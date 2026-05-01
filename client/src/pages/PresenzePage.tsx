@@ -31,6 +31,9 @@ import {
   ChevronRight,
   Info,
   Ticket,
+  Timer,
+  List,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -67,6 +70,25 @@ interface ConcessioneInfo {
   uscita_registrata: boolean;
 }
 
+interface PosteggioLibero {
+  id: number;
+  number: string;
+  area_mq: number;
+  daily_fee: number;
+}
+interface SpuntaTurnoInfo {
+  stato: 'IN_ATTESA' | 'TURNO_ATTIVO' | 'ASSEGNATO' | 'FINE_SPUNTA';
+  impresa_nome?: string;
+  posizione?: number;
+  coda_id?: number;
+  scadenza?: string;
+  stall_number?: string;
+  importo?: number;
+  saldo_residuo?: number;
+  motivo_fine?: string;
+  posteggi_disponibili?: number;
+  totale_in_coda?: number;
+}
 type SchermataCorrente = 
   | "caricamento"
   | "errore_impresa"
@@ -77,7 +99,12 @@ type SchermataCorrente =
   | "presenza_spunta"
   | "vista_mappa"
   | "deposito_rifiuti"
-  | "uscita_mercato";
+  | "uscita_mercato"
+  | "spunta_attesa"
+  | "spunta_turno"
+  | "spunta_lista_posteggi"
+  | "spunta_assegnato"
+  | "spunta_fine";
 
 interface PopupInfo {
   tipo: "successo" | "errore" | "avviso";
@@ -137,6 +164,12 @@ export default function PresenzePage() {
 
   // Ref per mappa
   const mapIframeRef = useRef<HTMLIFrameElement>(null);
+  // Stato spunta real-time
+  const [spuntaTurno, setSpuntaTurno] = useState<SpuntaTurnoInfo | null>(null);
+  const [posteggiLiberi, setPosteggiLiberi] = useState<PosteggioLibero[]>([]);
+  const [spuntaCodaId, setSpuntaCodaId] = useState<number | null>(null);
+  const [timerSecondi, setTimerSecondi] = useState(0);
+  const sseRef = useRef<EventSource | null>(null);
 
   // Orologio in tempo reale
   const [oraCorrente, setOraCorrente] = useState(
@@ -151,7 +184,152 @@ export default function PresenzePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // ─── RISOLUZIONE IMPRESA ────────────────────────────────────────────────
+  // ─── SPUNTA SSE REAL-TIME ───────────────────────────────────────────────────────────
+  const connettiSSESpunta = useCallback((sessionId: number) => {
+    if (sseRef.current) { sseRef.current.close(); }
+    const url = `${MIHUB_API_BASE_URL}/api/presenze-live/spunta/stream/${sessionId}`;
+    const es = new EventSource(url);
+    sseRef.current = es;
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'PROSSIMO_TURNO') {
+          if (data.impresa_id === impresaId) {
+            // È il nostro turno!
+            setSpuntaTurno({
+              stato: 'TURNO_ATTIVO',
+              impresa_nome: data.impresa_nome,
+              posizione: data.posizione,
+              coda_id: data.coda_id,
+              scadenza: data.scadenza,
+              posteggi_disponibili: data.posteggi_disponibili,
+              totale_in_coda: data.totale_in_coda,
+            });
+            setTimerSecondi(data.timeout_secondi || 120);
+            setSchermata('spunta_turno');
+          } else {
+            // Turno di un altro
+            setSpuntaTurno(prev => ({
+              ...prev!,
+              stato: 'IN_ATTESA',
+              impresa_nome: data.impresa_nome,
+              posizione: data.posizione,
+              posteggi_disponibili: data.posteggi_disponibili,
+              totale_in_coda: data.totale_in_coda,
+            }));
+          }
+        } else if (data.type === 'POSTEGGIO_ASSEGNATO') {
+          if (data.impresa_id === impresaId) {
+            setSpuntaTurno({
+              stato: 'ASSEGNATO',
+              stall_number: data.stall_number,
+              importo: data.importo_addebitato,
+              saldo_residuo: data.wallet_saldo_residuo,
+            });
+            setSchermata('spunta_assegnato');
+          }
+        } else if (data.type === 'SPUNTA_TERMINATA') {
+          setSpuntaTurno({
+            stato: 'FINE_SPUNTA',
+            motivo_fine: data.motivo === 'FINE_POSTEGGI' ? 'Tutti i posteggi sono stati assegnati' : 'Tutti i partecipanti sono stati chiamati',
+            posteggi_disponibili: data.posteggi_rimanenti,
+          });
+          setSchermata('spunta_fine');
+          es.close();
+        } else if (data.type === 'SPUNTA_INIZIATA') {
+          if (data.primo_turno?.impresa_id === impresaId) {
+            setSpuntaTurno({
+              stato: 'TURNO_ATTIVO',
+              impresa_nome: data.primo_turno.impresa_nome,
+              posizione: 1,
+              posteggi_disponibili: data.posteggi_disponibili,
+              totale_in_coda: data.spuntisti_in_coda,
+            });
+            setTimerSecondi(120);
+            setSchermata('spunta_turno');
+          } else {
+            setSchermata('spunta_attesa');
+          }
+        }
+      } catch (err) { console.error('SSE parse error:', err); }
+    };
+    es.onerror = () => { console.log('SSE spunta: connessione persa, riconnessione...'); };
+    return () => { es.close(); };
+  }, [impresaId]);
+
+  // Timer countdown per il turno
+  useEffect(() => {
+    if (schermata !== 'spunta_turno' && schermata !== 'spunta_lista_posteggi') return;
+    if (timerSecondi <= 0) return;
+    const interval = setInterval(() => {
+      setTimerSecondi(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          // Tempo scaduto, torna in attesa
+          setSchermata('spunta_attesa');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [schermata, timerSecondi > 0]);
+
+  // Carica posteggi liberi
+  const caricaPosteggiLiberi = useCallback(async () => {
+    if (!mercatoSelezionato?.session_id) return;
+    try {
+      const res = await authenticatedFetch(
+        `${MIHUB_API_BASE_URL}/api/presenze-live/spunta/posteggi-liberi/${mercatoSelezionato.session_id}`
+      );
+      const data = await res.json();
+      if (data.success) {
+        setPosteggiLiberi(data.posteggi_liberi || []);
+      }
+    } catch (err) { console.error('Errore caricamento posteggi liberi:', err); }
+  }, [mercatoSelezionato]);
+
+  // Scegli posteggio durante turno spunta
+  const scegliPosteggioSpunta = async (posteggio: PosteggioLibero) => {
+    if (!mercatoSelezionato?.session_id || !spuntaCodaId) return;
+    setLoadingAzione(true);
+    try {
+      const res = await authenticatedFetch(
+        `${MIHUB_API_BASE_URL}/api/presenze-live/spunta/scegli-posteggio`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            coda_id: spuntaCodaId,
+            session_id: mercatoSelezionato.session_id,
+            stall_id: posteggio.id,
+            impresa_id: impresaId,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setSpuntaTurno({
+          stato: 'ASSEGNATO',
+          stall_number: data.stall_number,
+          importo: data.importo_addebitato,
+          saldo_residuo: data.wallet_saldo_residuo,
+        });
+        setSchermata('spunta_assegnato');
+      } else {
+        setPopup({
+          tipo: 'errore',
+          titolo: 'ERRORE',
+          messaggio: data.messaggio || data.errore || 'Errore nella scelta del posteggio.',
+        });
+      }
+    } catch {
+      setPopup({ tipo: 'errore', titolo: 'ERRORE DI RETE', messaggio: 'Impossibile contattare il server.' });
+    }
+    setLoadingAzione(false);
+  };
+
+  // ─── RISOLUZIONE IMPRESA ──────────────────────────────────────────────────────
   useEffect(() => {
     async function resolveImpresa() {
       let id: number | null = null;
@@ -416,6 +594,7 @@ export default function PresenzePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             impresa_id: impresaId,
+            market_id: mercatoSelezionato.market_id,
             session_id: mercatoSelezionato.session_id,
             latitude: gpsPosition?.lat,
             longitude: gpsPosition?.lng,
@@ -425,12 +604,18 @@ export default function PresenzePage() {
 
       const data = await res.json();
       if (data.success) {
-        setPopup({
-          tipo: "successo",
-          titolo: "PRESENZA SPUNTA ESEGUITA CON SUCCESSO",
-          messaggio: `Posizione in graduatoria: ${data.posizione || "—"}`,
-          sottomessaggio: "VERRAI AVVISATO QUANDO SARÀ IL TUO TURNO!",
+        setSpuntaCodaId(data.coda_id || null);
+        setSpuntaTurno({
+          stato: 'IN_ATTESA',
+          posizione: data.posizione,
+          totale_in_coda: data.totale_in_coda,
+          posteggi_disponibili: data.posteggi_disponibili,
         });
+        // Connetti SSE per ricevere eventi in tempo reale
+        if (mercatoSelezionato.session_id) {
+          connettiSSESpunta(mercatoSelezionato.session_id);
+        }
+        setSchermata('spunta_attesa');
       } else {
         setPopup({
           tipo: "errore",
@@ -1298,8 +1483,200 @@ export default function PresenzePage() {
       </div>
     );
   }
+  // ─── OVERLAY SPUNTA: ATTESA TURNO (giallo full-screen) ──────────────────────
+  if (schermata === "spunta_attesa") {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-yellow-600 to-yellow-800 flex flex-col items-center justify-center p-6 text-white">
+        <Clock className="w-24 h-24 mb-8 drop-shadow-lg" strokeWidth={1.5} />
+        <h1 className="text-3xl sm:text-4xl font-black text-center mb-6 leading-tight drop-shadow-lg">
+          IN ATTESA DEL TUO TURNO
+        </h1>
+        {spuntaTurno?.impresa_nome && (
+          <p className="text-xl sm:text-2xl text-center text-white/90 mb-2 max-w-md">
+            Turno attuale: <strong>{spuntaTurno.impresa_nome}</strong>
+          </p>
+        )}
+        {spuntaTurno?.posizione && spuntaTurno?.totale_in_coda && (
+          <p className="text-lg text-center text-white/80 mb-4">
+            Posizione {spuntaTurno.posizione} di {spuntaTurno.totale_in_coda}
+          </p>
+        )}
+        <p className="text-lg sm:text-xl text-center text-white/80 mb-4 font-medium">
+          Posteggi disponibili: {spuntaTurno?.posteggi_disponibili ?? '—'}
+        </p>
+        <p className="text-lg sm:text-xl text-center text-white/80 mb-10 font-medium">
+          VERRAI AVVISATO QUANDO SARÀ IL TUO TURNO!
+        </p>
+        <Button
+          onClick={() => {
+            if (sseRef.current) sseRef.current.close();
+            setSchermata('scelta_tipo');
+          }}
+          className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-6 rounded-2xl font-bold shadow-xl"
+        >
+          TORNA AL MENU
+        </Button>
+      </div>
+    );
+  }
 
-  // ─── SCHERMATA: VISTA MAPPA ─────────────────────────────────────────────
+  // ─── OVERLAY SPUNTA: È IL TUO TURNO! (giallo acceso full-screen) ──────────────
+  if (schermata === "spunta_turno") {
+    const minuti = Math.floor(timerSecondi / 60);
+    const secondi = timerSecondi % 60;
+    return (
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-yellow-500 to-amber-600 flex flex-col items-center justify-center p-6 text-white">
+        <Star className="w-24 h-24 mb-6 drop-shadow-lg animate-pulse" strokeWidth={1.5} />
+        <h1 className="text-3xl sm:text-4xl font-black text-center mb-2 leading-tight drop-shadow-lg">
+          {nomeImpresa || ragioneSociale || 'LA TUA IMPRESA'}
+        </h1>
+        <h2 className="text-3xl sm:text-4xl font-black text-center mb-6 leading-tight drop-shadow-lg">
+          È IL TUO TURNO!
+        </h2>
+        <p className="text-xl text-center text-white/90 mb-2">
+          Tempo rimasto
+        </p>
+        <p className="text-5xl sm:text-6xl font-black font-mono mb-6 drop-shadow-lg">
+          {String(minuti).padStart(2, '0')}:{String(secondi).padStart(2, '0')}
+        </p>
+        <p className="text-lg text-center text-white/80 mb-6">
+          Posteggi disponibili: {spuntaTurno?.posteggi_disponibili ?? '—'}
+        </p>
+        <Button
+          onClick={async () => {
+            await caricaPosteggiLiberi();
+            setSchermata('spunta_lista_posteggi');
+          }}
+          className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-6 rounded-2xl font-bold shadow-xl"
+        >
+          VISUALIZZA POSTEGGI LIBERI
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── SCHERMATA: LISTA POSTEGGI LIBERI (con timer in header) ──────────────────
+  if (schermata === "spunta_lista_posteggi") {
+    const minuti = Math.floor(timerSecondi / 60);
+    const secondi = timerSecondi % 60;
+    return (
+      <div className="fixed inset-0 z-[9999] bg-[#0b1220] flex flex-col">
+        {/* Header con timer */}
+        <div className="bg-amber-500 p-4 flex items-center justify-between flex-shrink-0">
+          <button onClick={() => setSchermata('spunta_turno')} className="text-white">
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <h2 className="text-white font-bold text-lg">Posteggi Liberi</h2>
+          <div className="bg-white/30 rounded-lg px-3 py-1">
+            <span className="text-white font-mono font-bold text-lg">
+              {String(minuti).padStart(2, '0')}:{String(secondi).padStart(2, '0')}
+            </span>
+          </div>
+        </div>
+        {/* Lista posteggi scorrevole */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {posteggiLiberi.length === 0 ? (
+            <div className="text-center text-gray-400 mt-10">
+              <p className="text-lg">Nessun posteggio disponibile</p>
+            </div>
+          ) : (
+            posteggiLiberi.map((p) => (
+              <Card key={p.id} className="bg-[#1a2332] border-[#2a3a4a] cursor-pointer hover:border-amber-500 transition-colors"
+                onClick={() => {
+                  if (!loadingAzione) {
+                    setSpuntaCodaId(spuntaTurno?.coda_id || spuntaCodaId);
+                    scegliPosteggioSpunta(p);
+                  }
+                }}
+              >
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                      <span className="text-amber-400 font-bold text-lg">{p.number}</span>
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-lg">Posteggio {p.number}</p>
+                      <p className="text-gray-400 text-sm">{p.area_mq} mq — €{p.daily_fee.toFixed(2)}/giorno</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-6 h-6 text-amber-400" />
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── OVERLAY SPUNTA: POSTEGGIO ASSEGNATO (verde full-screen) ───────────────
+  if (schermata === "spunta_assegnato") {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-green-600 to-green-800 flex flex-col items-center justify-center p-6 text-white">
+        <CheckCircle className="w-24 h-24 mb-8 drop-shadow-lg" strokeWidth={1.5} />
+        <h1 className="text-3xl sm:text-4xl font-black text-center mb-6 leading-tight drop-shadow-lg">
+          POSTEGGIO ASSEGNATO!
+        </h1>
+        <p className="text-xl sm:text-2xl text-center text-white/90 mb-2 max-w-md">
+          Posteggio <strong>{spuntaTurno?.stall_number}</strong>
+        </p>
+        {spuntaTurno?.importo !== undefined && (
+          <p className="text-lg sm:text-xl text-center text-white/80 mb-2">
+            Importo addebitato: €{spuntaTurno.importo.toFixed(2)}
+          </p>
+        )}
+        {spuntaTurno?.saldo_residuo !== undefined && (
+          <p className="text-lg text-center text-white/70 mb-4">
+            Saldo residuo: €{spuntaTurno.saldo_residuo.toFixed(2)}
+          </p>
+        )}
+        <p className="text-lg sm:text-xl text-center text-white/80 mb-10 font-medium">
+          RICORDATI DI DEPOSITARE L'IMMONDIZIA E DI ESEGUIRE L'USCITA!
+        </p>
+        <Button
+          onClick={() => {
+            if (sseRef.current) sseRef.current.close();
+            cercaMercati();
+            setSchermata('scelta_tipo');
+          }}
+          className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-6 rounded-2xl font-bold shadow-xl"
+        >
+          CHIUDI
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── OVERLAY SPUNTA: FINE SPUNTA (giallo full-screen) ──────────────────────
+  if (schermata === "spunta_fine") {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-yellow-600 to-yellow-800 flex flex-col items-center justify-center p-6 text-white">
+        <AlertTriangle className="w-24 h-24 mb-8 drop-shadow-lg" strokeWidth={1.5} />
+        <h1 className="text-3xl sm:text-4xl font-black text-center mb-6 leading-tight drop-shadow-lg">
+          SPUNTA TERMINATA
+        </h1>
+        <p className="text-xl sm:text-2xl text-center text-white/90 mb-4 max-w-md leading-relaxed">
+          {spuntaTurno?.motivo_fine || 'La spunta è terminata.'}
+        </p>
+        {spuntaTurno?.posteggi_disponibili !== undefined && (
+          <p className="text-lg text-center text-white/80 mb-10">
+            Posteggi rimanenti: {spuntaTurno.posteggi_disponibili}
+          </p>
+        )}
+        <Button
+          onClick={() => {
+            cercaMercati();
+            setSchermata('scelta_tipo');
+          }}
+          className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-6 rounded-2xl font-bold shadow-xl"
+        >
+          CHIUDI
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── SCHERMATA: VISTA MAPPA ─────────────────────────────────────────────────────
   if (schermata === "vista_mappa" && mercatoSelezionato && posteggioSelezionato) {
     const mapUrl = `https://api.mio-hub.me/tools/market-map-viewer.html?marketId=${mercatoSelezionato.market_id}&stallNumber=${posteggioSelezionato.stall_number}`;
 
