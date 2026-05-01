@@ -639,13 +639,16 @@ export default function WalletImpresaPage() {
     setShowRicaricaDialog(true);
   };
 
-  // Esegue ricarica wallet GENERICO
+  // Esegue ricarica wallet GENERICO o SPUNTA
   const handleExecuteRicarica = async (mode: "AVVISO" | "PAGA_ORA") => {
     if (!selectedWalletRicarica || !ricaricaAmount) return;
     setIsProcessingRicarica(true);
 
     try {
-      const description = `Ricarica Wallet Generico - ${company?.ragione_sociale}`;
+      const walletLabel = selectedWalletRicarica.type === "SPUNTA"
+        ? `Ricarica Wallet Spunta ${selectedWalletRicarica.market_name || ''} - ${company?.ragione_sociale}`
+        : `Ricarica Wallet Generico - ${company?.ragione_sociale}`;
+      const description = walletLabel;
 
       // Recupera comune_id dal wallet selezionato o da qualsiasi wallet disponibile
       const allWallets = [
@@ -984,8 +987,8 @@ export default function WalletImpresaPage() {
                                   </p>
                                 </div>
 
-                                {/* Pulsante Ricarica per wallet GENERICO */}
-                                {wallet.type === "GENERICO" && (
+                                {/* Pulsante Ricarica per wallet GENERICO e SPUNTA */}
+                                {(wallet.type === "GENERICO" || wallet.type === "SPUNTA") && (
                                   <Button
                                     variant="outline"
                                     className="border-[#14b8a6]/30 hover:bg-[#14b8a6]/10 text-[#e8fbff] gap-2"
@@ -1682,10 +1685,12 @@ export default function WalletImpresaPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="w-5 h-5 text-[#14b8a6]" />
-              Ricarica Wallet Generico
+              Ricarica Wallet {selectedWalletRicarica?.type === "SPUNTA" ? "Spunta" : "Generico"}
             </DialogTitle>
             <DialogDescription className="text-[#e8fbff]/70">
-              {company?.ragione_sociale} - Borsellino Ricaricabile
+              {selectedWalletRicarica?.type === "SPUNTA"
+                ? `${selectedWalletRicarica?.market_name || 'Spunta'} - ${company?.ragione_sociale}`
+                : `${company?.ragione_sociale} - Borsellino Ricaricabile`}
             </DialogDescription>
           </DialogHeader>
 
