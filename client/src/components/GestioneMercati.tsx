@@ -2262,6 +2262,8 @@ function PosteggiTab({
   const [isSpuntaMode, setIsSpuntaMode] = useState(false);
   const [isOccupaMode, setIsOccupaMode] = useState(false);
   const [isLiberaMode, setIsLiberaMode] = useState(false);
+  const [isDepositoMode, setIsDepositoMode] = useState(false);
+  const [isChiudiMode, setIsChiudiMode] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false); // Animazione in corso
   const stopAnimationRef = React.useRef(false); // Flag per fermare l'animazione
   const [showCompanyModal, setShowCompanyModal] = useState(false);
@@ -2296,6 +2298,16 @@ function PosteggiTab({
 
   useEffect(() => {
     fetchData();
+  }, [marketId]);
+
+  // Auto-refresh: polling ogni 10 secondi per aggiornare la mappa in tempo reale
+  // (es. quando un'impresa fa checkin dall'app, la PA vede il posteggio occupato)
+  useEffect(() => {
+    if (!marketId) return;
+    const interval = setInterval(() => {
+      fetchData();
+    }, 10000); // 10 secondi
+    return () => clearInterval(interval);
   }, [marketId]);
 
   // Carica dati concessione quando viene selezionato un posteggio con concessione
@@ -2930,6 +2942,63 @@ function PosteggiTab({
     }
   };
 
+  // Deposito rifiuti per un singolo posteggio
+  const handleDepositoRifiutiSingolo = async (stallId: number) => {
+    try {
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/test-mercato/registra-rifiuti-singolo`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ market_id: marketId, stall_id: stallId }),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`\u267b\ufe0f ${data.message}`);
+        await fetchData();
+      } else {
+        toast.error(data.error || "Errore durante il deposito rifiuti");
+      }
+    } catch (error) {
+      console.error("[ERROR handleDepositoRifiutiSingolo]:", error);
+      toast.error("Errore durante il deposito rifiuti");
+      throw error;
+    }
+  };
+
+  // Chiudi mercato per un singolo posteggio (registra uscita + libera)
+  const handleChiudiMercatoSingolo = async (stallId: number) => {
+    // Aggiorna stato locale IMMEDIATAMENTE per feedback visivo
+    setStalls(prev =>
+      prev.map(s => (s.id === stallId ? { ...s, status: "libero" } : s))
+    );
+    setSelectedStallId(null);
+    setSelectedStallCenter(null);
+
+    try {
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/api/test-mercato/chiudi-mercato-singolo`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ market_id: marketId, stall_id: stallId }),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`\ud83d\udeaa ${data.message}`);
+        await fetchData();
+      } else {
+        toast.error(data.error || "Errore durante la chiusura");
+      }
+    } catch (error) {
+      console.error("[ERROR handleChiudiMercatoSingolo]:", error);
+      toast.error("Errore durante la chiusura del posteggio");
+      throw error;
+    }
+  };
+
   const handleCancel = () => {
     setEditingId(null);
     setEditData({});
@@ -3014,6 +3083,8 @@ function PosteggiTab({
               setIsOccupaMode(!isOccupaMode);
               setIsLiberaMode(false);
               setIsSpuntaMode(false);
+              setIsDepositoMode(false);
+              setIsChiudiMode(false);
             }}
           >
             ✅ Occupa
@@ -3042,6 +3113,8 @@ function PosteggiTab({
               setIsLiberaMode(!isLiberaMode);
               setIsOccupaMode(false);
               setIsSpuntaMode(false);
+              setIsDepositoMode(false);
+              setIsChiudiMode(false);
             }}
           >
             🚮 Libera
@@ -3102,6 +3175,8 @@ function PosteggiTab({
                   setIsSpuntaMode(true);
                   setIsOccupaMode(false);
                   setIsLiberaMode(false);
+                  setIsDepositoMode(false);
+                  setIsChiudiMode(false);
 
                   // Chiama endpoint avvia-spunta in background
                   try {
@@ -3159,6 +3234,8 @@ function PosteggiTab({
                 setIsSpuntaMode(!isSpuntaMode);
                 setIsOccupaMode(false);
                 setIsLiberaMode(false);
+                setIsDepositoMode(false);
+                setIsChiudiMode(false);
               }}
             >
               ✓ Spunta
@@ -3473,12 +3550,33 @@ function PosteggiTab({
               : `✓ Conferma Assegnazione (${reservedCount} posteggi)`}
           </Button>
 
-          {/* Pulsante Registra Deposito Rifiuti - registra orario deposito spazzatura per TUTTI */}
+          {/* Pulsante Deposito Rifiuti SINGOLO - click su posteggio */}
           <Button
-            className="w-full mt-2 font-semibold py-2 border-2 bg-[#22c55e] hover:bg-[#22c55e]/80 border-[#22c55e]/50 text-white"
+            className={`w-full mt-2 font-semibold py-2 border-2 ${
+              isDepositoMode
+                ? "bg-[#22c55e] border-[#22c55e] text-white"
+                : "bg-[#22c55e]/20 hover:bg-[#22c55e]/40 border-[#22c55e]/50 text-[#22c55e]"
+            }`}
+            onClick={() => {
+              setIsDepositoMode(!isDepositoMode);
+              setIsChiudiMode(false);
+              setIsOccupaMode(false);
+              setIsLiberaMode(false);
+              setIsSpuntaMode(false);
+              if (!isDepositoMode) {
+                toast.info("Clicca su un posteggio occupato per registrare il deposito rifiuti");
+              }
+            }}
+          >
+            {isDepositoMode ? "\u2705 Modalità Deposito Rifiuti ATTIVA" : "\u267b\ufe0f Deposito Rifiuti (Singolo)"}
+          </Button>
+
+          {/* Pulsante Deposito Rifiuti TUTTI */}
+          <Button
+            className="w-full mt-1 font-semibold py-1.5 border-2 bg-[#22c55e]/10 hover:bg-[#22c55e]/30 border-[#22c55e]/30 text-[#22c55e] text-sm"
             onClick={async () => {
               const confirmed = window.confirm(
-                `Registrare il deposito rifiuti?\n\n` +
+                `Registrare il deposito rifiuti per TUTTI?\n\n` +
                   `Questa azione registrerà l'orario di deposito spazzatura per tutte le presenze del giorno.`
               );
 
@@ -3496,7 +3594,8 @@ function PosteggiTab({
 
                 const data = await response.json();
                 if (data.success) {
-                  toast.success(`♻️ ${data.message}`);
+                  toast.success(`\u267b\ufe0f ${data.message}`);
+                  setIsDepositoMode(false);
                 } else {
                   toast.error(
                     data.error || "Errore durante la registrazione rifiuti"
@@ -3510,19 +3609,40 @@ function PosteggiTab({
               }
             }}
           >
-            ♻️ Registra Deposito Rifiuti
+            \u267b\ufe0f Deposito Rifiuti (Tutti)
           </Button>
 
-          {/* Pulsante Chiudi Mercato - registra uscita per TUTTI e libera TUTTI i posteggi */}
+          {/* Pulsante Chiudi Mercato SINGOLO - click su posteggio */}
           <Button
-            className="w-full mt-2 font-semibold py-2 border-2 bg-[#ef4444] hover:bg-[#ef4444]/80 border-[#ef4444]/50 text-white"
+            className={`w-full mt-2 font-semibold py-2 border-2 ${
+              isChiudiMode
+                ? "bg-[#ef4444] border-[#ef4444] text-white"
+                : "bg-[#ef4444]/20 hover:bg-[#ef4444]/40 border-[#ef4444]/50 text-[#ef4444]"
+            }`}
+            onClick={() => {
+              setIsChiudiMode(!isChiudiMode);
+              setIsDepositoMode(false);
+              setIsOccupaMode(false);
+              setIsLiberaMode(false);
+              setIsSpuntaMode(false);
+              if (!isChiudiMode) {
+                toast.info("Clicca su un posteggio occupato per registrare l'uscita");
+              }
+            }}
+          >
+            {isChiudiMode ? "\u2705 Modalit\u00e0 Chiudi Mercato ATTIVA" : "\ud83d\udeaa Chiudi Mercato (Singolo)"}
+          </Button>
+
+          {/* Pulsante Chiudi Mercato TUTTI */}
+          <Button
+            className="w-full mt-1 font-semibold py-1.5 border-2 bg-[#ef4444]/10 hover:bg-[#ef4444]/30 border-[#ef4444]/30 text-[#ef4444] text-sm"
             onClick={async () => {
               const confirmed = window.confirm(
-                `Chiudere il mercato?\n\n` +
+                `Chiudere il mercato per TUTTI?\n\n` +
                   `Questa azione:\n` +
-                  `• Registrerà l'orario di uscita per TUTTI (concessionari + spuntisti)\n` +
-                  `• Libererà TUTTI i posteggi\n` +
-                  `• Reset completo per il giorno successivo`
+                  `\u2022 Registrer\u00e0 l'orario di uscita per TUTTI\n` +
+                  `\u2022 Liberer\u00e0 TUTTI i posteggi\n` +
+                  `\u2022 Reset completo per il giorno successivo`
               );
 
               if (!confirmed) return;
@@ -3539,10 +3659,12 @@ function PosteggiTab({
 
                 const data = await response.json();
                 if (data.success) {
-                  toast.success(`🏪 ${data.message}`);
+                  toast.success(`\ud83c\udfea ${data.message}`);
                   setIsSpuntaMode(false);
                   setIsOccupaMode(false);
                   setIsLiberaMode(false);
+                  setIsDepositoMode(false);
+                  setIsChiudiMode(false);
                 } else {
                   toast.error(
                     data.error || "Errore durante la chiusura mercato"
@@ -3556,7 +3678,7 @@ function PosteggiTab({
               }
             }}
           >
-            🏪 Chiudi Mercato
+            \ud83c\udfea Chiudi Mercato (Tutti)
           </Button>
         </div>
       )}
@@ -3608,6 +3730,10 @@ function PosteggiTab({
                 onConfirmAssignment={handleConfirmAssignment}
                 onOccupaStall={handleOccupaStall}
                 onLiberaStall={handleLiberaStall}
+                isDepositoMode={isDepositoMode}
+                isChiudiMode={isChiudiMode}
+                onDepositoRifiuti={handleDepositoRifiutiSingolo}
+                onChiudiMercatoSingolo={handleChiudiMercatoSingolo}
                 costPerSqm={
                   allMarkets.find(m => m.id === marketId)?.cost_per_sqm || 0.9
                 }

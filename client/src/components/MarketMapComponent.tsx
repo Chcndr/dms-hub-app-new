@@ -94,6 +94,10 @@ interface MarketMapComponentProps {
     walletId?: number
   ) => Promise<void>; // Callback per occupare posteggio
   onLiberaStall?: (stallId: number) => Promise<void>; // Callback per liberare posteggio
+  isDepositoMode?: boolean; // Modalità deposito rifiuti (click su posteggio occupato -> registra deposito)
+  isChiudiMode?: boolean; // Modalità chiudi mercato (click su posteggio occupato -> registra uscita e libera)
+  onDepositoRifiuti?: (stallId: number) => Promise<void>; // Callback per deposito rifiuti singolo
+  onChiudiMercatoSingolo?: (stallId: number) => Promise<void>; // Callback per chiudi mercato singolo
   costPerSqm?: number; // Costo per metro quadro per calcolo canone spunta
   routeConfig?: {
     // Configurazione routing (opzionale)
@@ -215,6 +219,10 @@ export function MarketMapComponent({
   onConfirmAssignment,
   onOccupaStall,
   onLiberaStall,
+  isDepositoMode = false,
+  isChiudiMode = false,
+  onDepositoRifiuti,
+  onChiudiMercatoSingolo,
   costPerSqm = 0.9, // Default 0.90€/mq
   routeConfig,
   // Props per Vista Italia (Gemello Digitale)
@@ -789,6 +797,102 @@ export function MarketMapComponent({
                               disabled={!onLiberaStall || !dbStall?.id}
                             >
                               🚮 Conferma Liberazione
+                            </button>
+                          </div>
+                        </div>
+                      ) : isDepositoMode && displayStatus === "occupato" ? (
+                        /* Popup DEPOSITO RIFIUTI per posteggi occupati - VERDE */
+                        <div
+                          className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden"
+                          style={{ minWidth: "280px" }}
+                        >
+                          <div className="bg-[#1e293b] p-3 border-b border-gray-700 flex justify-between items-center">
+                            <div className="font-bold text-lg text-white">
+                              ♻️ Deposito #{props.number}
+                            </div>
+                            <span className="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold bg-red-900/50 text-red-400 border border-red-800">
+                              {getStallStatusLabel(displayStatus)}
+                            </span>
+                          </div>
+                          <div className="p-4 space-y-4">
+                            {dbStall?.vendor_name && (
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-400">Impresa:</span>
+                                <span className="text-gray-200 font-medium">{dbStall.vendor_name}</span>
+                              </div>
+                            )}
+                            <p className="text-sm text-gray-300">
+                              Conferma il deposito rifiuti per questo posteggio.
+                            </p>
+                            <button
+                              className="w-full bg-[#10b981] hover:bg-[#10b981]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                              onClick={async () => {
+                                if (!onDepositoRifiuti) {
+                                  alert('Funzione "Deposito Rifiuti" non configurata!');
+                                  return;
+                                }
+                                if (!dbStall?.id) {
+                                  alert("Impossibile trovare l'ID del posteggio!");
+                                  return;
+                                }
+                                try {
+                                  await onDepositoRifiuti(dbStall.id);
+                                } catch (error) {
+                                  console.error("[ERROR] Deposito rifiuti:", error);
+                                  alert("Errore durante il deposito rifiuti!");
+                                }
+                              }}
+                              disabled={!onDepositoRifiuti || !dbStall?.id}
+                            >
+                              ♻️ Conferma Deposito
+                            </button>
+                          </div>
+                        </div>
+                      ) : isChiudiMode && displayStatus === "occupato" ? (
+                        /* Popup CHIUDI MERCATO per posteggi occupati - ROSSO */
+                        <div
+                          className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden"
+                          style={{ minWidth: "280px" }}
+                        >
+                          <div className="bg-[#1e293b] p-3 border-b border-gray-700 flex justify-between items-center">
+                            <div className="font-bold text-lg text-white">
+                              🚪 Uscita #{props.number}
+                            </div>
+                            <span className="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold bg-red-900/50 text-red-400 border border-red-800">
+                              {getStallStatusLabel(displayStatus)}
+                            </span>
+                          </div>
+                          <div className="p-4 space-y-4">
+                            {dbStall?.vendor_name && (
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-400">Impresa:</span>
+                                <span className="text-gray-200 font-medium">{dbStall.vendor_name}</span>
+                              </div>
+                            )}
+                            <p className="text-sm text-gray-300">
+                              Conferma l'uscita dal mercato e libera il posteggio.
+                            </p>
+                            <button
+                              className="w-full bg-[#ef4444] hover:bg-[#ef4444]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                              onClick={async () => {
+                                if (!onChiudiMercatoSingolo) {
+                                  alert('Funzione "Chiudi Mercato" non configurata!');
+                                  return;
+                                }
+                                if (!dbStall?.id) {
+                                  alert("Impossibile trovare l'ID del posteggio!");
+                                  return;
+                                }
+                                try {
+                                  await onChiudiMercatoSingolo(dbStall.id);
+                                } catch (error) {
+                                  console.error("[ERROR] Chiudi mercato singolo:", error);
+                                  alert("Errore durante la chiusura!");
+                                }
+                              }}
+                              disabled={!onChiudiMercatoSingolo || !dbStall?.id}
+                            >
+                              🚪 Conferma Uscita
                             </button>
                           </div>
                         </div>
