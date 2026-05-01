@@ -340,10 +340,11 @@ export default function PresenzePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             impresa_id: impresaId,
+            market_id: mercatoSelezionato.market_id,
             session_id: mercatoSelezionato.session_id,
             stall_id: concessione.stall_id,
             concession_id: concessione.concession_id,
-            metodo: "app",
+            metodo_checkin: "APP",
             latitude: gpsPosition?.lat,
             longitude: gpsPosition?.lng,
           }),
@@ -937,10 +938,10 @@ export default function PresenzePage() {
                   <Button
                     onClick={() => eseguiPresenzaPosteggio(conc)}
                     disabled={loadingAzione}
-                    className="flex-1 bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white text-lg py-6 rounded-xl font-bold"
+                    className="flex-1 bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white text-base sm:text-lg py-5 sm:py-6 rounded-xl font-bold min-w-0"
                   >
-                    <LogIn className="w-5 h-5 mr-2" />
-                    CONFERMA PRESENZA
+                    <LogIn className="w-5 h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                    <span className="truncate">PRESENZA</span>
                   </Button>
                   <Button
                     onClick={() => {
@@ -948,7 +949,7 @@ export default function PresenzePage() {
                       setSchermata("vista_mappa");
                     }}
                     variant="outline"
-                    className="border-[#14b8a6]/40 text-[#14b8a6] text-lg py-6 rounded-xl px-4"
+                    className="border-[#14b8a6]/40 text-[#14b8a6] py-5 sm:py-6 rounded-xl px-4 flex-shrink-0"
                   >
                     <MapIcon className="w-5 h-5" />
                   </Button>
