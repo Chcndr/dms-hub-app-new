@@ -137,6 +137,19 @@ export default function PresenzePage() {
   // Ref per mappa
   const mapIframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Orologio in tempo reale
+  const [oraCorrente, setOraCorrente] = useState(
+    new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Europe/Rome" })
+  );
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setOraCorrente(
+        new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Europe/Rome" })
+      );
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // ─── RISOLUZIONE IMPRESA ────────────────────────────────────────────────
   useEffect(() => {
     async function resolveImpresa() {
@@ -806,6 +819,12 @@ export default function PresenzePage() {
             )}
           </div>
 
+          {/* Orologio in tempo reale */}
+          <div className="flex items-center justify-center gap-3 py-3">
+            <Clock className="w-5 h-5 text-[#14b8a6]" />
+            <span className="text-3xl font-mono font-bold text-[#e8fbff] tracking-wider">{oraCorrente}</span>
+          </div>
+
           {(() => {
             // Calcola stati per logica contestuale
             const concessioni = mercatoSelezionato.concessions.filter(c => c.tipo_posteggio !== 'Spunta');
@@ -831,8 +850,8 @@ export default function PresenzePage() {
                         <LogIn className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-lg sm:text-2xl font-black text-white truncate">PRESENZA POSTEGGIO</p>
-                        <p className="text-sm sm:text-base text-white/70 mt-1 truncate">
+                        <p className="text-base sm:text-xl font-black text-white leading-tight">PRESENZA POSTEGGIO</p>
+                        <p className="text-xs sm:text-sm text-white/70 mt-1">
                           Registra la presenza al posteggio
                         </p>
                       </div>
@@ -851,8 +870,8 @@ export default function PresenzePage() {
                         <Users className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-lg sm:text-2xl font-black text-white truncate">PRESENZA SPUNTA</p>
-                        <p className="text-sm sm:text-base text-white/70 mt-1 truncate">
+                        <p className="text-base sm:text-xl font-black text-white leading-tight">PRESENZA SPUNTA</p>
+                        <p className="text-xs sm:text-sm text-white/70 mt-1">
                           Graduatoria spuntisti
                         </p>
                       </div>
@@ -876,8 +895,8 @@ export default function PresenzePage() {
                         <Trash2 className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-400" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-lg sm:text-xl font-bold text-[#e8fbff] truncate">DEPOSITO RIFIUTI</p>
-                        <p className="text-xs sm:text-sm text-[#e8fbff]/50 truncate">Registra il deposito</p>
+                        <p className="text-base sm:text-lg font-bold text-[#e8fbff] leading-tight">DEPOSITO RIFIUTI</p>
+                        <p className="text-xs sm:text-sm text-[#e8fbff]/50">Registra il deposito</p>
                       </div>
                     </div>
                   </button>
@@ -894,8 +913,8 @@ export default function PresenzePage() {
                         <LogOut className="w-6 h-6 sm:w-7 sm:h-7 text-red-400" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-lg sm:text-xl font-bold text-[#e8fbff] truncate">USCITA MERCATO</p>
-                        <p className="text-xs sm:text-sm text-[#e8fbff]/50 truncate">Registra l'uscita</p>
+                        <p className="text-base sm:text-lg font-bold text-[#e8fbff] leading-tight">USCITA MERCATO</p>
+                        <p className="text-xs sm:text-sm text-[#e8fbff]/50">Registra l'uscita</p>
                       </div>
                     </div>
                   </button>
@@ -1301,10 +1320,10 @@ export default function PresenzePage() {
           <Button
             onClick={() => eseguiPresenzaPosteggio(posteggioSelezionato)}
             disabled={loadingAzione}
-            className="w-full bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white text-xl py-6 rounded-xl font-bold"
+            className="w-full bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white text-sm sm:text-base py-6 rounded-xl font-bold"
           >
-            <LogIn className="w-6 h-6 mr-2" />
-            CONFERMA PRESENZA — €{posteggioSelezionato.canone_giornaliero.toFixed(2)}
+            <LogIn className="w-5 h-5 mr-2 flex-shrink-0" />
+            <span>CONFERMA PRESENZA — €{posteggioSelezionato.canone_giornaliero.toFixed(2)}</span>
           </Button>
         </div>
       </div>
