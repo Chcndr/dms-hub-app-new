@@ -109,6 +109,8 @@ export default function PresenzePage() {
   const [impresaId, setImpresaId] = useState<number | null>(null);
   const [impresaResolving, setImpresaResolving] = useState(true);
   const [ragioneSociale, setRagioneSociale] = useState("");
+  const [nomeImpresa, setNomeImpresa] = useState("");
+  const [nomeUtente, setNomeUtente] = useState("");
 
   // Stato GPS
   const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number } | null>(null);
@@ -140,12 +142,13 @@ export default function PresenzePage() {
       let nome = "";
 
       // Strategia 1: miohub_firebase_user
+      let personaNome = "";
       try {
         const fbStr = localStorage.getItem("miohub_firebase_user");
         if (fbStr) {
           const fb = JSON.parse(fbStr);
           if (fb.impresaId) id = fb.impresaId;
-          nome = fb.displayName || fb.email || "";
+          personaNome = fb.displayName || fb.email || "";
         }
       } catch { /* ignore */ }
 
@@ -156,7 +159,7 @@ export default function PresenzePage() {
           if (userStr) {
             const user = JSON.parse(userStr);
             if (user.impresa_id) id = user.impresa_id;
-            if (!nome) nome = user.ragione_sociale || user.email || "";
+            if (!personaNome) personaNome = user.name || user.email || "";
           }
         } catch { /* ignore */ }
       }
@@ -175,16 +178,30 @@ export default function PresenzePage() {
               const data = await res.json();
               if (data.success && data.data?.length > 0) {
                 id = data.data[0].id;
-                nome = data.data[0].ragione_sociale || "";
+                nome = data.data[0].ragione_sociale || data.data[0].denominazione || "";
               }
             }
           }
         } catch { /* ignore */ }
       }
 
+      // Carica nome impresa dal server
       if (id) {
         setImpresaId(id);
-        setRagioneSociale(nome);
+        setNomeUtente(personaNome);
+        try {
+          const resImpresa = await fetch(`${MIHUB_API_BASE_URL}/api/imprese/${id}`);
+          if (resImpresa.ok) {
+            const dataImpresa = await resImpresa.json();
+            const raw = dataImpresa.success ? dataImpresa.data : dataImpresa;
+            if (raw) {
+              const nomeI = raw.denominazione || raw.ragione_sociale || "";
+              setNomeImpresa(nomeI);
+              setRagioneSociale(nomeI);
+            }
+          }
+        } catch { /* ignore */ }
+        if (!nome && !nomeImpresa) setRagioneSociale(personaNome);
         setSchermata("cerca_mercato");
       } else {
         setSchermata("errore_impresa");
@@ -538,7 +555,7 @@ export default function PresenzePage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={onBack || (() => setLocation("/app/impresa"))}
+            onClick={onBack || (() => setLocation("/dashboard-impresa"))}
             className="text-[#e8fbff]/70 hover:text-[#e8fbff] h-10 px-3"
           >
             <ArrowLeft className="w-5 h-5 mr-1" />
@@ -605,8 +622,15 @@ export default function PresenzePage() {
               <p className="text-base text-[#e8fbff]/50">
                 {new Date().toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
               </p>
-              {ragioneSociale && (
-                <p className="text-sm text-[#14b8a6] mt-1 truncate">{ragioneSociale}</p>
+              {(nomeUtente || nomeImpresa) && (
+                <div className="mt-1">
+                  {nomeUtente && (
+                    <p className="text-sm text-[#e8fbff]/70 truncate">{nomeUtente}</p>
+                  )}
+                  {nomeImpresa && (
+                    <p className="text-sm text-[#14b8a6] font-semibold truncate">Impresa: {nomeImpresa}</p>
+                  )}
+                </div>
               )}
             </div>
           </div>
