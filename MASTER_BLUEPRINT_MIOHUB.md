@@ -1,7 +1,40 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.0.3 (Autocompilazione Bolkestein + Popolamento Dati Imprese)
-> **Data:** 29 Aprile 2026
+> **Versione:** 10.0.4 (Gestione Presenze App Impresa: Tab Dinamici e Fix UI)
+> **Data:** 01 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.0.4 (01 Mag 2026)
+> **Gestione Presenze App Impresa: Tab Dinamici, Orologio Real-Time e Fix Logica Spunta**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `384e15a` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `384e15a` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `bf743f4` | Allineato |
+> | Vercel frontend | `bf743f4` | Autodeploy |
+>
+> **BACKEND — 5 commit (da `ec2ba0e` a `384e15a`):**
+>
+> **Endpoint Gestione Presenze Live (`routes/presenze-live.js`):**
+> - **Nuovi Endpoint:** Creati `POST /deposito-rifiuti` e `POST /uscita-mercato` per completare il flusso di presenza. Aggiornano rispettivamente `orario_deposito_rifiuti` e `checkout_time` in `vendor_presences` per la sessione corrente, e liberano lo stallo in uscita.
+> - **Fix Query `mercati-oggi`:** 
+>   - Corretto il nome della colonna da `rifiuti_time` a `orario_deposito_rifiuti` per il check dello stato deposito.
+>   - Aggiunti i flag booleani `deposito_rifiuti_fatto` e `uscita_registrata` al payload di risposta.
+>   - Aggiunte le colonne booleane fittizie al blocco `UNION ALL` per gli spuntisti per risolvere l'errore SQL.
+>   - **Fix Logica Spunta:** Rimossa la clausola `NOT EXISTS` che impediva alle imprese di vedere i mercati spunta se possedevano già una concessione nello stesso mercato. Ora un'impresa può partecipare sia come concessionario che come spuntista.
+>
+> **FRONTEND — 4 commit (da `4832763` a `bf743f4`):**
+>
+> **Flusso Operativo Presenze App Impresa (`PresenzePage.tsx`):**
+> - **Tab Dinamici (Posteggi):** I pulsanti sotto ogni posteggio cambiano stato dinamicamente in base alle azioni completate: `PRESENZA` (Verde) → `DEPOSITO RIFIUTI` (Giallo) → `USCITA MERCATO` (Rosso).
+> - **Pulsanti Contestuali (Scelta Tipo):** La schermata principale mostra dinamicamente i pulsanti di azione globale in base allo stato complessivo delle concessioni. Aggiunto messaggio di successo "Giornata completata!" quando tutte le operazioni sono concluse.
+> - **Nuove Schermate:** Aggiunte le viste `deposito_rifiuti` e `uscita_mercato` che mostrano solo i posteggi pertinenti alla fase specifica.
+> - **Fix UI e Truncate:** 
+>   - Rimossi i `truncate` che tagliavano i testi dei pulsanti principali (PRESENZA POSTEGGIO, PRESENZA SPUNTA, DEPOSITO RIFIUTI, USCITA MERCATO).
+>   - Risolto l'overflow del testo nel pulsante `CONFERMA PRESENZA` nella vista mappa, adattando il font per schermi piccoli.
+> - **Orologio Real-Time:** Aggiunto un orologio digitale in tempo reale (formato `HH:MM:SS`, timezone Europe/Rome) tra la card del mercato e i pulsanti di azione, aggiornato ogni secondo.
 >
 > ---
 > ### CHANGELOG v10.0.3 (29-30 Apr 2026)
