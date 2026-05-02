@@ -128,10 +128,18 @@ export default function SpuntaNotifier() {
               posteggi_disponibili: data.posteggi_disponibili,
               session_id: data.session_id,
             });
-          } else if (data.turno_attivo && data.session_id && currentStato === 'IDLE') {
-            // È già il nostro turno (solo da IDLE, mai sovrascrivere TURNO_ATTIVO)
-            scadenzaChiamataRef.current = false; // reset flag scadenza per nuovo turno
-            connettiSSE(data.session_id);
+          } else if (data.in_coda && data.session_id && currentStato === 'IN_ATTESA') {
+            // Siamo in attesa: assicurati che la SSE sia connessa (potrebbe essersi disconnessa)
+            if (!sseRef.current || sseRef.current.readyState === EventSource.CLOSED) {
+              console.log('[SpuntaNotifier] SSE disconnessa durante IN_ATTESA, riconnetto...');
+              connettiSSE(data.session_id);
+            }
+          } else if (data.turno_attivo && data.session_id && (currentStato === 'IDLE' || currentStato === 'IN_ATTESA')) {
+            // È il nostro turno (da IDLE o IN_ATTESA — il polling ha scoperto il turno prima della SSE)
+            scadenzaChiamataRef.current = false;
+            if (!sseRef.current || sseRef.current.readyState === EventSource.CLOSED) {
+              connettiSSE(data.session_id);
+            }
             setSpunta({
               stato: 'TURNO_ATTIVO',
               impresa_nome: data.impresa_nome,

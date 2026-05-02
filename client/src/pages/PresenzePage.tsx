@@ -495,8 +495,8 @@ export default function PresenzePage() {
   useEffect(() => {
     const handleSpuntaGestita = (e: StorageEvent) => {
       if (e.key === 'spunta_gestita') {
-        console.log('[PresenzePage] Spunta gestita, resetto stato spunta...');
-        // Resetta gia_presente_oggi per le concessioni Spunta
+        console.log('[PresenzePage] Spunta gestita, resetto stato spunta locale...');
+        // Resetta gia_presente_oggi per le concessioni Spunta (senza ricaricare tutto)
         setMercatoSelezionato(prev => {
           if (!prev) return prev;
           return {
@@ -511,17 +511,16 @@ export default function PresenzePage() {
         setSpuntaCodaId(null);
         setTimerSecondi(0);
         setPosteggiLiberi([]);
-        // Torna alla schermata principale se eravamo in una schermata spunta
+        // Torna alla schermata scelta_tipo se eravamo in una schermata spunta
         if (['spunta_attesa', 'spunta_turno', 'spunta_lista_posteggi', 'spunta_assegnato', 'spunta_fine'].includes(schermata)) {
           setSchermata('scelta_tipo');
         }
-        // Ricarica dati mercato freschi dal backend
-        cercaMercati();
+        // NON ricaricare cercaMercati() — non serve resettare tutto il mercato
       }
     };
     window.addEventListener('storage', handleSpuntaGestita);
     return () => window.removeEventListener('storage', handleSpuntaGestita);
-  }, [schermata, cercaMercati]);
+  }, [schermata]);
 
   // ─── AZIONI ─────────────────────────────────────────────────────────────
   const eseguiPresenzaPosteggio = async (concessione: ConcessioneInfo) => {
