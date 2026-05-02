@@ -119,24 +119,10 @@ export default function SpuntaNotifier() {
         const res = await fetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/stato-impresa/${impresaId}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.in_coda && data.session_id && currentStato === 'IDLE') {
-            // L'impresa è in coda: connetti SSE
-            connettiSSE(data.session_id);
-            setSpunta({
-              stato: 'IN_ATTESA',
-              posizione: data.posizione,
-              totale_in_coda: data.totale_in_coda,
-              posteggi_disponibili: data.posteggi_disponibili,
-              session_id: data.session_id,
-            });
-          } else if (data.in_coda && data.session_id && currentStato === 'IN_ATTESA') {
-            // Siamo in attesa: assicurati che la SSE sia connessa (potrebbe essersi disconnessa)
-            if (!sseRef.current || sseRef.current.readyState === EventSource.CLOSED) {
-              console.log('[SpuntaNotifier] SSE disconnessa durante IN_ATTESA, riconnetto...');
-              connettiSSE(data.session_id);
-            }
-          } else if (data.turno_attivo && data.session_id && (currentStato === 'IDLE' || currentStato === 'IN_ATTESA')) {
-            // È il nostro turno (da IDLE o IN_ATTESA — il polling ha scoperto il turno prima della SSE)
+          // IMPORTANTE: controllare turno_attivo PRIMA di in_coda,
+          // perché quando turno_attivo=true, anche in_coda=true!
+          if (data.turno_attivo && data.session_id && (currentStato === 'IDLE' || currentStato === 'IN_ATTESA')) {
+            // È il nostro turno (da IDLE o IN_ATTESA — il polling ha scoperto il turno)
             console.log(`[SpuntaNotifier] Polling: TURNO ATTIVO scoperto! Da ${currentStato} → TURNO_ATTIVO, secondi=${data.secondi_rimanenti}`);
             scadenzaChiamataRef.current = false;
             if (!sseRef.current || sseRef.current.readyState === EventSource.CLOSED) {
@@ -152,6 +138,22 @@ export default function SpuntaNotifier() {
               coda_id: data.coda_id,
             });
             setTimerSecondi(data.secondi_rimanenti || 120);
+          } else if (data.in_coda && data.session_id && currentStato === 'IDLE') {
+            // L'impresa è in coda: connetti SSE
+            connettiSSE(data.session_id);
+            setSpunta({
+              stato: 'IN_ATTESA',
+              posizione: data.posizione,
+              totale_in_coda: data.totale_in_coda,
+              posteggi_disponibili: data.posteggi_disponibili,
+              session_id: data.session_id,
+            });
+          } else if (data.in_coda && data.session_id && currentStato === 'IN_ATTESA') {
+            // Siamo in attesa: assicurati che la SSE sia connessa
+            if (!sseRef.current || sseRef.current.readyState === EventSource.CLOSED) {
+              console.log('[SpuntaNotifier] SSE disconnessa durante IN_ATTESA, riconnetto...');
+              connettiSSE(data.session_id);
+            }
           } else if (!data.in_coda && !data.turno_attivo) {
             // Non siamo più in coda e non è il nostro turno
             console.log(`[SpuntaNotifier] Polling: non in coda e non turno attivo, stato corrente=${currentStato}`);

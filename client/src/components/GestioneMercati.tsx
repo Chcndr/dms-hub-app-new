@@ -3286,6 +3286,32 @@ function PosteggiTab({
                   }
 
                   await fetchData();
+
+                  // Avvia automaticamente la spunta live (chiama il primo turno)
+                  try {
+                    const avviaRes = await authenticatedFetch(
+                      `${API_BASE_URL}/api/presenze-live/avvia-spunta-live/${marketId}`,
+                      { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+                    );
+                    const avviaData = await avviaRes.json();
+                    if (avviaData.success) {
+                      toast.success(avviaData.messaggio);
+                      setSpuntaLiveTurno({
+                        turno_attivo: true,
+                        impresa_nome: avviaData.turno_corrente.impresa_nome,
+                        impresa_id: avviaData.turno_corrente.impresa_id,
+                        posizione: avviaData.turno_corrente.posizione,
+                        spuntisti_rimanenti: avviaData.spuntisti_in_coda,
+                        posteggi_alla_spunta: avviaData.posteggi_alla_spunta,
+                        secondi_rimanenti: 120
+                      });
+                    } else {
+                      console.warn('Avvio spunta live:', avviaData.messaggio);
+                    }
+                  } catch (avviaErr) {
+                    console.warn('Avvio spunta live non disponibile:', avviaErr);
+                  }
+
                   setIsAnimating(false);
                 } catch (error) {
                   console.error("Errore preparazione spunta:", error);
@@ -3313,48 +3339,6 @@ function PosteggiTab({
               }}
             >
               ✓ Spunta
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs bg-transparent hover:bg-green-500/20 text-green-400 border-green-500/50"
-              onClick={async () => {
-                const confirmed = window.confirm(
-                  'Avviare la Spunta Live?\n\nIl primo spuntista in graduatoria riceverà la notifica "È IL TUO TURNO" nell\'app.'
-                );
-                if (!confirmed) return;
-                try {
-                  const response = await authenticatedFetch(
-                    `${API_BASE_URL}/api/presenze-live/avvia-spunta-live/${marketId}`,
-                    { method: 'POST', headers: { 'Content-Type': 'application/json' } }
-                  );
-                  const data = await response.json();
-                  if (data.success) {
-                    toast.success(data.messaggio);
-                    setSpuntaLiveTurno({
-                      turno_attivo: true,
-                      impresa_nome: data.turno_corrente.impresa_nome,
-                      impresa_id: data.turno_corrente.impresa_id,
-                      posizione: data.turno_corrente.posizione,
-                      spuntisti_rimanenti: data.spuntisti_in_coda,
-                      posteggi_alla_spunta: data.posteggi_alla_spunta,
-                      secondi_rimanenti: 120
-                    });
-                    setIsSpuntaMode(true);
-                    setIsOccupaMode(false);
-                    setIsLiberaMode(false);
-                    setIsDepositoMode(false);
-                    setIsChiudiMode(false);
-                  } else {
-                    toast.error(data.messaggio || 'Errore avvio spunta live');
-                  }
-                } catch (error) {
-                  console.error('Errore avvio spunta live:', error);
-                  toast.error('Errore di connessione');
-                }
-              }}
-            >
-              ▶ Avvia
             </Button>
           </div>
         </div>
