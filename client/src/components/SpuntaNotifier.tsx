@@ -109,10 +109,11 @@ export default function SpuntaNotifier() {
 
     const checkCoda = async () => {
       const currentStato = spuntaRef.current.stato;
+      console.log(`[SpuntaNotifier] Polling: stato=${currentStato}, scadenzaInCorso=${scadenzaInCorsoRef.current}, SSE=${sseRef.current?.readyState}`);
       // NON fare polling se siamo in uno stato terminale o attivo
       if (currentStato === 'LISTA_POSTEGGI' || currentStato === 'ASSEGNATO' || currentStato === 'FINE_SPUNTA') return;
       // NON fare polling durante il passaggio turno (scadenza in corso)
-      if (scadenzaInCorsoRef.current) return;
+      if (scadenzaInCorsoRef.current) { console.log('[SpuntaNotifier] Polling bloccato: scadenza in corso'); return; }
 
       try {
         const res = await fetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/stato-impresa/${impresaId}`);
@@ -136,6 +137,7 @@ export default function SpuntaNotifier() {
             }
           } else if (data.turno_attivo && data.session_id && (currentStato === 'IDLE' || currentStato === 'IN_ATTESA')) {
             // È il nostro turno (da IDLE o IN_ATTESA — il polling ha scoperto il turno prima della SSE)
+            console.log(`[SpuntaNotifier] Polling: TURNO ATTIVO scoperto! Da ${currentStato} → TURNO_ATTIVO, secondi=${data.secondi_rimanenti}`);
             scadenzaChiamataRef.current = false;
             if (!sseRef.current || sseRef.current.readyState === EventSource.CLOSED) {
               connettiSSE(data.session_id);
@@ -152,6 +154,7 @@ export default function SpuntaNotifier() {
             setTimerSecondi(data.secondi_rimanenti || 120);
           } else if (!data.in_coda && !data.turno_attivo) {
             // Non siamo più in coda e non è il nostro turno
+            console.log(`[SpuntaNotifier] Polling: non in coda e non turno attivo, stato corrente=${currentStato}`);
             if (currentStato === 'IN_ATTESA' || currentStato === 'TURNO_ATTIVO') {
               scadenzaInCorsoRef.current = false; // sblocca polling
               setSpunta({

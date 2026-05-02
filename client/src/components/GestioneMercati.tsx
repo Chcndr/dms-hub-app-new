@@ -2298,7 +2298,9 @@ function PosteggiTab({
 
   // Spunta Live: turno corrente e polling
   const [spuntaLiveTurno, setSpuntaLiveTurno] = useState<any>(null);
+  const [spuntaTimerSecondi, setSpuntaTimerSecondi] = useState(0);
   const spuntaLivePollingRef = React.useRef<NodeJS.Timeout | null>(null);
+  const spuntaTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -2311,11 +2313,25 @@ function PosteggiTab({
       const data = await res.json();
       if (data.success && data.turno_attivo) {
         setSpuntaLiveTurno(data);
+        setSpuntaTimerSecondi(data.secondi_rimanenti || 0);
       } else {
         setSpuntaLiveTurno(null);
+        setSpuntaTimerSecondi(0);
       }
-    } catch { setSpuntaLiveTurno(null); }
+    } catch { setSpuntaLiveTurno(null); setSpuntaTimerSecondi(0); }
   };
+
+  // Countdown locale ogni secondo per il timer PA
+  useEffect(() => {
+    if (spuntaLiveTurno && spuntaLiveTurno.turno_attivo) {
+      spuntaTimerRef.current = setInterval(() => {
+        setSpuntaTimerSecondi(prev => Math.max(0, prev - 1));
+      }, 1000);
+    } else {
+      if (spuntaTimerRef.current) { clearInterval(spuntaTimerRef.current); spuntaTimerRef.current = null; }
+    }
+    return () => { if (spuntaTimerRef.current) { clearInterval(spuntaTimerRef.current); spuntaTimerRef.current = null; } };
+  }, [spuntaLiveTurno]);
 
   // Avvia/ferma polling quando isSpuntaMode cambia
   useEffect(() => {
@@ -3362,7 +3378,7 @@ function PosteggiTab({
               </div>
             </div>
             <div className="text-white font-mono text-2xl font-bold">
-              {Math.floor((spuntaLiveTurno.secondi_rimanenti || 0) / 60)}:{String((spuntaLiveTurno.secondi_rimanenti || 0) % 60).padStart(2, '0')}
+              {Math.floor(spuntaTimerSecondi / 60)}:{String(spuntaTimerSecondi % 60).padStart(2, '0')}
             </div>
           </div>
         </div>
