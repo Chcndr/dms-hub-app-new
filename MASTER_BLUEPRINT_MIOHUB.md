@@ -1,29 +1,42 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.1.0 (Fix Spunta: wallet_id, Orario Timezone, Graduatoria, Polling Robusto)
+> **Versione:** 10.1.1 (Fix Spunta: Graduatoria, Timer PA, Stato Rientro, Debug Polling)
 > **Data:** 02 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.1.1 (02 Mag 2026)
+> **Fix Spunta: Regressione Graduatoria, Timer PA Countdown, Stato Rientro Presenze, Debug Polling**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `f04edc8` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `f04edc8` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `de384af` | Allineato |
+> | Vercel frontend | `de384af` | Autodeploy |
+>
+> **BACKEND (commit `66dfec9` → `f04edc8`):**
+> - **Fix regressione graduatoria_presenze:** La query INSERT usava `comune_id` che non esiste nella tabella. Allineata alle colonne del checkin normale: `(impresa_id, market_id, wallet_id, stall_id, tipo, anno, presenze_totali, punteggio, data_prima_presenza)` con conflict key `(market_id, impresa_id, tipo, anno)`.
+> - **Fix `entra-coda` posizione_graduatoria:** L'endpoint ora calcola la posizione reale con `ROW_NUMBER() OVER (ORDER BY punteggio DESC)` e restituisce `presenze_totali` nella risposta.
+> - **Fix `mercati-oggi` gia_presente_oggi per spuntisti:** Prima era hardcoded `false`. Ora controlla se l'impresa è in `spunta_coda` per la sessione di oggi. Risolve il bug del rientro nella pagina Presenze che mostrava sempre "PRESENZA SPUNTA" invece di "ATTESA SPUNTA".
+>
+> **FRONTEND (commit `c46216e` → `de384af`):**
+> - **Timer PA countdown locale:** Aggiunto `spuntaTimerLocal` con `useEffect` che scala ogni secondo. Il polling ogni 5s sincronizza il valore dal backend, ma tra un polling e l'altro il timer scende fluidamente.
+> - **Debug log polling:** Aggiunti console.log dettagliati nel polling per tracciare il passaggio turno (stato, scadenzaInCorso, readyState SSE).
 >
 > ---
 > ### CHANGELOG v10.1.0 (02 Mag 2026)
 > **Fix Spunta: Lista Spuntisti PA, Orario Timezone, Graduatoria Presenze, Polling Robusto, No Reset App**
 >
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `66dfec9` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `66dfec9` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `c46216e` | Allineato |
-> | Vercel frontend | `c46216e` | Autodeploy |
->
 > **BACKEND (commit `bb14d05` → `66dfec9`):**
-> - **Fix `scegli-posteggio` wallet_id:** Aggiunto `wallet_id` nella INSERT `vendor_presences`. L'endpoint `/api/spuntisti/mercato/:id` fa JOIN con `vp.wallet_id = w.id`, quindi senza `wallet_id` la presenza non veniva trovata e la lista spuntisti PA restava vuota dopo l'assegnazione.
-> - **Fix orario timezone:** `checkin_time` ora usa `NOW() AT TIME ZONE 'Europe/Rome'` e `dataOggi` è calcolato con timezone italiana. Prima usava UTC, mostrando orari sballati di 2 ore (es. 13:12 invece di 15:12).
-> - **Fix graduatoria_presenze:** Aggiunto INSERT/UPDATE in `graduatoria_presenze` dopo l'assegnazione posteggio (come nel checkin normale). Prima il punto presenza non veniva contato nella graduatoria.
+> - **Fix `scegli-posteggio` wallet_id:** Aggiunto `wallet_id` nella INSERT `vendor_presences`.
+> - **Fix orario timezone:** `checkin_time` ora usa `NOW() AT TIME ZONE 'Europe/Rome'`.
+> - **Fix graduatoria_presenze:** Aggiunto INSERT/UPDATE in `graduatoria_presenze` dopo l'assegnazione.
 >
 > **FRONTEND (commit `ead2ef6` → `c46216e`):**
-> - **Polling robusto IN_ATTESA:** Se lo stato è `IN_ATTESA` e la SSE si è disconnessa (readyState CLOSED), il polling la riconnette automaticamente. Prima la SSE poteva disconnettersi silenziosamente e il prossimo spuntista non riceveva mai `PROSSIMO_TURNO`.
-> - **Polling scopre turno attivo da IN_ATTESA:** Se il polling trova `turno_attivo: true` mentre lo stato è `IN_ATTESA`, passa direttamente a `TURNO_ATTIVO` senza aspettare la SSE. Questo è un fallback robusto nel caso la SSE non funzioni.
-> - **Fine spunta non resetta l'app:** Rimosso `cercaMercati()` dal listener `spunta_gestita`. Prima la chiusura dell'overlay spunta ricaricava tutti i mercati da zero, facendo sembrare un reset. Ora resetta solo lo stato spunta locale.
+> - **Polling robusto IN_ATTESA:** Riconnette SSE se disconnessa.
+> - **Polling scopre turno attivo da IN_ATTESA:** Fallback robusto.
+> - **Fine spunta non resetta l'app:** Solo reset stato locale.
 >
 > ---
 > ### CHANGELOG v10.0.9 (02 Mag 2026)
