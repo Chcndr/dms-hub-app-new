@@ -1,7 +1,29 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.0.9 (Fix Spunta: vendor_id, Passaggio Turno Race Condition, Mappa Responsive)
+> **Versione:** 10.1.0 (Fix Spunta: wallet_id, Orario Timezone, Graduatoria, Polling Robusto)
 > **Data:** 02 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.1.0 (02 Mag 2026)
+> **Fix Spunta: Lista Spuntisti PA, Orario Timezone, Graduatoria Presenze, Polling Robusto, No Reset App**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `66dfec9` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `66dfec9` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `c46216e` | Allineato |
+> | Vercel frontend | `c46216e` | Autodeploy |
+>
+> **BACKEND (commit `bb14d05` → `66dfec9`):**
+> - **Fix `scegli-posteggio` wallet_id:** Aggiunto `wallet_id` nella INSERT `vendor_presences`. L'endpoint `/api/spuntisti/mercato/:id` fa JOIN con `vp.wallet_id = w.id`, quindi senza `wallet_id` la presenza non veniva trovata e la lista spuntisti PA restava vuota dopo l'assegnazione.
+> - **Fix orario timezone:** `checkin_time` ora usa `NOW() AT TIME ZONE 'Europe/Rome'` e `dataOggi` è calcolato con timezone italiana. Prima usava UTC, mostrando orari sballati di 2 ore (es. 13:12 invece di 15:12).
+> - **Fix graduatoria_presenze:** Aggiunto INSERT/UPDATE in `graduatoria_presenze` dopo l'assegnazione posteggio (come nel checkin normale). Prima il punto presenza non veniva contato nella graduatoria.
+>
+> **FRONTEND (commit `ead2ef6` → `c46216e`):**
+> - **Polling robusto IN_ATTESA:** Se lo stato è `IN_ATTESA` e la SSE si è disconnessa (readyState CLOSED), il polling la riconnette automaticamente. Prima la SSE poteva disconnettersi silenziosamente e il prossimo spuntista non riceveva mai `PROSSIMO_TURNO`.
+> - **Polling scopre turno attivo da IN_ATTESA:** Se il polling trova `turno_attivo: true` mentre lo stato è `IN_ATTESA`, passa direttamente a `TURNO_ATTIVO` senza aspettare la SSE. Questo è un fallback robusto nel caso la SSE non funzioni.
+> - **Fine spunta non resetta l'app:** Rimosso `cercaMercati()` dal listener `spunta_gestita`. Prima la chiusura dell'overlay spunta ricaricava tutti i mercati da zero, facendo sembrare un reset. Ora resetta solo lo stato spunta locale.
 >
 > ---
 > ### CHANGELOG v10.0.9 (02 Mag 2026)
