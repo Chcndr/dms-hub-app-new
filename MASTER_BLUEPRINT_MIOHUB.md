@@ -1,7 +1,28 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.0.7 (Fix Spunta: Scadenza Turno, Mappa Interna, Reset Tab Attesa)
+> **Versione:** 10.0.8 (Fix Spunta: Passaggio Turno, Mappa Leaflet Interna, Wallet SPUNTA, Popup PA)
 > **Data:** 02 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.0.8 (02 Mag 2026)
+> **Fix Spunta: Passaggio Turno Automatico, Mappa Leaflet Interna, Wallet SPUNTA, Popup PA Assegnazione**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `e0fb5f0` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `e0fb5f0` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `bee8d43` | Allineato |
+> | Vercel frontend | `bee8d43` | Autodeploy |
+>
+> **BACKEND (commit `4af6ca2` → `e0fb5f0`):**
+> - **Fix `scegli-posteggio` wallet SPUNTA:** La query wallet ora cerca prima il wallet di tipo `SPUNTA` per il `market_id` specifico del turno, poi fa fallback a qualsiasi wallet attivo. Il saldo può andare in negativo (come per i concessionari), eliminando il blocco `WALLET_INSUFFICIENTE` per gli spuntisti.
+>
+> **FRONTEND (commit `283ffeb` → `bee8d43`):**
+> - **Fix passaggio turno automatico:** Quando il timer scade, il frontend chiama `scadenza-turno` ma **NON chiude più la SSE**. Torna in stato `IN_ATTESA` e resta in ascolto: il backend invierà `PROSSIMO_TURNO` (se c'è un altro spuntista) o `SPUNTA_TERMINATA` (se era l'ultimo). Risolve il bug dove il turno scadeva ma non passava al successivo.
+> - **Mappa Leaflet interna (no pagina esterna):** L'icona mappa nella lista posteggi ora apre un **modale full-screen con MarketMapComponent** (Leaflet) centrato sul posteggio selezionato, con evidenziazione fuxia. Non apre più una pagina esterna né il market-map-viewer.
+> - **Layout card posteggio:** Rimosso il quadratino verde con il numero del posteggio. Al suo posto c'è un'**icona mappa grande** (MapPin 14x14, sfondo teal) che apre la mappa interna. Il numero del posteggio resta nel testo della card.
+> - **Fix popup mappa PA (MarketMapComponent):** Quando `isSpuntaMode` e `isLiberaMode` sono entrambi attivi, i posteggi `riservato` ora mostrano il popup **"Conferma Assegnazione"** (spunta) invece di "Conferma Liberazione". La condizione `isLiberaMode` per i posteggi `riservato` è ora esclusa quando `isSpuntaMode` è attivo.
 >
 > ---
 > ### CHANGELOG v10.0.7 (02 Mag 2026)
