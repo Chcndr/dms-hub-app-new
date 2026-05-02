@@ -52,6 +52,7 @@ export default function SpuntaNotifier() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const spuntaRef = useRef(spunta);
   const scadenzaChiamataRef = useRef(false); // flag per evitare doppie chiamate scadenza
+  const scadenzaInCorsoRef = useRef(false); // blocca polling per 15s dopo scadenza turno
 
   // Tieni spuntaRef sincronizzato
   useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
@@ -82,6 +83,9 @@ export default function SpuntaNotifier() {
   const notificaScadenzaTurno = useCallback(async () => {
     if (scadenzaChiamataRef.current) return; // già chiamata
     scadenzaChiamataRef.current = true;
+    // Blocca il polling per 15 secondi per dare tempo al backend di attivare il prossimo turno
+    scadenzaInCorsoRef.current = true;
+    setTimeout(() => { scadenzaInCorsoRef.current = false; }, 15000);
     const currentState = spuntaRef.current;
     if (!impresaId || !currentState.session_id) return;
     try {
@@ -107,6 +111,8 @@ export default function SpuntaNotifier() {
       const currentStato = spuntaRef.current.stato;
       // NON fare polling se siamo in uno stato terminale o attivo
       if (currentStato === 'LISTA_POSTEGGI' || currentStato === 'ASSEGNATO' || currentStato === 'FINE_SPUNTA') return;
+      // NON fare polling durante il passaggio turno (scadenza in corso)
+      if (scadenzaInCorsoRef.current) return;
 
       try {
         const res = await fetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/stato-impresa/${impresaId}`);
@@ -139,6 +145,7 @@ export default function SpuntaNotifier() {
           } else if (!data.in_coda && !data.turno_attivo) {
             // Non siamo più in coda e non è il nostro turno
             if (currentStato === 'IN_ATTESA' || currentStato === 'TURNO_ATTIVO') {
+              scadenzaInCorsoRef.current = false; // sblocca polling
               setSpunta({
                 stato: 'FINE_SPUNTA',
                 motivo_fine: 'La spunta è terminata.',
@@ -198,10 +205,9 @@ export default function SpuntaNotifier() {
                 session_id: sessionId,
               };
             });
-            setTimerSecondi(prev => {
-              if (prev > 0) return prev;
-              return data.timeout_secondi || 120;
-            });
+            // Forza sempre il reset del timer per il nuovo turno
+            setTimerSecondi(data.timeout_secondi || 120);
+            scadenzaInCorsoRef.current = false; // sblocca polling
           } else {
             setSpunta(prev => {
               if (prev.stato === 'TURNO_ATTIVO' || prev.stato === 'LISTA_POSTEGGI') return prev;
@@ -501,22 +507,22 @@ export default function SpuntaNotifier() {
             ))
           )}
         </div>
-        {/* MODALE MAPPA INTERNA */}
+        {/* MODALE MAPPA INTERNA — responsive smartphone */}
         {mappaAperta && (
-          <div className="fixed inset-0 z-[999999] flex flex-col bg-gray-900">
-            <div className="bg-teal-700 p-3 flex items-center gap-3">
+          <div className="fixed inset-0 z-[999999] flex flex-col bg-gray-900" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <div className="bg-teal-700 px-3 py-2 flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => { setMappaAperta(false); setSelectedStallForMap(null); setSelectedStallCenter(null); }}
-                className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"
+                className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0"
               >
-                <ArrowLeft className="w-6 h-6 text-white" />
+                <ArrowLeft className="w-5 h-5 text-white" />
               </button>
-              <h2 className="text-white font-bold text-lg flex-1">Mappa — Posteggio {selectedStallForMap}</h2>
-              <div className="text-white font-mono text-xl font-bold">
+              <h2 className="text-white font-bold text-sm flex-1 truncate">Mappa — Post. {selectedStallForMap}</h2>
+              <div className="text-white font-mono text-lg font-bold flex-shrink-0">
                 {formatTimer(timerSecondi)}
               </div>
             </div>
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-h-0">
               {mapData ? (
                 <MarketMapComponent
                   mapData={mapData}
@@ -527,6 +533,7 @@ export default function SpuntaNotifier() {
                   viewTrigger={viewTrigger}
                   isMarketView={true}
                   isSpuntaMode={false}
+                  height="100%"
                 />
               ) : (
                 <div className="flex items-center justify-center h-full">
@@ -534,10 +541,10 @@ export default function SpuntaNotifier() {
                 </div>
               )}
             </div>
-            <div className="bg-gray-800 p-3 flex gap-2">
+            <div className="bg-gray-800 px-3 py-2 flex gap-2 flex-shrink-0" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom, 8px))' }}>
               <button
                 onClick={() => { setMappaAperta(false); setSelectedStallForMap(null); setSelectedStallCenter(null); }}
-                className="flex-1 py-3 bg-gray-700 text-white font-bold rounded-xl"
+                className="flex-1 py-3 bg-gray-700 text-white font-bold text-sm rounded-xl"
               >
                 TORNA ALLA LISTA
               </button>
@@ -547,9 +554,9 @@ export default function SpuntaNotifier() {
                   if (p) { setMappaAperta(false); scegliPosteggio(p); }
                 }}
                 disabled={loadingScelta}
-                className="flex-1 py-3 bg-teal-500 text-white font-bold rounded-xl disabled:opacity-50"
+                className="flex-1 py-3 bg-teal-500 text-white font-bold text-sm rounded-xl disabled:opacity-50"
               >
-                SCEGLI QUESTO POSTEGGIO
+                SCEGLI QUESTO
               </button>
             </div>
           </div>
