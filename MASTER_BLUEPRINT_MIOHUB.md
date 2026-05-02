@@ -1,7 +1,29 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.0.4 (Gestione Presenze App Impresa: Tab Dinamici e Fix UI)
-> **Data:** 01 Maggio 2026
+> **Versione:** 10.0.5 (SpuntaNotifier Globale e Fix UI Spunta)
+> **Data:** 02 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.0.5 (02 Mag 2026)
+> **Integrazione SpuntaNotifier Globale e Fix UI Attesa Spunta**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `f42740e` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `f42740e` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `8fb81da` | Allineato |
+> | Vercel frontend | `8fb81da` | Autodeploy |
+>
+> **BACKEND:**
+> - **Endpoint Stato Impresa (`GET /api/presenze-live/spunta/stato-impresa/:impresaId`):** Creato nuovo endpoint per controllare se l'impresa è attualmente in coda spunta (stato `IN_ATTESA`, `TURNO_ATTIVO` o `IN_CODA`) in qualsiasi sessione. Restituisce i dettagli del turno per permettere al client di connettersi alla SSE corretta.
+>
+> **FRONTEND:**
+> - **SpuntaNotifier Globale (`SpuntaNotifier.tsx`):** Creato e integrato in `App.tsx` un componente globale che gestisce la connessione SSE per la spunta. Effettua polling leggero sull'endpoint `stato-impresa` e, se in coda, si connette allo stream SSE mostrando gli overlay full-screen (giallo per attesa/turno, verde per assegnato) in **qualsiasi pagina dell'app**.
+> - **Fix UI Attesa Spunta (`PresenzePage.tsx`):**
+>   - **Tab Autorizzazione Spunta:** Dopo aver registrato la presenza spunta, il tab dinamico sotto la card mostra "ATTESA SPUNTA" con icona orologio lampeggiante, invece dei pulsanti "DEPOSITO RIFIUTI" e "USCITA MERCATO".
+>   - **Pulsante Scelta Tipo:** Il pulsante globale "PRESENZA SPUNTA" si trasforma in "ATTESA SPUNTA" se l'impresa ha già registrato la presenza.
+>   - **Schermata Presenza Spunta:** Se la presenza è già stata registrata, la schermata mostra lo stato di attesa invece del pulsante "REGISTRA SPUNTA".
 >
 > ---
 > ### CHANGELOG v10.0.4 (01 Mag 2026)
