@@ -1116,13 +1116,19 @@ export default function PresenzePage() {
             // Calcola stati per logica contestuale
             const concessioni = mercatoSelezionato.concessions.filter(c => c.tipo_posteggio !== 'Spunta');
             const spuntisti = mercatoSelezionato.concessions.filter(c => c.tipo_posteggio === 'Spunta');
+            // Spuntisti con posteggio assegnato (hanno stall_number) → trattati come concessioni per deposito/uscita
+            const spuntaConPosteggio = spuntisti.filter(s => s.gia_presente_oggi && s.stall_number && s.stall_number !== '-');
+            // Spuntisti in attesa (in coda, senza posteggio ancora)
+            const spuntaInAttesa = spuntisti.filter(s => s.gia_presente_oggi && (!s.stall_number || s.stall_number === '-'));
+            // Tutti i posteggi attivi (concessioni + spunta assegnati)
+            const tuttiPosteggi = [...concessioni, ...spuntaConPosteggio];
             const haConcessioni = concessioni.length > 0;
             const haSpunta = spuntisti.length > 0;
             const tuttiPresenti = haConcessioni && concessioni.every(c => c.gia_presente_oggi);
-            const qualcunoPresente = haConcessioni && concessioni.some(c => c.gia_presente_oggi);
-            const tuttiDepositoFatto = haConcessioni && concessioni.filter(c => c.gia_presente_oggi).every(c => c.deposito_rifiuti_fatto);
-            const qualcunoDepositoDaFare = haConcessioni && concessioni.some(c => c.gia_presente_oggi && !c.deposito_rifiuti_fatto);
-            const qualcunoUscitaDaFare = haConcessioni && concessioni.some(c => c.gia_presente_oggi && !c.uscita_registrata);
+            const qualcunoPresente = tuttiPosteggi.some(c => c.gia_presente_oggi);
+            const tuttiDepositoFatto = tuttiPosteggi.filter(c => c.gia_presente_oggi).every(c => c.deposito_rifiuti_fatto);
+            const qualcunoDepositoDaFare = tuttiPosteggi.some(c => c.gia_presente_oggi && !c.deposito_rifiuti_fatto);
+            const qualcunoUscitaDaFare = tuttiPosteggi.some(c => c.gia_presente_oggi && !c.uscita_registrata);
 
             return (
               <>
@@ -1148,8 +1154,8 @@ export default function PresenzePage() {
 
                 {/* PRESENZA SPUNTA / ATTESA SPUNTA */}
                 {haSpunta && (() => {
-                  const spuntaPresente = spuntisti.some(s => s.gia_presente_oggi);
-                  if (spuntaPresente) {
+                  // Mostra ATTESA SPUNTA solo se in coda senza posteggio assegnato
+                  if (spuntaInAttesa.length > 0) {
                     return (
                       <div className="w-full bg-gradient-to-r from-yellow-600 to-amber-700 rounded-2xl p-4 sm:p-6 text-left shadow-lg shadow-yellow-600/20">
                         <div className="flex items-center gap-3 sm:gap-4">
@@ -1166,6 +1172,11 @@ export default function PresenzePage() {
                       </div>
                     );
                   }
+                  // Se ha posteggio assegnato, non mostrare nulla (deposito/uscita gestiscono il posteggio)
+                  if (spuntaConPosteggio.length > 0) {
+                    return null;
+                  }
+                  // Altrimenti mostra bottone PRESENZA SPUNTA per entrare in coda
                   return (
                     <button
                       onClick={() => setSchermata("presenza_spunta")}
@@ -1334,8 +1345,48 @@ export default function PresenzePage() {
 
               {/* Tab azione dinamico sotto ogni posteggio */}
               {(() => {
-                // Per SPUNTA: PRESENZA → ATTESA SPUNTA (non DEPOSITO/USCITA)
+                // Per SPUNTA: flusso dipende dallo stato
                 if (isSpunta) {
+                  // Se ha un posteggio assegnato (stall_number presente), segui flusso DEPOSITO → USCITA come concessioni
+                  if (conc.gia_presente_oggi && conc.stall_number && conc.stall_number !== '-') {
+                    // Ha posteggio assegnato via spunta → mostra DEPOSITO o USCITA
+                    if (!conc.deposito_rifiuti_fatto) {
+                      return (
+                        <div className="flex gap-2 px-1">
+                          <Button
+                            onClick={() => eseguiDepositoRifiuti(conc)}
+                            disabled={loadingAzione}
+                            className="flex-1 bg-yellow-500 hover:bg-yellow-500/80 text-white text-base sm:text-lg py-5 sm:py-6 rounded-xl font-bold min-w-0"
+                          >
+                            <Trash2 className="w-5 h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                            <span className="truncate">DEPOSITO RIFIUTI</span>
+                          </Button>
+                        </div>
+                      );
+                    }
+                    if (!conc.uscita_registrata) {
+                      return (
+                        <div className="flex gap-2 px-1">
+                          <Button
+                            onClick={() => eseguiUscita(conc)}
+                            disabled={loadingAzione}
+                            className="flex-1 bg-red-500 hover:bg-red-500/80 text-white text-base sm:text-lg py-5 sm:py-6 rounded-xl font-bold min-w-0"
+                          >
+                            <LogOut className="w-5 h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                            <span className="truncate">USCITA MERCATO</span>
+                          </Button>
+                        </div>
+                      );
+                    }
+                    // Tutto completato
+                    return (
+                      <div className="flex items-center gap-2 px-3 py-3 bg-green-500/10 border border-green-500/30 rounded-xl">
+                        <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                        <span className="text-base font-semibold text-green-400">COMPLETATO</span>
+                      </div>
+                    );
+                  }
+                  // Non ha ancora fatto presenza spunta → mostra bottone PRESENZA SPUNTA
                   if (!conc.gia_presente_oggi) {
                     return (
                       <div className="flex gap-2 px-1">
@@ -1350,7 +1401,7 @@ export default function PresenzePage() {
                       </div>
                     );
                   }
-                  // Dopo la presenza spunta: mostra ATTESA SPUNTA
+                  // In coda senza posteggio → ATTESA SPUNTA
                   return (
                     <div className="flex items-center gap-2 px-3 py-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
                       <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0 animate-pulse" />
@@ -1497,7 +1548,7 @@ export default function PresenzePage() {
   // ─── SCHERMATA: DEPOSITO RIFIUTI ────────────────────────────────────────
   if (schermata === "deposito_rifiuti" && mercatoSelezionato) {
     const concPresenti = mercatoSelezionato.concessions.filter(
-      c => c.gia_presente_oggi && !c.deposito_rifiuti_fatto && c.tipo_posteggio !== 'Spunta'
+      c => c.gia_presente_oggi && !c.deposito_rifiuti_fatto && (c.tipo_posteggio !== 'Spunta' || (c.tipo_posteggio === 'Spunta' && c.stall_number && c.stall_number !== '-'))
     );
 
     return (
@@ -1563,7 +1614,7 @@ export default function PresenzePage() {
   // ─── SCHERMATA: USCITA MERCATO ──────────────────────────────────────────
   if (schermata === "uscita_mercato" && mercatoSelezionato) {
     const concPresenti = mercatoSelezionato.concessions.filter(
-      c => c.gia_presente_oggi && !c.uscita_registrata && c.tipo_posteggio !== 'Spunta'
+      c => c.gia_presente_oggi && !c.uscita_registrata && (c.tipo_posteggio !== 'Spunta' || (c.tipo_posteggio === 'Spunta' && c.stall_number && c.stall_number !== '-'))
     );
 
     return (
