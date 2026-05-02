@@ -3745,7 +3745,7 @@ function PosteggiTab({
               }
             }}
           >
-            \u267b\ufe0f Deposito Rifiuti (Tutti)
+            {"\u267b\ufe0f"} Deposito Rifiuti (Tutti)
           </Button>
 
           {/* Pulsante Chiudi Mercato SINGOLO - click su posteggio */}
@@ -3814,7 +3814,7 @@ function PosteggiTab({
               }
             }}
           >
-            \ud83c\udfea Chiudi Mercato (Tutti)
+            {"\ud83c\udfea"} Chiudi Mercato (Tutti)
           </Button>
         </div>
       )}

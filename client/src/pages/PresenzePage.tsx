@@ -1067,8 +1067,12 @@ export default function PresenzePage() {
                     <ChevronRight className="w-7 h-7 text-[#14b8a6]" />
                   </div>
                   {mercato.session_fase && (
-                    <Badge className="mt-3 bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-sm px-3 py-1">
-                      Fase: {mercato.session_fase}
+                    <Badge className={`mt-3 text-sm px-3 py-1 ${
+                      mercato.session_fase === 'CHIUSO' || mercato.session_fase === 'CHIUSA'
+                        ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                        : 'bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30'
+                    }`}>
+                      Fase: {mercato.session_fase === 'CHIUSO' ? 'CHIUSA' : mercato.session_fase}
                     </Badge>
                   )}
                 </button>
@@ -1100,8 +1104,12 @@ export default function PresenzePage() {
               {getGiornoItaliano()} — {new Date().toLocaleDateString("it-IT")}
             </p>
             {mercatoSelezionato.session_fase && (
-              <Badge className="mt-2 bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-sm">
-                Fase: {mercatoSelezionato.session_fase}
+              <Badge className={`mt-2 text-sm ${
+                mercatoSelezionato.session_fase === 'CHIUSO' || mercatoSelezionato.session_fase === 'CHIUSA'
+                  ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                  : 'bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30'
+              }`}>
+                Fase: {mercatoSelezionato.session_fase === 'CHIUSO' ? 'CHIUSA' : mercatoSelezionato.session_fase}
               </Badge>
             )}
           </div>
