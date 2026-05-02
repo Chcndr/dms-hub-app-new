@@ -6,7 +6,7 @@
  * overlay full-screen giallo "È IL TUO TURNO" in qualsiasi pagina.
  */
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Clock, List, MapPin, CheckCircle } from "lucide-react";
+import { Clock, List, MapPin, CheckCircle, X } from "lucide-react";
 
 const MIHUB_API_BASE_URL = "https://api.mio-hub.me";
 
@@ -42,6 +42,10 @@ export default function SpuntaNotifier() {
   const [loadingScelta, setLoadingScelta] = useState(false);
   const sseRef = useRef<EventSource | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const spuntaRef = useRef(spunta);
+
+  // Tieni spuntaRef sincronizzato
+  useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
 
   // Risolvi impresaId da localStorage
   useEffect(() => {
@@ -70,11 +74,15 @@ export default function SpuntaNotifier() {
     if (!impresaId) return;
 
     const checkCoda = async () => {
+      // Non fare polling se siamo già in uno stato attivo gestito dalla SSE
+      const currentStato = spuntaRef.current.stato;
+      if (currentStato === 'LISTA_POSTEGGI' || currentStato === 'ASSEGNATO' || currentStato === 'FINE_SPUNTA') return;
+
       try {
         const res = await fetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/stato-impresa/${impresaId}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.in_coda && data.session_id && spunta.stato === 'IDLE') {
+          if (data.in_coda && data.session_id && currentStato === 'IDLE') {
             // L'impresa è in coda: connetti SSE
             connettiSSE(data.session_id);
             setSpunta({
@@ -84,8 +92,8 @@ export default function SpuntaNotifier() {
               posteggi_disponibili: data.posteggi_disponibili,
               session_id: data.session_id,
             });
-          } else if (data.turno_attivo && data.session_id) {
-            // È già il nostro turno!
+          } else if (data.turno_attivo && data.session_id && currentStato !== 'TURNO_ATTIVO') {
+            // È già il nostro turno! (solo se non siamo già in TURNO_ATTIVO)
             connettiSSE(data.session_id);
             setSpunta({
               stato: 'TURNO_ATTIVO',
@@ -97,6 +105,16 @@ export default function SpuntaNotifier() {
               coda_id: data.coda_id,
             });
             setTimerSecondi(data.secondi_rimanenti || 120);
+          } else if (!data.in_coda && !data.turno_attivo && currentStato !== 'IDLE') {
+            // Non siamo più in coda e non è il nostro turno: torna a IDLE
+            // Questo gestisce il caso in cui il backend ha chiuso il turno
+            if (currentStato === 'IN_ATTESA' || currentStato === 'TURNO_ATTIVO') {
+              setSpunta({
+                stato: 'FINE_SPUNTA',
+                motivo_fine: 'La spunta è terminata.',
+              });
+              if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+            }
           }
         }
       } catch { /* ignore */ }
@@ -105,7 +123,7 @@ export default function SpuntaNotifier() {
     checkCoda();
     const interval = setInterval(checkCoda, 10000); // ogni 10 secondi
     return () => clearInterval(interval);
-  }, [impresaId, spunta.stato]);
+  }, [impresaId]);
 
   // SSE Connection
   const connettiSSE = useCallback((sessionId: number) => {
@@ -133,26 +151,39 @@ export default function SpuntaNotifier() {
           }
         } else if (data.type === 'PROSSIMO_TURNO') {
           if (data.impresa_id === impresaId) {
-            setSpunta(prev => ({
-              ...prev,
-              stato: 'TURNO_ATTIVO',
-              impresa_nome: data.impresa_nome,
-              posizione: data.posizione,
-              coda_id: data.coda_id,
-              posteggi_disponibili: data.posteggi_disponibili,
-              totale_in_coda: data.totale_in_coda,
-              session_id: sessionId,
-            }));
-            setTimerSecondi(data.timeout_secondi || 120);
+            // Solo se non siamo già in TURNO_ATTIVO (evita reset timer)
+            setSpunta(prev => {
+              if (prev.stato === 'TURNO_ATTIVO' && prev.coda_id === data.coda_id) {
+                // Stesso turno, non resettare
+                return prev;
+              }
+              return {
+                ...prev,
+                stato: 'TURNO_ATTIVO',
+                impresa_nome: data.impresa_nome,
+                posizione: data.posizione,
+                coda_id: data.coda_id,
+                posteggi_disponibili: data.posteggi_disponibili,
+                totale_in_coda: data.totale_in_coda,
+                session_id: sessionId,
+              };
+            });
+            // Solo resetta timer se è un nuovo turno
+            setTimerSecondi(prev => {
+              if (prev > 0) return prev; // timer già attivo, non resettare
+              return data.timeout_secondi || 120;
+            });
           } else {
-            setSpunta(prev => ({
-              ...prev,
-              stato: 'IN_ATTESA',
-              impresa_nome: data.impresa_nome,
-              posizione: data.posizione,
-              posteggi_disponibili: data.posteggi_disponibili,
-              totale_in_coda: data.totale_in_coda,
-            }));
+            // Turno di un altro: resta in attesa
+            setSpunta(prev => {
+              if (prev.stato === 'TURNO_ATTIVO' || prev.stato === 'LISTA_POSTEGGI') return prev; // non sovrascrivere il nostro turno
+              return {
+                ...prev,
+                stato: 'IN_ATTESA',
+                posteggi_disponibili: data.posteggi_disponibili,
+                totale_in_coda: data.totale_in_coda,
+              };
+            });
           }
         } else if (data.type === 'POSTEGGIO_ASSEGNATO') {
           if (data.impresa_id === impresaId) {
@@ -160,8 +191,8 @@ export default function SpuntaNotifier() {
               ...prev,
               stato: 'ASSEGNATO',
               stall_number: data.stall_number,
-              importo: data.importo_addebitato,
-              saldo_residuo: data.wallet_saldo_residuo,
+              importo: data.importo_addebitato || data.importo,
+              saldo_residuo: data.wallet_saldo_residuo || data.saldo_residuo,
             }));
           }
         } else if (data.type === 'SPUNTA_TERMINATA') {
@@ -173,6 +204,7 @@ export default function SpuntaNotifier() {
             posteggi_disponibili: data.posteggi_rimanenti,
           });
           es.close();
+          sseRef.current = null;
         }
       } catch (err) { console.error('SpuntaNotifier SSE parse error:', err); }
     };
@@ -254,6 +286,7 @@ export default function SpuntaNotifier() {
     setPosteggiLiberi([]);
     setTimerSecondi(0);
     if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     // Salva in localStorage che la spunta è stata gestita
     localStorage.setItem('spunta_gestita', Date.now().toString());
   };
@@ -271,6 +304,14 @@ export default function SpuntaNotifier() {
   if (spunta.stato === 'TURNO_ATTIVO') {
     return (
       <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-gradient-to-b from-yellow-500 to-amber-600 p-6">
+        {/* Pulsante X per chiudere forzatamente */}
+        <button
+          onClick={chiudiOverlay}
+          className="absolute top-4 right-4 w-10 h-10 bg-black/20 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+          title="Chiudi"
+        >
+          <X className="w-6 h-6 text-white/70" />
+        </button>
         <div className="text-center">
           <div className="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
             <Clock className="w-14 h-14 text-white" />
@@ -305,6 +346,12 @@ export default function SpuntaNotifier() {
       <div className="fixed inset-0 z-[99999] flex flex-col bg-gray-900">
         {/* Header con timer */}
         <div className="bg-amber-600 p-4 flex items-center justify-between">
+          <button
+            onClick={() => setSpunta(prev => ({ ...prev, stato: 'TURNO_ATTIVO' }))}
+            className="text-white font-bold text-sm px-3 py-1 bg-white/20 rounded-lg"
+          >
+            INDIETRO
+          </button>
           <h2 className="text-white font-bold text-lg">SCEGLI POSTEGGIO</h2>
           <div className="text-white font-mono text-2xl font-bold">
             {formatTimer(timerSecondi)}
@@ -313,7 +360,15 @@ export default function SpuntaNotifier() {
         {/* Lista posteggi */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {posteggiLiberi.length === 0 ? (
-            <p className="text-gray-400 text-center mt-10">Nessun posteggio disponibile</p>
+            <div className="text-center mt-10">
+              <p className="text-gray-400 text-lg mb-4">Nessun posteggio disponibile al momento.</p>
+              <button
+                onClick={caricaPosteggiLiberi}
+                className="px-6 py-3 bg-amber-600 text-white font-bold rounded-xl active:scale-95 transition-transform"
+              >
+                RICARICA
+              </button>
+            </div>
           ) : (
             posteggiLiberi.map((p) => (
               <div key={p.stall_id} className="bg-gray-800 rounded-xl p-4 flex items-center justify-between border border-gray-700">

@@ -630,6 +630,16 @@ export default function PresenzePage() {
           totale_in_coda: data.totale_in_coda,
           posteggi_disponibili: data.posteggi_disponibili,
         });
+        // Aggiorna gia_presente_oggi per le concessioni spunta
+        setMercatoSelezionato(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            concessions: prev.concessions.map(c =>
+              c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: true } : c
+            )
+          };
+        });
         // Connetti SSE per ricevere eventi in tempo reale
         if (mercatoSelezionato.session_id) {
           connettiSSESpunta(mercatoSelezionato.session_id);
@@ -642,6 +652,16 @@ export default function PresenzePage() {
           posizione: 0,
           totale_in_coda: 0,
           posteggi_disponibili: 0,
+        });
+        // Aggiorna gia_presente_oggi per le concessioni spunta
+        setMercatoSelezionato(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            concessions: prev.concessions.map(c =>
+              c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: true } : c
+            )
+          };
         });
         if (mercatoSelezionato?.session_id) {
           connettiSSESpunta(mercatoSelezionato.session_id);

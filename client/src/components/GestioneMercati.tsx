@@ -2681,7 +2681,10 @@ function PosteggiTab({
                   s.id === stallId ? { ...s, status: "libero" } : s
                 )
               );
-              return;
+              // Lancia errore speciale per fermare l'automazione
+              const noSpuntistiErr = new Error('NO_SPUNTISTI');
+              (noSpuntistiErr as any).noSpuntisti = true;
+              throw noSpuntistiErr;
             }
 
             const spuntista = data.data.spuntista;
@@ -3528,6 +3531,7 @@ function PosteggiTab({
                 let successCount = 0;
                 let errorCount = 0;
 
+                let spuntistiFiniti = false;
                 for (const stall of reservedStalls) {
                   // Controlla se l'utente ha cliccato STOP
                   if (stopAnimationRef.current) {
@@ -3536,10 +3540,21 @@ function PosteggiTab({
                     );
                     break;
                   }
+                  // Se gli spuntisti sono finiti, non continuare
+                  if (spuntistiFiniti) break;
                   try {
                     await handleConfirmAssignment(stall.id);
                     successCount++;
-                  } catch (error) {
+                  } catch (error: any) {
+                    if (error?.noSpuntisti) {
+                      // Spuntisti finiti: ferma l'automazione
+                      spuntistiFiniti = true;
+                      toast.info(
+                        `Spuntisti terminati dopo ${successCount} assegnazioni. Posteggi rimanenti rimessi a libero.`,
+                        { duration: 5000 }
+                      );
+                      break;
+                    }
                     console.error(
                       `Errore conferma posteggio ${stall.number}:`,
                       error
