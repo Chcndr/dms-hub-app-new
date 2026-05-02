@@ -88,6 +88,8 @@ interface SpuntaTurnoInfo {
   motivo_fine?: string;
   posteggi_disponibili?: number;
   totale_in_coda?: number;
+  posizione_graduatoria?: number | string;
+  presenze_totali?: number;
 }
 type SchermataCorrente = 
   | "caricamento"
@@ -572,6 +574,8 @@ export default function PresenzePage() {
             posizione: posizioneGrad,
             totale_in_coda: data.totale_in_coda || 0,
             posteggi_disponibili: 0,
+            posizione_graduatoria: posizioneGrad,
+            presenze_totali: presenzeTotali,
           });
           if (mercatoSelezionato?.session_id) {
             connettiSSESpunta(mercatoSelezionato.session_id);
@@ -629,6 +633,8 @@ export default function PresenzePage() {
           posizione: data.posizione,
           totale_in_coda: data.totale_in_coda,
           posteggi_disponibili: data.posteggi_disponibili,
+          posizione_graduatoria: data.posizione_graduatoria || data.posizione,
+          presenze_totali: data.presenze_totali || 0,
         });
         // Aggiorna gia_presente_oggi per le concessioni spunta
         setMercatoSelezionato(prev => {
@@ -1602,19 +1608,16 @@ export default function PresenzePage() {
         <h1 className="text-3xl sm:text-4xl font-black text-center mb-6 leading-tight drop-shadow-lg">
           IN ATTESA DEL TUO TURNO
         </h1>
-        {spuntaTurno?.impresa_nome && (
-          <p className="text-xl sm:text-2xl text-center text-white/90 mb-2 max-w-md">
-            Turno attuale: <strong>{spuntaTurno.impresa_nome}</strong>
+        {spuntaTurno?.posizione_graduatoria && (
+          <p className="text-2xl sm:text-3xl text-center text-white/90 mb-3 font-bold">
+            Posizione in graduatoria: <strong>{spuntaTurno.posizione_graduatoria}°</strong>
           </p>
         )}
-        {spuntaTurno?.posizione && spuntaTurno?.totale_in_coda && (
-          <p className="text-lg text-center text-white/80 mb-4">
-            Posizione {spuntaTurno.posizione} di {spuntaTurno.totale_in_coda}
+        {spuntaTurno?.presenze_totali !== undefined && spuntaTurno.presenze_totali > 0 && (
+          <p className="text-lg sm:text-xl text-center text-white/80 mb-4 font-medium">
+            Presenze accumulate: {spuntaTurno.presenze_totali}
           </p>
         )}
-        <p className="text-lg sm:text-xl text-center text-white/80 mb-4 font-medium">
-          Posteggi disponibili: {spuntaTurno?.posteggi_disponibili ?? '—'}
-        </p>
         <p className="text-lg sm:text-xl text-center text-white/80 mb-10 font-medium">
           VERRAI AVVISATO QUANDO SARÀ IL TUO TURNO!
         </p>

@@ -2296,9 +2296,38 @@ function PosteggiTab({
   const [selectedSpuntistaForDetail, setSelectedSpuntistaForDetail] =
     useState<any>(null);
 
+  // Spunta Live: turno corrente e polling
+  const [spuntaLiveTurno, setSpuntaLiveTurno] = useState<any>(null);
+  const spuntaLivePollingRef = React.useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     fetchData();
   }, [marketId]);
+
+  // Polling turno corrente spunta live
+  const fetchSpuntaLiveTurno = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/presenze-live/spunta-turno-corrente/${marketId}`);
+      const data = await res.json();
+      if (data.success && data.turno_attivo) {
+        setSpuntaLiveTurno(data);
+      } else {
+        setSpuntaLiveTurno(null);
+      }
+    } catch { setSpuntaLiveTurno(null); }
+  };
+
+  // Avvia/ferma polling quando isSpuntaMode cambia
+  useEffect(() => {
+    if (isSpuntaMode) {
+      fetchSpuntaLiveTurno();
+      spuntaLivePollingRef.current = setInterval(fetchSpuntaLiveTurno, 5000);
+    } else {
+      setSpuntaLiveTurno(null);
+      if (spuntaLivePollingRef.current) { clearInterval(spuntaLivePollingRef.current); spuntaLivePollingRef.current = null; }
+    }
+    return () => { if (spuntaLivePollingRef.current) { clearInterval(spuntaLivePollingRef.current); spuntaLivePollingRef.current = null; } };
+  }, [isSpuntaMode, marketId]);
 
   // Funzione leggera: aggiorna SOLO lo stato dei posteggi e le presenze
   // senza ricaricare la scheda anagrafica, mappa GIS, concessioni, ecc.
@@ -3269,9 +3298,75 @@ function PosteggiTab({
             >
               ✓ Spunta
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs bg-transparent hover:bg-green-500/20 text-green-400 border-green-500/50"
+              onClick={async () => {
+                const confirmed = window.confirm(
+                  'Avviare la Spunta Live?\n\nIl primo spuntista in graduatoria riceverà la notifica "È IL TUO TURNO" nell\'app.'
+                );
+                if (!confirmed) return;
+                try {
+                  const response = await authenticatedFetch(
+                    `${API_BASE_URL}/api/presenze-live/avvia-spunta-live/${marketId}`,
+                    { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+                  );
+                  const data = await response.json();
+                  if (data.success) {
+                    toast.success(data.messaggio);
+                    setSpuntaLiveTurno({
+                      turno_attivo: true,
+                      impresa_nome: data.turno_corrente.impresa_nome,
+                      impresa_id: data.turno_corrente.impresa_id,
+                      posizione: data.turno_corrente.posizione,
+                      spuntisti_rimanenti: data.spuntisti_in_coda,
+                      posteggi_alla_spunta: data.posteggi_alla_spunta,
+                      secondi_rimanenti: 120
+                    });
+                    setIsSpuntaMode(true);
+                    setIsOccupaMode(false);
+                    setIsLiberaMode(false);
+                    setIsDepositoMode(false);
+                    setIsChiudiMode(false);
+                  } else {
+                    toast.error(data.messaggio || 'Errore avvio spunta live');
+                  }
+                } catch (error) {
+                  console.error('Errore avvio spunta live:', error);
+                  toast.error('Errore di connessione');
+                }
+              }}
+            >
+              ▶ Avvia
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Banner giallo turno corrente spunta live */}
+      {spuntaLiveTurno && spuntaLiveTurno.turno_attivo && (
+        <div className="mb-4 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-lg p-4 shadow-lg shadow-yellow-500/20 animate-pulse">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-white font-black text-lg">
+                  TURNO: {spuntaLiveTurno.impresa_nome}
+                </p>
+                <p className="text-white/80 text-sm">
+                  Posizione {spuntaLiveTurno.posizione}° — {spuntaLiveTurno.spuntisti_rimanenti} spuntisti rimanenti — {spuntaLiveTurno.posteggi_alla_spunta} posteggi alla spunta
+                </p>
+              </div>
+            </div>
+            <div className="text-white font-mono text-2xl font-bold">
+              {Math.floor((spuntaLiveTurno.secondi_rimanenti || 0) / 60)}:{String((spuntaLiveTurno.secondi_rimanenti || 0) % 60).padStart(2, '0')}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Barra LIBERA TUTTI (modalità Libera) */}
       {isLiberaMode && (
