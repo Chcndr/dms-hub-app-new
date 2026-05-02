@@ -491,6 +491,38 @@ export default function PresenzePage() {
     }
   }, [impresaId, schermata, cercaMercati]);
 
+  // Ascolta evento 'spunta_gestita' da SpuntaNotifier per resettare tab ATTESA SPUNTA
+  useEffect(() => {
+    const handleSpuntaGestita = (e: StorageEvent) => {
+      if (e.key === 'spunta_gestita') {
+        console.log('[PresenzePage] Spunta gestita, resetto stato spunta...');
+        // Resetta gia_presente_oggi per le concessioni Spunta
+        setMercatoSelezionato(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            concessions: prev.concessions.map(c =>
+              c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: false } : c
+            )
+          };
+        });
+        // Resetta stato spunta locale
+        setSpuntaTurno(null);
+        setSpuntaCodaId(null);
+        setTimerSecondi(0);
+        setPosteggiLiberi([]);
+        // Torna alla schermata principale se eravamo in una schermata spunta
+        if (['spunta_attesa', 'spunta_turno', 'spunta_lista_posteggi', 'spunta_assegnato', 'spunta_fine'].includes(schermata)) {
+          setSchermata('scelta_tipo');
+        }
+        // Ricarica dati mercato freschi dal backend
+        cercaMercati();
+      }
+    };
+    window.addEventListener('storage', handleSpuntaGestita);
+    return () => window.removeEventListener('storage', handleSpuntaGestita);
+  }, [schermata, cercaMercati]);
+
   // ─── AZIONI ─────────────────────────────────────────────────────────────
   const eseguiPresenzaPosteggio = async (concessione: ConcessioneInfo) => {
     if (!mercatoSelezionato || !impresaId) return;

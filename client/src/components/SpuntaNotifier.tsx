@@ -40,6 +40,7 @@ export default function SpuntaNotifier() {
   const [timerSecondi, setTimerSecondi] = useState(0);
   const [posteggiLiberi, setPosteggiLiberi] = useState<PosteggioLibero[]>([]);
   const [loadingScelta, setLoadingScelta] = useState(false);
+  const [marketIdForMap, setMarketIdForMap] = useState<number | null>(null);
   const sseRef = useRef<EventSource | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const spuntaRef = useRef(spunta);
@@ -277,6 +278,8 @@ export default function SpuntaNotifier() {
           lng: p.lng,
         }));
         setPosteggiLiberi(mapped);
+        // Salva market_id per la mappa interna
+        if (data.market_id) setMarketIdForMap(data.market_id);
         setSpunta(prev => ({ ...prev, stato: 'LISTA_POSTEGGI' }));
       }
     } catch { /* ignore */ }
@@ -418,14 +421,18 @@ export default function SpuntaNotifier() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {p.lat && p.lng && (
-                    <button
-                      className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center"
-                      onClick={() => window.open(`https://www.google.com/maps?q=${p.lat},${p.lng}`, '_blank')}
-                    >
-                      <MapPin className="w-5 h-5 text-teal-400" />
-                    </button>
-                  )}
+                  <button
+                    className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center"
+                    onClick={() => {
+                      // Apri mappa interna del mercato centrata sul posteggio
+                      // Usa market_id (recuperato dal backend insieme ai posteggi)
+                      const mapUrl = `https://api.mio-hub.me/tools/market-map-viewer.html?marketId=${marketIdForMap || ''}&stallNumber=${encodeURIComponent(p.stall_number)}`;
+                      window.open(mapUrl, '_blank');
+                    }}
+                    title={`Vedi posteggio ${p.stall_number} sulla mappa`}
+                  >
+                    <MapPin className="w-5 h-5 text-teal-400" />
+                  </button>
                   <button
                     onClick={() => scegliPosteggio(p)}
                     disabled={loadingScelta}
