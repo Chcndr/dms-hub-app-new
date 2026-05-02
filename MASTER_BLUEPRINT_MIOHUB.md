@@ -1,7 +1,28 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.0.8 (Fix Spunta: Passaggio Turno, Mappa Leaflet Interna, Wallet SPUNTA, Popup PA)
+> **Versione:** 10.0.9 (Fix Spunta: vendor_id, Passaggio Turno Race Condition, Mappa Responsive)
 > **Data:** 02 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.0.9 (02 Mag 2026)
+> **Fix Spunta: vendor_id null, Race Condition Passaggio Turno, Mappa Modale Responsive Smartphone**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `bb14d05` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `bb14d05` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `ead2ef6` | Allineato |
+> | Vercel frontend | `ead2ef6` | Autodeploy |
+>
+> **BACKEND (commit `e0fb5f0` → `bb14d05`):**
+> - **Fix `scegli-posteggio` vendor_id null:** Aggiunto `vendor_id` (= `impresa_id`) nella INSERT `vendor_presences`. Prima mancava e causava l'errore "null value in column vendor_id of relation vendor_presences violates not-null constraint".
+>
+> **FRONTEND (commit `bee8d43` → `ead2ef6`):**
+> - **Fix race condition passaggio turno:** Aggiunto `scadenzaInCorsoRef` che **blocca il polling per 15 secondi** dopo la scadenza del turno. Prima il polling (ogni 10s) trovava l'impresa con stato `SCADUTO` nel DB, rispondeva `in_coda: false`, e chiudeva la SSE prima che il backend potesse inviare `PROSSIMO_TURNO`. Ora il polling è sospeso durante il passaggio turno.
+> - **Fix timer PROSSIMO_TURNO:** Il `setTimerSecondi` ora forza sempre il reset a `data.timeout_secondi || 120` quando arriva un nuovo turno, invece di mantenere il valore precedente se > 0.
+> - **Mappa modale responsive smartphone:** Aggiunto `safe-area-inset-top/bottom`, `min-h-0` sul container mappa, `flex-shrink-0` su header e footer, testo ridotto per non tagliare i pulsanti. I pulsanti "TORNA ALLA LISTA" e "SCEGLI QUESTO" sono ora sempre visibili su iPhone.
+> - **`height="100%"`** passato a `MarketMapComponent` nel modale per riempire correttamente lo spazio disponibile.
 >
 > ---
 > ### CHANGELOG v10.0.8 (02 Mag 2026)
