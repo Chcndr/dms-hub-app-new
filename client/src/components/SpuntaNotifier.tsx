@@ -6,7 +6,8 @@
  * overlay full-screen giallo "È IL TUO TURNO" in qualsiasi pagina.
  */
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Clock, List, MapPin, CheckCircle, X } from "lucide-react";
+import { Clock, List, MapPin, CheckCircle, X, ArrowLeft } from "lucide-react";
+import { MarketMapComponent } from "./MarketMapComponent";
 
 const MIHUB_API_BASE_URL = "https://api.mio-hub.me";
 
@@ -41,6 +42,12 @@ export default function SpuntaNotifier() {
   const [posteggiLiberi, setPosteggiLiberi] = useState<PosteggioLibero[]>([]);
   const [loadingScelta, setLoadingScelta] = useState(false);
   const [marketIdForMap, setMarketIdForMap] = useState<number | null>(null);
+  const [mappaAperta, setMappaAperta] = useState(false);
+  const [mapData, setMapData] = useState<any>(null);
+  const [stallsData, setStallsData] = useState<any[]>([]);
+  const [selectedStallForMap, setSelectedStallForMap] = useState<string | null>(null);
+  const [selectedStallCenter, setSelectedStallCenter] = useState<[number, number] | null>(null);
+  const [viewTrigger, setViewTrigger] = useState(0);
   const sseRef = useRef<EventSource | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const spuntaRef = useRef(spunta);
@@ -247,11 +254,11 @@ export default function SpuntaNotifier() {
       setTimerSecondi(prev => {
         if (prev <= 1) {
           clearInterval(timerRef.current!);
-          // Chiama il backend per chiudere il turno
+          // Chiama il backend per chiudere il turno e attivare il prossimo
           notificaScadenzaTurno();
-          // Chiudi SSE
-          if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
-          setSpunta(s => ({ ...s, stato: 'FINE_SPUNTA', motivo_fine: 'Tempo scaduto! Il turno è passato al prossimo spuntista.' }));
+          // NON chiudere SSE! Il backend invierà PROSSIMO_TURNO o SPUNTA_TERMINATA
+          // Torna in attesa — la SSE aggiornerà lo stato quando il prossimo viene attivato
+          setSpunta(s => ({ ...s, stato: 'IN_ATTESA', motivo_fine: undefined }));
           return 0;
         }
         return prev - 1;
@@ -284,6 +291,66 @@ export default function SpuntaNotifier() {
       }
     } catch { /* ignore */ }
   };
+
+  // Apri mappa interna centrata su un posteggio
+  const apriMappaPosteggio = async (stallNumber: string) => {
+    if (!marketIdForMap) return;
+    setSelectedStallForMap(stallNumber);
+    setMappaAperta(true);
+    // Carica dati GIS se non già caricati
+    if (!mapData) {
+      try {
+        const [gisRes, stallsRes] = await Promise.all([
+          fetch(`${MIHUB_API_BASE_URL}/api/gis/market-map/${marketIdForMap}`),
+          fetch(`${MIHUB_API_BASE_URL}/api/markets/${marketIdForMap}/stalls`),
+        ]);
+        if (gisRes.ok) {
+          const gisData = await gisRes.json();
+          if (gisData.success) setMapData(gisData.data);
+        }
+        if (stallsRes.ok) {
+          const sData = await stallsRes.json();
+          setStallsData(sData.success ? sData.data : (Array.isArray(sData) ? sData : []));
+        }
+      } catch { /* ignore */ }
+    }
+    // Centra sul posteggio dopo un breve delay per permettere il render
+    setTimeout(() => {
+      // Cerca coordinate del posteggio nel GIS
+      if (mapData) {
+        const feature = mapData.stalls_geojson?.features?.find(
+          (f: any) => String(f.properties.number) === String(stallNumber)
+        );
+        if (feature && feature.geometry.type === 'Polygon') {
+          const coords = feature.geometry.coordinates[0] as [number, number][];
+          const lats = coords.map(c => c[1]);
+          const lngs = coords.map(c => c[0]);
+          const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+          const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+          setSelectedStallCenter([centerLat, centerLng]);
+          setViewTrigger(prev => prev + 1);
+        }
+      }
+    }, 300);
+  };
+
+  // Effetto per centrare quando mapData viene caricato
+  useEffect(() => {
+    if (mapData && selectedStallForMap && mappaAperta) {
+      const feature = mapData.stalls_geojson?.features?.find(
+        (f: any) => String(f.properties.number) === String(selectedStallForMap)
+      );
+      if (feature && feature.geometry.type === 'Polygon') {
+        const coords = feature.geometry.coordinates[0] as [number, number][];
+        const lats = coords.map(c => c[1]);
+        const lngs = coords.map(c => c[0]);
+        const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+        const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+        setSelectedStallCenter([centerLat, centerLng]);
+        setViewTrigger(prev => prev + 1);
+      }
+    }
+  }, [mapData, selectedStallForMap, mappaAperta]);
 
   // Scegli posteggio
   const scegliPosteggio = async (posteggio: PosteggioLibero) => {
@@ -408,43 +475,85 @@ export default function SpuntaNotifier() {
             </div>
           ) : (
             posteggiLiberi.map((p) => (
-              <div key={p.stall_id} className="bg-gray-800 rounded-xl p-4 flex items-center justify-between border border-gray-700">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-teal-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">{p.stall_number}</span>
-                    </div>
-                    <div>
-                      <p className="text-white font-bold">Posteggio {p.stall_number}</p>
-                      <p className="text-gray-400 text-sm">{p.area_mq} mq — &euro;{p.canone_giornaliero.toFixed(2)}/giorno</p>
-                    </div>
-                  </div>
+              <div key={p.stall_id} className="bg-gray-800 rounded-xl p-4 flex items-center gap-3 border border-gray-700">
+                {/* Icona mappa grande al posto del quadratino verde */}
+                <button
+                  className="w-14 h-14 bg-teal-700/50 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
+                  onClick={() => apriMappaPosteggio(p.stall_number)}
+                  title={`Vedi posteggio ${p.stall_number} sulla mappa`}
+                >
+                  <MapPin className="w-8 h-8 text-teal-400" />
+                </button>
+                {/* Info posteggio */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-bold text-lg">Posteggio {p.stall_number}</p>
+                  <p className="text-gray-400 text-sm">{p.area_mq} mq — &euro;{p.canone_giornaliero.toFixed(2)}/giorno</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center"
-                    onClick={() => {
-                      // Apri mappa interna del mercato centrata sul posteggio
-                      // Usa market_id (recuperato dal backend insieme ai posteggi)
-                      const mapUrl = `https://api.mio-hub.me/tools/market-map-viewer.html?marketId=${marketIdForMap || ''}&stallNumber=${encodeURIComponent(p.stall_number)}`;
-                      window.open(mapUrl, '_blank');
-                    }}
-                    title={`Vedi posteggio ${p.stall_number} sulla mappa`}
-                  >
-                    <MapPin className="w-5 h-5 text-teal-400" />
-                  </button>
-                  <button
-                    onClick={() => scegliPosteggio(p)}
-                    disabled={loadingScelta}
-                    className="px-4 py-2 bg-teal-500 text-white font-bold rounded-lg active:scale-95 transition-transform disabled:opacity-50"
-                  >
-                    {loadingScelta ? '...' : 'SCEGLI'}
-                  </button>
-                </div>
+                {/* Pulsante SCEGLI */}
+                <button
+                  onClick={() => scegliPosteggio(p)}
+                  disabled={loadingScelta}
+                  className="px-5 py-3 bg-teal-500 text-white font-bold text-base rounded-xl active:scale-95 transition-transform disabled:opacity-50 flex-shrink-0"
+                >
+                  {loadingScelta ? '...' : 'SCEGLI'}
+                </button>
               </div>
             ))
           )}
         </div>
+        {/* MODALE MAPPA INTERNA */}
+        {mappaAperta && (
+          <div className="fixed inset-0 z-[999999] flex flex-col bg-gray-900">
+            <div className="bg-teal-700 p-3 flex items-center gap-3">
+              <button
+                onClick={() => { setMappaAperta(false); setSelectedStallForMap(null); setSelectedStallCenter(null); }}
+                className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"
+              >
+                <ArrowLeft className="w-6 h-6 text-white" />
+              </button>
+              <h2 className="text-white font-bold text-lg flex-1">Mappa — Posteggio {selectedStallForMap}</h2>
+              <div className="text-white font-mono text-xl font-bold">
+                {formatTimer(timerSecondi)}
+              </div>
+            </div>
+            <div className="flex-1 relative">
+              {mapData ? (
+                <MarketMapComponent
+                  mapData={mapData}
+                  stallsData={stallsData}
+                  selectedStallNumber={selectedStallForMap || undefined}
+                  selectedStallCenter={selectedStallCenter || undefined}
+                  viewMode="mercato"
+                  viewTrigger={viewTrigger}
+                  isMarketView={true}
+                  isSpuntaMode={false}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-400 animate-pulse">Caricamento mappa...</p>
+                </div>
+              )}
+            </div>
+            <div className="bg-gray-800 p-3 flex gap-2">
+              <button
+                onClick={() => { setMappaAperta(false); setSelectedStallForMap(null); setSelectedStallCenter(null); }}
+                className="flex-1 py-3 bg-gray-700 text-white font-bold rounded-xl"
+              >
+                TORNA ALLA LISTA
+              </button>
+              <button
+                onClick={() => {
+                  const p = posteggiLiberi.find(pl => pl.stall_number === selectedStallForMap);
+                  if (p) { setMappaAperta(false); scegliPosteggio(p); }
+                }}
+                disabled={loadingScelta}
+                className="flex-1 py-3 bg-teal-500 text-white font-bold rounded-xl disabled:opacity-50"
+              >
+                SCEGLI QUESTO POSTEGGIO
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
