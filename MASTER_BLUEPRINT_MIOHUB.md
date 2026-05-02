@@ -1,7 +1,30 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.1.1 (Fix Spunta: Graduatoria, Timer PA, Stato Rientro, Debug Polling)
+> **Versione:** 10.1.2 (Fix Critico Passaggio Turno, Dedup Concessioni, Tab AVVIA Rimosso)
 > **Data:** 02 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.1.2 (02 Mag 2026)
+> **Fix Critico Passaggio Turno, Deduplicazione Concessioni, Tab AVVIA Rimosso, Lista Spuntisti PA**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `ace16df` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `ace16df` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `ded45fe` | Allineato |
+> | Vercel frontend | `ded45fe` | Autodeploy |
+>
+> **BACKEND (commit `f04edc8` → `ace16df`):**
+> - **Fix regressione scegli-posteggio:** La query `graduatoria_presenze` usava `comune_id` inesistente. Allineata alle colonne del checkin normale.
+> - **Log broadcastSSE e attivaProssimoTurno:** Aggiunti log dettagliati per tracciare quanti client SSE ricevono gli eventi e il passaggio turno.
+> - **Deduplicazione concessioni mercati-oggi:** Le concessioni con stesso `(market_id, wallet_type)` vengono deduplicate per evitare schede doppie nell'app.
+> - **Lista spuntisti PA filtro data oggi:** L'endpoint `/api/spuntisti/mercato/:id` ora filtra `vendor_presences` per `giorno_mercato = oggi` (timezone Europe/Rome).
+>
+> **FRONTEND (commit `de384af` → `ded45fe`):**
+> - **FIX CRITICO passaggio turno:** Il polling controllava `in_coda` PRIMA di `turno_attivo`. Quando `turno_attivo=true`, anche `in_coda=true`, quindi il ramo `turno_attivo` non veniva mai raggiunto per gli spuntisti in `IN_ATTESA`. Invertito l'ordine: ora `turno_attivo` viene controllato per primo.
+> - **Tab AVVIA rimosso:** Il bottone "▶ Avvia" è stato rimosso dalla PA. La spunta live viene avviata automaticamente dal bottone "🟠 Prepara" che ora chiama sia `avvia-spunta` che `avvia-spunta-live`.
+> - **Timer PA countdown fluido:** Il timer nella PA ora scala ogni secondo con countdown locale, sincronizzato dal polling ogni 5s.
 >
 > ---
 > ### CHANGELOG v10.1.1 (02 Mag 2026)
