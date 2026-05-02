@@ -1,8 +1,42 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.1.2 (Fix Critico Passaggio Turno, Dedup Concessioni, Tab AVVIA Rimosso)
-> **Data:** 02 Maggio 2026
+> **Versione:** 10.1.3 (Fix Modulo Spunta, Graduatoria, Orari e UI Presenze)
+> **Data:** 03 Maggio 2026
 >
+> ---
+> ### CHANGELOG v10.1.3 (03 Mag 2026)
+> **Fix Modulo Spunta, Graduatoria, Orari Timezone, Auto-Scadenza Turno, UI Presenze**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `b4d81df` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `b4d81df` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `04df75e` | Allineato |
+> | Vercel frontend | `04df75e` | Autodeploy |
+>
+> **BACKEND (commit `5c986a4` → `b4d81df`):**
+> - **Fix `mercati-oggi` gia_presente_oggi:** Aggiunto filtro `stato IN ('IN_ATTESA', 'TURNO_ATTIVO', 'IN_CODA')` per gli spuntisti.
+> - **Fix `entra-coda` graduatoria:** Aggiunto `AND tipo = 'SPUNTA'` per prendere le presenze corrette.
+> - **Fix `mercati-oggi` spuntisti (UNION ALL):** Aggiunta JOIN con `vendor_presences` (tipo SPUNTA) e `stalls` per restituire il posteggio assegnato (stall_number), stato deposito e uscita.
+> - **Fix `markets.js` stalls endpoint:** Aggiunta JOIN con `imprese` e `wallets` per restituire `spuntista_impresa_nome` e `spuntista_wallet_balance`.
+> - **Fix Orari Timezone App:** Modificato `NOW()` in `NOW() AT TIME ZONE 'Europe/Rome'` in `deposito-rifiuti` e `uscita-mercato`.
+> - **Fix Orari Timezone PA:** Modificato `NOW()` in `NOW() AT TIME ZONE 'Europe/Rome'` in `deposito-rifiuti` e `uscita-mercato`.
+> - **Fix `scegli-posteggio`:** Aggiorna `stalls.spuntista_nome` e `stalls.spuntista_impresa_id` all'assegnazione.
+> - **Fix `uscita-mercato` (app + PA):** Resetta `spuntista_nome` e `spuntista_impresa_id` a NULL all'uscita.
+> - **Fix `spunta-turno-corrente` (Auto-scadenza):** Aggiunta auto-scadenza: se `secondi_rimanenti <= 0`, scade il turno e chiama `attivaProssimoTurno` automaticamente.
+> - **Fix `checkin` (concessione):** Preferisce wallet CONCESSION con `ORDER BY CASE WHEN type = 'CONCESSION' THEN 0 ELSE 1 END` per evitare presenza duplicata.
+> - **Fix `checkin` blocco auto-inserimento spunta_coda:** Aggiunto `AND tipo = 'SPUNTA'` nella query graduatoria.
+> - **Fix `storico/sessioni`:** Rimosso filtro `checkout_time IS NOT NULL` per sessioni di oggi, ora mostra anche presenze attive.
+>
+> **FRONTEND (commit `840fb9f` → `04df75e`):**
+> - **Fix UI `PresenzePage.tsx` (Card posteggio spunta):** Dopo l'assegnazione (ha stall_number), mostra DEPOSITO/USCITA invece di ATTESA SPUNTA.
+> - **Fix UI `PresenzePage.tsx` (Tab ATTESA SPUNTA):** Distingue `spuntaInAttesa` (in coda senza posteggio) vs `spuntaConPosteggio`. Mostra ATTESA SPUNTA solo se in coda.
+> - **Fix UI `PresenzePage.tsx` (Deposito/Uscita):** I tab deposito e uscita ora includono anche i posteggi spunta con stall_number assegnato.
+> - **Fix UI `PresenzePage.tsx` (Semaforo Fase):** Mostra rosso/CHIUSA se `session_fase === 'CHIUSO'`, verde altrimenti.
+> - **Fix UI `GestioneMercati.tsx` (Emoji):** Corrette le emoji rotte usando le espressioni JSX `\u267b\ufe0f` e `\ud83c\udfea`.
+>
+> ---
 > ---
 > ### CHANGELOG v10.1.2 (02 Mag 2026)
 > **Fix Critico Passaggio Turno, Deduplicazione Concessioni, Tab AVVIA Rimosso, Lista Spuntisti PA**
@@ -16,7 +50,6 @@
 > | Vercel frontend | `ded45fe` | Autodeploy |
 >
 > **BACKEND (commit `f04edc8` → `ace16df`):**
-> - **Fix regressione scegli-posteggio:** La query `graduatoria_presenze` usava `comune_id` inesistente. Allineata alle colonne del checkin normale.
 > - **Log broadcastSSE e attivaProssimoTurno:** Aggiunti log dettagliati per tracciare quanti client SSE ricevono gli eventi e il passaggio turno.
 > - **Deduplicazione concessioni mercati-oggi:** Le concessioni con stesso `(market_id, wallet_type)` vengono deduplicate per evitare schede doppie nell'app.
 > - **Lista spuntisti PA filtro data oggi:** L'endpoint `/api/spuntisti/mercato/:id` ora filtra `vendor_presences` per `giorno_mercato = oggi` (timezone Europe/Rome).
