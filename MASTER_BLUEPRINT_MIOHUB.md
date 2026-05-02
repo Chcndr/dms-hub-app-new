@@ -1,7 +1,37 @@
-# 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
+# MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.0.6 (Bridge SSE per Simulazione Mercato e SpuntaNotifier Globale)
+> **Versione:** 10.0.7 (Fix Spunta: Scadenza Turno, Mappa Interna, Reset Tab Attesa)
 > **Data:** 02 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.0.7 (02 Mag 2026)
+> **Fix Spunta: Scadenza Turno, Mappa Interna, Reset Tab Attesa, Chiusura Spunta Reale**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `4af6ca2` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `4af6ca2` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `4c16916` | Allineato |
+> | Vercel frontend | `4c16916` | Autodeploy |
+>
+> **BACKEND (commit `57a4e78` → `4af6ca2`):**
+> - **Fix `scegli-posteggio` auto-lookup `coda_id`:** Se il frontend non invia `coda_id` ma solo `impresa_id`, il backend cerca automaticamente il turno attivo (`TURNO_ATTIVO`) nella `spunta_coda` e recupera il `coda_id` e `session_id`. Risolve l'errore "coda_id, session_id e stall_id sono obbligatori".
+> - **Fix `scegli-posteggio` accetta posteggi `riservato`:** La query di verifica posteggio ora cerca `status IN ('libero', 'riservato')` invece di solo `libero`, permettendo la scelta di posteggi riservati alla spunta.
+> - **Fix `attivaProssimoTurno` chiude spunta davvero:** Quando non ci sono più spuntisti `IN_ATTESA`, la funzione ora: (1) rimette tutti i posteggi `riservato` a `libero`, (2) chiude tutti i turni rimasti `IN_ATTESA` settandoli a `COMPLETATO`, (3) invia evento SSE `SPUNTA_TERMINATA`.
+> - **Fix conteggio posteggi:** Tutte le query che contano posteggi disponibili ora usano `status IN ('libero', 'riservato')` invece di solo `libero`.
+> - **Endpoint `scadenza-turno`:** `POST /api/presenze-live/spunta/scadenza-turno` — chiamato dal frontend quando il timer scade. Chiude il turno corrente (`SCADUTO`) e chiama `attivaProssimoTurno` per attivare il prossimo spuntista.
+> - **Endpoint `avvia-spunta-live`:** `POST /api/presenze-live/avvia-spunta-live/:marketId` — per il tab "▶ Avvia" nella PA. Avvia la spunta live separatamente dall'automazione.
+> - **Endpoint `spunta-turno-corrente`:** `GET /api/presenze-live/spunta-turno-corrente/:marketId` — per il banner giallo PA che mostra l'impresa di turno corrente.
+> - **Endpoint `posteggi-liberi` fix:** Cerca `status IN ('riservato', 'libero')` invece di solo `libero`.
+> - **Impedisce doppia presenza spunta:** Se l'impresa è già in `spunta_coda` con stato finale (`ASSEGNATO`, `SCADUTO`, `COMPLETATO`, `SALTATO`, `RINUNCIATO`), non viene reinserita. Impedisce di rifare la presenza spunta dopo che la spunta è terminata.
+>
+> **FRONTEND (commit `9d84617` → `4c16916`):**
+> - **SpuntaNotifier — Mappa interna (no Google Maps):** L'icona MapPin nella lista posteggi alla spunta ora apre il `market-map-viewer.html` interno centrato sul posteggio selezionato, invece di Google Maps. Il `market_id` viene recuperato dalla risposta del backend `posteggi-liberi`.
+> - **SpuntaNotifier — Timer scadenza:** Quando il timer raggiunge 0, il frontend chiama `POST /spunta/scadenza-turno` per notificare il backend, chiude la SSE e mostra l'overlay "Tempo scaduto".
+> - **SpuntaNotifier — Polling sicuro:** Il polling non sovrascrive stati terminali (`LISTA_POSTEGGI`, `ASSEGNATO`, `FINE_SPUNTA`). Flag `scadenzaChiamataRef` previene doppie chiamate scadenza.
+> - **PresenzePage — Reset tab ATTESA SPUNTA:** Aggiunto listener `storage` per l'evento `spunta_gestita` emesso da SpuntaNotifier quando l'overlay viene chiuso. Quando ricevuto: resetta `gia_presente_oggi` per le concessioni Spunta, resetta lo stato spunta locale, torna a `scelta_tipo` se in schermata spunta, e ricarica i dati mercato freschi dal backend.
+> - **GestioneMercati — Tab AVVIA e Banner:** Tab "▶ Avvia" per avviare la spunta live dalla PA. Banner giallo con polling ogni 5s mostra l'impresa di turno corrente. L'automazione si ferma quando finiscono gli spuntisti.
 >
 > ---
 > ### CHANGELOG v10.0.6 (02 Mag 2026)
@@ -14,7 +44,6 @@
 > | Hetzner backend (api.mio-hub.me) | `7eb82a0` | Autodeploy |
 > | GitHub `dms-hub-app-new` master | `daeb9d8` | Allineato |
 > | Vercel frontend | `daeb9d8` | Autodeploy |
->
 > **BACKEND:**
 > - **Bridge SSE in Test Mercato (`routes/test-mercato.js`):** Aggiunto un "bridge" non bloccante agli endpoint legacy di simulazione mercato per farli comunicare con l'app impresa tramite SSE, **mantenendo intatto il flusso di simulazione per le demo**:
 >   - `POST /avvia-spunta`: Dopo l'esecuzione legacy, crea/trova la `market_session` di oggi, popola la tabella `spunta_coda` con tutti gli spuntisti ordinati per graduatoria, attiva il turno del primo e invia gli eventi SSE `SPUNTA_INIZIATA` e `PROSSIMO_TURNO`.
