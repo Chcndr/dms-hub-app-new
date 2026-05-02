@@ -1089,25 +1089,45 @@ export default function PresenzePage() {
                   </button>
                 )}
 
-                {/* PRESENZA SPUNTA: visibile solo se ha wallet spunta */}
-                {haSpunta && (
-                  <button
-                    onClick={() => setSchermata("presenza_spunta")}
-                    className="w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#8b5cf6]/20"
-                  >
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                        <Users className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                {/* PRESENZA SPUNTA / ATTESA SPUNTA */}
+                {haSpunta && (() => {
+                  const spuntaPresente = spuntisti.some(s => s.gia_presente_oggi);
+                  if (spuntaPresente) {
+                    return (
+                      <div className="w-full bg-gradient-to-r from-yellow-600 to-amber-700 rounded-2xl p-4 sm:p-6 text-left shadow-lg shadow-yellow-600/20">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                            <Clock className="w-7 h-7 sm:w-9 sm:h-9 text-white animate-pulse" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-base sm:text-xl font-black text-white leading-tight">ATTESA SPUNTA</p>
+                            <p className="text-xs sm:text-sm text-white/70 mt-1">
+                              Presenza registrata — in attesa del turno
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-base sm:text-xl font-black text-white leading-tight">PRESENZA SPUNTA</p>
-                        <p className="text-xs sm:text-sm text-white/70 mt-1">
-                          Graduatoria spuntisti
-                        </p>
+                    );
+                  }
+                  return (
+                    <button
+                      onClick={() => setSchermata("presenza_spunta")}
+                      className="w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#8b5cf6]/20"
+                    >
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                          <Users className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-base sm:text-xl font-black text-white leading-tight">PRESENZA SPUNTA</p>
+                          <p className="text-xs sm:text-sm text-white/70 mt-1">
+                            Graduatoria spuntisti
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                )}
+                    </button>
+                  );
+                })()}
 
                 {/* Separatore se ci sono azioni post-presenza */}
                 {qualcunoPresente && (qualcunoDepositoDaFare || qualcunoUscitaDaFare) && (
@@ -1257,7 +1277,31 @@ export default function PresenzePage() {
 
               {/* Tab azione dinamico sotto ogni posteggio */}
               {(() => {
-                // PRESENZA → DEPOSITO → USCITA → COMPLETATO
+                // Per SPUNTA: PRESENZA → ATTESA SPUNTA (non DEPOSITO/USCITA)
+                if (isSpunta) {
+                  if (!conc.gia_presente_oggi) {
+                    return (
+                      <div className="flex gap-2 px-1">
+                        <Button
+                          onClick={() => eseguiPresenzaPosteggio(conc)}
+                          disabled={loadingAzione}
+                          className="flex-1 bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white text-base sm:text-lg py-5 sm:py-6 rounded-xl font-bold min-w-0"
+                        >
+                          <Ticket className="w-5 h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                          <span className="truncate">PRESENZA SPUNTA</span>
+                        </Button>
+                      </div>
+                    );
+                  }
+                  // Dopo la presenza spunta: mostra ATTESA SPUNTA
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                      <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0 animate-pulse" />
+                      <span className="text-base font-semibold text-yellow-400">ATTESA SPUNTA</span>
+                    </div>
+                  );
+                }
+                // Per CONCESSIONI: PRESENZA → DEPOSITO → USCITA → COMPLETATO
                 if (!conc.gia_presente_oggi) {
                   return (
                     <div className="flex gap-2 px-1">
@@ -1325,53 +1369,69 @@ export default function PresenzePage() {
       </div>
     );
   }
-  // ─── SCHERMATA: PRESENZA SPUNTAA ─────────────────────────────────────────
+  // ─── SCHERMATA: PRESENZA SPUNTA ─────────────────────────────────────────
   if (schermata === "presenza_spunta" && mercatoSelezionato) {
+    const spuntaGiaPresente = mercatoSelezionato.concessions.some(c => c.tipo_posteggio === 'Spunta' && c.gia_presente_oggi);
     return (
       <div className="min-h-screen bg-[#0b1220] flex flex-col">
         {renderHeader("Presenza Spunta", () => setSchermata("scelta_tipo"))}
 
         <div className="flex-1 p-4 flex flex-col items-center justify-center space-y-6">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed] flex items-center justify-center shadow-lg shadow-[#8b5cf6]/30">
-            <Users className="w-12 h-12 text-white" />
+          <div className={`w-24 h-24 rounded-full flex items-center justify-center shadow-lg ${spuntaGiaPresente ? 'bg-gradient-to-br from-yellow-500 to-amber-600 shadow-yellow-500/30' : 'bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed] shadow-[#8b5cf6]/30'}`}>
+            {spuntaGiaPresente ? <Clock className="w-12 h-12 text-white animate-pulse" /> : <Users className="w-12 h-12 text-white" />}
           </div>
 
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-[#e8fbff] mb-2">Presenza Spunta</h2>
+            <h2 className="text-2xl font-bold text-[#e8fbff] mb-2">
+              {spuntaGiaPresente ? 'Attesa Spunta' : 'Presenza Spunta'}
+            </h2>
             <p className="text-lg text-[#e8fbff]/60 max-w-sm">
-              Registra la tua presenza nella graduatoria spuntisti per il mercato <strong className="text-[#14b8a6]">{mercatoSelezionato.market_name}</strong>.
+              {spuntaGiaPresente
+                ? <>Presenza registrata per <strong className="text-[#14b8a6]">{mercatoSelezionato.market_name}</strong>. Sei in attesa del tuo turno.</>
+                : <>Registra la tua presenza nella graduatoria spuntisti per il mercato <strong className="text-[#14b8a6]">{mercatoSelezionato.market_name}</strong>.</>
+              }
             </p>
           </div>
 
-          <div className="bg-[#1a2332] border border-[#8b5cf6]/20 rounded-2xl p-5 w-full max-w-sm">
-            <div className="flex items-center gap-3 mb-3">
-              <Info className="w-5 h-5 text-[#8b5cf6]" />
-              <p className="text-base font-semibold text-[#e8fbff]">Come funziona</p>
+          {spuntaGiaPresente ? (
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 w-full max-w-sm text-center">
+              <Clock className="w-10 h-10 text-yellow-400 mx-auto mb-3 animate-pulse" />
+              <p className="text-xl font-bold text-yellow-400 mb-2">ATTESA SPUNTA</p>
+              <p className="text-base text-[#e8fbff]/60">Verrai avvisato quando sarà il tuo turno.</p>
             </div>
-            <ul className="space-y-2 text-base text-[#e8fbff]/60">
-              <li className="flex items-start gap-2">
-                <span className="text-[#8b5cf6] font-bold mt-0.5">1.</span>
-                Registri la tua presenza
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-[#8b5cf6] font-bold mt-0.5">2.</span>
-                Ricevi la posizione in graduatoria
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-[#8b5cf6] font-bold mt-0.5">3.</span>
-                Verrai avvisato quando sarà il tuo turno
-              </li>
-            </ul>
-          </div>
+          ) : (
+            <>
+              <div className="bg-[#1a2332] border border-[#8b5cf6]/20 rounded-2xl p-5 w-full max-w-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <Info className="w-5 h-5 text-[#8b5cf6]" />
+                  <p className="text-base font-semibold text-[#e8fbff]">Come funziona</p>
+                </div>
+                <ul className="space-y-2 text-base text-[#e8fbff]/60">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#8b5cf6] font-bold mt-0.5">1.</span>
+                    Registri la tua presenza
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#8b5cf6] font-bold mt-0.5">2.</span>
+                    Ricevi la posizione in graduatoria
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#8b5cf6] font-bold mt-0.5">3.</span>
+                    Verrai avvisato quando sarà il tuo turno
+                  </li>
+                </ul>
+              </div>
 
-          <Button
-            onClick={eseguiPresenzaSpunta}
-            disabled={loadingAzione}
-            className="w-full max-w-sm bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#6d28d9] text-white text-lg sm:text-xl py-8 rounded-2xl font-black shadow-xl shadow-[#8b5cf6]/20"
-          >
-            <Users className="w-6 h-6 mr-2 flex-shrink-0" />
-            REGISTRA SPUNTA
-          </Button>
+              <Button
+                onClick={eseguiPresenzaSpunta}
+                disabled={loadingAzione}
+                className="w-full max-w-sm bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#6d28d9] text-white text-lg sm:text-xl py-8 rounded-2xl font-black shadow-xl shadow-[#8b5cf6]/20"
+              >
+                <Users className="w-6 h-6 mr-2 flex-shrink-0" />
+                REGISTRA SPUNTA
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );

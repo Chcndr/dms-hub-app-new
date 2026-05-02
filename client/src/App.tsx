@@ -13,6 +13,7 @@ import { FirebaseAuthProvider } from "./contexts/FirebaseAuthContext";
 import ChatWidget from "./components/ChatWidget";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 import CookieConsentBanner from "./components/CookieConsentBanner";
+import SpuntaNotifier from "./components/SpuntaNotifier";
 import SkipToContent from "./components/SkipToContent";
 import GlobalFooter from "./components/GlobalFooter";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -166,6 +167,7 @@ function App() {
                     <GlobalFooter />
                     <ChatWidget userRole="cliente" />
                     <CookieConsentBanner />
+                    <SpuntaNotifier />
                   </TooltipProvider>
                 </TransportProvider>
               </PermissionsProvider>
