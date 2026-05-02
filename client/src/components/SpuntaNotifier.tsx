@@ -199,8 +199,8 @@ export default function SpuntaNotifier() {
           setSpunta({
             stato: 'FINE_SPUNTA',
             motivo_fine: data.motivo === 'FINE_POSTEGGI'
-              ? 'Tutti i posteggi sono stati assegnati'
-              : 'Tutti i partecipanti sono stati chiamati',
+              ? 'Tutti i posteggi alla spunta sono stati assegnati'
+              : 'Tutti i partecipanti alla spunta sono stati chiamati',
             posteggi_disponibili: data.posteggi_rimanenti,
           });
           es.close();
@@ -326,7 +326,7 @@ export default function SpuntaNotifier() {
             {formatTimer(timerSecondi)}
           </div>
           <p className="text-white/80 text-lg mb-2">
-            Posteggi disponibili: {spunta.posteggi_disponibili || 0}
+            Posteggi alla spunta: {spunta.posteggi_disponibili || 0}
           </p>
           <button
             onClick={caricaPosteggiLiberi}
