@@ -1,21 +1,24 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.0.5 (SpuntaNotifier Globale e Fix UI Spunta)
+> **Versione:** 10.0.6 (Bridge SSE per Simulazione Mercato e SpuntaNotifier Globale)
 > **Data:** 02 Maggio 2026
 >
 > ---
-> ### CHANGELOG v10.0.5 (02 Mag 2026)
-> **Integrazione SpuntaNotifier Globale e Fix UI Attesa Spunta**
+> ### CHANGELOG v10.0.6 (02 Mag 2026)
+> **Bridge SSE per Simulazione Mercato e SpuntaNotifier Globale**
 >
 > **Stato deploy:**
 > | Sistema | Commit | Stato |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | `f42740e` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `f42740e` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `8fb81da` | Allineato |
-> | Vercel frontend | `8fb81da` | Autodeploy |
+> | GitHub `mihub-backend-rest` master | `7eb82a0` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `7eb82a0` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `daeb9d8` | Allineato |
+> | Vercel frontend | `daeb9d8` | Autodeploy |
 >
 > **BACKEND:**
+> - **Bridge SSE in Test Mercato (`routes/test-mercato.js`):** Aggiunto un "bridge" non bloccante agli endpoint legacy di simulazione mercato per farli comunicare con l'app impresa tramite SSE, **mantenendo intatto il flusso di simulazione per le demo**:
+>   - `POST /avvia-spunta`: Dopo l'esecuzione legacy, crea/trova la `market_session` di oggi, popola la tabella `spunta_coda` con tutti gli spuntisti ordinati per graduatoria, attiva il turno del primo e invia gli eventi SSE `SPUNTA_INIZIATA` e `PROSSIMO_TURNO`.
+>   - `POST /assegna-posteggio-spunta`: Dopo l'assegnazione legacy, aggiorna la `spunta_coda` a `ASSEGNATO`, invia l'evento SSE `POSTEGGIO_ASSEGNATO` all'impresa e chiama `attivaProssimoTurno` per far scattare la notifica allo spuntista successivo.
 > - **Endpoint Stato Impresa (`GET /api/presenze-live/spunta/stato-impresa/:impresaId`):** Creato nuovo endpoint per controllare se l'impresa è attualmente in coda spunta (stato `IN_ATTESA`, `TURNO_ATTIVO` o `IN_CODA`) in qualsiasi sessione. Restituisce i dettagli del turno per permettere al client di connettersi alla SSE corretta.
 >
 > **FRONTEND:**
