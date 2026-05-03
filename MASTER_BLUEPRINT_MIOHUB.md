@@ -1,7 +1,15 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.1.9 (Fix Storico + Rinunce + Semaforo Saldo)
+> **Versione:** 10.2.0 (Fix Critico Assegnazione Spunta)
 > **Data:** 03 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.0 (03 Mag 2026)
+> **FIX CRITICO: assegna-posteggio-spunta ora usa spunta_coda**
+>
+> 1. **BUG CRITICO**: la route `assegna-posteggio-spunta` cercava lo spuntista dalla GRADUATORIA (primo senza posteggio) invece che dalla SPUNTA_CODA (chi è in TURNO_ATTIVO). Questo causava: a) assegnazione allo spuntista sbagliato, b) errore SALDO_NEGATIVO per spuntisti con saldo positivo
+> 2. **Auto-skip con attivaProssimoTurno**: quando uno spuntista ha saldo negativo, ora fa auto-skip (SALTATO nella coda), incrementa rinunce, e attiva il prossimo turno automaticamente
+> 3. **Evento SSE SALDO_NEGATIVO_SKIP**: inviato a tutti i client per aggiornare l'interfaccia
 >
 > ---
 > ### CHANGELOG v10.1.9 (03 Mag 2026)
