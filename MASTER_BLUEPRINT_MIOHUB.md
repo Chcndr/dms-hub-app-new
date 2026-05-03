@@ -10,10 +10,10 @@
 > **Stato deploy:**
 > | Sistema | Commit | Stato |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | *da pushare* | In attesa |
-> | Hetzner backend (api.mio-hub.me) | *da pushare* | Autodeploy |
-> | GitHub `dms-hub-app-new` master | *da pushare* | In attesa |
-> | Vercel frontend | *da pushare* | Autodeploy |
+> | GitHub `mihub-backend-rest` master | `858e359` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `858e359` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `9d7b4b6` | Allineato |
+> | Vercel frontend | `9d7b4b6` | Autodeploy |
 >
 > **BACKEND:**
 > - **Fix `markets.js` stalls wallet_balance:** `COALESCE(w.balance, w_spunta.balance)` per mostrare il saldo corretto anche per gli spuntisti (prima mostrava €0.00 perché il JOIN su concession_id falliva per wallet SPUNTA).
