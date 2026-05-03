@@ -2721,10 +2721,12 @@ function PosteggiTab({
             const errData = await response.json().catch(() => ({} as Record<string, unknown>));
             if (errData.errore === 'SALDO_NEGATIVO') {
               // Popup fullscreen rosso per saldo negativo
+              // Usa il nome dal turno corrente (spuntaLiveTurno), non dal messaggio errore
+              const nomeImpresaSaldo = spuntaLiveTurno?.impresa_nome || String(errData.messaggio || '').split(' ha ')[0]?.replace('Spuntista ', '') || 'Spuntista';
               setShowSaldoNegativoPopup({
                 show: true,
                 messaggio: errData.messaggio || 'Impossibile assegnare il posteggio.',
-                impresa: String(errData.messaggio || '').split(' ha ')[0]?.replace('Spuntista ', '') || 'Spuntista',
+                impresa: nomeImpresaSaldo,
                 saldo: errData.saldo || 0
               });
               // Rimetti il posteggio a riservato nel frontend
@@ -2733,10 +2735,12 @@ function PosteggiTab({
                   s.id === stallId ? { ...s, status: "riservato" } : s
                 )
               );
-              // Auto-refresh turno dopo 3 secondi (il backend ha già attivato il prossimo)
-              setTimeout(() => {
+              // Auto-refresh turno dopo 3 secondi (il backend ha gi\u00e0 attivato il prossimo)
+              setTimeout(async () => {
                 setShowSaldoNegativoPopup(prev => ({...prev, show: false}));
-                fetchSpuntaLiveTurno();
+                await fetchSpuntaLiveTurno();
+                // Ricarica anche la lista stalls per aggiornare lo stato
+                await fetchStallsAndPresenzeOnly();
               }, 3000);
             } else {
               toast.error(

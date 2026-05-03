@@ -81,6 +81,7 @@ interface SpuntaTurnoInfo {
   impresa_nome?: string;
   posizione?: number;
   coda_id?: number;
+  session_id?: number;
   scadenza?: string;
   stall_number?: string;
   importo?: number;
@@ -1540,7 +1541,46 @@ export default function PresenzePage() {
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 w-full max-w-sm text-center">
               <Clock className="w-10 h-10 text-yellow-400 mx-auto mb-3 animate-pulse" />
               <p className="text-xl font-bold text-yellow-400 mb-2">ATTESA SPUNTA</p>
-              <p className="text-base text-[#e8fbff]/60">Verrai avvisato quando sarà il tuo turno.</p>
+              <p className="text-base text-[#e8fbff]/60 mb-4">Verrai avvisato quando sar\u00e0 il tuo turno.</p>
+              <Button
+                onClick={async () => {
+                  const confirmed = window.confirm(
+                    'Sei sicuro di voler RINUNCIARE alla spunta?\n\nNON riceverai un posteggio e NON guadagnerai il punto presenza in graduatoria.'
+                  );
+                  if (!confirmed) return;
+                  try {
+                    const rinunciaRes = await authenticatedFetch(
+                      `${MIHUB_API_BASE_URL}/api/presenze-live/spunta/rinuncia`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          coda_id: spuntaCodaId || spuntaTurno?.coda_id || null,
+                          impresa_id: impresaId,
+                          session_id: spuntaTurno?.session_id || null
+                        }),
+                      }
+                    );
+                    const rinunciaData = await rinunciaRes.json();
+                    if (rinunciaData.success) {
+                      setPopup({
+                        tipo: "avviso",
+                        titolo: "RINUNCIA REGISTRATA",
+                        messaggio: "Hai rinunciato alla spunta. Non riceverai un posteggio e non guadagni il punto presenza.",
+                      });
+                      setSchermata('scelta_tipo');
+                      if (sseRef.current) sseRef.current.close();
+                    } else {
+                      setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: rinunciaData.messaggio || 'Errore rinuncia' });
+                    }
+                  } catch (err) {
+                    setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: 'Errore durante la rinuncia' });
+                  }
+                }}
+                className="bg-red-600/80 hover:bg-red-700 text-white border border-red-400/50 text-sm px-6 py-2 rounded-xl font-bold"
+              >
+                RINUNCIA ALLA SPUNTA
+              </Button>
             </div>
           ) : (
             <>
@@ -1760,7 +1800,11 @@ export default function PresenzePage() {
                 {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ coda_id: spuntaCodaId || spuntaTurno?.coda_id }),
+                  body: JSON.stringify({
+                    coda_id: spuntaCodaId || spuntaTurno?.coda_id || null,
+                    impresa_id: impresaId,
+                    session_id: spuntaTurno?.session_id || null
+                  }),
                 }
               );
               const rinunciaData = await rinunciaRes.json();
@@ -1831,7 +1875,11 @@ export default function PresenzePage() {
                 {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ coda_id: spuntaCodaId || spuntaTurno?.coda_id }),
+                  body: JSON.stringify({
+                    coda_id: spuntaCodaId || spuntaTurno?.coda_id || null,
+                    impresa_id: impresaId,
+                    session_id: spuntaTurno?.session_id || null
+                  }),
                 }
               );
               const rinunciaData = await rinunciaRes.json();
