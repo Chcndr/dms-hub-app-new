@@ -3775,7 +3775,10 @@ function PosteggiTab({
               ? "⏹ STOP"
               : `✓ Conferma Assegnazione (${reservedCount} posteggi)`}
           </Button>
-
+        </div>
+      )}
+      {/* Deposito Rifiuti e Chiudi Mercato - SEMPRE visibili (v10.1.7) */}
+      <div className="mb-4 space-y-2">
           {/* Deposito Rifiuti - bottone espandibile */}
           <div className="space-y-1">
             <Button
@@ -3787,9 +3790,6 @@ function PosteggiTab({
               onClick={() => {
                 setIsDepositoMode(!isDepositoMode);
                 setIsChiudiMode(false);
-                setIsOccupaMode(false);
-                setIsLiberaMode(false);
-                setIsSpuntaMode(false);
                 if (!isDepositoMode) {
                   toast.info("Clicca su un posteggio occupato per registrare il deposito rifiuti");
                 }
@@ -3846,9 +3846,6 @@ function PosteggiTab({
               onClick={() => {
                 setIsChiudiMode(!isChiudiMode);
                 setIsDepositoMode(false);
-                setIsOccupaMode(false);
-                setIsLiberaMode(false);
-                setIsSpuntaMode(false);
                 if (!isChiudiMode) {
                   toast.info("Clicca su un posteggio occupato per registrare l'uscita");
                 }
@@ -3901,8 +3898,7 @@ function PosteggiTab({
               </Button>
             )}
           </div>
-        </div>
-      )}
+      </div>
 
       {/* NUOVO LAYOUT: Mappa in alto (rettangolare) */}
       <div
