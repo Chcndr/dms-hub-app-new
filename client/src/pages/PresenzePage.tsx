@@ -318,6 +318,13 @@ export default function PresenzePage() {
           saldo_residuo: data.wallet_saldo_residuo,
         });
         setSchermata('spunta_assegnato');
+      } else if (data.errore === 'SALDO_NEGATIVO') {
+        // Messaggio rosso a tutto schermo per saldo negativo
+        setPopup({
+          tipo: 'errore',
+          titolo: 'ACCESSO NEGATO',
+          messaggio: data.messaggio || `Saldo insufficiente (€${data.saldo?.toFixed(2)}). Ricaricare il wallet.`,
+        });
       } else {
         setPopup({
           tipo: 'errore',
@@ -1296,7 +1303,7 @@ export default function PresenzePage() {
                 className={`w-full bg-[#1a2332] border-2 rounded-2xl p-5 text-left transition-all active:scale-[0.98] ${
                   conc.gia_presente_oggi
                     ? "border-green-500/40 opacity-70"
-                    : !isSpunta && conc.wallet_balance !== null && conc.wallet_balance < 0
+                    : conc.wallet_balance !== null && conc.wallet_balance < 0
                       ? "border-red-500/40"
                       : "border-[#14b8a6]/30 hover:border-[#14b8a6]"
                 }`}
@@ -1336,15 +1343,15 @@ export default function PresenzePage() {
 
                 {/* Wallet */}
                 <div className={`mt-3 flex items-center gap-2 px-3 py-2 rounded-xl ${
-                  !isSpunta && conc.wallet_balance !== null && conc.wallet_balance < 0
+                  conc.wallet_balance !== null && conc.wallet_balance < 0
                     ? "bg-red-500/10"
                     : "bg-[#14b8a6]/10"
                 }`}>
                   <Wallet className={`w-5 h-5 ${
-                    !isSpunta && conc.wallet_balance !== null && conc.wallet_balance < 0 ? "text-red-400" : "text-[#14b8a6]"
+                    conc.wallet_balance !== null && conc.wallet_balance < 0 ? "text-red-400" : "text-[#14b8a6]"
                   }`} />
                   <span className={`text-lg font-bold ${
-                    !isSpunta && conc.wallet_balance !== null && conc.wallet_balance < 0 ? "text-red-400" : "text-[#14b8a6]"
+                    conc.wallet_balance !== null && conc.wallet_balance < 0 ? "text-red-400" : "text-[#14b8a6]"
                   }`}>
                     Saldo: €{conc.wallet_balance?.toFixed(2) ?? "N/D"}
                   </span>
