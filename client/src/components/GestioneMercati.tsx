@@ -2319,9 +2319,11 @@ function PosteggiTab({
         setSpuntaLiveTurno(data);
         setSpuntaTimerSecondi(data.secondi_rimanenti || 0);
       } else {
-        // Se la spunta è terminata, mostra popup giallo SPUNTA FINITA
-        if (data.spunta_terminata && isSpuntaMode) {
+        // Se la spunta è terminata, mostra popup giallo SPUNTA FINITA (solo una volta)
+        if (data.spunta_terminata && isSpuntaMode && !showSpuntaFinitaPopup) {
           setShowSpuntaFinitaPopup(true);
+          // Ferma il polling — la spunta è finita, non serve più pollare
+          if (spuntaLivePollingRef.current) { clearInterval(spuntaLivePollingRef.current); spuntaLivePollingRef.current = null; }
           // Aggiorna la lista posteggi
           fetchStallsAndPresenzeOnly();
         }
@@ -3468,14 +3470,14 @@ function PosteggiTab({
       )}
       {/* Popup fullscreen SPUNTA FINITA */}
       {showSpuntaFinitaPopup && (
-        <div className="fixed inset-0 bg-yellow-700/95 flex items-center justify-center z-[9999]" onClick={() => { setShowSpuntaFinitaPopup(false); }}>
+        <div className="fixed inset-0 bg-yellow-700/95 flex items-center justify-center z-[9999]" onClick={() => { setShowSpuntaFinitaPopup(false); setIsSpuntaMode(false); }}>
           <div className="text-center p-8 max-w-lg">
             <div className="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
               <span className="text-5xl">✅</span>
             </div>
             <h1 className="text-white text-4xl font-black mb-4">SPUNTA FINITA!</h1>
             <p className="text-white/90 text-xl mb-8">Tutti gli spuntisti sono stati processati.<br/>La spunta è terminata.</p>
-            <button className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-4 rounded-2xl font-bold" onClick={() => setShowSpuntaFinitaPopup(false)}>CHIUDI</button>
+            <button className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-4 rounded-2xl font-bold" onClick={(e) => { e.stopPropagation(); setShowSpuntaFinitaPopup(false); setIsSpuntaMode(false); }}>CHIUDI</button>
           </div>
         </div>
       )}

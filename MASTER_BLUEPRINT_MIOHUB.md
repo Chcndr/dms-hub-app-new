@@ -1,7 +1,47 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.0 (Fix Critico Assegnazione Spunta)
+> **Versione:** 10.2.3 (Fix Definitivo Popup Ripetitivi, Rinuncia Spunta, Race Condition)
 > **Data:** 03 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.3 (03 Mag 2026)
+> **Fix Definitivo: Popup ripetitivi, SPUNTA FINITA bloccante, Tab PRESENZA SPUNTA dopo rinuncia, Race condition Prepara**
+>
+> **Problemi risolti:**
+> 1. **Popup SPUNTA FINITA/TERMINATA ripetitivo (App)**: SpuntaNotifier mostrava overlay FINE_SPUNTA ad ogni ciclo di polling (10s). Dopo la chiusura, il polling ri-triggerava lo stesso overlay perché il backend continuava a restituire `in_coda: false`. **Fix**: aggiunto `dismissedSessionRef` che traccia la session_id dismissata — il polling non ri-mostra FINE_SPUNTA per la stessa sessione. Reset solo per nuove sessioni.
+> 2. **Popup SPUNTA FINITA ripetitivo (PA)**: Il polling PA ogni 2s riceveva `spunta_terminata: true` e ri-apriva il popup. **Fix**: aggiunta condizione `!showSpuntaFinitaPopup` + stop polling dopo SPUNTA FINITA + `setIsSpuntaMode(false)` alla chiusura.
+> 3. **Race condition "Prepara" → FINE_SPUNTA immediata**: Dopo Prepara, il polling trovava l'impresa non ancora in coda (DB non aggiornato) e mostrava FINE_SPUNTA. **Fix**: aggiunto cooldown `inAttesaSinceRef` — se in IN_ATTESA da meno di 30 secondi, il polling non transiziona a FINE_SPUNTA.
+> 4. **Tab PRESENZA SPUNTA visibile dopo rinuncia**: La logica `scelta_tipo` controllava `spuntaInAttesa` (basato su `gia_presente_oggi`) PRIMA di `spunta_stato_coda === 'RINUNCIATO'`. **Fix**: ordine invertito — RINUNCIATO/SALTATO ha priorità massima. Stato locale aggiornato dopo rinuncia in tutte e 3 le schermate (presenza_spunta, spunta_attesa, spunta_turno).
+> 5. **Listener storage `spunta_gestita`**: Ora aggiorna anche `spunta_stato_coda` e ricarica dati dal backend (`cercaMercati()`) per avere stato fresco.
+> 6. **Alert nativi rimossi**: Sostituiti `alert()` con `console.error()` in SpuntaNotifier per errori scelta posteggio.
+>
+> **File modificati:**
+> - `SpuntaNotifier.tsx`: anti-ripetizione popup (dismissedSessionRef), cooldown race condition (inAttesaSinceRef), session_id preservato in FINE_SPUNTA
+> - `PresenzePage.tsx`: logica rinuncia, listener storage con refresh backend, stato locale aggiornato
+> - `GestioneMercati.tsx`: popup SPUNTA FINITA una sola volta, stop polling, reset isSpuntaMode
+>
+> **Regole anti-ripetizione popup (NUOVA SEZIONE ARCHITETTURA):**
+> - Ogni overlay/popup deve essere mostrato UNA SOLA VOLTA per sessione
+> - `dismissedSessionRef` in SpuntaNotifier traccia la session_id chiusa dall'utente
+> - Il polling NON ri-mostra FINE_SPUNTA se `dismissedSessionRef === currentSessionId`
+> - Il dismiss si resetta SOLO quando viene trovata una NUOVA session_id diversa
+> - Cooldown 30s: se lo spuntista è in IN_ATTESA da meno di 30 secondi, il polling non transiziona a FINE_SPUNTA (protegge da race condition dopo Prepara)
+>
+> ---
+> ### CHANGELOG v10.2.2 (03 Mag 2026)
+> **Fix UNION ALL mismatch colonne mercati-oggi + Fix rinuncia spunta stato locale**
+>
+> 1. **UNION ALL mismatch**: La prima parte (concessionari) aveva 24 colonne, la seconda (spuntisti) 25 (campo `spunta_stato_coda` mancante). Aggiunto `NULL as spunta_stato_coda` alla prima parte.
+> 2. **Rinuncia spunta stato locale**: Dopo rinuncia, `gia_presente_oggi` e `spunta_stato_coda` non venivano aggiornati nello stato React locale. Aggiunto aggiornamento in tutte e 3 le schermate rinuncia.
+> 3. **Logica scelta_tipo riordinata**: RINUNCIATO/SALTATO controllato PRIMA di spuntaInAttesa.
+> 4. **Card singola spuntista**: Badge RINUNCIATO/SALDO NEGATIVO per spuntisti con stato coda terminale.
+>
+> ---
+> ### CHANGELOG v10.2.1 (03 Mag 2026)
+> **Aggiunto campo spunta_stato_coda all'endpoint mercati-oggi**
+>
+> 1. Aggiunto LEFT JOIN con `spunta_coda` nella seconda parte della UNION (spuntisti) per restituire `spunta_stato_coda`.
+> 2. Il frontend usa questo campo per distinguere RINUNCIATO/SALTATO/IN_ATTESA/TURNO_ATTIVO.
 >
 > ---
 > ### CHANGELOG v10.2.0 (03 Mag 2026)

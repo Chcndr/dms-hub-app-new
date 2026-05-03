@@ -545,13 +545,13 @@ export default function PresenzePage() {
     const handleSpuntaGestita = (e: StorageEvent) => {
       if (e.key === 'spunta_gestita') {
         console.log('[PresenzePage] Spunta gestita, resetto stato spunta locale...');
-        // Resetta gia_presente_oggi per le concessioni Spunta (senza ricaricare tutto)
+        // Resetta gia_presente_oggi e aggiorna spunta_stato_coda per le concessioni Spunta
         setMercatoSelezionato(prev => {
           if (!prev) return prev;
           return {
             ...prev,
             concessions: prev.concessions.map(c =>
-              c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: false } : c
+              c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: false, spunta_stato_coda: c.spunta_stato_coda || 'COMPLETATO' } : c
             )
           };
         });
@@ -564,7 +564,8 @@ export default function PresenzePage() {
         if (['spunta_attesa', 'spunta_turno', 'spunta_lista_posteggi', 'spunta_assegnato', 'spunta_fine', 'spunta_saldo_negativo', 'spunta_rinunciato'].includes(schermata)) {
           setSchermata('scelta_tipo');
         }
-        // NON ricaricare cercaMercati() — non serve resettare tutto il mercato
+        // Ricarica dati dal backend per avere stato aggiornato (spunta_stato_coda dal DB)
+        cercaMercati();
       }
     };
     window.addEventListener('storage', handleSpuntaGestita);

@@ -53,6 +53,8 @@ export default function SpuntaNotifier() {
   const spuntaRef = useRef(spunta);
   const scadenzaChiamataRef = useRef(false); // flag per evitare doppie chiamate scadenza
   const scadenzaInCorsoRef = useRef(false); // blocca polling per 15s dopo scadenza turno
+  const dismissedSessionRef = useRef<number | null>(null); // session_id dell'ultima spunta dismissata — anti-ripetizione popup
+  const inAttesaSinceRef = useRef<number>(0); // timestamp di quando è entrato in IN_ATTESA — cooldown anti-race
 
   // Tieni spuntaRef sincronizzato
   useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
@@ -109,7 +111,8 @@ export default function SpuntaNotifier() {
 
     const checkCoda = async () => {
       const currentStato = spuntaRef.current.stato;
-      console.log(`[SpuntaNotifier] Polling: stato=${currentStato}, scadenzaInCorso=${scadenzaInCorsoRef.current}, SSE=${sseRef.current?.readyState}`);
+      const currentSessionId = spuntaRef.current.session_id;
+      console.log(`[SpuntaNotifier] Polling: stato=${currentStato}, scadenzaInCorso=${scadenzaInCorsoRef.current}, dismissed=${dismissedSessionRef.current}`);
       // NON fare polling se siamo in uno stato terminale o attivo
       if (currentStato === 'LISTA_POSTEGGI' || currentStato === 'ASSEGNATO' || currentStato === 'FINE_SPUNTA') return;
       // NON fare polling durante il passaggio turno (scadenza in corso)
@@ -123,6 +126,10 @@ export default function SpuntaNotifier() {
           // perché quando turno_attivo=true, anche in_coda=true!
           if (data.turno_attivo && data.session_id && (currentStato === 'IDLE' || currentStato === 'IN_ATTESA')) {
             // È il nostro turno (da IDLE o IN_ATTESA — il polling ha scoperto il turno)
+            // Se questa sessione era stata dismissata, ma ora c'è un turno attivo, resetta il dismiss
+            if (dismissedSessionRef.current === data.session_id) {
+              dismissedSessionRef.current = null;
+            }
             console.log(`[SpuntaNotifier] Polling: TURNO ATTIVO scoperto! Da ${currentStato} → TURNO_ATTIVO, secondi=${data.secondi_rimanenti}`);
             scadenzaChiamataRef.current = false;
             if (!sseRef.current || sseRef.current.readyState === EventSource.CLOSED) {
@@ -140,7 +147,16 @@ export default function SpuntaNotifier() {
             setTimerSecondi(data.secondi_rimanenti || 120);
           } else if (data.in_coda && data.session_id && currentStato === 'IDLE') {
             // L'impresa è in coda: connetti SSE
+            // Se è una NUOVA sessione diversa da quella dismissata, resetta il dismiss
+            if (dismissedSessionRef.current !== data.session_id) {
+              dismissedSessionRef.current = null;
+            } else {
+              // Stessa sessione già dismissata, non rientrare in coda
+              console.log('[SpuntaNotifier] Sessione già dismissata, ignoro');
+              return;
+            }
             connettiSSE(data.session_id);
+            inAttesaSinceRef.current = Date.now(); // segna inizio attesa per cooldown
             setSpunta({
               stato: 'IN_ATTESA',
               posizione: data.posizione,
@@ -158,10 +174,26 @@ export default function SpuntaNotifier() {
             // Non siamo più in coda e non è il nostro turno
             console.log(`[SpuntaNotifier] Polling: non in coda e non turno attivo, stato corrente=${currentStato}`);
             if (currentStato === 'IN_ATTESA' || currentStato === 'TURNO_ATTIVO') {
+              // ANTI-RIPETIZIONE: se questa sessione è già stata dismissata, non mostrare FINE_SPUNTA
+              if (dismissedSessionRef.current === currentSessionId) {
+                console.log('[SpuntaNotifier] Sessione già dismissata, non mostro FINE_SPUNTA');
+                setSpunta({ stato: 'IDLE' });
+                if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+                return;
+              }
+              // COOLDOWN: se siamo in IN_ATTESA da meno di 30 secondi, potrebbe essere una race condition
+              if (currentStato === 'IN_ATTESA' && inAttesaSinceRef.current > 0) {
+                const secondiInAttesa = (Date.now() - inAttesaSinceRef.current) / 1000;
+                if (secondiInAttesa < 30) {
+                  console.log(`[SpuntaNotifier] Cooldown: in attesa da solo ${secondiInAttesa.toFixed(0)}s, aspetto ancora`);
+                  return;
+                }
+              }
               scadenzaInCorsoRef.current = false; // sblocca polling
               setSpunta({
                 stato: 'FINE_SPUNTA',
                 motivo_fine: 'La spunta è terminata.',
+                session_id: currentSessionId,
               });
               if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
             }
@@ -224,6 +256,7 @@ export default function SpuntaNotifier() {
           } else {
             setSpunta(prev => {
               if (prev.stato === 'TURNO_ATTIVO' || prev.stato === 'LISTA_POSTEGGI') return prev;
+              inAttesaSinceRef.current = Date.now(); // cooldown anti-race
               return {
                 ...prev,
                 stato: 'IN_ATTESA',
@@ -243,13 +276,14 @@ export default function SpuntaNotifier() {
             }));
           }
         } else if (data.type === 'SPUNTA_TERMINATA') {
-          setSpunta({
+          setSpunta(prev => ({
             stato: 'FINE_SPUNTA',
             motivo_fine: data.motivo === 'FINE_POSTEGGI'
               ? 'Tutti i posteggi alla spunta sono stati assegnati'
               : 'Tutti i partecipanti alla spunta sono stati chiamati',
             posteggi_disponibili: data.posteggi_rimanenti,
-          });
+            session_id: prev.session_id, // preserva session_id per anti-ripetizione
+          }));
           es.close();
           sseRef.current = null;
         }
@@ -277,6 +311,7 @@ export default function SpuntaNotifier() {
           notificaScadenzaTurno();
           // NON chiudere SSE! Il backend invierà PROSSIMO_TURNO o SPUNTA_TERMINATA
           // Torna in attesa — la SSE aggiornerà lo stato quando il prossimo viene attivato
+          inAttesaSinceRef.current = Date.now(); // cooldown anti-race
           setSpunta(s => ({ ...s, stato: 'IN_ATTESA', motivo_fine: undefined }));
           return 0;
         }
@@ -394,23 +429,30 @@ export default function SpuntaNotifier() {
           saldo_residuo: data.wallet_saldo_residuo,
         });
       } else {
-        alert(data.messaggio || 'Errore nella scelta del posteggio');
+        console.error('[SpuntaNotifier] Errore scelta posteggio:', data.messaggio);
+        // Non usare alert() — mostra errore nel log e resta sulla lista
       }
-    } catch {
-      alert('Errore di rete. Riprova.');
+    } catch (err) {
+      console.error('[SpuntaNotifier] Errore di rete scelta posteggio:', err);
     }
     setLoadingScelta(false);
   };
 
   // Chiudi overlay
   const chiudiOverlay = () => {
+    // ANTI-RIPETIZIONE: salva la session_id dismissata per non riaprire lo stesso overlay
+    const sessionDismissing = spuntaRef.current.session_id;
+    if (sessionDismissing) {
+      dismissedSessionRef.current = sessionDismissing;
+    }
     setSpunta({ stato: 'IDLE' });
     setPosteggiLiberi([]);
     setTimerSecondi(0);
     scadenzaChiamataRef.current = false;
+    inAttesaSinceRef.current = 0;
     if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    // Salva in localStorage che la spunta è stata gestita
+    // Salva in localStorage che la spunta è stata gestita (notifica PresenzePage)
     localStorage.setItem('spunta_gestita', Date.now().toString());
   };
 
