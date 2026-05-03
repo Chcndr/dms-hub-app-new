@@ -1212,29 +1212,7 @@ export default function PresenzePage() {
 
                 {/* PRESENZA SPUNTA / ATTESA SPUNTA */}
                 {haSpunta && (() => {
-                  // Mostra ATTESA SPUNTA solo se in coda senza posteggio assegnato
-                  if (spuntaInAttesa.length > 0) {
-                    return (
-                      <div className="w-full bg-gradient-to-r from-yellow-600 to-amber-700 rounded-2xl p-4 sm:p-6 text-left shadow-lg shadow-yellow-600/20">
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                            <Clock className="w-7 h-7 sm:w-9 sm:h-9 text-white animate-pulse" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-base sm:text-xl font-black text-white leading-tight">ATTESA SPUNTA</p>
-                            <p className="text-xs sm:text-sm text-white/70 mt-1">
-                              Presenza registrata — in attesa del turno
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                  // Se ha posteggio assegnato, non mostrare nulla (deposito/uscita gestiscono il posteggio)
-                  if (spuntaConPosteggio.length > 0) {
-                    return null;
-                  }
-                  // Se ha rinunciato o è stato saltato, mostra card grigia
+                  // PRIMA controlla se ha rinunciato o è stato saltato (priorità massima)
                   const spuntaRinunciato = spuntisti.some(s => s.spunta_stato_coda === 'RINUNCIATO' || s.spunta_stato_coda === 'SALTATO');
                   if (spuntaRinunciato) {
                     const isSaldoNeg = spuntisti.some(s => s.spunta_stato_coda === 'SALTATO');
@@ -1254,6 +1232,29 @@ export default function PresenzePage() {
                       </div>
                     );
                   }
+                  // Se ha posteggio assegnato, non mostrare nulla (deposito/uscita gestiscono il posteggio)
+                  if (spuntaConPosteggio.length > 0) {
+                    return null;
+                  }
+                  // Mostra ATTESA SPUNTA solo se in coda senza posteggio assegnato
+                  if (spuntaInAttesa.length > 0) {
+                    return (
+                      <div className="w-full bg-gradient-to-r from-yellow-600 to-amber-700 rounded-2xl p-4 sm:p-6 text-left shadow-lg shadow-yellow-600/20">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                            <Clock className="w-7 h-7 sm:w-9 sm:h-9 text-white animate-pulse" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-base sm:text-xl font-black text-white leading-tight">ATTESA SPUNTA</p>
+                            <p className="text-xs sm:text-sm text-white/70 mt-1">
+                              Presenza registrata — in attesa del turno
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  // (RINUNCIATO/SALTATO e posteggio assegnato già gestiti sopra)
                   // Altrimenti mostra bottone PRESENZA SPUNTA per entrare in coda
                   return (
                     <button
@@ -1464,6 +1465,16 @@ export default function PresenzePage() {
                       </div>
                     );
                   }
+                  // Se ha rinunciato o è stato saltato, mostra card grigia/rossa
+                  if (conc.spunta_stato_coda === 'RINUNCIATO' || conc.spunta_stato_coda === 'SALTATO') {
+                    const isSaldoNeg = conc.spunta_stato_coda === 'SALTATO';
+                    return (
+                      <div className={`flex items-center gap-2 px-3 py-3 rounded-xl ${isSaldoNeg ? 'bg-red-500/10 border border-red-500/30' : 'bg-gray-500/10 border border-gray-500/30'}`}>
+                        <XCircle className={`w-5 h-5 flex-shrink-0 ${isSaldoNeg ? 'text-red-400' : 'text-gray-400'}`} />
+                        <span className={`text-base font-semibold ${isSaldoNeg ? 'text-red-400' : 'text-gray-400'}`}>{isSaldoNeg ? 'SALDO NEGATIVO' : 'RINUNCIATO'}</span>
+                      </div>
+                    );
+                  }
                   // Non ha ancora fatto presenza spunta → mostra bottone PRESENZA SPUNTA
                   if (!conc.gia_presente_oggi) {
                     return (
@@ -1558,6 +1569,12 @@ export default function PresenzePage() {
   // ─── SCHERMATA: PRESENZA SPUNTA ─────────────────────────────────────────
   if (schermata === "presenza_spunta" && mercatoSelezionato) {
     const spuntaGiaPresente = mercatoSelezionato.concessions.some(c => c.tipo_posteggio === 'Spunta' && c.gia_presente_oggi);
+    const spuntaRinunciatoOSaltato = mercatoSelezionato.concessions.some(c => c.tipo_posteggio === 'Spunta' && (c.spunta_stato_coda === 'RINUNCIATO' || c.spunta_stato_coda === 'SALTATO'));
+    // Se ha rinunciato/saltato, torna alla schermata scelta_tipo
+    if (spuntaRinunciatoOSaltato) {
+      setSchermata('scelta_tipo');
+      return null;
+    }
     return (
       <div className="min-h-screen bg-[#0b1220] flex flex-col">
         {renderHeader("Presenza Spunta", () => setSchermata("scelta_tipo"))}
@@ -1610,6 +1627,17 @@ export default function PresenzePage() {
                         titolo: "RINUNCIA REGISTRATA",
                         messaggio: "Hai rinunciato alla spunta. Non riceverai un posteggio e non guadagni il punto presenza.",
                       });
+                      // Aggiorna stato locale: segna come rinunciato e non più presente
+                      setMercatoSelezionato(prev => {
+                        if (!prev) return prev;
+                        return {
+                          ...prev,
+                          concessions: prev.concessions.map(c =>
+                            c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: false, spunta_stato_coda: 'RINUNCIATO' } : c
+                          )
+                        };
+                      });
+                      setSpuntaTurno({ stato: 'RINUNCIATO' });
                       setSchermata('scelta_tipo');
                       if (sseRef.current) sseRef.current.close();
                     } else {
@@ -1856,6 +1884,17 @@ export default function PresenzePage() {
                   titolo: "RINUNCIA REGISTRATA",
                   messaggio: "Hai rinunciato alla spunta. Non riceverai un posteggio e non guadagni il punto presenza.",
                 });
+                // Aggiorna stato locale: segna come rinunciato
+                setMercatoSelezionato(prev => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    concessions: prev.concessions.map(c =>
+                      c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: false, spunta_stato_coda: 'RINUNCIATO' } : c
+                    )
+                  };
+                });
+                setSpuntaTurno({ stato: 'RINUNCIATO' });
                 setSchermata('scelta_tipo');
                 if (sseRef.current) sseRef.current.close();
               } else {
@@ -1931,6 +1970,17 @@ export default function PresenzePage() {
                   titolo: "RINUNCIA REGISTRATA",
                   messaggio: "Hai rinunciato al turno. Non riceverai un posteggio e non guadagni il punto presenza.",
                 });
+                // Aggiorna stato locale: segna come rinunciato
+                setMercatoSelezionato(prev => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    concessions: prev.concessions.map(c =>
+                      c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: false, spunta_stato_coda: 'RINUNCIATO' } : c
+                    )
+                  };
+                });
+                setSpuntaTurno({ stato: 'RINUNCIATO' });
                 setSchermata('scelta_tipo');
                 if (sseRef.current) sseRef.current.close();
               } else {
