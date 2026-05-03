@@ -1,7 +1,17 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.1.8 (Fix Assenze + UI Deposito/Chiudi)
+> **Versione:** 10.1.9 (Fix Storico + Rinunce + Semaforo Saldo)
 > **Data:** 03 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.1.9 (03 Mag 2026)
+> **Fix storico sessioni, rinunce, banner saldo negativo, semaforo SALDO NEG**
+>
+> 1. **Storico sessioni ordinamento**: aggiunto `created_at DESC` per sessioni dello stesso giorno + container 600px
+> 2. **Rinunce incremento**: auto-skip (saldo negativo) e rinuncia manuale ora incrementano `assenze_non_giustificate` nella graduatoria
+> 3. **Banner spuntista dopo saldo negativo**: click sul popup rosso ora fa anche fetchSpuntaLiveTurno per aggiornare il banner
+> 4. **Semaforo SALDO NEG.**: nella lista spuntisti, chi ha wallet negativo mostra badge rosso "SALDO NEG."
+> 5. **Pulizia sessioni zombie**: chiusa sessione 482 IN_CORSO rimasta aperta
 >
 > ---
 > ### CHANGELOG v10.1.8 (03 Mag 2026)
