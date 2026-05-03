@@ -3445,7 +3445,7 @@ function PosteggiTab({
 
       {/* Popup fullscreen saldo negativo */}
       {showSaldoNegativoPopup.show && (
-        <div className="fixed inset-0 bg-red-900/95 flex items-center justify-center z-[9999]" onClick={() => setShowSaldoNegativoPopup(prev => ({...prev, show: false}))}>
+        <div className="fixed inset-0 bg-red-900/95 flex items-center justify-center z-[9999]" onClick={async () => { setShowSaldoNegativoPopup(prev => ({...prev, show: false})); await fetchSpuntaLiveTurno(); await fetchStallsAndPresenzeOnly(); }}>
           <div className="text-center p-8 max-w-lg">
             <div className="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
               <span className="text-5xl">⛔</span>
@@ -4173,6 +4173,10 @@ function PosteggiTab({
                         // Verde - presente ma non ha ancora scelto
                         statoLabel = "PRESENTE";
                         statoColor = "bg-[#10b981]/20 text-[#10b981]";
+                      } else if (parseFloat(String(spuntista.wallet_balance || spuntista.wallet_saldo || 0)) < 0) {
+                        // Rosso - saldo negativo
+                        statoLabel = "SALDO NEG.";
+                        statoColor = "bg-[#ef4444]/20 text-[#ef4444]";
                       } else {
                         // Grigio - non ancora presente
                         statoLabel = "IN ATTESA";

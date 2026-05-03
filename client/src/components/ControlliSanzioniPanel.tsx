@@ -3575,7 +3575,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
                   <p>Nessuna sessione mercato chiusa</p>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
                   {marketSessions
                     .filter(session => {
                       if (!storicoDateFilter) return true;
