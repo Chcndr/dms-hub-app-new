@@ -1,7 +1,17 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.1.7 (Fix Storico Sessioni)
+> **Versione:** 10.1.8 (Fix Assenze + UI Deposito/Chiudi)
 > **Data:** 03 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.1.8 (03 Mag 2026)
+> **Fix assenze lista posteggi, rinomina Ass->Rin per spuntisti, deposito/chiudi solo in spunta, auto-chiusura popup**
+>
+> 1. **Assenze concessionari a zero**: il frontend cercava `assenze_totali` (sempre 0) invece di `assenze_non_giustificate`
+> 2. **Spuntisti "Ass." -> "Rin."**: colonna rinominata in "Rinunce" + usa `assenze_non_giustificate`
+> 3. **Backend spuntisti**: aggiunto campo `assenze_non_giustificate` e `assenze_totali` all'endpoint `/api/presenze/spuntisti/mercato`
+> 4. **Deposito/Chiudi visibili solo in Spunta**: rimessi dentro blocco `isSpuntaMode` senza bug reset
+> 5. **Auto-chiusura popup**: dopo conferma deposito rifiuti o chiudi mercato singolo, il popup Leaflet si chiude automaticamente
 >
 > ---
 > ### CHANGELOG v10.1.7 (03 Mag 2026)
