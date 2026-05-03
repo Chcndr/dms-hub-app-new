@@ -1192,7 +1192,8 @@ export default function PresenzePage() {
             return (
               <>
                 {/* PRESENZA POSTEGGIO: visibile se ha concessioni e non tutti hanno fatto presenza */}
-                {haConcessioni && !tuttiPresenti && mercatoSelezionato.session_fase !== 'SPUNTA' && (
+                {/* Nascosto durante fase SPUNTA o se la spunta è in corso (spuntisti in attesa/con posteggio) */}
+                {haConcessioni && !tuttiPresenti && mercatoSelezionato.session_fase !== 'SPUNTA' && spuntaInAttesa.length === 0 && spuntaConPosteggio.length === 0 && (
                   <button
                     onClick={() => setSchermata("presenza_posteggio")}
                     className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"

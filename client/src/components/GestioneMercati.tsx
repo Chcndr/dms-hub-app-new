@@ -2830,6 +2830,8 @@ function PosteggiTab({
             }
 
             await fetchData();
+            // Aggiorna immediatamente la barra turno spunta
+            await fetchSpuntaLiveTurno();
           } else {
             console.warn(
               "API assegna-posteggio-spunta risposta non success:",
@@ -3982,6 +3984,18 @@ function PosteggiTab({
                   const dbStall = stallsByNumber.get(String(stallNumber));
                   if (dbStall) {
                     setSelectedStallId(dbStall.id);
+                    // Centra la mappa sul posteggio cliccato (animazione flyTo)
+                    const mapFeature = mapData?.stalls_geojson?.features?.find(
+                      (f: any) => String(f.properties.number) === String(stallNumber)
+                    );
+                    if (mapFeature && mapFeature.geometry.type === 'Polygon') {
+                      const coords = mapFeature.geometry.coordinates as [number, number][][];
+                      const lats = coords[0].map((c: [number, number]) => c[1]);
+                      const lngs = coords[0].map((c: [number, number]) => c[0]);
+                      const centerLat = lats.reduce((a: number, b: number) => a + b, 0) / lats.length;
+                      const centerLng = lngs.reduce((a: number, b: number) => a + b, 0) / lngs.length;
+                      setSelectedStallCenter([centerLat, centerLng]);
+                    }
                     // Scroll alla riga nella lista (solo dentro il container, non la pagina)
                     setTimeout(() => {
                       const row = document.querySelector(
