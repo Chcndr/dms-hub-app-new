@@ -1,7 +1,28 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.3 (Fix Definitivo Popup Ripetitivi, Rinuncia Spunta, Race Condition)
-> **Data:** 03 Maggio 2026
+> **Versione:** 10.2.4 (Fix 5 Bug Critici Spunta: Graduatoria, Mappa, Tab Presenza)
+> **Data:** 04 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.4 (04 Mag 2026)
+> **Fix 5 Bug Critici: Graduatoria doppia, Animazione mappa, Tab PRESENZA POSTEGGIO, Barra turno PA**
+>
+> **Problemi risolti:**
+> 1. **BUG 5 (CRITICO) — Graduatoria +2 su entrambi i posteggi (Backend)**: Il checkin su un secondo posteggio della stessa impresa incrementava la graduatoria una seconda volta. La `graduatoria_presenze` ha constraint unico `(market_id, impresa_id, tipo, anno)` senza `stall_id`. **Fix**: aggiunta query `altrePresenzeOggi` che verifica se l'impresa ha già fatto checkin oggi su un altro posteggio. Se sì, `incrementaPresenze = false`.
+> 2. **BUG 3 — Tab PRESENZA POSTEGGIO visibile durante fase SPUNTA (App)**: Il tab restava visibile anche quando la spunta era in corso perché `session_fase` non si aggiornava in tempo reale. **Fix**: aggiunto check `spuntaInAttesa.length === 0 && spuntaConPosteggio.length === 0` — se ci sono spuntisti in attesa o con posteggio, il tab è nascosto.
+> 3. **BUG 1 — Animazione mappa non parte dalla lista spunta (PA)**: Il `onStallClick` settava solo `selectedStallId` ma NON `selectedStallCenter`. **Fix**: aggiunto calcolo centro poligono dal GeoJSON e `setSelectedStallCenter([lat, lng])` per triggerare `flyTo` in `MarketMapComponent`.
+> 4. **BUG 2 — Barra spunta PA non aggiorna dopo assegnazione**: Dopo il successo di `assegna-posteggio-spunta`, la barra turno non si aggiornava immediatamente. **Fix**: aggiunto `await fetchSpuntaLiveTurno()` dopo `fetchData()` nel successo dell'assegnazione.
+> 5. **BUG 4 — MIO TEST concessionario nello storico**: Collegato a BUG 5 — la graduatoria veniva incrementata erroneamente. Con il fix BUG 5, il conteggio sarà corretto per le prossime sessioni.
+>
+> **File modificati:**
+> - `presenze-live.js` (Backend): query `altrePresenzeOggi` prima di incrementare graduatoria
+> - `PresenzePage.tsx`: check `spuntaInAttesa/spuntaConPosteggio` per nascondere tab PRESENZA POSTEGGIO
+> - `GestioneMercati.tsx`: calcolo centro poligono in `onStallClick` + `fetchSpuntaLiveTurno` dopo assegnazione
+>
+> **Regola critica graduatoria (NUOVA):**
+> - La graduatoria si incrementa SOLO al PRIMO checkin del giorno per impresa/mercato/tipo
+> - Se l'impresa ha più posteggi, il secondo/terzo checkin NON incrementa
+> - Verifica: `SELECT COUNT(*) FROM vendor_presences WHERE impresa_id AND market_id AND giorno_mercato AND id != presenzaId`
 >
 > ---
 > ### CHANGELOG v10.2.3 (03 Mag 2026)
