@@ -68,6 +68,7 @@ interface ConcessioneInfo {
   gia_presente_oggi: boolean;
   deposito_rifiuti_fatto: boolean;
   uscita_registrata: boolean;
+  spunta_stato_coda?: string | null;
 }
 
 interface PosteggioLibero {
@@ -77,7 +78,7 @@ interface PosteggioLibero {
   daily_fee: number;
 }
 interface SpuntaTurnoInfo {
-  stato: 'IN_ATTESA' | 'TURNO_ATTIVO' | 'ASSEGNATO' | 'FINE_SPUNTA';
+  stato: 'IN_ATTESA' | 'TURNO_ATTIVO' | 'ASSEGNATO' | 'FINE_SPUNTA' | 'SALDO_NEGATIVO' | 'RINUNCIATO';
   impresa_nome?: string;
   posizione?: number;
   coda_id?: number;
@@ -91,6 +92,7 @@ interface SpuntaTurnoInfo {
   totale_in_coda?: number;
   posizione_graduatoria?: number | string;
   presenze_totali?: number;
+  saldo?: number;
 }
 type SchermataCorrente = 
   | "caricamento"
@@ -107,7 +109,9 @@ type SchermataCorrente =
   | "spunta_turno"
   | "spunta_lista_posteggi"
   | "spunta_assegnato"
-  | "spunta_fine";
+  | "spunta_fine"
+  | "spunta_saldo_negativo"
+  | "spunta_rinunciato";
 
 interface PopupInfo {
   tipo: "successo" | "errore" | "avviso";
@@ -252,6 +256,24 @@ export default function PresenzePage() {
             setSchermata('spunta_turno');
           } else {
             setSchermata('spunta_attesa');
+          }
+        } else if (data.type === 'SALDO_NEGATIVO_SKIP') {
+          // Spuntista saltato per saldo negativo
+          if (data.impresa_id === impresaId) {
+            setSpuntaTurno({
+              stato: 'SALDO_NEGATIVO',
+              impresa_nome: data.impresa_nome,
+              saldo: data.saldo,
+            });
+            setSchermata('spunta_saldo_negativo');
+          }
+        } else if (data.type === 'TURNO_RINUNCIATO') {
+          // Conferma rinuncia (potrebbe arrivare se un altro spuntista rinuncia)
+          if (data.impresa_id === impresaId) {
+            setSpuntaTurno({
+              stato: 'RINUNCIATO',
+            });
+            setSchermata('spunta_rinunciato');
           }
         }
       } catch (err) { console.error('SSE parse error:', err); }
@@ -539,7 +561,7 @@ export default function PresenzePage() {
         setTimerSecondi(0);
         setPosteggiLiberi([]);
         // Torna alla schermata scelta_tipo se eravamo in una schermata spunta
-        if (['spunta_attesa', 'spunta_turno', 'spunta_lista_posteggi', 'spunta_assegnato', 'spunta_fine'].includes(schermata)) {
+        if (['spunta_attesa', 'spunta_turno', 'spunta_lista_posteggi', 'spunta_assegnato', 'spunta_fine', 'spunta_saldo_negativo', 'spunta_rinunciato'].includes(schermata)) {
           setSchermata('scelta_tipo');
         }
         // NON ricaricare cercaMercati() — non serve resettare tutto il mercato
@@ -1169,7 +1191,7 @@ export default function PresenzePage() {
             return (
               <>
                 {/* PRESENZA POSTEGGIO: visibile se ha concessioni e non tutti hanno fatto presenza */}
-                {haConcessioni && !tuttiPresenti && (
+                {haConcessioni && !tuttiPresenti && mercatoSelezionato.session_fase !== 'SPUNTA' && (
                   <button
                     onClick={() => setSchermata("presenza_posteggio")}
                     className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"
@@ -1211,6 +1233,26 @@ export default function PresenzePage() {
                   // Se ha posteggio assegnato, non mostrare nulla (deposito/uscita gestiscono il posteggio)
                   if (spuntaConPosteggio.length > 0) {
                     return null;
+                  }
+                  // Se ha rinunciato o è stato saltato, mostra card grigia
+                  const spuntaRinunciato = spuntisti.some(s => s.spunta_stato_coda === 'RINUNCIATO' || s.spunta_stato_coda === 'SALTATO');
+                  if (spuntaRinunciato) {
+                    const isSaldoNeg = spuntisti.some(s => s.spunta_stato_coda === 'SALTATO');
+                    return (
+                      <div className={`w-full rounded-2xl p-4 sm:p-6 text-left shadow-lg ${isSaldoNeg ? 'bg-gradient-to-r from-red-800 to-red-900 shadow-red-800/20' : 'bg-gradient-to-r from-gray-600 to-gray-700 shadow-gray-600/20'}`}>
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0`}>
+                            <XCircle className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-base sm:text-xl font-black text-white leading-tight">{isSaldoNeg ? 'SALDO NEGATIVO' : 'RINUNCIA SPUNTA'}</p>
+                            <p className="text-xs sm:text-sm text-white/70 mt-1">
+                              {isSaldoNeg ? 'Non puoi partecipare alla spunta con saldo negativo' : 'Hai rinunciato alla spunta di oggi'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
                   }
                   // Altrimenti mostra bottone PRESENZA SPUNTA per entrare in coda
                   return (
@@ -2016,6 +2058,61 @@ export default function PresenzePage() {
         )}
         <Button
           onClick={() => {
+            cercaMercati();
+            setSchermata('scelta_tipo');
+          }}
+          className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-6 rounded-2xl font-bold shadow-xl"
+        >
+          CHIUDI
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── SCHERMATA: SALDO NEGATIVO (saltato automaticamente) ────────────────────────
+  if (schermata === "spunta_saldo_negativo") {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-red-700 to-red-900 flex flex-col items-center justify-center p-6 text-white">
+        <XCircle className="w-24 h-24 mb-8 drop-shadow-lg" strokeWidth={1.5} />
+        <h1 className="text-3xl sm:text-4xl font-black text-center mb-6 leading-tight drop-shadow-lg">
+          SALDO NEGATIVO
+        </h1>
+        <p className="text-xl sm:text-2xl text-center text-white/90 mb-4 max-w-md leading-relaxed">
+          Non puoi ricevere un posteggio perch\u00e9 il tuo saldo \u00e8 negativo.
+        </p>
+        {spuntaTurno?.saldo !== undefined && (
+          <p className="text-2xl font-bold text-red-200 mb-10">
+            Saldo: \u20ac{Number(spuntaTurno.saldo).toFixed(2)}
+          </p>
+        )}
+        <Button
+          onClick={() => {
+            if (sseRef.current) sseRef.current.close();
+            cercaMercati();
+            setSchermata('scelta_tipo');
+          }}
+          className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-6 rounded-2xl font-bold shadow-xl"
+        >
+          CHIUDI
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── SCHERMATA: RINUNCIA CONFERMATA ─────────────────────────────────────────────
+  if (schermata === "spunta_rinunciato") {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-orange-600 to-orange-800 flex flex-col items-center justify-center p-6 text-white">
+        <AlertTriangle className="w-24 h-24 mb-8 drop-shadow-lg" strokeWidth={1.5} />
+        <h1 className="text-3xl sm:text-4xl font-black text-center mb-6 leading-tight drop-shadow-lg">
+          RINUNCIA REGISTRATA
+        </h1>
+        <p className="text-xl sm:text-2xl text-center text-white/90 mb-4 max-w-md leading-relaxed">
+          Hai rinunciato alla spunta. Non riceverai un posteggio e non guadagni il punto presenza.
+        </p>
+        <Button
+          onClick={() => {
+            if (sseRef.current) sseRef.current.close();
             cercaMercati();
             setSchermata('scelta_tipo');
           }}

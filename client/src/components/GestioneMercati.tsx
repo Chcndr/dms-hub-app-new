@@ -2298,6 +2298,8 @@ function PosteggiTab({
 
   // Popup fullscreen saldo negativo
   const [showSaldoNegativoPopup, setShowSaldoNegativoPopup] = useState<{show: boolean, messaggio: string, impresa: string, saldo: number}>({show: false, messaggio: '', impresa: '', saldo: 0});
+  // Popup fullscreen spunta finita
+  const [showSpuntaFinitaPopup, setShowSpuntaFinitaPopup] = useState(false);
   // Spunta Live: turno corrente e polling
   const [spuntaLiveTurno, setSpuntaLiveTurno] = useState<any>(null);
   const [spuntaTimerSecondi, setSpuntaTimerSecondi] = useState(0);
@@ -2317,6 +2319,12 @@ function PosteggiTab({
         setSpuntaLiveTurno(data);
         setSpuntaTimerSecondi(data.secondi_rimanenti || 0);
       } else {
+        // Se la spunta è terminata, mostra popup giallo SPUNTA FINITA
+        if (data.spunta_terminata && isSpuntaMode) {
+          setShowSpuntaFinitaPopup(true);
+          // Aggiorna la lista posteggi
+          fetchStallsAndPresenzeOnly();
+        }
         setSpuntaLiveTurno(null);
         setSpuntaTimerSecondi(0);
       }
@@ -2339,7 +2347,7 @@ function PosteggiTab({
   useEffect(() => {
     if (isSpuntaMode) {
       fetchSpuntaLiveTurno();
-      spuntaLivePollingRef.current = setInterval(fetchSpuntaLiveTurno, 5000);
+      spuntaLivePollingRef.current = setInterval(fetchSpuntaLiveTurno, 2000);
     } else {
       setSpuntaLiveTurno(null);
       if (spuntaLivePollingRef.current) { clearInterval(spuntaLivePollingRef.current); spuntaLivePollingRef.current = null; }
@@ -3458,6 +3466,19 @@ function PosteggiTab({
           </div>
         </div>
       )}
+      {/* Popup fullscreen SPUNTA FINITA */}
+      {showSpuntaFinitaPopup && (
+        <div className="fixed inset-0 bg-yellow-700/95 flex items-center justify-center z-[9999]" onClick={() => { setShowSpuntaFinitaPopup(false); }}>
+          <div className="text-center p-8 max-w-lg">
+            <div className="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-5xl">✅</span>
+            </div>
+            <h1 className="text-white text-4xl font-black mb-4">SPUNTA FINITA!</h1>
+            <p className="text-white/90 text-xl mb-8">Tutti gli spuntisti sono stati processati.<br/>La spunta è terminata.</p>
+            <button className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-4 rounded-2xl font-bold" onClick={() => setShowSpuntaFinitaPopup(false)}>CHIUDI</button>
+          </div>
+        </div>
+      )}
             {/* Barra LIBERA TUTTI (modalità Libera) */}
       {isLiberaMode && (
         <div className="mb-4">
@@ -4161,8 +4182,12 @@ function PosteggiTab({
                         // Verde con numero posteggio - ha scelto posteggio
                         statoLabel = stallScelto;
                         statoColor = "bg-[#10b981]/20 text-[#10b981]";
+                      } else if (statoPresenza === "saldo_negativo") {
+                        // Rosso - saltato per saldo negativo
+                        statoLabel = "SALDO NEG.";
+                        statoColor = "bg-[#ef4444]/20 text-[#ef4444]";
                       } else if (statoPresenza === "rinunciato") {
-                        // Arancione - ha fatto presenza ma non ha scelto posteggio
+                        // Arancione - ha rinunciato volontariamente
                         statoLabel = "RINUNCIATO";
                         statoColor = "bg-[#f59e0b]/20 text-[#f59e0b]";
                       } else if (statoPresenza === "rinuncia_forzata") {
