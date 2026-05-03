@@ -541,10 +541,6 @@ export default function SpuntaNotifier() {
                   mapData={mapData}
                   stallsData={stallsData}
                   selectedStallNumber={selectedStallForMap || undefined}
-                  selectedStallCenter={selectedStallCenter || undefined}
-                  viewMode="mercato"
-                  viewTrigger={viewTrigger}
-                  isMarketView={true}
                   isSpuntaMode={false}
                   height="100%"
                 />

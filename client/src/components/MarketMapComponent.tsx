@@ -1163,8 +1163,8 @@ export function MarketMapComponent({
                               )}
 
                             {isLiberaMode &&
-                              (displayStatus === "occupato" ||
-                                (displayStatus === "riservato" && !isSpuntaMode)) && (
+                              ((displayStatus as string) === "occupato" ||
+                                ((displayStatus as string) === "riservato" && !isSpuntaMode)) && (
                                 <button
                                   className="w-full bg-[#10b981] hover:bg-[#10b981]/80 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                   onClick={async e => {
