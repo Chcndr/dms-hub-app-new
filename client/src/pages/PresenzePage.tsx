@@ -309,6 +309,25 @@ export default function PresenzePage() {
           }),
         }
       );
+      // Gestione esplicita errori HTTP (403 SALDO_NEGATIVO, etc.)
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({} as Record<string, unknown>));
+        if (errData.errore === 'SALDO_NEGATIVO') {
+          setPopup({
+            tipo: 'errore',
+            titolo: 'ACCESSO NEGATO',
+            messaggio: (errData.messaggio as string) || `Saldo insufficiente. Ricaricare il wallet.`,
+          });
+        } else {
+          setPopup({
+            tipo: 'errore',
+            titolo: 'ERRORE',
+            messaggio: (errData.messaggio as string) || (errData.errore as string) || 'Errore dal server.',
+          });
+        }
+        setLoadingAzione(false);
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setSpuntaTurno({
@@ -319,7 +338,7 @@ export default function PresenzePage() {
         });
         setSchermata('spunta_assegnato');
       } else if (data.errore === 'SALDO_NEGATIVO') {
-        // Messaggio rosso a tutto schermo per saldo negativo
+        // Fallback: se il backend restituisce 200 con errore nel body
         setPopup({
           tipo: 'errore',
           titolo: 'ACCESSO NEGATO',

@@ -2714,6 +2714,33 @@ function PosteggiTab({
             }
           );
 
+          // Gestione errore HTTP 403 (SALDO_NEGATIVO)
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({} as Record<string, unknown>));
+            if (errData.errore === 'SALDO_NEGATIVO') {
+              toast.error(
+                `\u26d4 SALDO NEGATIVO: ${errData.messaggio || 'Impossibile assegnare il posteggio.'}`,
+                { duration: 5000 }
+              );
+              // Rimetti il posteggio a riservato nel frontend
+              setStalls(prev =>
+                prev.map(s =>
+                  s.id === stallId ? { ...s, status: "riservato" } : s
+                )
+              );
+            } else {
+              toast.error(
+                `Errore assegnazione: ${(errData.messaggio as string) || (errData.error as string) || 'Errore dal server.'}`,
+                { duration: 3000 }
+              );
+              setStalls(prev =>
+                prev.map(s =>
+                  s.id === stallId ? { ...s, status: "riservato" } : s
+                )
+              );
+            }
+            return;
+          }
           const data = await response.json();
           if (data.success) {
             if (data.no_spuntisti) {
@@ -4397,20 +4424,26 @@ function PosteggiTab({
                           String(p.stall_number) === String(stall.number) ||
                           p.stallId === stall.id
                       );
-                      // Cerca graduatoria: prima per posteggio (ID), poi per impresa del concessionario, poi per spuntista
+                      // Cerca graduatoria: per posteggio (stall_id) con tipo CONCESSION, poi per impresa con tipo corretto
                       let gradRecord = graduatoria.find(
-                        g => g.stallId === stall.id || g.stall_id === stall.id
+                        g => (g.stallId === stall.id || g.stall_id === stall.id) && (g.tipo === 'CONCESSION' || g.wallet_type === 'CONCESSION')
                       );
-                      // Se non trovato, cerca per impresa_id del concessionario
+                      // Se non trovato per stall_id, cerca per impresa_id del concessionario con tipo CONCESSION
                       if (!gradRecord && stall.impresa_id) {
                         gradRecord = graduatoria.find(
-                          g => g.impresa_id === stall.impresa_id
+                          g => g.impresa_id === stall.impresa_id && (g.tipo === 'CONCESSION' || g.wallet_type === 'CONCESSION')
                         );
                       }
-                      // Se non trovato e c'è uno spuntista assegnato, cerca per impresa_id dello spuntista
+                      // Se non trovato e c'è uno spuntista assegnato, cerca per impresa_id dello spuntista con tipo SPUNTA
                       if (!gradRecord && stall.spuntista_impresa_id) {
                         gradRecord = graduatoria.find(
-                          g => g.impresa_id === stall.spuntista_impresa_id
+                          g => g.impresa_id === stall.spuntista_impresa_id && (g.tipo === 'SPUNTA' || g.wallet_type === 'SPUNTA')
+                        );
+                      }
+                      // Fallback senza filtro tipo se nessun record trovato
+                      if (!gradRecord) {
+                        gradRecord = graduatoria.find(
+                          g => (g.stallId === stall.id || g.stall_id === stall.id)
                         );
                       }
 

@@ -1,7 +1,37 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.1.3 (Fix Modulo Spunta, Graduatoria, Orari e UI Presenze)
+> **Versione:** 10.1.4 (Fix Definitivi Modulo Spunta + Schema Tecnico Completo)
 > **Data:** 03 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.1.4 (03 Mag 2026)
+> **Fix Definitivi Modulo Spunta: Popup Saldo Negativo, Wallet Spuntisti, Presenze Graduatoria, Blocco PA, Schema Tecnico**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | *da pushare* | In attesa |
+> | Hetzner backend (api.mio-hub.me) | *da pushare* | Autodeploy |
+> | GitHub `dms-hub-app-new` master | *da pushare* | In attesa |
+> | Vercel frontend | *da pushare* | Autodeploy |
+>
+> **BACKEND:**
+> - **Fix `markets.js` stalls wallet_balance:** `COALESCE(w.balance, w_spunta.balance)` per mostrare il saldo corretto anche per gli spuntisti (prima mostrava €0.00 perché il JOIN su concession_id falliva per wallet SPUNTA).
+> - **Fix `test-mercato.js` assegna-posteggio-spunta:** Aggiunto blocco saldo negativo (HTTP 403 SALDO_NEGATIVO) prima dell'assegnazione. La PA non può più assegnare posteggi a spuntisti con saldo < 0.
+> - **Fix `presenze-live.js` checkin graduatoria:** `tipoGrad = walletType === 'SPUNTA' ? 'SPUNTA' : 'CONCESSION'` per restituire posizione e presenze corrette (non mescolando CONCESSION e SPUNTA).
+> - **Fix `presenze-live.js` scegli-posteggio:** Aggiorna presenza esistente (UPDATE) invece di crearne una nuova (INSERT). Blocco saldo negativo con HTTP 403.
+> - **Fix `presenze-live.js` avvia-spunta-live:** Riusa turno TURNO_ATTIVO già creato dal bridge invece di chiuderlo.
+> - **Fix `presenze.js` spuntisti/mercato:** JOIN con spunta_coda per stato/stall_number. Timezone Europe/Rome.
+> - **Fix `presenze.js` storico/dettaglio:** Cerca in TUTTE le sessioni del giorno con `ANY($1)`.
+>
+> **FRONTEND:**
+> - **Fix `PresenzePage.tsx` popup SALDO_NEGATIVO:** Gestione esplicita HTTP 403 con `if (!res.ok)` prima di `res.json()`. Mostra popup rosso fullscreen "ACCESSO NEGATO" (non più alert nativo bianco).
+> - **Fix `PresenzePage.tsx` card spunta rossa:** Rimosso `!isSpunta` dalla condizione colore → card con bordo/sfondo/testo rosso quando saldo negativo.
+> - **Fix `GestioneMercati.tsx` presenze graduatoria:** Filtro per `tipo` nella ricerca gradRecord: CONCESSION per concessionari, SPUNTA per spuntisti. Risolve presenze uguali per tutti e 81 presenze nel posteggio 1708.
+> - **Fix `GestioneMercati.tsx` blocco PA saldo negativo:** Gestione HTTP 403 nell'assegnazione posteggio spunta. Toast errore "SALDO NEGATIVO" e posteggio rimesso a "riservato".
+>
+> **DOCUMENTAZIONE:**
+> - **Nuova sezione "ARCHITETTURA TECNICA — MODULO PRESENZE E SPUNTA"** nel blueprint: schema completo tabelle (wallets, stalls, vendor_presences, graduatoria_presenze, spunta_coda, market_sessions), relazioni, flussi end-to-end (checkin, spunta live, lista concessionari PA, lista spuntisti PA), regole di business critiche (timezone, tipo graduatoria, blocco saldo, aggiornamento presenza, riuso turno), riferimento rapido endpoint API.
 >
 > ---
 > ### CHANGELOG v10.1.3 (03 Mag 2026)
@@ -1765,6 +1795,297 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 │  └────────────────────────────────────────────────────────────────────┘  │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🏛️ ARCHITETTURA TECNICA — MODULO PRESENZE E SPUNTA
+
+> **Versione:** 1.0.0 — 03 Maggio 2026
+> **Scopo:** Documentazione tecnica completa del sistema presenze (concessionari e spuntisti), graduatoria, e spunta live. Questo documento serve come riferimento definitivo per debug, manutenzione e sviluppo futuro.
+
+### 1. Schema Database — Tabelle Chiave
+
+#### 1.1 `wallets`
+
+Gestisce i saldi prepagati delle imprese per ogni mercato.
+
+| Colonna | Tipo | Descrizione |
+|---|---|---|
+| `id` | SERIAL PK | ID univoco wallet |
+| `company_id` | INTEGER FK → imprese.id | **ATTENZIONE: NON si chiama `impresa_id`!** Collegamento all'impresa |
+| `concession_id` | INTEGER FK → concessions.id | Solo per wallet CONCESSION — collega alla concessione specifica |
+| `market_id` | INTEGER FK → markets.id | Mercato di riferimento |
+| `type` | VARCHAR | `CONCESSION` oppure `SPUNTA` |
+| `balance` | DECIMAL | Saldo corrente (può essere negativo) |
+| `status` | VARCHAR | `ACTIVE`, `SUSPENDED`, etc. |
+
+**Regole critiche:**
+- Un'impresa ha **un wallet CONCESSION per ogni concessione** (collegato via `concession_id`)
+- Un'impresa ha **un solo wallet SPUNTA per mercato** (senza `concession_id`)
+- Il campo si chiama `company_id`, **MAI** `impresa_id` — errore frequente nelle query
+
+#### 1.2 `stalls`
+
+Posteggi fisici del mercato.
+
+| Colonna | Tipo | Descrizione |
+|---|---|---|
+| `id` | SERIAL PK | ID univoco posteggio |
+| `market_id` | INTEGER FK | Mercato di appartenenza |
+| `number` | VARCHAR | **Numero del posteggio (es. "1708", "116"). ATTENZIONE: si chiama `number`, NON `stall_number`!** |
+| `area_mq` | DECIMAL | Superficie in mq |
+| `status` | VARCHAR | `libero`, `occupato`, `riservato` |
+| `spuntista_impresa_id` | INTEGER | ID impresa dello spuntista assegnato (NULL se non assegnato) |
+| `spuntista_nome` | VARCHAR | Nome dello spuntista assegnato (NULL se non assegnato) |
+| `geometry_geojson` | JSONB | Poligono GIS per la mappa |
+| `is_active` | BOOLEAN | Se il posteggio è attivo |
+
+**Regole critiche:**
+- `spuntista_impresa_id` e `spuntista_nome` vengono popolati da `scegli-posteggio` e resettati a NULL da `uscita-mercato`
+- Il campo numero si chiama `number`, **MAI** `stall_number` (che esiste solo in `spunta_coda`)
+
+#### 1.3 `vendor_presences`
+
+Registro presenze giornaliere.
+
+| Colonna | Tipo | Descrizione |
+|---|---|---|
+| `id` | SERIAL PK | ID univoco presenza |
+| `vendor_id` | INTEGER FK | ID vendor (legacy) |
+| `stall_id` | INTEGER FK | Posteggio assegnato (NULL per spuntisti prima della scelta) |
+| `wallet_id` | INTEGER FK | Wallet utilizzato per il pagamento |
+| `market_id` | INTEGER FK | Mercato |
+| `impresa_id` | INTEGER FK | ID impresa |
+| `tipo_presenza` | VARCHAR | `CONCESSION` o `SPUNTA` |
+| `giorno_mercato` | DATE | Data della presenza (timezone Europe/Rome) |
+| `checkin_time` | TIMESTAMP | Orario di ingresso |
+| `checkout_time` | TIMESTAMP | Orario di uscita |
+| `orario_deposito_rifiuti` | TIMESTAMP | Orario deposito rifiuti |
+| `importo_addebitato` | DECIMAL | Importo addebitato al wallet |
+| `session_id` | INTEGER FK | Sessione mercato |
+
+**Regole critiche:**
+- Per gli spuntisti, la presenza viene creata dal bridge `avvia-spunta` con `stall_id=NULL` e `importo=0`
+- Quando lo spuntista sceglie il posteggio, `scegli-posteggio` **aggiorna** la presenza esistente (non ne crea una nuova)
+
+#### 1.4 `graduatoria_presenze`
+
+Classifica annuale per mercato — usata per ordinare la coda spunta.
+
+| Colonna | Tipo | Descrizione |
+|---|---|---|
+| `id` | SERIAL PK | ID univoco |
+| `market_id` | INTEGER FK | Mercato |
+| `impresa_id` | INTEGER FK | Impresa |
+| `wallet_id` | INTEGER FK | Wallet di riferimento |
+| `stall_id` | INTEGER FK | Posteggio (solo per CONCESSION) |
+| `tipo` | VARCHAR | **`CONCESSION` o `SPUNTA` — MAI mescolare!** |
+| `anno` | INTEGER | Anno di riferimento |
+| `presenze_totali` | INTEGER | Numero presenze accumulate |
+| `punteggio` | INTEGER | Punteggio graduatoria |
+| `posizione` | INTEGER | Posizione in classifica |
+| `data_prima_presenza` | DATE | Data della prima presenza (per spareggio) |
+| `assenze_totali` | INTEGER | Numero assenze |
+
+**Regole critiche:**
+- Constraint UNIQUE su `(market_id, impresa_id, tipo, anno)` — un record per tipo per impresa per anno
+- Un'impresa con concessione + spunta ha **DUE record**: uno CONCESSION (per stall) e uno SPUNTA
+- Le query devono **SEMPRE** filtrare per `tipo` — mai usare `tipo IN ('CONCESSION','SPUNTA')`
+- La posizione SPUNTA si calcola con `ROW_NUMBER() OVER (ORDER BY presenze_totali DESC, data_prima_presenza ASC)`
+
+#### 1.5 `spunta_coda`
+
+Coda di attesa per l'assegnazione posteggi durante la spunta live.
+
+| Colonna | Tipo | Descrizione |
+|---|---|---|
+| `id` | SERIAL PK | ID univoco |
+| `session_id` | INTEGER FK | Sessione mercato |
+| `impresa_id` | INTEGER FK | Impresa in coda |
+| `market_id` | INTEGER FK | Mercato |
+| `posizione` | INTEGER | Posizione nella coda |
+| `stato` | VARCHAR | `IN_ATTESA`, `TURNO_ATTIVO`, `ASSEGNATO`, `COMPLETATO`, `SCADUTO`, `RINUNCIATO` |
+| `stall_id` | INTEGER | Posteggio assegnato (dopo la scelta) |
+| `stall_number` | VARCHAR | Numero posteggio assegnato |
+| `punteggio_graduatoria` | INTEGER | Punteggio per l'ordinamento |
+| `presenze_annuali` | INTEGER | Presenze annuali al momento del checkin |
+| `turno_iniziato_at` | TIMESTAMP | Inizio del turno attivo |
+| `turno_scadenza_at` | TIMESTAMP | Scadenza del turno (auto-scadenza) |
+
+#### 1.6 `market_sessions`
+
+Sessioni giornaliere dei mercati.
+
+| Colonna | Tipo | Descrizione |
+|---|---|---|
+| `id` | SERIAL PK | ID univoco |
+| `market_id` | INTEGER FK | Mercato |
+| `data_mercato` | DATE | Data della sessione |
+| `stato` | VARCHAR | `APERTO`, `IN_CORSO`, `CHIUSO` |
+| `totale_presenze` | INTEGER | Contatore presenze |
+| `totale_incassato` | DECIMAL | Totale incassato |
+
+### 2. Relazioni tra Tabelle
+
+```
+imprese (id)
+  ├── wallets.company_id (1:N) — un wallet CONCESSION per concessione + un wallet SPUNTA per mercato
+  ├── vendor_presences.impresa_id (1:N) — presenze giornaliere
+  ├── graduatoria_presenze.impresa_id (1:N) — un record CONCESSION + un record SPUNTA per anno
+  ├── spunta_coda.impresa_id (1:N) — coda spunta per sessione
+  └── concessions.impresa_id (1:N) — concessioni attive
+
+stalls (id)
+  ├── concessions.stall_id (1:1) — concessione attiva sul posteggio
+  ├── vendor_presences.stall_id (N:1) — presenze su questo posteggio
+  └── spuntista_impresa_id → imprese.id — spuntista assegnato temporaneamente
+
+wallets (id)
+  ├── concession_id → concessions.id (solo tipo CONCESSION)
+  ├── company_id → imprese.id
+  └── market_id → markets.id
+
+market_sessions (id)
+  ├── spunta_coda.session_id (1:N)
+  └── vendor_presences.session_id (1:N)
+```
+
+### 3. Flussi End-to-End
+
+#### 3.1 Flusso Checkin Concessionario (App Impresa)
+
+1. L'impresa apre l'app → chiama `GET /api/presenze-live/mercati-oggi`
+2. Il backend restituisce i mercati con le concessioni dell'impresa (wallet, saldo, posteggio)
+3. L'impresa preme "PRESENZA" su un posteggio → chiama `POST /api/presenze-live/checkin`
+4. Il backend:
+   - Verifica sessione attiva (o ne crea una)
+   - Verifica non già presente oggi
+   - Calcola tariffa (area_mq * cost_per_sqm)
+   - Seleziona il wallet corretto (preferisce CONCESSION, fallback SPUNTA)
+   - Decurta il saldo dal wallet
+   - Crea `vendor_presences` con tipo = wallet.type
+   - Aggiorna `graduatoria_presenze` con tipo = wallet.type (CONCESSION o SPUNTA)
+   - Se wallet.type = SPUNTA e non c'è stall_id → inserisce in `spunta_coda`
+   - Restituisce posizione_graduatoria e presenze_totali **filtrate per tipo corretto**
+
+#### 3.2 Flusso Spunta Live (Bridge PA → App)
+
+**Fase 1: Preparazione (PA preme "Prepara")**
+1. PA chiama `POST /api/test-mercato/avvia-spunta` (bridge)
+2. Il bridge:
+   - Mette i posteggi liberi in stato `riservato`
+   - Per ogni spuntista: crea `vendor_presences` (stall_id=NULL, importo=0)
+   - Per ogni spuntista: incrementa `graduatoria_presenze` tipo=SPUNTA
+   - Popola `spunta_coda` (primo = TURNO_ATTIVO, altri = IN_ATTESA)
+   - Invia SSE SPUNTA_INIZIATA + PROSSIMO_TURNO
+3. PA chiama `POST /api/presenze-live/avvia-spunta-live/:marketId`
+4. Il backend riusa il turno TURNO_ATTIVO già creato dal bridge
+
+**Fase 2: Turno Attivo (App Spuntista)**
+1. Lo spuntista riceve SSE `PROSSIMO_TURNO` → l'app mostra "È IL TUO TURNO"
+2. Lo spuntista vede i posteggi liberi (`GET /api/presenze-live/spunta/posteggi-liberi/:sessionId`)
+3. Lo spuntista sceglie un posteggio → `POST /api/presenze-live/spunta/scegli-posteggio`
+4. Il backend:
+   - Verifica che il wallet SPUNTA abbia saldo >= 0 (altrimenti errore 403 SALDO_NEGATIVO)
+   - **Aggiorna** la vendor_presence esistente (stall_id + importo) — non ne crea una nuova
+   - Occupa lo stall (status=occupato, spuntista_nome, spuntista_impresa_id)
+   - Aggiorna spunta_coda (stato=ASSEGNATO, stall_id, stall_number)
+   - Decurta il wallet SPUNTA
+   - Chiama `attivaProssimoTurno()` per il prossimo spuntista
+
+**Fase 3: Auto-scadenza**
+- Se lo spuntista non sceglie entro il timeout, `spunta-turno-corrente` auto-scade il turno
+- Lo stato passa a SCADUTO e viene attivato il prossimo turno
+
+#### 3.3 Flusso Lista Concessionari PA (GestioneMercati)
+
+1. PA apre la scheda mercato → chiama in parallelo:
+   - `GET /api/markets/:id/stalls` → posteggi con wallet_balance e spuntista_nome
+   - `GET /api/presenze/mercato/:id` → presenze del giorno
+   - `GET /api/graduatoria/mercato/:id` → graduatoria completa (CONCESSION + SPUNTA)
+2. Il frontend mostra ogni posteggio con:
+   - Nome impresa (concessionario o spuntista)
+   - Wallet balance (dal campo `wallet_balance` della query stalls)
+   - Presenze totali (dal record graduatoria corrispondente)
+
+#### 3.4 Flusso Lista Spuntisti PA
+
+1. PA apre il tab "Spunta" → chiama `GET /api/presenze/spuntisti/mercato/:id`
+2. Il backend restituisce gli spuntisti con:
+   - Dati dalla `vendor_presences` del giorno (tipo SPUNTA)
+   - JOIN con `spunta_coda` per stato e stall_number
+   - JOIN con `wallets` (tipo SPUNTA) per il saldo
+
+### 4. Regole di Business Critiche
+
+#### 4.1 Timezone
+
+Tutte le date e gli orari devono usare il timezone `Europe/Rome`:
+
+- **SQL:** `NOW() AT TIME ZONE 'Europe/Rome'` per timestamp, `(NOW() AT TIME ZONE 'Europe/Rome')::date` per date
+- **JavaScript:** `new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' })` per date YYYY-MM-DD
+- **MAI usare:** `new Date().toISOString().split('T')[0]` (è UTC, sbaglia dopo mezzanotte)
+
+#### 4.2 Tipo Graduatoria
+
+- Le query sulla `graduatoria_presenze` devono **SEMPRE** filtrare per `tipo`
+- Per i concessionari: `tipo = 'CONCESSION'`
+- Per gli spuntisti: `tipo = 'SPUNTA'`
+- **MAI** usare `tipo IN ('CONCESSION', 'SPUNTA')` — mescola i dati e causa bug gravi
+
+#### 4.3 Blocco Saldo Negativo
+
+- Il backend `scegli-posteggio` verifica `wallet.balance < 0` **PRIMA** di procedere
+- Se il saldo è negativo → restituisce HTTP 403 con `{ errore: 'SALDO_NEGATIVO' }`
+- Il frontend deve gestire HTTP 403 leggendo il body JSON e mostrando un popup rosso fullscreen
+
+#### 4.4 Aggiornamento Presenza (Non Duplicazione)
+
+- Quando lo spuntista sceglie il posteggio, il backend **aggiorna** la presenza esistente (creata dal bridge)
+- La query usa `UPDATE vendor_presences SET stall_id = $1, importo_addebitato = $2 WHERE impresa_id = $3 AND market_id = $4 AND giorno_mercato = $5 AND stall_id IS NULL`
+- Questo evita presenze duplicate per lo stesso spuntista nello stesso giorno
+
+#### 4.5 Riuso Turno Attivo
+
+- `avvia-spunta-live` verifica se esiste già un turno TURNO_ATTIVO nella spunta_coda
+- Se esiste (creato dal bridge `avvia-spunta`) → lo riusa invece di chiuderlo e crearne uno nuovo
+- Questo evita di perdere il turno dello spuntista corrente
+
+### 5. Endpoint API — Riferimento Rapido
+
+| Endpoint | Metodo | File | Descrizione |
+|---|---|---|---|
+| `/api/presenze-live/mercati-oggi` | GET | presenze-live.js | Mercati del giorno con concessioni e stato spunta |
+| `/api/presenze-live/checkin` | POST | presenze-live.js | Registra presenza concessionario/spuntista |
+| `/api/presenze-live/spunta/entra-coda` | POST | presenze-live.js | Spuntista entra in coda spunta |
+| `/api/presenze-live/spunta/scegli-posteggio` | POST | presenze-live.js | Spuntista sceglie posteggio (con blocco saldo negativo) |
+| `/api/presenze-live/spunta/stato/:sessionId` | GET | presenze-live.js | Stato corrente spuntista nella coda |
+| `/api/presenze-live/spunta/posteggi-liberi/:sessionId` | GET | presenze-live.js | Lista posteggi disponibili |
+| `/api/presenze-live/spunta/rinuncia` | POST | presenze-live.js | Spuntista rinuncia al turno |
+| `/api/presenze-live/avvia-spunta-live/:marketId` | POST | presenze-live.js | PA avvia spunta live (riusa turno attivo) |
+| `/api/presenze-live/spunta-turno-corrente/:marketId` | GET | presenze-live.js | PA polling turno corrente (con auto-scadenza) |
+| `/api/presenze-live/deposito-rifiuti` | POST | presenze-live.js | Registra deposito rifiuti |
+| `/api/presenze-live/uscita-mercato` | POST | presenze-live.js | Registra uscita (resetta spuntista su stall) |
+| `/api/presenze/spuntisti/mercato/:id` | GET | presenze.js | Lista spuntisti PA con stato coda e wallet |
+| `/api/presenze/storico/sessioni` | GET | presenze.js | Storico sessioni mercato |
+| `/api/presenze/storico/dettaglio` | GET | presenze.js | Dettaglio presenze per sessione |
+| `/api/presenze/mercato/:id/chiudi` | POST | presenze.js | Chiudi sessione mercato |
+| `/api/graduatoria/mercato/:id` | GET | presenze.js | Graduatoria presenze per mercato e tipo |
+| `/api/markets/:id/stalls` | GET | markets.js | Posteggi con wallet, concessioni e spuntisti |
+| `/api/test-mercato/avvia-spunta` | POST | test-mercato.js | Bridge: prepara spunta (NON MODIFICARE) |
+
+### 6. Bug Risolti in Sessione v10.1.4 (03 Maggio 2026)
+
+| Bug | Descrizione | Causa Radice | Fix |
+|---|---|---|---|
+| Posizione 1° e 79 presenze | App mostrava dati CONCESSION invece di SPUNTA | Query checkin usava `tipo IN('CONCESSION','SPUNTA')` | `tipoGrad = walletType === 'SPUNTA' ? 'SPUNTA' : 'CONCESSION'` |
+| Popup saldo negativo bianco | Alert nativo invece di popup rosso fullscreen | Frontend non gestiva HTTP 403 come JSON | Aggiunto `if (!res.ok)` con lettura body JSON prima di `res.json()` |
+| Card spunta verde con saldo negativo | Card non diventava rossa | Condizione `!isSpunta` impediva il colore rosso | Rimosso `!isSpunta` dalla condizione |
+| Presenze duplicate spuntisti | Nuova presenza creata invece di aggiornare | `scegli-posteggio` faceva INSERT invece di UPDATE | Cambiato in UPDATE della presenza esistente (stall_id IS NULL) |
+| Turno perso all'avvio spunta | `avvia-spunta-live` chiudeva il turno del bridge | Non verificava turno TURNO_ATTIVO esistente | Aggiunto check e riuso del turno attivo |
+| Wallet €0.00 nella lista concessionari | Spuntisti mostravano saldo 0 | JOIN wallet solo su concession_id (spuntisti non hanno concession_id) | Aggiunto `COALESCE(w.balance, w_spunta.balance)` con JOIN separato |
+| Presenze uguali per tutti | Stessa cifra per tutti i posteggi | Frontend cercava graduatoria per impresa_id senza filtrare per tipo | Aggiunto filtro tipo nella ricerca gradRecord |
+| Giorno sbagliato (sab vs dom) | Data UTC invece di Europe/Rome | `toISOString().split('T')[0]` è UTC | Cambiato in `toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' })` |
 
 ---
 
