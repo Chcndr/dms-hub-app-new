@@ -2300,6 +2300,7 @@ function PosteggiTab({
   const [showSaldoNegativoPopup, setShowSaldoNegativoPopup] = useState<{show: boolean, messaggio: string, impresa: string, saldo: number}>({show: false, messaggio: '', impresa: '', saldo: 0});
   // Popup fullscreen spunta finita
   const [showSpuntaFinitaPopup, setShowSpuntaFinitaPopup] = useState(false);
+  const spuntaFinitaGiaVistaRef = React.useRef(false); // true dopo che il popup è stato mostrato e chiuso — non mostrarlo mai più
   // Spunta Live: turno corrente e polling
   const [spuntaLiveTurno, setSpuntaLiveTurno] = useState<any>(null);
   const [spuntaTimerSecondi, setSpuntaTimerSecondi] = useState(0);
@@ -2319,13 +2320,16 @@ function PosteggiTab({
         setSpuntaLiveTurno(data);
         setSpuntaTimerSecondi(data.secondi_rimanenti || 0);
       } else {
-        // Se la spunta è terminata, mostra popup giallo SPUNTA FINITA (solo una volta)
-        if (data.spunta_terminata && isSpuntaMode && !showSpuntaFinitaPopup) {
-          setShowSpuntaFinitaPopup(true);
+        // Se la spunta è terminata
+        if (data.spunta_terminata && isSpuntaMode) {
           // Ferma il polling — la spunta è finita, non serve più pollare
           if (spuntaLivePollingRef.current) { clearInterval(spuntaLivePollingRef.current); spuntaLivePollingRef.current = null; }
-          // Aggiorna la lista posteggi
-          fetchStallsAndPresenzeOnly();
+          // Mostra popup SOLO se non è già stato visto e chiuso in precedenza
+          if (!spuntaFinitaGiaVistaRef.current && !showSpuntaFinitaPopup) {
+            setShowSpuntaFinitaPopup(true);
+            // Aggiorna la lista posteggi
+            fetchStallsAndPresenzeOnly();
+          }
         }
         setSpuntaLiveTurno(null);
         setSpuntaTimerSecondi(0);
@@ -3470,14 +3474,14 @@ function PosteggiTab({
       )}
       {/* Popup fullscreen SPUNTA FINITA */}
       {showSpuntaFinitaPopup && (
-        <div className="fixed inset-0 bg-yellow-700/95 flex items-center justify-center z-[9999]" onClick={() => { setShowSpuntaFinitaPopup(false); setIsSpuntaMode(false); }}>
+        <div className="fixed inset-0 bg-yellow-700/95 flex items-center justify-center z-[9999]" onClick={() => { setShowSpuntaFinitaPopup(false); spuntaFinitaGiaVistaRef.current = true; }}>
           <div className="text-center p-8 max-w-lg">
             <div className="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
               <span className="text-5xl">✅</span>
             </div>
             <h1 className="text-white text-4xl font-black mb-4">SPUNTA FINITA!</h1>
             <p className="text-white/90 text-xl mb-8">Tutti gli spuntisti sono stati processati.<br/>La spunta è terminata.</p>
-            <button className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-4 rounded-2xl font-bold" onClick={(e) => { e.stopPropagation(); setShowSpuntaFinitaPopup(false); setIsSpuntaMode(false); }}>CHIUDI</button>
+            <button className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-4 rounded-2xl font-bold" onClick={(e) => { e.stopPropagation(); setShowSpuntaFinitaPopup(false); spuntaFinitaGiaVistaRef.current = true; }}>CHIUDI</button>
           </div>
         </div>
       )}
