@@ -3775,10 +3775,6 @@ function PosteggiTab({
               ? "⏹ STOP"
               : `✓ Conferma Assegnazione (${reservedCount} posteggi)`}
           </Button>
-        </div>
-      )}
-      {/* Deposito Rifiuti e Chiudi Mercato - SEMPRE visibili (v10.1.7) */}
-      <div className="mb-4 space-y-2">
           {/* Deposito Rifiuti - bottone espandibile */}
           <div className="space-y-1">
             <Button
@@ -3898,7 +3894,8 @@ function PosteggiTab({
               </Button>
             )}
           </div>
-      </div>
+        </div>
+      )}
 
       {/* NUOVO LAYOUT: Mappa in alto (rettangolare) */}
       <div
@@ -4115,7 +4112,7 @@ function PosteggiTab({
                       className="text-[#e8fbff]/70 text-xs text-center"
                       style={{ width: "5%" }}
                     >
-                      Ass.
+                      Rin.
                     </TableHead>
                     <TableHead
                       className="text-right text-[#e8fbff]/70 text-xs"
@@ -4332,9 +4329,9 @@ function PosteggiTab({
                               0}
                           </TableCell>
 
-                          {/* Assenze */}
+                          {/* Rinunce */}
                           <TableCell className="text-xs text-center text-[#e8fbff]/50">
-                            {spuntista.numero_assenze || 0}
+                            {spuntista.assenze_non_giustificate || spuntista.numero_assenze || 0}
                           </TableCell>
 
                           {/* Azioni */}
@@ -4717,8 +4714,8 @@ function PosteggiTab({
 
                           {/* Assenze */}
                           <TableCell className="text-xs text-center text-[#e8fbff]/50">
-                            {gradRecord?.assenze_totali ||
-                              gradRecord?.assenze ||
+                            {gradRecord?.assenze_non_giustificate ||
+                              gradRecord?.assenze_totali ||
                               0}
                           </TableCell>
 

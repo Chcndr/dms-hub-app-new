@@ -837,6 +837,8 @@ export function MarketMapComponent({
                                 }
                                 try {
                                   await onDepositoRifiuti(dbStall.id);
+                                  // Auto-chiudi popup dopo conferma
+                                  if (mapRef.current) mapRef.current.closePopup();
                                 } catch (error) {
                                   console.error("[ERROR] Deposito rifiuti:", error);
                                   alert("Errore durante il deposito rifiuti!");
@@ -885,6 +887,8 @@ export function MarketMapComponent({
                                 }
                                 try {
                                   await onChiudiMercatoSingolo(dbStall.id);
+                                  // Auto-chiudi popup dopo conferma
+                                  if (mapRef.current) mapRef.current.closePopup();
                                 } catch (error) {
                                   console.error("[ERROR] Chiudi mercato singolo:", error);
                                   alert("Errore durante la chiusura!");
