@@ -1,5 +1,29 @@
 # MASTER BLUEPRINT — MIOHUB
 
+> **Versione:** 10.1.7 (Fix Storico Sessioni)
+> **Data:** 03 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.1.7 (03 Mag 2026)
+> **Fix Critico Storico Sessioni: ogni "Prepara" ora crea una NUOVA sessione, "Chiudi" aggiorna quella esistente**
+>
+> **Problema:** `avvia-spunta` riusava la sessione esistente per lo stesso giorno (SELECT + riuso).
+> Quindi Prepara→Chiudi→Prepara sovrascriveva sempre la stessa sessione.
+> `chiudi-mercato` creava SEMPRE una nuova sessione (INSERT) invece di aggiornare quella creata da Prepara.
+>
+> **Fix applicati:**
+> - `avvia-spunta`: SEMPRE crea nuova sessione (INSERT diretto, mai SELECT+riuso)
+> - `chiudi-mercato`: AGGIORNA la sessione IN_CORSO esistente (UPDATE) invece di INSERT
+> - Tutte le query che cercavano sessione per `DATE(data_mercato)` ora cercano sessione `IN_CORSO` per `market_id`
+> - `presenze-live.js` checkin e attivaProssimoTurno: stessa logica
+> - `presenze.js` chiudi-mercato endpoint: stessa logica
+> - Pulite 5 sessioni zombie IN_CORSO nel DB
+>
+> **File modificati:** `test-mercato.js`, `presenze-live.js`, `presenze.js`
+> **Commit backend:** e0e72b3
+>
+> ---
+> ### CHANGELOG v10.1.4 (03 Mag 2026)
 > **Versione:** 10.1.4 (Fix Definitivi Modulo Spunta + Schema Tecnico Completo)
 > **Data:** 03 Maggio 2026
 >
