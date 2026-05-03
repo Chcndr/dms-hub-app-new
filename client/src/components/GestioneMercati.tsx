@@ -3404,7 +3404,7 @@ function PosteggiTab({
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm shadow-lg transition-colors"
                 onClick={async () => {
                   const confirmed = window.confirm(
-                    `Confermi la RINUNCIA per ${spuntaLiveTurno.impresa_nome}?\n\nLo spuntista manterrà il punto presenza in graduatoria ma non riceverà un posteggio.`
+                    `Confermi la RINUNCIA per ${spuntaLiveTurno.impresa_nome}?\n\nLo spuntista NON riceverà un posteggio e NON guadagnerà il punto presenza in graduatoria.`
                   );
                   if (!confirmed) return;
                   try {
@@ -3418,7 +3418,7 @@ function PosteggiTab({
                     );
                     const rinunciaData = await rinunciaRes.json();
                     if (rinunciaData.success) {
-                      toast.success(`Rinuncia registrata per ${spuntaLiveTurno.impresa_nome}. Prossimo turno attivato.`);
+                      toast.success(`Rinuncia registrata per ${spuntaLiveTurno.impresa_nome}. Nessun punto presenza assegnato. Prossimo turno attivato.`);
                       fetchSpuntaLiveTurno();
                     } else {
                       toast.error(rinunciaData.messaggio || 'Errore rinuncia');

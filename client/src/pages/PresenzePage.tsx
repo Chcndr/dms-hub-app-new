@@ -1747,6 +1747,42 @@ export default function PresenzePage() {
         >
           TORNA AL MENU
         </Button>
+        {/* Tab Rinuncia dalla schermata attesa */}
+        <Button
+          onClick={async () => {
+            const confirmed = window.confirm(
+              'Sei sicuro di voler RINUNCIARE alla spunta?\n\nNON riceverai un posteggio e NON guadagnerai il punto presenza in graduatoria.'
+            );
+            if (!confirmed) return;
+            try {
+              const rinunciaRes = await authenticatedFetch(
+                `${MIHUB_API_BASE_URL}/api/presenze-live/spunta/rinuncia`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ coda_id: spuntaCodaId || spuntaTurno?.coda_id }),
+                }
+              );
+              const rinunciaData = await rinunciaRes.json();
+              if (rinunciaData.success) {
+                setPopup({
+                  tipo: "avviso",
+                  titolo: "RINUNCIA REGISTRATA",
+                  messaggio: "Hai rinunciato alla spunta. Non riceverai un posteggio e non guadagni il punto presenza.",
+                });
+                setSchermata('scelta_tipo');
+                if (sseRef.current) sseRef.current.close();
+              } else {
+                setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: rinunciaData.messaggio || 'Errore rinuncia' });
+              }
+            } catch (err) {
+              setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: 'Errore durante la rinuncia' });
+            }
+          }}
+          className="mt-4 bg-red-600/80 hover:bg-red-700 text-white border-2 border-red-400/50 text-lg px-12 py-4 rounded-2xl font-bold shadow-xl"
+        >
+          RINUNCIA ALLA SPUNTA
+        </Button>
       </div>
     );
   }
@@ -1781,6 +1817,42 @@ export default function PresenzePage() {
           className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-6 rounded-2xl font-bold shadow-xl"
         >
           VISUALIZZA POSTEGGI LIBERI
+        </Button>
+        {/* Tab Rinuncia */}
+        <Button
+          onClick={async () => {
+            const confirmed = window.confirm(
+              'Sei sicuro di voler RINUNCIARE al turno?\n\nNON riceverai un posteggio e NON guadagnerai il punto presenza in graduatoria.'
+            );
+            if (!confirmed) return;
+            try {
+              const rinunciaRes = await authenticatedFetch(
+                `${MIHUB_API_BASE_URL}/api/presenze-live/spunta/rinuncia`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ coda_id: spuntaCodaId || spuntaTurno?.coda_id }),
+                }
+              );
+              const rinunciaData = await rinunciaRes.json();
+              if (rinunciaData.success) {
+                setPopup({
+                  tipo: "avviso",
+                  titolo: "RINUNCIA REGISTRATA",
+                  messaggio: "Hai rinunciato al turno. Non riceverai un posteggio e non guadagni il punto presenza.",
+                });
+                setSchermata('scelta_tipo');
+                if (sseRef.current) sseRef.current.close();
+              } else {
+                setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: rinunciaData.messaggio || 'Errore rinuncia' });
+              }
+            } catch (err) {
+              setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: 'Errore durante la rinuncia' });
+            }
+          }}
+          className="mt-4 bg-red-600 hover:bg-red-700 text-white border-2 border-red-400 text-lg px-12 py-4 rounded-2xl font-bold shadow-xl"
+        >
+          RINUNCIA AL TURNO
         </Button>
       </div>
     );
