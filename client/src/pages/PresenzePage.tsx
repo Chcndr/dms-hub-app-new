@@ -598,6 +598,7 @@ export default function PresenzePage() {
             session_id: mercatoSelezionato.session_id,
             stall_id: concessione.stall_id,
             concession_id: concessione.concession_id,
+            tipo_presenza: isSpuntaConc ? 'SPUNTA' : 'CONCESSION',
             metodo_checkin: "APP",
             latitude: gpsPosition?.lat,
             longitude: gpsPosition?.lng,

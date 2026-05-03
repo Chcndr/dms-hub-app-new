@@ -2296,6 +2296,8 @@ function PosteggiTab({
   const [selectedSpuntistaForDetail, setSelectedSpuntistaForDetail] =
     useState<any>(null);
 
+  // Popup fullscreen saldo negativo
+  const [showSaldoNegativoPopup, setShowSaldoNegativoPopup] = useState<{show: boolean, messaggio: string, impresa: string, saldo: number}>({show: false, messaggio: '', impresa: '', saldo: 0});
   // Spunta Live: turno corrente e polling
   const [spuntaLiveTurno, setSpuntaLiveTurno] = useState<any>(null);
   const [spuntaTimerSecondi, setSpuntaTimerSecondi] = useState(0);
@@ -2718,16 +2720,24 @@ function PosteggiTab({
           if (!response.ok) {
             const errData = await response.json().catch(() => ({} as Record<string, unknown>));
             if (errData.errore === 'SALDO_NEGATIVO') {
-              toast.error(
-                `\u26d4 SALDO NEGATIVO: ${errData.messaggio || 'Impossibile assegnare il posteggio.'}`,
-                { duration: 5000 }
-              );
+              // Popup fullscreen rosso per saldo negativo
+              setShowSaldoNegativoPopup({
+                show: true,
+                messaggio: errData.messaggio || 'Impossibile assegnare il posteggio.',
+                impresa: String(errData.messaggio || '').split(' ha ')[0]?.replace('Spuntista ', '') || 'Spuntista',
+                saldo: errData.saldo || 0
+              });
               // Rimetti il posteggio a riservato nel frontend
               setStalls(prev =>
                 prev.map(s =>
                   s.id === stallId ? { ...s, status: "riservato" } : s
                 )
               );
+              // Auto-refresh turno dopo 3 secondi (il backend ha già attivato il prossimo)
+              setTimeout(() => {
+                setShowSaldoNegativoPopup(prev => ({...prev, show: false}));
+                fetchSpuntaLiveTurno();
+              }, 3000);
             } else {
               toast.error(
                 `Errore assegnazione: ${(errData.messaggio as string) || (errData.error as string) || 'Errore dal server.'}`,
@@ -3388,14 +3398,63 @@ function PosteggiTab({
                 </p>
               </div>
             </div>
-            <div className="text-white font-mono text-2xl font-bold">
-              {Math.floor(spuntaTimerSecondi / 60)}:{String(spuntaTimerSecondi % 60).padStart(2, '0')}
+            <div className="flex items-center gap-3">
+              {/* Tab Rinuncia */}
+              <button
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm shadow-lg transition-colors"
+                onClick={async () => {
+                  const confirmed = window.confirm(
+                    `Confermi la RINUNCIA per ${spuntaLiveTurno.impresa_nome}?\n\nLo spuntista manterrà il punto presenza in graduatoria ma non riceverà un posteggio.`
+                  );
+                  if (!confirmed) return;
+                  try {
+                    const rinunciaRes = await authenticatedFetch(
+                      `${API_BASE_URL}/api/presenze-live/spunta/rinuncia`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ coda_id: spuntaLiveTurno.coda_id, session_id: spuntaLiveTurno.session_id }),
+                      }
+                    );
+                    const rinunciaData = await rinunciaRes.json();
+                    if (rinunciaData.success) {
+                      toast.success(`Rinuncia registrata per ${spuntaLiveTurno.impresa_nome}. Prossimo turno attivato.`);
+                      fetchSpuntaLiveTurno();
+                    } else {
+                      toast.error(rinunciaData.messaggio || 'Errore rinuncia');
+                    }
+                  } catch (err) {
+                    toast.error('Errore durante la rinuncia');
+                  }
+                }}
+              >
+                ✋ Rinuncia
+              </button>
+              <div className="text-white font-mono text-2xl font-bold">
+                {Math.floor(spuntaTimerSecondi / 60)}:{String(spuntaTimerSecondi % 60).padStart(2, '0')}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra LIBERA TUTTI (modalità Libera) */}
+
+      {/* Popup fullscreen saldo negativo */}
+      {showSaldoNegativoPopup.show && (
+        <div className="fixed inset-0 bg-red-900/95 flex items-center justify-center z-[9999]" onClick={() => setShowSaldoNegativoPopup(prev => ({...prev, show: false}))}>
+          <div className="text-center p-8 max-w-lg">
+            <div className="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-5xl">⛔</span>
+            </div>
+            <h1 className="text-white text-4xl font-black mb-4">SALDO NEGATIVO</h1>
+            <p className="text-white/90 text-xl mb-2">{showSaldoNegativoPopup.impresa}</p>
+            <p className="text-red-200 text-3xl font-bold mb-6">€{showSaldoNegativoPopup.saldo.toFixed(2)}</p>
+            <p className="text-white/70 text-lg mb-8">Impossibile assegnare il posteggio.<br/>Passaggio automatico al prossimo spuntista...</p>
+            <div className="animate-spin w-8 h-8 border-4 border-white/30 border-t-white rounded-full mx-auto"></div>
+          </div>
+        </div>
+      )}
+            {/* Barra LIBERA TUTTI (modalità Libera) */}
       {isLiberaMode && (
         <div className="mb-4">
           <Button
@@ -3713,136 +3772,131 @@ function PosteggiTab({
               : `✓ Conferma Assegnazione (${reservedCount} posteggi)`}
           </Button>
 
-          {/* Pulsante Deposito Rifiuti SINGOLO - click su posteggio */}
-          <Button
-            className={`w-full mt-2 font-semibold py-2 border-2 ${
-              isDepositoMode
-                ? "bg-[#22c55e] border-[#22c55e] text-white"
-                : "bg-[#22c55e]/20 hover:bg-[#22c55e]/40 border-[#22c55e]/50 text-[#22c55e]"
-            }`}
-            onClick={() => {
-              setIsDepositoMode(!isDepositoMode);
-              setIsChiudiMode(false);
-              setIsOccupaMode(false);
-              setIsLiberaMode(false);
-              setIsSpuntaMode(false);
-              if (!isDepositoMode) {
-                toast.info("Clicca su un posteggio occupato per registrare il deposito rifiuti");
-              }
-            }}
-          >
-            {isDepositoMode ? "\u2705 Modalità Deposito Rifiuti ATTIVA" : "\u267b\ufe0f Deposito Rifiuti (Singolo)"}
-          </Button>
-
-          {/* Pulsante Deposito Rifiuti TUTTI */}
-          <Button
-            className="w-full mt-1 font-semibold py-1.5 border-2 bg-[#22c55e]/10 hover:bg-[#22c55e]/30 border-[#22c55e]/30 text-[#22c55e] text-sm"
-            onClick={async () => {
-              const confirmed = window.confirm(
-                `Registrare il deposito rifiuti per TUTTI?\n\n` +
-                  `Questa azione registrerà l'orario di deposito spazzatura per tutte le presenze del giorno.`
-              );
-
-              if (!confirmed) return;
-
-              try {
-                const response = await authenticatedFetch(
-                  `${API_BASE_URL}/api/test-mercato/registra-rifiuti`,
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ market_id: marketId }),
-                  }
-                );
-
-                const data = await response.json();
-                if (data.success) {
-                  toast.success(`\u267b\ufe0f ${data.message}`);
-                  setIsDepositoMode(false);
-                } else {
-                  toast.error(
-                    data.error || "Errore durante la registrazione rifiuti"
-                  );
+          {/* Deposito Rifiuti - bottone espandibile */}
+          <div className="space-y-1">
+            <Button
+              className={`w-full font-semibold py-2 border-2 ${
+                isDepositoMode
+                  ? "bg-[#22c55e] border-[#22c55e] text-white"
+                  : "bg-[#22c55e]/20 hover:bg-[#22c55e]/40 border-[#22c55e]/50 text-[#22c55e]"
+              }`}
+              onClick={() => {
+                setIsDepositoMode(!isDepositoMode);
+                setIsChiudiMode(false);
+                setIsOccupaMode(false);
+                setIsLiberaMode(false);
+                setIsSpuntaMode(false);
+                if (!isDepositoMode) {
+                  toast.info("Clicca su un posteggio occupato per registrare il deposito rifiuti");
                 }
-
-                await fetchData();
-              } catch (error) {
-                console.error("Errore registrazione rifiuti:", error);
-                toast.error("Errore durante la registrazione deposito rifiuti");
-              }
-            }}
-          >
-            {"\u267b\ufe0f"} Deposito Rifiuti (Tutti)
-          </Button>
-
-          {/* Pulsante Chiudi Mercato SINGOLO - click su posteggio */}
-          <Button
-            className={`w-full mt-2 font-semibold py-2 border-2 ${
-              isChiudiMode
-                ? "bg-[#ef4444] border-[#ef4444] text-white"
-                : "bg-[#ef4444]/20 hover:bg-[#ef4444]/40 border-[#ef4444]/50 text-[#ef4444]"
-            }`}
-            onClick={() => {
-              setIsChiudiMode(!isChiudiMode);
-              setIsDepositoMode(false);
-              setIsOccupaMode(false);
-              setIsLiberaMode(false);
-              setIsSpuntaMode(false);
-              if (!isChiudiMode) {
-                toast.info("Clicca su un posteggio occupato per registrare l'uscita");
-              }
-            }}
-          >
-            {isChiudiMode ? "\u2705 Modalit\u00e0 Chiudi Mercato ATTIVA" : "\ud83d\udeaa Chiudi Mercato (Singolo)"}
-          </Button>
-
-          {/* Pulsante Chiudi Mercato TUTTI */}
-          <Button
-            className="w-full mt-1 font-semibold py-1.5 border-2 bg-[#ef4444]/10 hover:bg-[#ef4444]/30 border-[#ef4444]/30 text-[#ef4444] text-sm"
-            onClick={async () => {
-              const confirmed = window.confirm(
-                `Chiudere il mercato per TUTTI?\n\n` +
-                  `Questa azione:\n` +
-                  `\u2022 Registrer\u00e0 l'orario di uscita per TUTTI\n` +
-                  `\u2022 Liberer\u00e0 TUTTI i posteggi\n` +
-                  `\u2022 Reset completo per il giorno successivo`
-              );
-
-              if (!confirmed) return;
-
-              try {
-                const response = await authenticatedFetch(
-                  `${API_BASE_URL}/api/test-mercato/chiudi-mercato`,
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ market_id: marketId }),
-                  }
-                );
-
-                const data = await response.json();
-                if (data.success) {
-                  toast.success(`\ud83c\udfea ${data.message}`);
-                  setIsSpuntaMode(false);
-                  setIsOccupaMode(false);
-                  setIsLiberaMode(false);
-                  setIsDepositoMode(false);
-                  setIsChiudiMode(false);
-                } else {
-                  toast.error(
-                    data.error || "Errore durante la chiusura mercato"
+              }}
+            >
+              {isDepositoMode ? "\u2705 Modalità Deposito Rifiuti ATTIVA" : "\u267b\ufe0f Deposito Rifiuti (Singolo)"}
+            </Button>
+            {isDepositoMode && (
+              <Button
+                className="w-full font-semibold py-1.5 border-2 bg-[#22c55e]/10 hover:bg-[#22c55e]/30 border-[#22c55e]/30 text-[#22c55e] text-sm"
+                onClick={async () => {
+                  const confirmed = window.confirm(
+                    `Registrare il deposito rifiuti per TUTTI?\n\n` +
+                      `Questa azione registrerà l'orario di deposito spazzatura per tutte le presenze del giorno.`
                   );
+                  if (!confirmed) return;
+                  try {
+                    const response = await authenticatedFetch(
+                      `${API_BASE_URL}/api/test-mercato/registra-rifiuti`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ market_id: marketId }),
+                      }
+                    );
+                    const data = await response.json();
+                    if (data.success) {
+                      toast.success(`\u267b\ufe0f ${data.message}`);
+                      setIsDepositoMode(false);
+                    } else {
+                      toast.error(
+                        data.error || "Errore durante la registrazione rifiuti"
+                      );
+                    }
+                    await fetchData();
+                  } catch (error) {
+                    console.error("Errore registrazione rifiuti:", error);
+                    toast.error("Errore durante la registrazione deposito rifiuti");
+                  }
+                }}
+              >
+                {"\u267b\ufe0f"} Deposito Rifiuti (Tutti)
+              </Button>
+            )}
+          </div>
+          {/* Chiudi Mercato - bottone espandibile */}
+          <div className="space-y-1">
+            <Button
+              className={`w-full mt-2 font-semibold py-2 border-2 ${
+                isChiudiMode
+                  ? "bg-[#ef4444] border-[#ef4444] text-white"
+                  : "bg-[#ef4444]/20 hover:bg-[#ef4444]/40 border-[#ef4444]/50 text-[#ef4444]"
+              }`}
+              onClick={() => {
+                setIsChiudiMode(!isChiudiMode);
+                setIsDepositoMode(false);
+                setIsOccupaMode(false);
+                setIsLiberaMode(false);
+                setIsSpuntaMode(false);
+                if (!isChiudiMode) {
+                  toast.info("Clicca su un posteggio occupato per registrare l'uscita");
                 }
-
-                await fetchData();
-              } catch (error) {
-                console.error("Errore chiusura mercato:", error);
-                toast.error("Errore durante la chiusura del mercato");
-              }
-            }}
-          >
-            {"\ud83c\udfea"} Chiudi Mercato (Tutti)
-          </Button>
+              }}
+            >
+              {isChiudiMode ? "\u2705 Modalit\u00e0 Chiudi Mercato ATTIVA" : "\ud83d\udeaa Chiudi Mercato (Singolo)"}
+            </Button>
+            {isChiudiMode && (
+              <Button
+                className="w-full mt-1 font-semibold py-1.5 border-2 bg-[#ef4444]/10 hover:bg-[#ef4444]/30 border-[#ef4444]/30 text-[#ef4444] text-sm"
+                onClick={async () => {
+                  const confirmed = window.confirm(
+                    `Chiudere il mercato per TUTTI?\n\n` +
+                      `Questa azione:\n` +
+                      `\u2022 Registrer\u00e0 l'orario di uscita per TUTTI\n` +
+                      `\u2022 Liberer\u00e0 TUTTI i posteggi\n` +
+                      `\u2022 Reset completo per il giorno successivo`
+                  );
+                  if (!confirmed) return;
+                  try {
+                    const response = await authenticatedFetch(
+                      `${API_BASE_URL}/api/test-mercato/chiudi-mercato`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ market_id: marketId }),
+                      }
+                    );
+                    const data = await response.json();
+                    if (data.success) {
+                      toast.success(`\ud83c\udfea ${data.message}`);
+                      setIsSpuntaMode(false);
+                      setIsOccupaMode(false);
+                      setIsLiberaMode(false);
+                      setIsDepositoMode(false);
+                      setIsChiudiMode(false);
+                    } else {
+                      toast.error(
+                        data.error || "Errore durante la chiusura mercato"
+                      );
+                    }
+                    await fetchData();
+                  } catch (error) {
+                    console.error("Errore chiusura mercato:", error);
+                    toast.error("Errore durante la chiusura del mercato");
+                  }
+                }}
+              >
+                {"\ud83c\udfea"} Chiudi Mercato (Tutti)
+              </Button>
+            )}
+          </div>
         </div>
       )}
 

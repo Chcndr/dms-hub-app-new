@@ -13401,3 +13401,27 @@ Il flusso completo è stato testato con successo:
 [3] Codice dell'Amministrazione Digitale (D.Lgs. 82/2005) - Artt. 20 e 24. https://docs.italia.it/italia/piano-triennale-ict/codice-amministrazione-digitale-docs/it/v2018-09-28/_rst/capo2_sezione2_art24.html
 [4] DPR 28 dicembre 2000, n. 445 - Testo Unico Documentazione Amministrativa. https://www.normattiva.it/atto/caricaDettaglioAtto?atto.dataPubblicazioneGazzetta=2001-02-20&atto.codiceRedazionale=001G0049
 [5] Regolamento (UE) n. 910/2014 (eIDAS) - Validità firma elettronica. https://geometri.mi.it/la-firma-elettronica-avanzata/
+
+
+### 14. SCHEMA IMPLEMENTAZIONI FUTURE
+
+Per evitare regressioni (fixare da una parte e rompere dall'altra), ogni nuova implementazione nel modulo Presenze/Spunta deve seguire questo schema:
+
+1. **Gestione Wallet (Il cuore del sistema)**
+   - Regola d'oro: Un'impresa può avere DUE wallet attivi (CONCESSION e SPUNTA).
+   - Quando si fa checkin, BISOGNA specificare il `tipo_presenza` per usare il wallet corretto.
+   - Il saldo negativo blocca l'occupazione MA DEVE far avanzare la coda automaticamente.
+
+2. **Gestione Graduatoria**
+   - La tabella `graduatoria_presenze` ha due record per la stessa impresa se fa sia concessionario che spuntista.
+   - Le query devono SEMPRE filtrare per `tipo` ('CONCESSION' o 'SPUNTA').
+   - Le presenze SPUNTA aumentano di +1 per TUTTI gli spuntisti in coda quando si preme "Prepara" (questo è by-design).
+
+3. **Gestione Storico e Sessioni**
+   - Più sessioni possono esistere nello stesso giorno (se si preme "Prepara" più volte).
+   - Lo storico deve leggere `market_session_details` di TUTTE le sessioni del giorno, non solo dell'ultima.
+   - L'uscita mercato resetta `stalls.spuntista_nome` ma NON deve toccare `vendors.business_name`.
+
+4. **Flusso Eventi SSE (Server-Sent Events)**
+   - Ogni azione sulla coda (assegnazione, rinuncia, skip per saldo) DEVE chiamare `attivaProssimoTurno(sessionId)`.
+   - Il frontend deve reagire agli eventi SSE aggiornando lo stato senza ricaricare l'intera pagina.
