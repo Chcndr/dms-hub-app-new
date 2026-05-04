@@ -1,7 +1,21 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.4 (Fix 5 Bug Critici Spunta: Graduatoria, Mappa, Tab Presenza)
+> **Versione:** 10.2.6 (Fix Lista Spuntisti PA, Popup SPUNTA FINITA, Animazione Mappa App)
 > **Data:** 04 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.6 (04 Mag 2026)
+> **Fix 3 Bug Residui: Lista spuntisti PA, Popup SPUNTA FINITA, Animazione mappa App**
+>
+> **Problemi risolti:**
+> 1. **BUG 1 — Lista Spuntisti PA mostra "IN ATTESA" invece di posteggio/costo (Backend)**: L'endpoint `GET /api/spuntisti/mercato/:id` usava `DATE(ms.data_mercato) = $3` senza fallback per sessioni IN_CORSO. Se la sessione era stata aperta a mezzanotte (data_mercato del giorno precedente), la spunta_coda non veniva trovata → stato NULL → mostrava "IN ATTESA". **Fix**: aggiunto `OR ms.stato = 'IN_CORSO'` al filtro data in presenze.js riga 833.
+> 2. **BUG 2 — Popup SPUNTA FINITA non appare dopo fine spunta (Frontend PA)**: Il `spuntaFinitaGiaVistaRef` veniva inizializzato a `false` ma MAI resettato quando si avviava una nuova spunta. Se l'utente aveva già visto il popup nella sessione precedente, il ref restava `true` e il popup non appariva più. **Fix**: aggiunto `spuntaFinitaGiaVistaRef.current = false` nel handler "Prepara Spunta" in GestioneMercati.tsx.
+> 3. **BUG 3 — Animazione mappa App non parte (flyTo non eseguito)**: In `market-map-viewer.html`, `fitBounds` veniva chiamato prima e poi `setTimeout(selectStall, 500)`. Su dispositivi lenti, `fitBounds` poteva non completarsi in 500ms e Leaflet ignorava il `flyTo`. **Fix**: sostituito `setTimeout` con `map.once('moveend', ...)` per aspettare il completamento del fitBounds prima di fare selectStall.
+>
+> **File modificati:**
+> - `presenze.js` (Backend): aggiunto `OR ms.stato = 'IN_CORSO'` nella subquery spunta_coda
+> - `GestioneMercati.tsx` (Frontend): reset `spuntaFinitaGiaVistaRef.current = false` su Prepara Spunta
+> - `market-map-viewer.html` (Backend): `map.once('moveend')` invece di `setTimeout(500)`
 >
 > ---
 > ### CHANGELOG v10.2.4 (04 Mag 2026)
