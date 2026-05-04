@@ -548,7 +548,7 @@ export default function PresenzePage() {
     if (!['scelta_tipo', 'vista_mappa'].includes(schermata)) return;
     const interval = setInterval(() => {
       cercaMercati();
-    }, 15000); // 15 secondi
+    }, 10000); // 10 secondi (allineato alla PA)
     return () => clearInterval(interval);
   }, [mercatoSelezionato, impresaId, schermata, cercaMercati]);
 
@@ -658,6 +658,9 @@ export default function PresenzePage() {
             };
           });
         }
+
+        // Refresh dati mercato per avere wallet aggiornato, importo, ecc.
+        cercaMercati();
 
         if (isSpuntaConc) {
           // Per la spunta: connetti SSE e mostra schermata attesa
