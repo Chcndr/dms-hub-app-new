@@ -2257,6 +2257,7 @@ function PosteggiTab({
   const [selectedStallCenter, setSelectedStallCenter] = useState<
     [number, number] | null
   >(null);
+  const [stallCenterTrigger, setStallCenterTrigger] = useState(0);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
   const [isSpuntaMode, setIsSpuntaMode] = useState(false);
@@ -2324,11 +2325,11 @@ function PosteggiTab({
         if (data.spunta_terminata && isSpuntaMode) {
           // Ferma il polling — la spunta è finita, non serve più pollare
           if (spuntaLivePollingRef.current) { clearInterval(spuntaLivePollingRef.current); spuntaLivePollingRef.current = null; }
+          // Aggiorna SEMPRE la lista posteggi quando la spunta termina (i riservati tornano liberi)
+          fetchStallsAndPresenzeOnly();
           // Mostra popup SOLO se non è già stato visto e chiuso in precedenza
           if (!spuntaFinitaGiaVistaRef.current && !showSpuntaFinitaPopup) {
             setShowSpuntaFinitaPopup(true);
-            // Aggiorna la lista posteggi
-            fetchStallsAndPresenzeOnly();
           }
         }
         setSpuntaLiveTurno(null);
@@ -3162,6 +3163,7 @@ function PosteggiTab({
       const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
 
       setSelectedStallCenter([centerLat, centerLng]);
+      setStallCenterTrigger(prev => prev + 1);
     }
   };
 
@@ -3996,6 +3998,7 @@ function PosteggiTab({
                       const centerLat = lats.reduce((a: number, b: number) => a + b, 0) / lats.length;
                       const centerLng = lngs.reduce((a: number, b: number) => a + b, 0) / lngs.length;
                       setSelectedStallCenter([centerLat, centerLng]);
+                      setStallCenterTrigger(prev => prev + 1);
                     }
                     // Scroll alla riga nella lista (solo dentro il container, non la pagina)
                     setTimeout(() => {
@@ -4033,6 +4036,7 @@ function PosteggiTab({
                 viewTrigger={viewTrigger}
                 marketCenterFixed={marketCenter}
                 selectedStallCenter={selectedStallCenter || undefined}
+                stallCenterTrigger={stallCenterTrigger}
                 onMarketClick={clickedMarketId => {
                   // Quando clicchi su un marker, passa a vista mercato e triggera flyTo
                   setViewMode("mercato");

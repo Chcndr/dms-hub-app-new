@@ -1183,7 +1183,7 @@ export default function PresenzePage() {
             const tuttiPosteggi = [...concessioni, ...spuntaConPosteggio];
             const haConcessioni = concessioni.length > 0;
             const haSpunta = spuntisti.length > 0;
-            const tuttiPresenti = haConcessioni && concessioni.every(c => c.gia_presente_oggi);
+            const tuttiPresenti = tuttiPosteggi.length > 0 && tuttiPosteggi.every(c => c.gia_presente_oggi);
             const qualcunoPresente = tuttiPosteggi.some(c => c.gia_presente_oggi);
             const tuttiDepositoFatto = tuttiPosteggi.filter(c => c.gia_presente_oggi).every(c => c.deposito_rifiuti_fatto);
             const qualcunoDepositoDaFare = tuttiPosteggi.some(c => c.gia_presente_oggi && !c.deposito_rifiuti_fatto);

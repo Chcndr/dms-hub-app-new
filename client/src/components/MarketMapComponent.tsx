@@ -121,6 +121,7 @@ interface MarketMapComponentProps {
   viewTrigger?: number; // Trigger per forzare flyTo quando cambia vista
   marketCenterFixed?: [number, number]; // Centro fisso del mercato per marker M (non si sposta con selezione posteggio)
   selectedStallCenter?: [number, number]; // Centro del posteggio selezionato per pan mappa
+  stallCenterTrigger?: number; // Trigger per forzare flyTo su posteggio selezionato
 }
 
 // Controller per centrare la mappa programmaticamente
@@ -154,11 +155,12 @@ function MapCenterController(props: MapControllerProps) {
 // Controller per centrare mappa su posteggio selezionato (pan senza animazione lunga)
 function StallCenterController({
   stallCenter,
+  trigger = 0,
 }: {
   stallCenter?: [number, number];
+  trigger?: number;
 }) {
   const map = useMap();
-  const lastCenterRef = React.useRef<string | null>(null);
 
   useEffect(() => {
     if (!stallCenter) return;
@@ -169,19 +171,12 @@ function StallCenterController({
     )
       return;
 
-    // Crea una chiave unica per questo centro
-    const centerKey = `${stallCenter[0].toFixed(6)},${stallCenter[1].toFixed(6)}`;
-
-    // Evita di ri-centrare se è lo stesso punto
-    if (lastCenterRef.current === centerKey) return;
-    lastCenterRef.current = centerKey;
-
-    // Pan veloce verso il posteggio con zoom appropriato
+    // Pan veloce verso il posteggio con zoom appropriato (trigger forza il flyTo ogni click)
     map.flyTo(stallCenter, 19, {
       duration: 0.8, // Animazione veloce
       easeLinearity: 0.5,
     });
-  }, [stallCenter, map]);
+  }, [stallCenter, trigger, map]);
 
   return null;
 }
@@ -232,6 +227,7 @@ export function MarketMapComponent({
   viewTrigger = 0,
   marketCenterFixed,
   selectedStallCenter,
+  stallCenterTrigger = 0,
 }: MarketMapComponentProps) {
   // Ottieni lo stato di animazione dal context per nascondere poligoni durante zoom
   const { isAnimating } = useAnimation();
@@ -382,7 +378,7 @@ export function MarketMapComponent({
           />
 
           {/* Controller per centrare su posteggio selezionato dalla lista */}
-          <StallCenterController stallCenter={selectedStallCenter} />
+          <StallCenterController stallCenter={selectedStallCenter} trigger={stallCenterTrigger} />
 
           {/* Routing layer (opzionale) */}
           {routeConfig?.enabled && (
