@@ -3304,6 +3304,7 @@ function PosteggiTab({
                     )
                   );
                   setIsSpuntaMode(true);
+                  spuntaFinitaGiaVistaRef.current = false; // v10.2.6: Reset per nuova sessione spunta
                   setIsOccupaMode(false);
                   setIsLiberaMode(false);
                   setIsDepositoMode(false);
