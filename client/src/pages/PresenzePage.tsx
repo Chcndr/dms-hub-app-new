@@ -540,6 +540,18 @@ export default function PresenzePage() {
     }
   }, [impresaId, schermata, cercaMercati]);
 
+  // Auto-refresh: polling ogni 15 secondi per aggiornare lo stato delle concessioni/presenze
+  // (es. quando la PA registra deposito rifiuti o uscita, l'App lo vede senza uscire e rientrare)
+  useEffect(() => {
+    if (!mercatoSelezionato || !impresaId) return;
+    // Solo nelle schermate principali (non durante flusso spunta attivo)
+    if (!['scelta_tipo', 'vista_mappa'].includes(schermata)) return;
+    const interval = setInterval(() => {
+      cercaMercati();
+    }, 15000); // 15 secondi
+    return () => clearInterval(interval);
+  }, [mercatoSelezionato, impresaId, schermata, cercaMercati]);
+
   // Ascolta evento 'spunta_gestita' da SpuntaNotifier per resettare tab ATTESA SPUNTA
   useEffect(() => {
     const handleSpuntaGestita = (e: StorageEvent) => {

@@ -2362,16 +2362,18 @@ function PosteggiTab({
     return () => { if (spuntaLivePollingRef.current) { clearInterval(spuntaLivePollingRef.current); spuntaLivePollingRef.current = null; } };
   }, [isSpuntaMode, marketId]);
 
-  // Funzione leggera: aggiorna SOLO lo stato dei posteggi e le presenze
+  // Funzione leggera: aggiorna SOLO lo stato dei posteggi, presenze e spuntisti
   // senza ricaricare la scheda anagrafica, mappa GIS, concessioni, ecc.
   const fetchStallsAndPresenzeOnly = async () => {
     try {
-      const [stallsRes, presenzeRes] = await Promise.all([
+      const [stallsRes, presenzeRes, spuntistiRes] = await Promise.all([
         fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)),
         fetch(addComuneIdToUrl(`${API_BASE_URL}/api/presenze/mercato/${marketId}`)).catch(() => ({ json: () => ({ success: false }) })),
+        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/spuntisti/mercato/${marketId}`)).catch(() => ({ json: () => ({ success: false }) })),
       ]);
       const stallsData = await stallsRes.json();
       const presenzeData = await presenzeRes.json();
+      const spuntistiData = await spuntistiRes.json();
       if (stallsData.success) {
         const normalizedStalls = stallsData.data.map((s: Stall) => ({
           ...s,
@@ -2382,6 +2384,15 @@ function PosteggiTab({
       }
       if (presenzeData.success && Array.isArray(presenzeData.data)) {
         setPresenze(presenzeData.data);
+      }
+      // Aggiorna spuntisti (per vedere occupazione posteggio in tempo reale)
+      const spuntistiArray = spuntistiData.data || spuntistiData;
+      if (Array.isArray(spuntistiArray) && spuntistiArray.length > 0) {
+        const spuntistiOrdinati = spuntistiArray.sort(
+          (a: any, b: any) =>
+            (a.posizione_graduatoria || 999) - (b.posizione_graduatoria || 999)
+        );
+        setSpuntisti(spuntistiOrdinati);
       }
     } catch (error) {
       // Silenzioso: non mostrare errori per il polling
@@ -2425,7 +2436,7 @@ function PosteggiTab({
     if (selectedStallId) {
       loadConcessionData();
     }
-  }, [selectedStallId, stalls]);
+  }, [selectedStallId]);
 
   // Carica dati domanda spunta quando viene selezionato un posteggio con spuntista
   useEffect(() => {
@@ -2456,7 +2467,7 @@ function PosteggiTab({
     if (selectedStallId) {
       loadDomandaSpuntaData();
     }
-  }, [selectedStallId, stalls]);
+  }, [selectedStallId]);
 
   // Carica dati impresa quando viene selezionato un posteggio
   useEffect(() => {
@@ -2503,7 +2514,8 @@ function PosteggiTab({
     } else {
       setSidebarCompanyData(null);
     }
-  }, [selectedStallId, stalls, concessionsByStallId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStallId]);
 
   // Carica dati impresa e domanda spunta quando si clicca su uno spuntista dalla lista Spunta
   useEffect(() => {
@@ -3154,16 +3166,28 @@ function PosteggiTab({
       f => String(f.properties.number) === String(stall.number)
     );
 
-    if (mapFeature && mapFeature.geometry.type === "Polygon") {
-      // Calcola il centro del poligono
-      const coords = mapFeature.geometry.coordinates as [number, number][][];
-      const lats = coords[0].map(c => c[1]);
-      const lngs = coords[0].map(c => c[0]);
-      const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
-      const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+    if (mapFeature) {
+      let centerLat: number | null = null;
+      let centerLng: number | null = null;
 
-      setSelectedStallCenter([centerLat, centerLng]);
-      setStallCenterTrigger(prev => prev + 1);
+      if (mapFeature.geometry.type === "Polygon") {
+        // Calcola il centro del poligono
+        const coords = mapFeature.geometry.coordinates as [number, number][][];
+        const lats = coords[0].map(c => c[1]);
+        const lngs = coords[0].map(c => c[0]);
+        centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+        centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+      } else if (mapFeature.geometry.type === "Point") {
+        // Per posteggi con geometry Point, usa le coordinate direttamente
+        const coords = mapFeature.geometry.coordinates as [number, number];
+        centerLng = coords[0];
+        centerLat = coords[1];
+      }
+
+      if (centerLat !== null && centerLng !== null) {
+        setSelectedStallCenter([centerLat, centerLng]);
+        setStallCenterTrigger(prev => prev + 1);
+      }
     }
   };
 
@@ -3991,14 +4015,24 @@ function PosteggiTab({
                     const mapFeature = mapData?.stalls_geojson?.features?.find(
                       (f: any) => String(f.properties.number) === String(stallNumber)
                     );
-                    if (mapFeature && mapFeature.geometry.type === 'Polygon') {
-                      const coords = mapFeature.geometry.coordinates as [number, number][][];
-                      const lats = coords[0].map((c: [number, number]) => c[1]);
-                      const lngs = coords[0].map((c: [number, number]) => c[0]);
-                      const centerLat = lats.reduce((a: number, b: number) => a + b, 0) / lats.length;
-                      const centerLng = lngs.reduce((a: number, b: number) => a + b, 0) / lngs.length;
-                      setSelectedStallCenter([centerLat, centerLng]);
-                      setStallCenterTrigger(prev => prev + 1);
+                    if (mapFeature) {
+                      let centerLat: number | null = null;
+                      let centerLng: number | null = null;
+                      if (mapFeature.geometry.type === 'Polygon') {
+                        const coords = mapFeature.geometry.coordinates as [number, number][][];
+                        const lats = coords[0].map((c: [number, number]) => c[1]);
+                        const lngs = coords[0].map((c: [number, number]) => c[0]);
+                        centerLat = lats.reduce((a: number, b: number) => a + b, 0) / lats.length;
+                        centerLng = lngs.reduce((a: number, b: number) => a + b, 0) / lngs.length;
+                      } else if (mapFeature.geometry.type === 'Point') {
+                        const coords = mapFeature.geometry.coordinates as [number, number];
+                        centerLng = coords[0];
+                        centerLat = coords[1];
+                      }
+                      if (centerLat !== null && centerLng !== null) {
+                        setSelectedStallCenter([centerLat, centerLng]);
+                        setStallCenterTrigger(prev => prev + 1);
+                      }
                     }
                     // Scroll alla riga nella lista (solo dentro il container, non la pagina)
                     setTimeout(() => {
