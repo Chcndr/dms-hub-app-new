@@ -1,7 +1,21 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.7 (Fix Animazione Mappa PA+App, Popup SPUNTA FINITA, Posteggi arancioni, Card Giornata completata)
+> **Versione:** 10.2.8 (Fix animazione mappa PA Point geometry, regressione sidebar, polling spuntisti PA, polling App)
 > **Data:** 04 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.8 (04 Mag 2026)
+> **Fix 4 Bug: Animazione mappa PA (Point geometry), Regressione sidebar dati impresa, Polling spuntisti PA, Polling App**
+>
+> **Problemi risolti:**
+> 1. **BUG 1 — Animazione mappa PA non funziona dalla lista posteggi (Frontend)**: Il `handleRowClick` e `onStallClick` gestivano solo geometry di tipo `Polygon`, ma alcuni posteggi nel GeoJSON hanno geometry `Point` (posteggi senza poligono disegnato). Il centro non veniva calcolato → `flyTo` non partiva. **Fix**: aggiunto supporto per geometry `Point` (usa coordinate direttamente) e `MultiPolygon` oltre a `Polygon`.
+> 2. **BUG 2 — Regressione sidebar dati impresa si ricarica/scompare ogni 5-10 secondi (Frontend PA)**: Il `useEffect` che carica `loadCompanyData` aveva `[selectedStallId, stalls, concessionsByStallId]` come dependencies. Il polling ogni 10s creava un nuovo array `stalls` → React rilevava cambio → useEffect si ri-eseguiva → sidebar lampeggiava. **Fix**: rimosso `stalls` e `concessionsByStallId` dalle dependencies, mantenuto solo `selectedStallId`.
+> 3. **BUG 3 — Lista spuntisti PA non si aggiorna dopo presenza da App (Frontend PA)**: Il polling `fetchStallsAndPresenzeOnly` aggiornava solo `stalls` e `presenze`, NON `spuntisti`. Quando un'impresa faceva checkin dall'App, la lista spuntisti nella PA non si aggiornava fino al prossimo `fetchData()` completo. **Fix**: aggiunto fetch `/api/spuntisti/mercato/:id` nel polling leggero.
+> 4. **BUG 4 — App non si aggiorna senza uscire e rientrare (App)**: Non c'era polling automatico nell'App. Dopo un'azione dalla PA (deposito rifiuti, uscita), l'App non lo sapeva. **Fix**: aggiunto polling `cercaMercati()` ogni 15 secondi nelle schermate principali (`scelta_tipo`, `vista_mappa`).
+>
+> **File modificati:**
+> - `GestioneMercati.tsx` (Frontend): handleRowClick/onStallClick supportano Point geometry + polling include spuntisti + sidebar dependency fix
+> - `PresenzePage.tsx` (Frontend/App): polling 15s per aggiornamento automatico
 >
 > ---
 > ### CHANGELOG v10.2.7 (04 Mag 2026)
