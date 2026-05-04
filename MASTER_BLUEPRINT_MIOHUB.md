@@ -1,7 +1,25 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.6 (Fix Lista Spuntisti PA, Popup SPUNTA FINITA, Animazione Mappa App)
+> **Versione:** 10.2.7 (Fix Animazione Mappa PA+App, Popup SPUNTA FINITA, Posteggi arancioni, Card Giornata completata)
 > **Data:** 04 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.7 (04 Mag 2026)
+> **Fix 4 Bug: Animazione mappa PA+App, Popup SPUNTA FINITA, Posteggi arancioni dopo spunta, Card Giornata completata per spuntisti**
+>
+> **Problemi risolti:**
+> 1. **BUG 1 — Animazione mappa dalla lista posteggi PA (Frontend)**: Il `StallCenterController` usava un `lastCenterRef` che bloccava il `flyTo` se il centro era uguale al precedente. **Fix**: rimosso `lastCenterRef`, aggiunto `stallCenterTrigger` counter che viene incrementato ad ogni click e usato come dependency dell'useEffect per forzare il flyTo.
+> 2. **BUG 1b — Animazione mappa App (Backend)**: Il `map.once('moveend')` poteva non scattare se `fitBounds` non causava movimento. **Fix**: aggiunto fallback `setTimeout(1500ms)` con flag `stallSelected` per garantire che `selectStall` venga sempre chiamato.
+> 3. **BUG 2 — Popup SPUNTA FINITA non appare (Backend)**: L'endpoint `spunta-turno-corrente` usava `DATE(ms.data_mercato) = $2` senza fallback IN_CORSO in 4 query (righe 2189, 2200, 2201, 2234). La sessione non veniva trovata → `spunta_terminata = false` → popup mai triggerato. **Fix**: aggiunto `OR ms.stato = 'IN_CORSO'` a tutte e 4 le query.
+> 4. **BUG 3 — Posteggi arancioni non tornano verdi dopo fine spunta (Frontend PA)**: Il `fetchStallsAndPresenzeOnly()` veniva chiamato solo dentro il check del popup. Se il popup non appariva (BUG 2), i dati non si aggiornavano. **Fix**: spostato `fetchStallsAndPresenzeOnly()` fuori dal check popup, chiamato SEMPRE quando `spunta_terminata && isSpuntaMode`.
+> 5. **BUG 4 — Card "Giornata completata" mancante per spuntisti puri (App)**: `tuttiPresenti` richiedeva `haConcessioni` (concessioni.length > 0). Per imprese con solo wallet SPUNTA e nessuna concessione, la card non appariva mai. **Fix**: cambiato `tuttiPresenti = tuttiPosteggi.length > 0 && tuttiPosteggi.every(c => c.gia_presente_oggi)` per considerare sia concessioni che spuntisti con posteggio.
+>
+> **File modificati:**
+> - `presenze-live.js` (Backend): `OR ms.stato = 'IN_CORSO'` in 4 query spunta-turno-corrente
+> - `market-map-viewer.html` (Backend): fallback timeout 1.5s per selectStall
+> - `GestioneMercati.tsx` (Frontend): stallCenterTrigger + fetchStallsAndPresenzeOnly fuori dal popup check
+> - `MarketMapComponent.tsx` (Frontend): StallCenterController con trigger prop
+> - `PresenzePage.tsx` (Frontend): tuttiPresenti usa tuttiPosteggi
 >
 > ---
 > ### CHANGELOG v10.2.6 (04 Mag 2026)
