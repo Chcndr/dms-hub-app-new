@@ -1,7 +1,28 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.13 (Fix mappa PA vibra, saldo negativo concessionari, sessioni orfane, bottone PRESENZE)
+> **Versione:** 10.2.14 (Blocco presenze dopo fase PRESENZE, fix conflitto concessionario/spuntista, badge ASSENTE)
 > **Data:** 05 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.14 (05 Mag 2026)
+> **Blocco presenze dopo fase PRESENZE, fix conflitto concessionario/spuntista, badge ASSENTE in PA**
+>
+> **Problemi risolti:**
+> 1. **BUG — Bottone PRESENZE visibile durante SPUNTA/MERCATO IN CORSO (Frontend App)**: Il bottone PRESENZE rimaneva visibile anche quando la fase del mercato era già SPUNTA o MERCATO_ATTIVO. **Fix**: aggiunta variabile `presenzeChiuse` che verifica `session_fase` e nasconde il bottone quando la fase è SPUNTA, MERCATO_ATTIVO, MERCATO, ATTIVO, CHIUSO, CHIUSA o CHIUSURA.
+> 2. **BUG — Backend accetta checkin dopo fase PRESENZE (Backend)**: L'endpoint `/checkin` non verificava la fase corrente della sessione. **Fix**: aggiunto check in `presenze-live.js` che interroga `sessioni_fasi` e rifiuta il checkin con errore `FASE_NON_CONSENTITA` se la fase è SPUNTA, MERCATO_ATTIVO o CHIUSO. Stesso blocco aggiunto a `registra-presenza-concessionario` in `test-mercato.js`.
+> 3. **BUG — Concessionario appare anche come spuntista (Backend)**: MIO TEST aveva sia wallet CONCESSION che wallet SPUNTA per lo stesso mercato. Quando faceva checkin, il codice poteva usare il wallet SPUNTA e inserirlo in `spunta_coda`. **Fix**: prima di inserire in `spunta_coda`, verifica se l'impresa ha una concessione ATTIVA per quel mercato — se sì, NON inserire.
+> 4. **BUG — Presenza fantasma €0.00 senza posteggio (Backend)**: Un concessionario poteva fare checkin senza specificare `stall_id`, generando una riga con importo €0.00 e senza numero posteggio. **Fix**: se l'impresa ha una concessione attiva e non ha passato `stall_id`, il backend rifiuta con errore `STALL_OBBLIGATORIO`.
+> 5. **Badge ASSENTE in rosso (Frontend PA)**: Nel popup dettaglio posteggio, se il concessionario non ha fatto la presenza oggi (posteggio LIBERO + nessuna presenza trovata), viene mostrato un badge "ASSENTE" in rosso accanto allo stato.
+>
+> **Fix DB eseguiti:**
+> - Eliminata presenza fantasma id=2774 (stall_id NULL, €0.00, MIO TEST)
+> - Rimosso MIO TEST da spunta_coda sessione 511 (stato IN_ATTESA, non doveva essere lì)
+>
+> **File modificati:**
+> - `PresenzePage.tsx` (Frontend/App): variabile `presenzeChiuse` per nascondere bottone PRESENZE dopo fase PRESENZE
+> - `GestioneMercati.tsx` (Frontend/PA): badge ASSENTE in rosso nel popup dettaglio posteggio
+> - `presenze-live.js` (Backend): blocco fase SPUNTA/MERCATO_ATTIVO/CHIUSO, blocco checkin senza stall_id per concessionari, impedisce inserimento concessionari in spunta_coda
+> - `test-mercato.js` (Backend): blocco fase per registra-presenza-concessionario
 >
 > ---
 > ### CHANGELOG v10.2.13 (05 Mag 2026)
