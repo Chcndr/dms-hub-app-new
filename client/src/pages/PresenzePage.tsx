@@ -336,11 +336,9 @@ export default function PresenzePage() {
       if (!res.ok) {
         const errData = await res.json().catch(() => ({} as Record<string, unknown>));
         if (errData.errore === 'SALDO_NEGATIVO') {
-          setPopup({
-            tipo: 'errore',
-            titolo: 'ACCESSO NEGATO',
-            messaggio: (errData.messaggio as string) || `Saldo insufficiente. Ricaricare il wallet.`,
-          });
+          // Mostra schermata fullscreen dedicata saldo negativo
+          setSpuntaTurno({ stato: 'SALDO_NEGATIVO', saldo: (errData as { saldo?: number }).saldo });
+          setSchermata('spunta_saldo_negativo');
         } else {
           setPopup({
             tipo: 'errore',
@@ -1170,7 +1168,7 @@ export default function PresenzePage() {
             const tuttePresenzeComplete = tutteLeConcessioni.length > 0 && tutteLeConcessioni.every(c => c.gia_presente_oggi);
             // Fase corrente del mercato: dopo PRESENZE non si può più fare la presenza
             const faseCorrente = mercatoSelezionato.session_fase;
-            const presenzeChiuse = faseCorrente === 'SPUNTA' || faseCorrente === 'MERCATO_ATTIVO' || faseCorrente === 'MERCATO' || faseCorrente === 'ATTIVO' || faseCorrente === 'CHIUSO' || faseCorrente === 'CHIUSA' || faseCorrente === 'CHIUSURA';
+            const presenzeChiuse = faseCorrente === 'SPUNTA' || faseCorrente === 'SPUNTA_IN_CORSO' || faseCorrente === 'MERCATO_ATTIVO' || faseCorrente === 'MERCATO' || faseCorrente === 'ATTIVO' || faseCorrente === 'CHIUSO' || faseCorrente === 'CHIUSA' || faseCorrente === 'CHIUSURA';
             const qualcunoPresente = tuttiPosteggi.some(c => c.gia_presente_oggi);
             const tuttiDepositoFatto = tuttiPosteggi.filter(c => c.gia_presente_oggi).every(c => c.deposito_rifiuti_fatto);
             const qualcunoDepositoDaFare = tuttiPosteggi.some(c => c.gia_presente_oggi && !c.deposito_rifiuti_fatto);
@@ -1200,8 +1198,35 @@ export default function PresenzePage() {
 
                 {/* Indicatore ATTESA SPUNTA (card arancione informativa) */}
                 {haSpunta && (() => {
+                  // Se la fase è MERCATO_ATTIVO o CHIUSO, la spunta è finita → non mostrare nulla
+                  if (presenzeChiuse && faseCorrente !== 'SPUNTA') {
+                    // Mostra card grigia "Spunta terminata" solo se era in attesa e non ha ottenuto posteggio
+                    const spuntaTerminata = spuntisti.some(s => 
+                      s.spunta_stato_coda === 'SCADUTO' || s.spunta_stato_coda === 'COMPLETATO' ||
+                      s.spunta_stato_coda === 'SALTATO' || s.spunta_stato_coda === 'RINUNCIATO'
+                    );
+                    const spuntaSaldoNeg = spuntisti.some(s => s.spunta_stato_coda === 'SALTATO');
+                    if (spuntaTerminata && spuntaConPosteggio.length === 0) {
+                      return (
+                        <div className={`w-full rounded-2xl p-4 sm:p-6 text-left shadow-lg ${spuntaSaldoNeg ? 'bg-gradient-to-r from-red-800 to-red-900 shadow-red-800/20' : 'bg-gradient-to-r from-gray-600 to-gray-700 shadow-gray-600/20'}`}>
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                              <XCircle className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-base sm:text-xl font-black text-white leading-tight">{spuntaSaldoNeg ? 'SALDO NEGATIVO' : 'SPUNTA TERMINATA'}</p>
+                              <p className="text-xs sm:text-sm text-white/70 mt-1">
+                                {spuntaSaldoNeg ? 'Non hai potuto partecipare alla spunta per saldo negativo' : 'La spunta di oggi è terminata'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }
                   // PRIMA controlla se ha rinunciato o è stato saltato (priorità massima)
-                  const spuntaRinunciato = spuntisti.some(s => s.spunta_stato_coda === 'RINUNCIATO' || s.spunta_stato_coda === 'SALTATO');
+                  const spuntaRinunciato = spuntisti.some(s => s.spunta_stato_coda === 'RINUNCIATO' || s.spunta_stato_coda === 'SALTATO' || s.spunta_stato_coda === 'SCADUTO');
                   if (spuntaRinunciato) {
                     const isSaldoNeg = spuntisti.some(s => s.spunta_stato_coda === 'SALTATO');
                     return (
@@ -1991,10 +2016,10 @@ export default function PresenzePage() {
       <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-red-700 to-red-900 flex flex-col items-center justify-center p-6 text-white">
         <XCircle className="w-24 h-24 mb-8 drop-shadow-lg" strokeWidth={1.5} />
         <h1 className="text-3xl sm:text-4xl font-black text-center mb-6 leading-tight drop-shadow-lg">
-          SALDO NEGATIVO
+          SALDO INSUFFICIENTE
         </h1>
         <p className="text-xl sm:text-2xl text-center text-white/90 mb-4 max-w-md leading-relaxed">
-          Non puoi ricevere un posteggio perch\u00e9 il tuo saldo \u00e8 negativo.
+          Il tuo wallet non ha saldo sufficiente per occupare un posteggio. Ricarica il wallet per partecipare alla prossima spunta.
         </p>
         {spuntaTurno?.saldo !== undefined && (
           <p className="text-2xl font-bold text-red-200 mb-10">
