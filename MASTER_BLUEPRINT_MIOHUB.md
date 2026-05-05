@@ -1,7 +1,27 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.11 (Fix semaforo fasi mercato, popup spunta finita, barra turno, mappa spunta flyTo)
+> **Versione:** 10.2.12 (Fix semaforo LATERAL, mappa iframe, popup cooldown, pulizia sessioni DB)
 > **Data:** 05 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.12 (05 Mag 2026)
+> **Fix definitivi: semaforo fase, mappa spunta, popup PA, pulizia DB**
+>
+> **Problemi risolti:**
+> 1. **BUG — Semaforo sempre verde (Backend)**: La query `mercati-oggi` faceva un `LEFT JOIN` con `market_sessions` senza `ORDER BY`, prendendo sessioni vecchie senza fasi in `sessioni_fasi`. **Fix**: convertito in `LEFT JOIN LATERAL` con `ORDER BY created_at DESC LIMIT 1` per prendere sempre la sessione più recente. Inoltre pulite 9 sessioni vecchie rimaste `IN_CORSO` nel DB e aggiunta fase `PRESENZE` alla sessione 506 che ne era priva.
+> 2. **BUG — Popup SPUNTA FINITA appare ancora (Frontend PA)**: Il fix `turnoAttivoCount` nel backend era corretto ma il timing del polling PA causava un falso positivo nei primi secondi. **Fix**: aggiunto cooldown 10 secondi (`spuntaStartedAtRef`) nella PA — il popup non viene mostrato nei primi 10s dopo l'avvio della spunta.
+> 3. **BUG — Mappa spunta non fa animazione flyTo (Frontend App)**: Il `MarketMapComponent` React/Leaflet aveva problemi di timing con il flyTo. **Fix**: sostituito con **iframe** che punta a `market-map-viewer.html?marketId=X&stallNumber=Y` (lo stesso usato dalla scheda posteggi che funziona). Rimosso codice GIS inutilizzato da SpuntaNotifier.
+> 4. **BUG — Scelta posteggio da App non chiama prossimo**: L'endpoint `scegli-posteggio` in `presenze-live.js` GIÀ chiama `attivaProssimoTurno`. Il problema era il timing della PA (delay 500ms già aggiunto in v10.2.11).
+>
+> **File modificati:**
+> - `SpuntaNotifier.tsx` (Frontend/App): mappa con iframe, rimosso MarketMapComponent/GIS code
+> - `GestioneMercati.tsx` (Frontend/PA): cooldown 10s per popup spunta_terminata
+> - `presenze-live.js` (Backend): query mercati-oggi con LEFT JOIN LATERAL
+> - `test-mercato.js` (Backend): attivaProssimoTurno con cambio fase MERCATO_ATTIVO
+>
+> **Fix DB eseguiti:**
+> - Chiuse 9 sessioni vecchie IN_CORSO (di ieri)
+> - Aggiunta fase PRESENZE alla sessione 506 (La Piazzola oggi)
 >
 > ---
 > ### CHANGELOG v10.2.11 (05 Mag 2026)
