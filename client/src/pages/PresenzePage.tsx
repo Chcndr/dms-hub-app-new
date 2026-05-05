@@ -523,7 +523,20 @@ export default function PresenzePage() {
           const currentMarketId = mercatoSelezionato?.market_id;
           const updatedMercato = mercati.find(m => m.market_id === currentMarketId);
           if (updatedMercato) {
-            setMercatoSelezionato(updatedMercato);
+            // Preserva gia_presente_oggi=true per spuntisti se era già true localmente
+            // (evita che il polling sovrascriva lo stato locale dopo checkin spunta)
+            const prevConcessions = mercatoSelezionato?.concessions || [];
+            const mergedConcessions = updatedMercato.concessions.map(c => {
+              if (c.tipo_posteggio === 'Spunta') {
+                const prevConc = prevConcessions.find(pc => pc.wallet_id === c.wallet_id && pc.tipo_posteggio === 'Spunta');
+                if (prevConc?.gia_presente_oggi && !c.gia_presente_oggi) {
+                  // Il locale dice true ma il backend dice false → preserva true (backend potrebbe non aver ancora deployato il fix)
+                  return { ...c, gia_presente_oggi: true };
+                }
+              }
+              return c;
+            });
+            setMercatoSelezionato({ ...updatedMercato, concessions: mergedConcessions });
           }
         } else if (mercati.length === 1) {
           setMercatoSelezionato(mercati[0]);
@@ -557,7 +570,7 @@ export default function PresenzePage() {
   useEffect(() => {
     if (!mercatoSelezionato || !impresaId) return;
     // Solo nelle schermate principali (non durante flusso spunta attivo)
-    if (!['scelta_tipo', 'vista_mappa'].includes(schermata)) return;
+    if (!['scelta_tipo', 'vista_mappa', 'presenza_posteggio'].includes(schermata)) return;
     const interval = setInterval(() => {
       cercaMercati();
     }, 10000); // 10 secondi (allineato alla PA)
@@ -715,89 +728,7 @@ export default function PresenzePage() {
     setLoadingAzione(false);
   };
 
-  const eseguiPresenzaSpunta = async () => {
-    if (!mercatoSelezionato || !impresaId) return;
-    setLoadingAzione(true);
-    try {
-      const res = await authenticatedFetch(
-        `${MIHUB_API_BASE_URL}/api/presenze-live/spunta/entra-coda`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            impresa_id: impresaId,
-            market_id: mercatoSelezionato.market_id,
-            session_id: mercatoSelezionato.session_id,
-            latitude: gpsPosition?.lat,
-            longitude: gpsPosition?.lng,
-          }),
-        }
-      );
-
-      const data = await res.json();
-      if (data.success) {
-        setSpuntaCodaId(data.coda_id || null);
-        setSpuntaTurno({
-          stato: 'IN_ATTESA',
-          posizione: data.posizione,
-          totale_in_coda: data.totale_in_coda,
-          posteggi_disponibili: data.posteggi_disponibili,
-          posizione_graduatoria: data.posizione_graduatoria || data.posizione,
-          presenze_totali: data.presenze_totali || 0,
-        });
-        // Aggiorna gia_presente_oggi per le concessioni spunta
-        setMercatoSelezionato(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            concessions: prev.concessions.map(c =>
-              c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: true } : c
-            )
-          };
-        });
-        // Connetti SSE per ricevere eventi in tempo reale
-        if (mercatoSelezionato.session_id) {
-          connettiSSESpunta(mercatoSelezionato.session_id);
-        }
-        setSchermata('spunta_attesa');
-      } else if (data.errore === 'GIA_IN_CODA') {
-        // Già in coda: connetti SSE e mostra schermata attesa
-        setSpuntaTurno({
-          stato: 'IN_ATTESA',
-          posizione: 0,
-          totale_in_coda: 0,
-          posteggi_disponibili: 0,
-        });
-        // Aggiorna gia_presente_oggi per le concessioni spunta
-        setMercatoSelezionato(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            concessions: prev.concessions.map(c =>
-              c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: true } : c
-            )
-          };
-        });
-        if (mercatoSelezionato?.session_id) {
-          connettiSSESpunta(mercatoSelezionato.session_id);
-        }
-        setSchermata('spunta_attesa');
-      } else {
-        setPopup({
-          tipo: "errore",
-          titolo: "ERRORE",
-          messaggio: data.messaggio || data.error || "Si è verificato un errore.",
-        });
-      }
-    } catch {
-      setPopup({
-        tipo: "errore",
-        titolo: "ERRORE DI RETE",
-        messaggio: "Impossibile contattare il server. Riprova.",
-      });
-    }
-    setLoadingAzione(false);
-  };
+  // eseguiPresenzaSpunta rimossa v10.2.9 - la presenza spunta ora passa da eseguiPresenzaPosteggio(conc) con tipo_presenza='SPUNTA'
 
   const eseguiDepositoRifiuti = async (concessione: ConcessioneInfo) => {
     if (!mercatoSelezionato || !impresaId) return;
@@ -1218,28 +1149,25 @@ export default function PresenzePage() {
 
             return (
               <>
-                {/* PRESENZA POSTEGGIO: visibile se ha concessioni e non tutti hanno fatto presenza */}
-                {/* Nascosto durante fase SPUNTA o se la spunta è in corso (spuntisti in attesa/con posteggio) */}
-                {haConcessioni && !tuttiPresenti && mercatoSelezionato.session_fase !== 'SPUNTA' && spuntaInAttesa.length === 0 && spuntaConPosteggio.length === 0 && (
-                  <button
-                    onClick={() => setSchermata("presenza_posteggio")}
-                    className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"
-                  >
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                        <LogIn className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-base sm:text-xl font-black text-white leading-tight">PRESENZA POSTEGGIO</p>
-                        <p className="text-xs sm:text-sm text-white/70 mt-1">
-                          Registra la presenza al posteggio
-                        </p>
-                      </div>
+                {/* PRESENZE: bottone unico che apre la schermata con card posteggi + card Autorizzazione Spunta */}
+                <button
+                  onClick={() => setSchermata("presenza_posteggio")}
+                  className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"
+                >
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                      <LogIn className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
                     </div>
-                  </button>
-                )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base sm:text-xl font-black text-white leading-tight">PRESENZE</p>
+                      <p className="text-xs sm:text-sm text-white/70 mt-1">
+                        Registra la presenza
+                      </p>
+                    </div>
+                  </div>
+                </button>
 
-                {/* PRESENZA SPUNTA / ATTESA SPUNTA */}
+                {/* Indicatore ATTESA SPUNTA (card arancione informativa) */}
                 {haSpunta && (() => {
                   // PRIMA controlla se ha rinunciato o è stato saltato (priorità massima)
                   const spuntaRinunciato = spuntisti.some(s => s.spunta_stato_coda === 'RINUNCIATO' || s.spunta_stato_coda === 'SALTATO');
@@ -1283,26 +1211,9 @@ export default function PresenzePage() {
                       </div>
                     );
                   }
-                  // (RINUNCIATO/SALTATO e posteggio assegnato già gestiti sopra)
-                  // Altrimenti mostra bottone PRESENZA SPUNTA per entrare in coda
-                  return (
-                    <button
-                      onClick={() => setSchermata("presenza_spunta")}
-                      className="w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#8b5cf6]/20"
-                    >
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                          <Users className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-base sm:text-xl font-black text-white leading-tight">PRESENZA SPUNTA</p>
-                          <p className="text-xs sm:text-sm text-white/70 mt-1">
-                            Graduatoria spuntisti
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  );
+                  // Se non ha ancora fatto presenza spunta, non mostrare nulla qui
+                  // (il bottone PRESENZA SPUNTA è nella schermata presenza_posteggio sotto la card Autorizzazione Spunta)
+                  return null;
                 })()}
 
                 {/* Separatore se ci sono azioni post-presenza */}
@@ -1368,14 +1279,14 @@ export default function PresenzePage() {
 
     return (
       <div className="min-h-screen bg-[#0b1220] flex flex-col">
-        {renderHeader("Presenza Posteggio", () => setSchermata("scelta_tipo"))}
+        {renderHeader("Presenze", () => setSchermata("scelta_tipo"))}
 
         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
           <h2 className="text-xl font-bold text-[#e8fbff] px-1">
-            Seleziona il posteggio
+            Registra la presenza
           </h2>
           <p className="text-base text-[#e8fbff]/50 px-1">
-            Clicca sul posteggio per registrare la presenza
+            Seleziona il posteggio o l'autorizzazione spunta
           </p>
 
           {concessioni.length === 0 && (
@@ -1595,128 +1506,11 @@ export default function PresenzePage() {
       </div>
     );
   }
-  // ─── SCHERMATA: PRESENZA SPUNTA ─────────────────────────────────────────
+  // ─── SCHERMATA: PRESENZA SPUNTA (rimossa v10.2.9 - unificata in presenza_posteggio) ──
+  // Se qualcuno naviga ancora a presenza_spunta (es. link legacy), redirect a presenza_posteggio
   if (schermata === "presenza_spunta" && mercatoSelezionato) {
-    const spuntaGiaPresente = mercatoSelezionato.concessions.some(c => c.tipo_posteggio === 'Spunta' && c.gia_presente_oggi);
-    const spuntaRinunciatoOSaltato = mercatoSelezionato.concessions.some(c => c.tipo_posteggio === 'Spunta' && (c.spunta_stato_coda === 'RINUNCIATO' || c.spunta_stato_coda === 'SALTATO'));
-    // Se ha rinunciato/saltato, torna alla schermata scelta_tipo
-    if (spuntaRinunciatoOSaltato) {
-      setSchermata('scelta_tipo');
-      return null;
-    }
-    return (
-      <div className="min-h-screen bg-[#0b1220] flex flex-col">
-        {renderHeader("Presenza Spunta", () => setSchermata("scelta_tipo"))}
-
-        <div className="flex-1 p-4 flex flex-col items-center justify-center space-y-6">
-          <div className={`w-24 h-24 rounded-full flex items-center justify-center shadow-lg ${spuntaGiaPresente ? 'bg-gradient-to-br from-yellow-500 to-amber-600 shadow-yellow-500/30' : 'bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed] shadow-[#8b5cf6]/30'}`}>
-            {spuntaGiaPresente ? <Clock className="w-12 h-12 text-white animate-pulse" /> : <Users className="w-12 h-12 text-white" />}
-          </div>
-
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-[#e8fbff] mb-2">
-              {spuntaGiaPresente ? 'Attesa Spunta' : 'Presenza Spunta'}
-            </h2>
-            <p className="text-lg text-[#e8fbff]/60 max-w-sm">
-              {spuntaGiaPresente
-                ? <>Presenza registrata per <strong className="text-[#14b8a6]">{mercatoSelezionato.market_name}</strong>. Sei in attesa del tuo turno.</>
-                : <>Registra la tua presenza nella graduatoria spuntisti per il mercato <strong className="text-[#14b8a6]">{mercatoSelezionato.market_name}</strong>.</>
-              }
-            </p>
-          </div>
-
-          {spuntaGiaPresente ? (
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 w-full max-w-sm text-center">
-              <Clock className="w-10 h-10 text-yellow-400 mx-auto mb-3 animate-pulse" />
-              <p className="text-xl font-bold text-yellow-400 mb-2">ATTESA SPUNTA</p>
-              <p className="text-base text-[#e8fbff]/60 mb-4">Verrai avvisato quando sar\u00e0 il tuo turno.</p>
-              <Button
-                onClick={async () => {
-                  const confirmed = window.confirm(
-                    'Sei sicuro di voler RINUNCIARE alla spunta?\n\nNON riceverai un posteggio e NON guadagnerai il punto presenza in graduatoria.'
-                  );
-                  if (!confirmed) return;
-                  try {
-                    const rinunciaRes = await authenticatedFetch(
-                      `${MIHUB_API_BASE_URL}/api/presenze-live/spunta/rinuncia`,
-                      {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          coda_id: spuntaCodaId || spuntaTurno?.coda_id || null,
-                          impresa_id: impresaId,
-                          session_id: spuntaTurno?.session_id || null
-                        }),
-                      }
-                    );
-                    const rinunciaData = await rinunciaRes.json();
-                    if (rinunciaData.success) {
-                      setPopup({
-                        tipo: "avviso",
-                        titolo: "RINUNCIA REGISTRATA",
-                        messaggio: "Hai rinunciato alla spunta. Non riceverai un posteggio e non guadagni il punto presenza.",
-                      });
-                      // Aggiorna stato locale: segna come rinunciato e non più presente
-                      setMercatoSelezionato(prev => {
-                        if (!prev) return prev;
-                        return {
-                          ...prev,
-                          concessions: prev.concessions.map(c =>
-                            c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: false, spunta_stato_coda: 'RINUNCIATO' } : c
-                          )
-                        };
-                      });
-                      setSpuntaTurno({ stato: 'RINUNCIATO' });
-                      setSchermata('scelta_tipo');
-                      if (sseRef.current) sseRef.current.close();
-                    } else {
-                      setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: rinunciaData.messaggio || 'Errore rinuncia' });
-                    }
-                  } catch (err) {
-                    setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: 'Errore durante la rinuncia' });
-                  }
-                }}
-                className="bg-red-600/80 hover:bg-red-700 text-white border border-red-400/50 text-sm px-6 py-2 rounded-xl font-bold"
-              >
-                RINUNCIA ALLA SPUNTA
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="bg-[#1a2332] border border-[#8b5cf6]/20 rounded-2xl p-5 w-full max-w-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <Info className="w-5 h-5 text-[#8b5cf6]" />
-                  <p className="text-base font-semibold text-[#e8fbff]">Come funziona</p>
-                </div>
-                <ul className="space-y-2 text-base text-[#e8fbff]/60">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#8b5cf6] font-bold mt-0.5">1.</span>
-                    Registri la tua presenza
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#8b5cf6] font-bold mt-0.5">2.</span>
-                    Ricevi la posizione in graduatoria
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#8b5cf6] font-bold mt-0.5">3.</span>
-                    Verrai avvisato quando sarà il tuo turno
-                  </li>
-                </ul>
-              </div>
-
-              <Button
-                onClick={eseguiPresenzaSpunta}
-                disabled={loadingAzione}
-                className="w-full max-w-sm bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#6d28d9] text-white text-lg sm:text-xl py-8 rounded-2xl font-black shadow-xl shadow-[#8b5cf6]/20"
-              >
-                <Users className="w-6 h-6 mr-2 flex-shrink-0" />
-                REGISTRA SPUNTA
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-    );
+    setSchermata('presenza_posteggio');
+    return null;
   }
 
   // ─── SCHERMATA: DEPOSITO RIFIUTI ────────────────────────────────────────
