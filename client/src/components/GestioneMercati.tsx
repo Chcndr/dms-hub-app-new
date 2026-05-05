@@ -5406,6 +5406,14 @@ function PosteggiTab({
                   >
                     {getStallStatusLabel(selectedStall.status)}
                   </Badge>
+                  {/* Badge ASSENTE: mostrato quando il concessionario non ha fatto la presenza oggi */}
+                  {selectedStall.concession_id && selectedStall.status === 'libero' && (() => {
+                    const presenzaStall = presenze.find(p => String(p.stall_number) === String(selectedStall.number) || p.stallId === selectedStall.id);
+                    if (!presenzaStall) {
+                      return <Badge className="bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30 text-xs mt-1 ml-2">ASSENTE</Badge>;
+                    }
+                    return null;
+                  })()}
                 </div>
                 <button
                   onClick={() => {

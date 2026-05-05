@@ -1168,6 +1168,9 @@ export default function PresenzePage() {
             // Verifica se TUTTE le concessioni (inclusi spuntisti) hanno fatto la presenza
             const tutteLeConcessioni = mercatoSelezionato.concessions;
             const tuttePresenzeComplete = tutteLeConcessioni.length > 0 && tutteLeConcessioni.every(c => c.gia_presente_oggi);
+            // Fase corrente del mercato: dopo PRESENZE non si può più fare la presenza
+            const faseCorrente = mercatoSelezionato.session_fase;
+            const presenzeChiuse = faseCorrente === 'SPUNTA' || faseCorrente === 'MERCATO_ATTIVO' || faseCorrente === 'MERCATO' || faseCorrente === 'ATTIVO' || faseCorrente === 'CHIUSO' || faseCorrente === 'CHIUSA' || faseCorrente === 'CHIUSURA';
             const qualcunoPresente = tuttiPosteggi.some(c => c.gia_presente_oggi);
             const tuttiDepositoFatto = tuttiPosteggi.filter(c => c.gia_presente_oggi).every(c => c.deposito_rifiuti_fatto);
             const qualcunoDepositoDaFare = tuttiPosteggi.some(c => c.gia_presente_oggi && !c.deposito_rifiuti_fatto);
@@ -1175,8 +1178,8 @@ export default function PresenzePage() {
 
             return (
               <>
-                {/* PRESENZE: bottone unico - nascosto quando tutte le presenze sono completate */}
-                {!tuttePresenzeComplete && (
+                {/* PRESENZE: bottone unico - nascosto quando tutte le presenze sono completate O quando la fase è oltre PRESENZE */}
+                {!tuttePresenzeComplete && !presenzeChiuse && (
                   <button
                     onClick={() => setSchermata("presenza_posteggio")}
                     className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"
