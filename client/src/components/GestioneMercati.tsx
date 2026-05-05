@@ -2302,6 +2302,7 @@ function PosteggiTab({
   // Popup fullscreen spunta finita
   const [showSpuntaFinitaPopup, setShowSpuntaFinitaPopup] = useState(false);
   const spuntaFinitaGiaVistaRef = React.useRef(false); // true dopo che il popup è stato mostrato e chiuso — non mostrarlo mai più
+  const spuntaStartedAtRef = React.useRef<number>(0); // timestamp di quando la spunta è stata avviata — cooldown anti-popup
   // Spunta Live: turno corrente e polling
   const [spuntaLiveTurno, setSpuntaLiveTurno] = useState<any>(null);
   const [spuntaTimerSecondi, setSpuntaTimerSecondi] = useState(0);
@@ -2323,13 +2324,19 @@ function PosteggiTab({
       } else {
         // Se la spunta è terminata
         if (data.spunta_terminata && isSpuntaMode) {
-          // Ferma il polling — la spunta è finita, non serve più pollare
-          if (spuntaLivePollingRef.current) { clearInterval(spuntaLivePollingRef.current); spuntaLivePollingRef.current = null; }
-          // Aggiorna SEMPRE la lista posteggi quando la spunta termina (i riservati tornano liberi)
-          fetchStallsAndPresenzeOnly();
-          // Mostra popup SOLO se non è già stato visto e chiuso in precedenza
-          if (!spuntaFinitaGiaVistaRef.current && !showSpuntaFinitaPopup) {
-            setShowSpuntaFinitaPopup(true);
+          // COOLDOWN: non mostrare popup se la spunta è stata avviata da meno di 10 secondi
+          const secondiDaAvvio = (Date.now() - spuntaStartedAtRef.current) / 1000;
+          if (secondiDaAvvio < 10) {
+            console.log(`[PA] Spunta terminata ignorata: avviata da solo ${secondiDaAvvio.toFixed(0)}s (cooldown 10s)`);
+          } else {
+            // Ferma il polling — la spunta è finita, non serve più pollare
+            if (spuntaLivePollingRef.current) { clearInterval(spuntaLivePollingRef.current); spuntaLivePollingRef.current = null; }
+            // Aggiorna SEMPRE la lista posteggi quando la spunta termina (i riservati tornano liberi)
+            fetchStallsAndPresenzeOnly();
+            // Mostra popup SOLO se non è già stato visto e chiuso in precedenza
+            if (!spuntaFinitaGiaVistaRef.current && !showSpuntaFinitaPopup) {
+              setShowSpuntaFinitaPopup(true);
+            }
           }
         }
         setSpuntaLiveTurno(null);
@@ -3331,6 +3338,7 @@ function PosteggiTab({
                     )
                   );
                   setIsSpuntaMode(true);
+                  spuntaStartedAtRef.current = Date.now(); // Timestamp avvio spunta per cooldown anti-popup
                   spuntaFinitaGiaVistaRef.current = false; // v10.2.6: Reset per nuova sessione spunta
                   setIsOccupaMode(false);
                   setIsLiberaMode(false);
@@ -3416,6 +3424,7 @@ function PosteggiTab({
                   : "bg-transparent hover:bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50"
               }`}
               onClick={() => {
+                if (!isSpuntaMode) spuntaStartedAtRef.current = Date.now();
                 setIsSpuntaMode(!isSpuntaMode);
                 setIsOccupaMode(false);
                 setIsLiberaMode(false);

@@ -7,7 +7,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Clock, List, MapPin, CheckCircle, X, ArrowLeft } from "lucide-react";
-import { MarketMapComponent } from "./MarketMapComponent";
+// import { MarketMapComponent } from "./MarketMapComponent"; // Rimosso: ora usiamo iframe
 
 const MIHUB_API_BASE_URL = "https://api.mio-hub.me";
 
@@ -43,12 +43,7 @@ export default function SpuntaNotifier() {
   const [loadingScelta, setLoadingScelta] = useState(false);
   const [marketIdForMap, setMarketIdForMap] = useState<number | null>(null);
   const [mappaAperta, setMappaAperta] = useState(false);
-  const [mapData, setMapData] = useState<any>(null);
-  const [stallsData, setStallsData] = useState<any[]>([]);
   const [selectedStallForMap, setSelectedStallForMap] = useState<string | null>(null);
-  const [selectedStallCenter, setSelectedStallCenter] = useState<[number, number] | null>(null);
-  const [viewTrigger, setViewTrigger] = useState(0);
-  const [stallCenterTrigger, setStallCenterTrigger] = useState(0);
   const sseRef = useRef<EventSource | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const spuntaRef = useRef(spunta);
@@ -347,65 +342,12 @@ export default function SpuntaNotifier() {
     } catch { /* ignore */ }
   };
 
-  // Apri mappa interna centrata su un posteggio
-  const apriMappaPosteggio = async (stallNumber: string) => {
+  // Apri mappa interna centrata su un posteggio (usa iframe come la scheda posteggi)
+  const apriMappaPosteggio = (stallNumber: string) => {
     if (!marketIdForMap) return;
     setSelectedStallForMap(stallNumber);
     setMappaAperta(true);
-    // Carica dati GIS se non già caricati
-    if (!mapData) {
-      try {
-        const [gisRes, stallsRes] = await Promise.all([
-          fetch(`${MIHUB_API_BASE_URL}/api/gis/market-map/${marketIdForMap}`),
-          fetch(`${MIHUB_API_BASE_URL}/api/markets/${marketIdForMap}/stalls`),
-        ]);
-        if (gisRes.ok) {
-          const gisData = await gisRes.json();
-          if (gisData.success) setMapData(gisData.data);
-        }
-        if (stallsRes.ok) {
-          const sData = await stallsRes.json();
-          setStallsData(sData.success ? sData.data : (Array.isArray(sData) ? sData : []));
-        }
-      } catch { /* ignore */ }
-    }
-    // Centra sul posteggio dopo un breve delay per permettere il render
-    setTimeout(() => {
-      // Cerca coordinate del posteggio nel GIS
-      if (mapData) {
-        const feature = mapData.stalls_geojson?.features?.find(
-          (f: any) => String(f.properties.number) === String(stallNumber)
-        );
-        if (feature && feature.geometry.type === 'Polygon') {
-          const coords = feature.geometry.coordinates[0] as [number, number][];
-          const lats = coords.map(c => c[1]);
-          const lngs = coords.map(c => c[0]);
-          const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
-          const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
-          setSelectedStallCenter([centerLat, centerLng]);
-          setStallCenterTrigger(prev => prev + 1);
-        }
-      }
-    }, 300);
   };
-
-  // Effetto per centrare quando mapData viene caricato
-  useEffect(() => {
-    if (mapData && selectedStallForMap && mappaAperta) {
-      const feature = mapData.stalls_geojson?.features?.find(
-        (f: any) => String(f.properties.number) === String(selectedStallForMap)
-      );
-      if (feature && feature.geometry.type === 'Polygon') {
-        const coords = feature.geometry.coordinates[0] as [number, number][];
-        const lats = coords.map(c => c[1]);
-        const lngs = coords.map(c => c[0]);
-        const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
-        const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
-        setSelectedStallCenter([centerLat, centerLng]);
-        setStallCenterTrigger(prev => prev + 1);
-      }
-    }
-  }, [mapData, selectedStallForMap, mappaAperta]);
 
   // Scegli posteggio
   const scegliPosteggio = async (posteggio: PosteggioLibero) => {
@@ -568,7 +510,7 @@ export default function SpuntaNotifier() {
           <div className="fixed inset-0 z-[999999] flex flex-col bg-gray-900" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <div className="bg-teal-700 px-3 py-2 flex items-center gap-2 flex-shrink-0">
               <button
-                onClick={() => { setMappaAperta(false); setSelectedStallForMap(null); setSelectedStallCenter(null); }}
+                onClick={() => { setMappaAperta(false); setSelectedStallForMap(null); }}
                 className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0"
               >
                 <ArrowLeft className="w-5 h-5 text-white" />
@@ -579,26 +521,17 @@ export default function SpuntaNotifier() {
               </div>
             </div>
             <div className="flex-1 relative min-h-0">
-              {mapData ? (
-                <MarketMapComponent
-                  mapData={mapData}
-                  stallsData={stallsData}
-                  selectedStallNumber={selectedStallForMap || undefined}
-                  selectedStallCenter={selectedStallCenter || undefined}
-                  stallCenterTrigger={stallCenterTrigger}
-                  viewTrigger={viewTrigger}
-                  isSpuntaMode={false}
-                  height="100%"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-400 animate-pulse">Caricamento mappa...</p>
-                </div>
-              )}
+              <iframe
+                src={`https://api.mio-hub.me/tools/market-map-viewer.html?marketId=${marketIdForMap}&stallNumber=${selectedStallForMap}`}
+                className="w-full h-full border-0"
+                style={{ minHeight: '100%' }}
+                title={`Mappa Posteggio ${selectedStallForMap}`}
+                allow="geolocation"
+              />
             </div>
             <div className="bg-gray-800 px-3 py-2 flex gap-2 flex-shrink-0" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom, 8px))' }}>
               <button
-                onClick={() => { setMappaAperta(false); setSelectedStallForMap(null); setSelectedStallCenter(null); }}
+                onClick={() => { setMappaAperta(false); setSelectedStallForMap(null); }}
                 className="flex-1 py-3 bg-gray-700 text-white font-bold text-sm rounded-xl"
               >
                 TORNA ALLA LISTA
