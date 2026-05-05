@@ -1,7 +1,33 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.16 (Presenze/assenze per posteggio, fix saldo negativo spunta, fix sessione mercato)
+> **Versione:** 10.2.17 (Fix ON CONFLICT SPUNTA + logica presenze spunta)
 > **Data:** 05 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.17 (05 Mag 2026)
+> **Fix record duplicati SPUNTA nella graduatoria + logica corretta incremento presenze spunta**
+>
+> **Problemi risolti:**
+> 1. **BUG — ON CONFLICT non matcha record SPUNTA esistenti**: Il vecchio record SPUNTA nella graduatoria aveva `stall_id` del posteggio assegnato dalla spunta (es. stall_id=1071). I nuovi checkin SPUNTA usano `stall_id=NULL`. `COALESCE(1071,0) ≠ COALESCE(NULL,0)` → creava record duplicato. **Fix**: per tipo SPUNTA, `stall_id` nella graduatoria è SEMPRE NULL (il posteggio assegnato dalla spunta è temporaneo e cambia ogni giorno).
+> 2. **BUG — Presenze spunta incrementavano al checkin**: `presenze_totali` veniva incrementato al momento del checkin SPUNTA, ma deve incrementare SOLO quando un posteggio viene effettivamente occupato (in `scegli-posteggio`). **Fix**: al checkin SPUNTA si crea/aggiorna il record graduatoria SENZA incrementare; l'incremento avviene solo in `scegli-posteggio` (occupazione) o a fine spunta per chi resta in coda (fine posteggi).
+> 3. **BUG — Query SPUNTA senza filtro stall_id IS NULL**: Le query che leggono la graduatoria SPUNTA potevano restituire record errati se esistevano vecchi record con stall_id non-NULL. **Fix**: aggiunto `AND stall_id IS NULL` in tutte le query graduatoria tipo SPUNTA.
+>
+> **Logica presenze spunta corretta:**
+> - Checkin SPUNTA: crea record graduatoria con presenze=0 (niente punto)
+> - `scegli-posteggio` (posteggio occupato): incrementa presenze_totali +1 (punto)
+> - Fine spunta (resta in coda, posteggi finiti): incrementa presenze_totali +1 (punto)
+> - SALTATO (saldo negativo): niente punto
+> - SCADUTO (timeout turno): niente punto
+> - RINUNCIATO: niente punto
+>
+> **DB cleanup eseguito:**
+> - Eliminato record duplicato id=2189 (SPUNTA, stall_id=NULL, presenze=1)
+> - Corretti 34 record SPUNTA con stall_id errato (impostato a NULL)
+>
+> **File modificati:**
+> - `presenze-live.js`: checkin SPUNTA non incrementa, scegli-posteggio usa stall_id=NULL per ON CONFLICT, stall_id IS NULL in query graduatoria, logica fine spunta per chi resta in coda
+> - `presenze.js`: stall_id IS NULL in query graduatoria SPUNTA (3 query fixate)
+> - `test-mercato.js`: stall_id IS NULL in query graduatoria SPUNTA (3 query fixate)
 >
 > ---
 > ### CHANGELOG v10.2.16 (05 Mag 2026)
