@@ -317,6 +317,8 @@ const GestioneMercati = memo(function GestioneMercati() {
         gis_market_id: String(m.id),
         latitude: m.lat,
         longitude: m.lng,
+        cost_per_sqm: parseFloat(m.cost_per_sqm) || 0,
+        annual_market_days: parseInt(m.annual_market_days) || 0,
       }));
       const filtered = applyFilters(mapped);
       setMarkets(filtered);
@@ -2308,6 +2310,7 @@ function PosteggiTab({
   const [spuntaTimerSecondi, setSpuntaTimerSecondi] = useState(0);
   const spuntaLivePollingRef = React.useRef<NodeJS.Timeout | null>(null);
   const spuntaTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const popupOpenRef = React.useRef(false); // Traccia se il popup mappa è aperto (per evitare re-render che causano vibrazione)
 
   useEffect(() => {
     fetchData();
@@ -2387,7 +2390,9 @@ function PosteggiTab({
           number: String(s.number),
           status: normalizeStallStatus(s.status),
         }));
-        setStalls(normalizedStalls);
+        if (!popupOpenRef.current) {
+          setStalls(normalizedStalls);
+        }
       }
       if (presenzeData.success && Array.isArray(presenzeData.data)) {
         setPresenze(presenzeData.data);
@@ -2532,7 +2537,7 @@ function PosteggiTab({
       if (!impresaId) return;
 
       // Resetta selectedStallId per evitare conflitti
-      setSelectedStallId(null);
+      setSelectedStallId(null); popupOpenRef.current = false;
       setSelectedStallCenter(null);
 
       // Carica impresa
@@ -2737,7 +2742,7 @@ function PosteggiTab({
         setStalls(prev =>
           prev.map(s => (s.id === stallId ? { ...s, status: "occupato" } : s))
         );
-        setSelectedStallId(null);
+        setSelectedStallId(null); popupOpenRef.current = false;
         setSelectedStallCenter(null);
 
         try {
@@ -2874,7 +2879,7 @@ function PosteggiTab({
       setStalls(prev =>
         prev.map(s => (s.id === stallId ? { ...s, status: "occupato" } : s))
       );
-      setSelectedStallId(null);
+      setSelectedStallId(null); popupOpenRef.current = false;
       setSelectedStallCenter(null);
 
       const response = await authenticatedFetch(
@@ -2940,7 +2945,7 @@ function PosteggiTab({
         );
 
         // Deseleziona il posteggio per fermare il lampeggiamento e chiudere il popup
-        setSelectedStallId(null);
+        setSelectedStallId(null); popupOpenRef.current = false;
         setSelectedStallCenter(null);
       } else {
         toast.error("Errore nell'assegnazione del posteggio");
@@ -2962,7 +2967,7 @@ function PosteggiTab({
     setStalls(prev =>
       prev.map(s => (s.id === stallId ? { ...s, status: "occupato" } : s))
     );
-    setSelectedStallId(null);
+    setSelectedStallId(null); popupOpenRef.current = false;
     setSelectedStallCenter(null);
 
     try {
@@ -3037,7 +3042,7 @@ function PosteggiTab({
     setStalls(prev =>
       prev.map(s => (s.id === stallId ? { ...s, status: "libero" } : s))
     );
-    setSelectedStallId(null);
+    setSelectedStallId(null); popupOpenRef.current = false;
     setSelectedStallCenter(null);
 
     try {
@@ -3125,7 +3130,7 @@ function PosteggiTab({
     setStalls(prev =>
       prev.map(s => (s.id === stallId ? { ...s, status: "libero" } : s))
     );
-    setSelectedStallId(null);
+    setSelectedStallId(null); popupOpenRef.current = false;
     setSelectedStallCenter(null);
 
     try {
@@ -3159,7 +3164,7 @@ function PosteggiTab({
   const handleRowClick = (stall: Stall) => {
     // Se clicco la stessa riga già selezionata, resetta e torna alla vista mercato originale
     if (selectedStallId === stall.id) {
-      setSelectedStallId(null);
+      setSelectedStallId(null); popupOpenRef.current = false;
       setSelectedStallCenter(null);
       // Torna alla vista mercato (zoom out)
       setViewMode("mercato");
@@ -3168,6 +3173,7 @@ function PosteggiTab({
     }
 
     setSelectedStallId(stall.id);
+    popupOpenRef.current = true;
 
     // Trova il posteggio nella mappa tramite gis_slot_id
     const mapFeature = mapData?.stalls_geojson.features.find(
@@ -4016,12 +4022,13 @@ function PosteggiTab({
                 onDepositoRifiuti={handleDepositoRifiutiSingolo}
                 onChiudiMercatoSingolo={handleChiudiMercatoSingolo}
                 costPerSqm={
-                  allMarkets.find(m => m.id === marketId)?.cost_per_sqm || 0.9
+                  parseFloat(String(allMarkets.find(m => m.id === marketId)?.cost_per_sqm || 0)) || 0
                 }
                 onStallClick={stallNumber => {
                   const dbStall = stallsByNumber.get(String(stallNumber));
                   if (dbStall) {
                     setSelectedStallId(dbStall.id);
+                    popupOpenRef.current = true;
                     // Centra la mappa sul posteggio cliccato (animazione flyTo)
                     const mapFeature = mapData?.stalls_geojson?.features?.find(
                       (f: any) => String(f.properties.number) === String(stallNumber)
@@ -4707,8 +4714,8 @@ function PosteggiTab({
                               // Altrimenti calcola l'importo teorico del posteggio
                               const areaMq = parseFloat(stall.area_mq || "0");
                               const costPerSqm =
-                                allMarkets.find(m => m.id === marketId)
-                                  ?.cost_per_sqm || 0.9;
+                                parseFloat(String(allMarkets.find(m => m.id === marketId)
+                                  ?.cost_per_sqm || 0)) || 0;
                               if (areaMq > 0) {
                                 const importoTeorico = areaMq * costPerSqm;
                                 return (
@@ -5371,7 +5378,7 @@ function PosteggiTab({
                   Posteggio {selectedStall.number}
                 </h3>
                 <button
-                  onClick={() => setSelectedStallId(null)}
+                  onClick={() => { setSelectedStallId(null); popupOpenRef.current = false; }}
                   className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
                 >
                   <X className="h-4 w-4" />
@@ -5402,7 +5409,7 @@ function PosteggiTab({
                 </div>
                 <button
                   onClick={() => {
-                    setSelectedStallId(null);
+                    setSelectedStallId(null); popupOpenRef.current = false;
                     setSidebarView("impresa");
                     setSidebarConcessionData(null);
                   }}
@@ -5466,7 +5473,7 @@ function PosteggiTab({
                       company={sidebarCompanyData}
                       inline={true}
                       onClose={() => {
-                        setSelectedStallId(null);
+                        setSelectedStallId(null); popupOpenRef.current = false;
                         setSidebarCompanyData(null);
                       }}
                       onSaved={() => {

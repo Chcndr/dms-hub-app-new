@@ -1165,6 +1165,9 @@ export default function PresenzePage() {
             const haConcessioni = concessioni.length > 0;
             const haSpunta = spuntisti.length > 0;
             const tuttiPresenti = tuttiPosteggi.length > 0 && tuttiPosteggi.every(c => c.gia_presente_oggi);
+            // Verifica se TUTTE le concessioni (inclusi spuntisti) hanno fatto la presenza
+            const tutteLeConcessioni = mercatoSelezionato.concessions;
+            const tuttePresenzeComplete = tutteLeConcessioni.length > 0 && tutteLeConcessioni.every(c => c.gia_presente_oggi);
             const qualcunoPresente = tuttiPosteggi.some(c => c.gia_presente_oggi);
             const tuttiDepositoFatto = tuttiPosteggi.filter(c => c.gia_presente_oggi).every(c => c.deposito_rifiuti_fatto);
             const qualcunoDepositoDaFare = tuttiPosteggi.some(c => c.gia_presente_oggi && !c.deposito_rifiuti_fatto);
@@ -1172,23 +1175,25 @@ export default function PresenzePage() {
 
             return (
               <>
-                {/* PRESENZE: bottone unico che apre la schermata con card posteggi + card Autorizzazione Spunta */}
-                <button
-                  onClick={() => setSchermata("presenza_posteggio")}
-                  className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"
-                >
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                      <LogIn className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                {/* PRESENZE: bottone unico - nascosto quando tutte le presenze sono completate */}
+                {!tuttePresenzeComplete && (
+                  <button
+                    onClick={() => setSchermata("presenza_posteggio")}
+                    className="w-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] rounded-2xl p-4 sm:p-6 text-left transition-all active:scale-[0.98] shadow-lg shadow-[#14b8a6]/20"
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                        <LogIn className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base sm:text-xl font-black text-white leading-tight">PRESENZE</p>
+                        <p className="text-xs sm:text-sm text-white/70 mt-1">
+                          Registra la presenza
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-base sm:text-xl font-black text-white leading-tight">PRESENZE</p>
-                      <p className="text-xs sm:text-sm text-white/70 mt-1">
-                        Registra la presenza
-                      </p>
-                    </div>
-                  </div>
-                </button>
+                  </button>
+                )}
 
                 {/* Indicatore ATTESA SPUNTA (card arancione informativa) */}
                 {haSpunta && (() => {
