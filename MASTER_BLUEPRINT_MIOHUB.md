@@ -1,7 +1,27 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.18 (Fix record fantasma, protezione checkin, JOIN graduatoria SPUNTA)
-> **Data:** 05 Maggio 2026
+> **Versione:** 10.2.19 (Fix graduatorie azzerate, consolidamento presenze multi-posteggio, deploy verificato)
+> **Data:** 06 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.19 (06 Mag 2026)
+> **Fix graduatorie azzerate per concessionari multi-posteggio e spuntisti Bologna**
+>
+> **Root cause:**
+> 1. La migrazione v10.2.16 creava UN SOLO record graduatoria per impresa (il primo stall_id trovato). Quando la PA registrava presenze su TUTTI i posteggi dell'impresa, i posteggi senza record graduatoria ne creavano uno nuovo con presenze=1 (azzerato).
+> 2. Per Bologna SPUNTA: il vecchio codice su Hetzner (pre-deploy) continuava a scrivere stall_id del posteggio assegnato nel record graduatoria, creando duplicati con presenze=1.
+> 3. Il deploy su Hetzner non era avvenuto per v10.2.17/v10.2.18 — ora confermato attivo (v10.2.19).
+>
+> **Fix applicati:**
+> 1. **Consolidamento presenze Grosseto**: per ogni impresa con più posteggi, tutti i record graduatoria allineati al valore massimo (storico corretto).
+> 2. **Merge record SPUNTA Bologna**: eliminati 6 record con stall_id non-NULL, creati 3 record corretti con stall_id=NULL e presenze totali corrette.
+> 3. **Ricreati session_details**: sessione 524 (Grosseto) con 39 details corretti (eliminati 85 duplicati); sessione 520 (Bologna) con 5 details corretti.
+> 4. **Version bump**: endpoint /health mostra version '10.2.19' per verifica deploy.
+>
+> **Deploy confermato**: `curl https://api.mio-hub.me/health` → version: '10.2.19'
+>
+> **File modificati:**
+> - `index.js`: version bump a 10.2.19
 >
 > ---
 > ### CHANGELOG v10.2.18 (05 Mag 2026)
