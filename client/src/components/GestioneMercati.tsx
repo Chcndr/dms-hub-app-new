@@ -2843,7 +2843,8 @@ function PosteggiTab({
             }
 
             await fetchData();
-            // Aggiorna immediatamente la barra turno spunta
+            // Aggiorna la barra turno spunta (piccolo delay per dare tempo al backend di attivare il prossimo turno)
+            await new Promise(r => setTimeout(r, 500));
             await fetchSpuntaLiveTurno();
           } else {
             console.warn(
@@ -3466,6 +3467,7 @@ function PosteggiTab({
                     const rinunciaData = await rinunciaRes.json();
                     if (rinunciaData.success) {
                       toast.success(`Rinuncia registrata per ${spuntaLiveTurno.impresa_nome}. Nessun punto presenza assegnato. Prossimo turno attivato.`);
+                      await new Promise(r => setTimeout(r, 500));
                       fetchSpuntaLiveTurno();
                     } else {
                       toast.error(rinunciaData.messaggio || 'Errore rinuncia');

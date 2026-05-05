@@ -48,6 +48,7 @@ export default function SpuntaNotifier() {
   const [selectedStallForMap, setSelectedStallForMap] = useState<string | null>(null);
   const [selectedStallCenter, setSelectedStallCenter] = useState<[number, number] | null>(null);
   const [viewTrigger, setViewTrigger] = useState(0);
+  const [stallCenterTrigger, setStallCenterTrigger] = useState(0);
   const sseRef = useRef<EventSource | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const spuntaRef = useRef(spunta);
@@ -382,7 +383,7 @@ export default function SpuntaNotifier() {
           const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
           const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
           setSelectedStallCenter([centerLat, centerLng]);
-          setViewTrigger(prev => prev + 1);
+          setStallCenterTrigger(prev => prev + 1);
         }
       }
     }, 300);
@@ -401,7 +402,7 @@ export default function SpuntaNotifier() {
         const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
         const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
         setSelectedStallCenter([centerLat, centerLng]);
-        setViewTrigger(prev => prev + 1);
+        setStallCenterTrigger(prev => prev + 1);
       }
     }
   }, [mapData, selectedStallForMap, mappaAperta]);
@@ -583,6 +584,9 @@ export default function SpuntaNotifier() {
                   mapData={mapData}
                   stallsData={stallsData}
                   selectedStallNumber={selectedStallForMap || undefined}
+                  selectedStallCenter={selectedStallCenter || undefined}
+                  stallCenterTrigger={stallCenterTrigger}
+                  viewTrigger={viewTrigger}
                   isSpuntaMode={false}
                   height="100%"
                 />

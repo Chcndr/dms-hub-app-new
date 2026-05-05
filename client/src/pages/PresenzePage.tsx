@@ -1079,13 +1079,13 @@ export default function PresenzePage() {
                     const fase = mercato.session_fase;
                     let badgeColor = 'bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30';
                     let badgeText = 'PRESENZA IN CORSO';
-                    if (fase === 'CHIUSO' || fase === 'CHIUSA') {
+                    if (fase === 'CHIUSO' || fase === 'CHIUSA' || fase === 'CHIUSURA') {
                       badgeColor = 'bg-red-500/20 text-red-400 border-red-500/30';
                       badgeText = 'MERCATO CHIUSO';
                     } else if (fase === 'SPUNTA') {
                       badgeColor = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
                       badgeText = 'SPUNTA IN CORSO';
-                    } else if (fase === 'MERCATO' || fase === 'ATTIVO') {
+                    } else if (fase === 'MERCATO' || fase === 'ATTIVO' || fase === 'MERCATO_ATTIVO') {
                       badgeColor = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
                       badgeText = 'MERCATO IN CORSO';
                     }
@@ -1127,17 +1127,17 @@ export default function PresenzePage() {
               const fase = mercatoSelezionato.session_fase;
               let badgeColor = 'bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30';
               let badgeText = 'PRESENZA IN CORSO';
-              if (fase === 'CHIUSO' || fase === 'CHIUSA') {
+              if (fase === 'CHIUSO' || fase === 'CHIUSA' || fase === 'CHIUSURA') {
                 badgeColor = 'bg-red-500/20 text-red-400 border-red-500/30';
                 badgeText = 'MERCATO CHIUSO';
               } else if (fase === 'SPUNTA') {
                 badgeColor = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
                 badgeText = 'SPUNTA IN CORSO';
-              } else if (fase === 'MERCATO' || fase === 'ATTIVO') {
+              } else if (fase === 'MERCATO' || fase === 'ATTIVO' || fase === 'MERCATO_ATTIVO') {
                 badgeColor = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
                 badgeText = 'MERCATO IN CORSO';
               }
-              // IN_CORSO = fase presenze (verde)
+              // PRESENZE, IN_CORSO, APERTURA = fase presenze (verde)
               return (
                 <Badge className={`mt-2 text-sm ${badgeColor}`}>
                   {badgeText}
