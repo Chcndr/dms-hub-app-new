@@ -480,6 +480,9 @@ export default function PresenzePage() {
   // ─── CERCA MERCATI DEL GIORNO ──────────────────────────────────────────
   const cercaMercati = useCallback(async () => {
     if (!impresaId) return;
+    // Se l'utente è già in una schermata operativa, questo è un refresh (polling)
+    // NON cambiare la schermata, solo aggiornare i dati
+    const isRefresh = mercatoSelezionato !== null;
     setLoadingMercati(true);
 
     try {
@@ -504,8 +507,8 @@ export default function PresenzePage() {
           }));
           mercati.sort((a, b) => (a.distance_km || 999) - (b.distance_km || 999));
 
-          // Auto-selezione se il mercato più vicino è entro 2km
-          if (mercati[0].distance_km && mercati[0].distance_km < 2) {
+          // Auto-selezione se il mercato più vicino è entro 2km (solo primo caricamento)
+          if (!isRefresh && mercati[0].distance_km && mercati[0].distance_km < 2) {
             setMercatoSelezionato(mercati[0]);
             setSchermata("scelta_tipo");
             setMercatiOggi(mercati);
@@ -515,7 +518,14 @@ export default function PresenzePage() {
         }
 
         setMercatiOggi(mercati);
-        if (mercati.length === 1) {
+        if (isRefresh) {
+          // Refresh: aggiorna solo i dati del mercato selezionato, non cambiare schermata
+          const currentMarketId = mercatoSelezionato?.market_id;
+          const updatedMercato = mercati.find(m => m.market_id === currentMarketId);
+          if (updatedMercato) {
+            setMercatoSelezionato(updatedMercato);
+          }
+        } else if (mercati.length === 1) {
           setMercatoSelezionato(mercati[0]);
           setSchermata("scelta_tipo");
         } else {
@@ -523,15 +533,17 @@ export default function PresenzePage() {
         }
       } else {
         setMercatiOggi([]);
-        setSchermata("selezione_mercato");
+        if (!isRefresh) setSchermata("selezione_mercato");
       }
     } catch (err) {
       console.error("Errore cerca mercati:", err);
-      setMercatiOggi([]);
-      setSchermata("selezione_mercato");
+      if (!isRefresh) {
+        setMercatiOggi([]);
+        setSchermata("selezione_mercato");
+      }
     }
     setLoadingMercati(false);
-  }, [impresaId, gpsPosition, richiediGPS]);
+  }, [impresaId, gpsPosition, richiediGPS, mercatoSelezionato]);
 
   // Auto-cerca mercati quando impresa risolta
   useEffect(() => {
@@ -659,11 +671,9 @@ export default function PresenzePage() {
           });
         }
 
-        // Refresh dati mercato per avere wallet aggiornato, importo, ecc.
-        cercaMercati();
-
         if (isSpuntaConc) {
           // Per la spunta: connetti SSE e mostra schermata attesa
+          // NON chiamare cercaMercati() qui perché sovrascrive lo stato spunta_attesa
           const posizioneGrad = data.posizione_graduatoria || '-';
           const presenzeTotali = data.presenze_totali || 0;
           setSpuntaTurno({
@@ -679,6 +689,8 @@ export default function PresenzePage() {
           }
           setSchermata('spunta_attesa');
         } else {
+          // Refresh dati mercato per avere wallet aggiornato, importo, ecc.
+          cercaMercati();
           setPopup({
             tipo: "successo",
             titolo: "PRESENZA EFFETTUATA CON SUCCESSO",
