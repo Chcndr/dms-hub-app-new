@@ -1075,15 +1075,26 @@ export default function PresenzePage() {
                     </div>
                     <ChevronRight className="w-7 h-7 text-[#14b8a6]" />
                   </div>
-                  {mercato.session_fase && (
-                    <Badge className={`mt-3 text-sm px-3 py-1 ${
-                      mercato.session_fase === 'CHIUSO' || mercato.session_fase === 'CHIUSA'
-                        ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                        : 'bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30'
-                    }`}>
-                      Fase: {mercato.session_fase === 'CHIUSO' ? 'CHIUSA' : mercato.session_fase}
-                    </Badge>
-                  )}
+                  {mercato.session_fase && (() => {
+                    const fase = mercato.session_fase;
+                    let badgeColor = 'bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30';
+                    let badgeText = 'PRESENZA IN CORSO';
+                    if (fase === 'CHIUSO' || fase === 'CHIUSA') {
+                      badgeColor = 'bg-red-500/20 text-red-400 border-red-500/30';
+                      badgeText = 'MERCATO CHIUSO';
+                    } else if (fase === 'SPUNTA') {
+                      badgeColor = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+                      badgeText = 'SPUNTA IN CORSO';
+                    } else if (fase === 'MERCATO' || fase === 'ATTIVO') {
+                      badgeColor = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+                      badgeText = 'MERCATO IN CORSO';
+                    }
+                    return (
+                      <Badge className={`mt-3 text-sm px-3 py-1 ${badgeColor}`}>
+                        {badgeText}
+                      </Badge>
+                    );
+                  })()}
                 </button>
               ))}
             </>
@@ -1112,15 +1123,27 @@ export default function PresenzePage() {
             <p className="text-base text-[#e8fbff]/50">
               {getGiornoItaliano()} — {new Date().toLocaleDateString("it-IT")}
             </p>
-            {mercatoSelezionato.session_fase && (
-              <Badge className={`mt-2 text-sm ${
-                mercatoSelezionato.session_fase === 'CHIUSO' || mercatoSelezionato.session_fase === 'CHIUSA'
-                  ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                  : 'bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30'
-              }`}>
-                Fase: {mercatoSelezionato.session_fase === 'CHIUSO' ? 'CHIUSA' : mercatoSelezionato.session_fase}
-              </Badge>
-            )}
+            {mercatoSelezionato.session_fase && (() => {
+              const fase = mercatoSelezionato.session_fase;
+              let badgeColor = 'bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30';
+              let badgeText = 'PRESENZA IN CORSO';
+              if (fase === 'CHIUSO' || fase === 'CHIUSA') {
+                badgeColor = 'bg-red-500/20 text-red-400 border-red-500/30';
+                badgeText = 'MERCATO CHIUSO';
+              } else if (fase === 'SPUNTA') {
+                badgeColor = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+                badgeText = 'SPUNTA IN CORSO';
+              } else if (fase === 'MERCATO' || fase === 'ATTIVO') {
+                badgeColor = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+                badgeText = 'MERCATO IN CORSO';
+              }
+              // IN_CORSO = fase presenze (verde)
+              return (
+                <Badge className={`mt-2 text-sm ${badgeColor}`}>
+                  {badgeText}
+                </Badge>
+              );
+            })()}
           </div>
 
           {/* Orologio in tempo reale */}
@@ -1322,18 +1345,30 @@ export default function PresenzePage() {
                           : "bg-gradient-to-br from-[#14b8a6]/30 to-[#3b82f6]/30"
                     }`}>
                       {isSpunta
-                        ? <Ticket className="w-8 h-8 text-[#f59e0b]" />
+                        ? (conc.stall_number && conc.stall_number !== '-'
+                            ? <span className="text-2xl font-black text-[#e8fbff]">{conc.stall_number}</span>
+                            : <Ticket className="w-8 h-8 text-[#f59e0b]" />
+                          )
                         : <span className="text-2xl font-black text-[#e8fbff]">{conc.stall_number}</span>
                       }
                     </div>
                     <div>
                       <p className="text-xl font-bold text-[#e8fbff]">
-                        {isSpunta ? "Autorizzazione Spunta" : `Posteggio ${conc.stall_number}`}
+                        {isSpunta
+                          ? (conc.stall_number && conc.stall_number !== '-'
+                              ? `Posteggio ${conc.stall_number}`
+                              : "Autorizzazione Spunta"
+                            )
+                          : `Posteggio ${conc.stall_number}`
+                        }
                       </p>
                       <p className="text-base text-[#e8fbff]/50">
                         {isSpunta
-                          ? `${mercatoSelezionato?.market_name || 'Mercato'} — Spuntista`
-                          : `${conc.area_mq} mq — Canone: €${conc.canone_giornaliero.toFixed(2)}/giorno`
+                          ? (conc.stall_number && conc.stall_number !== '-'
+                              ? `${mercatoSelezionato?.market_name || 'Mercato'} — Spunta`
+                              : `${mercatoSelezionato?.market_name || 'Mercato'} — Spuntista`
+                            )
+                          : `${conc.area_mq} mq — Canone: \u20AC${conc.canone_giornaliero.toFixed(2)}/giorno`
                         }
                       </p>
                       {conc.gia_presente_oggi && (
