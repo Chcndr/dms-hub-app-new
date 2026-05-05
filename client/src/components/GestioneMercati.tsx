@@ -4582,22 +4582,33 @@ function PosteggiTab({
                           p.stallId === stall.id
                       );
                       // Cerca graduatoria: per posteggio (stall_id) con tipo CONCESSION, poi per impresa con tipo corretto
+                      // 1. Cerca per stall_id specifico con tipo CONCESSION
                       let gradRecord = graduatoria.find(
                         g => (g.stallId === stall.id || g.stall_id === stall.id) && (g.tipo === 'CONCESSION' || g.wallet_type === 'CONCESSION')
                       );
-                      // Se non trovato per stall_id, cerca per impresa_id del concessionario con tipo CONCESSION
+                      // 2. Se non trovato, cerca per impresa_id + stall_id (record potrebbe avere stall_id diverso dal DB)
                       if (!gradRecord && stall.impresa_id) {
                         gradRecord = graduatoria.find(
-                          g => g.impresa_id === stall.impresa_id && (g.tipo === 'CONCESSION' || g.wallet_type === 'CONCESSION')
+                          g => g.impresa_id === stall.impresa_id && (g.stall_id === stall.id || g.stallId === stall.id) && (g.tipo === 'CONCESSION' || g.wallet_type === 'CONCESSION')
                         );
                       }
-                      // Se non trovato e c'è uno spuntista assegnato, cerca per impresa_id dello spuntista con tipo SPUNTA
+                      // 3. Fallback: cerca per impresa_id senza filtro stall_id (solo se non ci sono altri record per la stessa impresa)
+                      if (!gradRecord && stall.impresa_id) {
+                        const allRecords = graduatoria.filter(
+                          g => g.impresa_id === stall.impresa_id && (g.tipo === 'CONCESSION' || g.wallet_type === 'CONCESSION')
+                        );
+                        // Se c'è un solo record per questa impresa, usalo (backward compatibility)
+                        if (allRecords.length === 1) {
+                          gradRecord = allRecords[0];
+                        }
+                      }
+                      // 4. Se c'è uno spuntista assegnato, cerca per impresa_id dello spuntista con tipo SPUNTA
                       if (!gradRecord && stall.spuntista_impresa_id) {
                         gradRecord = graduatoria.find(
                           g => g.impresa_id === stall.spuntista_impresa_id && (g.tipo === 'SPUNTA' || g.wallet_type === 'SPUNTA')
                         );
                       }
-                      // Fallback senza filtro tipo se nessun record trovato
+                      // 5. Fallback finale senza filtro tipo se nessun record trovato
                       if (!gradRecord) {
                         gradRecord = graduatoria.find(
                           g => (g.stallId === stall.id || g.stall_id === stall.id)

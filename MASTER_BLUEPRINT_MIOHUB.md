@@ -1,7 +1,45 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.14 (Blocco presenze dopo fase PRESENZE, fix conflitto concessionario/spuntista, badge ASSENTE)
+> **Versione:** 10.2.16 (Presenze/assenze per posteggio, fix saldo negativo spunta, fix sessione mercato)
 > **Data:** 05 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.16 (05 Mag 2026)
+> **Presenze e assenze calcolate per posteggio (non per impresa), migrazione DB graduatoria**
+>
+> **Problemi risolti:**
+> 1. **BUG — Presenze/Assenze uguali su tutti i posteggi dell'impresa**: Il constraint unique della tabella `graduatoria_presenze` era `(market_id, impresa_id, tipo, anno)` — un solo record per impresa. Se un'impresa aveva 2 posteggi, le presenze si accumulavano sullo stesso record. **Fix**: migrazione DB con nuovo indice unique `(market_id, impresa_id, tipo, anno, COALESCE(stall_id, 0))`. Ogni posteggio ha il suo record separato.
+> 2. **BUG — Riga fantasma €0.00 nello storico**: Presenza CONCESSION con stall_id=NULL creata da checkin senza posteggio. **Fix**: blocco STALL_OBBLIGATORIO (v10.2.14) + pulizia DB delle presenze orfane.
+> 3. **BUG — Incremento doppio graduatoria**: La logica `primoCheckinOggi` verificava qualsiasi posteggio dell'impresa. Con 2 posteggi, solo il primo incrementava. **Fix**: ora verifica solo lo stesso `stall_id`.
+> 4. **BUG — JOIN graduatoria/mercato senza filtro stall_id**: Il JOIN con `vendor_presences` poteva restituire la presenza di un altro posteggio. **Fix**: aggiunto `AND (gp.stall_id IS NULL OR vp.stall_id = gp.stall_id)`.
+>
+> **Migrazione DB eseguita:**
+> - Rimosso vecchio constraint `graduatoria_presenze_market_id_impresa_id_tipo_anno_key`
+> - Creato nuovo indice unique `graduatoria_presenze_market_impresa_tipo_anno_stall_key`
+> - Redistribuite presenze per imprese con più posteggi (divise equamente)
+> - Eliminata presenza orfana id=2792 (CONCESSION senza stall_id)
+>
+> **File modificati:**
+> - `presenze-live.js`: ON CONFLICT aggiornato, logica primoCheckinOggi per stall_id
+> - `presenze.js`: ON CONFLICT aggiornato, JOIN graduatoria con filtro stall_id, endpoint /registra con cerca per stall_id
+> - `test-mercato.js`: ON CONFLICT aggiornato
+>
+> ---
+> ### CHANGELOG v10.2.15 (05 Mag 2026)
+> **Fix ATTESA SPUNTA persiste, saldo negativo spunta salta turno, sessione mercato mancante**
+>
+> **Problemi risolti:**
+> 1. **BUG — ATTESA SPUNTA rimane durante MERCATO IN CORSO (Frontend App)**: Il card arancione "ATTESA SPUNTA" rimaneva visibile anche dopo la fine della spunta. **Fix**: aggiunto check su `session_fase` (MERCATO_ATTIVO/CHIUSO) e su `spunta_stato_coda` (SCADUTO/COMPLETATO) per nascondere il card.
+> 2. **BUG — Spuntista con saldo negativo blocca la coda (Backend)**: Quando uno spuntista con saldo negativo provava a scegliere un posteggio, il backend restituiva errore ma non cambiava lo stato. Lo spuntista rimaneva in TURNO_ATTIVO bloccando la coda. **Fix**: endpoint `scegli-posteggio` ora setta stato `SALTATO` e chiama `attivaProssimoTurno()` automaticamente.
+> 3. **BUG — App non mostra popup rosso saldo negativo (Frontend App)**: L'errore SALDO_NEGATIVO non veniva gestito con la schermata dedicata. **Fix**: aggiunta gestione errore con schermata fullscreen rossa "SALDO INSUFFICIENTE" e messaggio motivazionale.
+> 4. **BUG — Semaforo/fase non visibile (Backend)**: L'endpoint `inizia-mercato` non creava una nuova `market_session` e non inseriva la fase PRESENZE. **Fix**: ora crea sessione IN_CORSO + inserisce fase PRESENZE + pulisce spunta_coda.
+> 5. **BUG — mercati-oggi non trova sessioni CHIUSO (Backend)**: La query LATERAL cercava solo sessioni APERTO/IN_CORSO. **Fix**: aggiunto `OR (ms2.stato = 'CHIUSO' AND DATE(ms2.data_mercato) = $2)` per restituire sempre session_fase.
+> 6. **BUG — Bottone PRESENZE durante SPUNTA_IN_CORSO (Frontend App)**: Il check `presenzeChiuse` non includeva il valore `SPUNTA_IN_CORSO`. **Fix**: aggiunto al check.
+>
+> **File modificati:**
+> - `PresenzePage.tsx`: gestione ATTESA SPUNTA, schermata saldo negativo, SPUNTA_IN_CORSO in presenzeChiuse
+> - `presenze-live.js`: fix inizia-mercato (crea sessione), fix scegli-posteggio (SALTATO + attivaProssimoTurno), fix mercati-oggi (sessioni CHIUSO), fix tipoGraduatoria per stall_id, fix STALL_OBBLIGATORIO esclude SPUNTA
+> - `presenze.js`: fix JOIN graduatoria con filtro tipo_presenza
 >
 > ---
 > ### CHANGELOG v10.2.14 (05 Mag 2026)

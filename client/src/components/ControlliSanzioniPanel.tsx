@@ -3597,7 +3597,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
                             );
                             const data = await res.json();
                             if (data.success) {
-                              // Rimuovi duplicati basandosi su stall_id
+                              // Rimuovi duplicati basandosi su chiave composita (stall_id + impresa_id + tipo_presenza)
                               const uniqueDetails = data.presenze.filter(
                                 (
                                   p: SessionDetail,
@@ -3605,7 +3605,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
                                   arr: SessionDetail[]
                                 ) =>
                                   arr.findIndex(
-                                    x => x.stall_id === p.stall_id
+                                    x => x.stall_id === p.stall_id && x.impresa_id === p.impresa_id && x.tipo_presenza === p.tipo_presenza
                                   ) === i
                               );
                               setSessionDetails(uniqueDetails);
