@@ -1,7 +1,19 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.8 (Fix animazione mappa PA Point geometry, regressione sidebar, polling spuntisti PA, polling App)
-> **Data:** 04 Maggio 2026
+> **Versione:** 10.2.9 (Semplificazione UI - tab unico PRESENZE, fix polling spunta)
+> **Data:** 05 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.9 (05 Mag 2026)
+> **Semplificazione UI App + Fix polling spunta**
+>
+> **Problemi risolti:**
+> 1. **BUG 1 — Polling sovrascrive gia_presente_oggi dopo checkin spunta (App)**: Dopo il checkin spunta, il polling ogni 10s chiamava `cercaMercati()` che aggiornava `mercatoSelezionato` con i dati dal backend. Se il backend non aveva ancora deployato il fix OR EXISTS, `gia_presente_oggi` tornava `false` → la card tornava a "PRESENZA SPUNTA" invece di "ATTESA SPUNTA" dopo 5 secondi. **Fix**: nel `cercaMercati()` durante il refresh, se una concessione Spunta ha `gia_presente_oggi=true` localmente ma il backend ritorna `false`, preserva `true` (non sovrascrivere lo stato locale più aggiornato).
+> 2. **Semplificazione UI — Tab unico PRESENZE (App)**: Eliminata la schermata separata `presenza_spunta` (quella viola con "Registra Spunta" e "Come funziona"). Rinominato "PRESENZA POSTEGGIO" → "PRESENZE". Il bottone "PRESENZE" apre direttamente la schermata con le card dei posteggi + card Autorizzazione Spunta (con tab PRESENZA SPUNTA / ATTESA SPUNTA sotto). Rimossa la condizione che nascondeva il bottone durante la fase SPUNTA.
+> 3. **Polling attivo in presenza_posteggio (App)**: Il polling ora gira anche nella schermata `presenza_posteggio` (oltre a `scelta_tipo` e `vista_mappa`) per aggiornamenti real-time dei dati.
+>
+> **File modificati:**
+> - `PresenzePage.tsx` (Frontend/App): fix polling preserva gia_presente_oggi, semplificazione UI, rimossa schermata presenza_spunta, rimossa funzione eseguiPresenzaSpunta, polling in presenza_posteggio
 >
 > ---
 > ### CHANGELOG v10.2.8 (04 Mag 2026)
