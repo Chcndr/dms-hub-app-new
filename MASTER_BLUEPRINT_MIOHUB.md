@@ -1,7 +1,24 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.10 (Card spunta con numero posteggio, indicatore fase dinamico, fix popup Spunta Terminata)
+> **Versione:** 10.2.11 (Fix semaforo fasi mercato, popup spunta finita, barra turno, mappa spunta flyTo)
 > **Data:** 05 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.11 (05 Mag 2026)
+> **Fix semaforo fasi mercato + popup spunta finita + barra turno + mappa spunta flyTo**
+>
+> **Problemi risolti:**
+> 1. **BUG — Semaforo stato mercato sempre verde (Backend)**: L'endpoint `test-mercato/avvia-spunta` creava la sessione ma NON inseriva la fase in `sessioni_fasi`. Ora inserisce `PRESENZE` alla creazione. `avvia-spunta-live` inserisce `SPUNTA` quando la PA avvia la spunta. `attivaProssimoTurno` inserisce `MERCATO_ATTIVO` quando la spunta finisce. Frontend aggiornato per mappare `MERCATO_ATTIVO` → badge blu.
+> 2. **BUG — Popup SPUNTA FINITA appare appena parte la spunta (Backend)**: Il fix `turnoAttivoCount` era già nel codice ma non deployato. Inoltre `attivaProssimoTurno` in `test-mercato.js` ora rimette i posteggi riservati a libero e chiude i turni IN_ATTESA (allineato con la versione in `presenze-live.js`).
+> 3. **BUG — Barra gialla turno non cambia al prossimo spuntista (Frontend PA)**: Timing issue — dopo assegnazione/rinuncia, `fetchSpuntaLiveTurno()` veniva chiamato prima che il backend avesse completato `attivaProssimoTurno`. Aggiunto delay 500ms prima del refresh.
+> 4. **BUG — Mappa spunta non fa animazione flyTo (Frontend App)**: In `SpuntaNotifier`, il `MarketMapComponent` veniva renderizzato SENZA le props `selectedStallCenter`, `stallCenterTrigger` e `viewTrigger`. Aggiunto stato `stallCenterTrigger` e passate tutte le props necessarie per il flyTo animato.
+>
+> **File modificati:**
+> - `PresenzePage.tsx` (Frontend/App): mapping MERCATO_ATTIVO/CHIUSURA nei badge fase
+> - `GestioneMercati.tsx` (Frontend/PA): delay 500ms prima di fetchSpuntaLiveTurno
+> - `SpuntaNotifier.tsx` (Frontend/App): stallCenterTrigger + props mappa per flyTo
+> - `presenze-live.js` (Backend): inserimento fasi SPUNTA/MERCATO_ATTIVO in sessioni_fasi
+> - `test-mercato.js` (Backend): inserimento fase PRESENZE + attivaProssimoTurno completo
 >
 > ---
 > ### CHANGELOG v10.2.10 (05 Mag 2026)
