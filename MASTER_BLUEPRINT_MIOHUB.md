@@ -1,7 +1,24 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.12 (Fix semaforo LATERAL, mappa iframe, popup cooldown, pulizia sessioni DB)
+> **Versione:** 10.2.13 (Fix mappa PA vibra, saldo negativo concessionari, sessioni orfane, bottone PRESENZE)
 > **Data:** 05 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.13 (05 Mag 2026)
+> **Fix mappa PA vibra popup, saldo negativo concessionari, sessioni orfane, bottone PRESENZE**
+>
+> **Problemi risolti:**
+> 1. **BUG — Mappa PA vibra quando popup aperto (Frontend PA)**: Il polling ogni 10s chiamava `setStalls()` causando re-render della mappa Leaflet anche con popup aperto, provocando vibrazione/chiusura popup. **Fix**: aggiunto `popupOpenRef` (useRef) che viene settato a `true` quando si seleziona un posteggio e a `false` quando si chiude il popup. In `fetchStallsAndPresenzeOnly`, `setStalls()` viene saltato se `popupOpenRef.current === true`.
+> 2. **BUG — PA fa presenza con saldo negativo (Backend)**: Il codice in `registra-presenza-concessionario` usava la variabile `spuntista` (non definita in quel contesto) per il check saldo negativo. **Fix**: sostituito con `stall.wallet_balance` che è il saldo corretto del concessionario associato al posteggio.
+> 3. **BUG — Sessioni orfane IN_CORSO (Backend)**: `inizia-mercato` non chiudeva le sessioni precedenti prima di crearne una nuova, causando sessioni orfane. **Fix**: aggiunto `UPDATE market_sessions SET stato='CHIUSO'` per tutte le sessioni IN_CORSO prima di creare la nuova. Anche `chiudi-mercato` ora chiude tutte le sessioni IN_CORSO orfane.
+> 4. **BUG — Semaforo non diventa CHIUSO (Backend)**: `chiudi-mercato` non inseriva la fase `CHIUSO` in `sessioni_fasi`. **Fix**: aggiunto `INSERT INTO sessioni_fasi (session_id, fase) VALUES ($1, 'CHIUSO')` dopo la chiusura della sessione.
+> 5. **BUG — Bottone PRESENZE visibile anche quando tutte presenze fatte (Frontend App)**: Il bottone PRESENZE nella home app rimaneva visibile anche dopo che tutti i concessionari avevano già fatto la presenza. **Fix**: aggiunta variabile `tuttePresenzeComplete` che verifica `concessions.every(c => c.gia_presente_oggi)` e nasconde il bottone con rendering condizionale.
+> 6. **BUG — Costo suolo popup non coincide con addebito (Frontend PA)**: Il valore `costPerSqm` passato al componente mappa non veniva parsato correttamente. **Fix**: aggiunto `parseFloat(String(...))` e fallback mapping con `cost_per_sqm` dal market.
+>
+> **File modificati:**
+> - `GestioneMercati.tsx` (Frontend/PA): popupOpenRef per bloccare setStalls durante popup, fix costPerSqm con parseFloat
+> - `PresenzePage.tsx` (Frontend/App): bottone PRESENZE nascosto quando tuttePresenzeComplete
+> - `test-mercato.js` (Backend): fix registra-presenza-concessionario (stall.wallet_balance), fix inizia-mercato (chiude sessioni vecchie), fix chiudi-mercato (inserisce fase CHIUSO + chiude orfane)
 >
 > ---
 > ### CHANGELOG v10.2.12 (05 Mag 2026)
