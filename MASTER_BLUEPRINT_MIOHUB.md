@@ -21,8 +21,10 @@
 >
 > **File modificati:**
 > - `presenze-live.js`: ON CONFLICT aggiornato, logica primoCheckinOggi per stall_id
-> - `presenze.js`: ON CONFLICT aggiornato, JOIN graduatoria con filtro stall_id, endpoint /registra con cerca per stall_id
+> - `presenze.js`: ON CONFLICT aggiornato, JOIN graduatoria con filtro tipo+stall_id (4 query fixate), endpoint /registra con cerca per stall_id
 > - `test-mercato.js`: ON CONFLICT aggiornato
+> - `GestioneMercati.tsx`: gradRecord cerca prima per stall_id specifico, fallback solo se 1 record per impresa
+> - `ControlliSanzioniPanel.tsx`: uniqueDetails usa chiave composita (stall_id + impresa_id + tipo_presenza) per non eliminare spuntisti
 >
 > ---
 > ### CHANGELOG v10.2.15 (05 Mag 2026)
