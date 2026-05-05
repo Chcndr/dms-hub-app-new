@@ -1,7 +1,24 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.9 (Semplificazione UI - tab unico PRESENZE, fix polling spunta)
+> **Versione:** 10.2.10 (Card spunta con numero posteggio, indicatore fase dinamico, fix popup Spunta Terminata)
 > **Data:** 05 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.10 (05 Mag 2026)
+> **Card spunta con numero posteggio + Indicatore fase dinamico + Fix popup Spunta Terminata PA**
+>
+> **Modifiche:**
+> 1. **Card Autorizzazione Spunta mostra numero posteggio (App)**: Quando lo spuntista ha un posteggio assegnato (`stall_number` presente e diverso da '-'), l'icona ticket viene sostituita dal **numero del posteggio** (come per le concessioni). Il titolo cambia da "Autorizzazione Spunta" a "Posteggio X" e il sottotitolo da "Spuntista" a "Spunta".
+> 2. **Indicatore fase mercato con colori dinamici (App)**: Il badge "Fase: IN_CORSO" nella card mercato ora mostra testi e colori diversi in base a `session_fase`:
+>    - 🟢 Verde: **PRESENZA IN CORSO** (fase `IN_CORSO`)
+>    - 🟡 Giallo: **SPUNTA IN CORSO** (fase `SPUNTA`)
+>    - 🟦 Blu: **MERCATO IN CORSO** (fase `MERCATO` o `ATTIVO`)
+>    - 🔴 Rosso: **MERCATO CHIUSO** (fase `CHIUSO`/`CHIUSA`)
+> 3. **Fix popup "Spunta Terminata" appare appena parte la spunta (Backend)**: Race condition nell'endpoint `spunta-turno-corrente`. La query principale non trovava `TURNO_ATTIVO` (timing) ma la condizione `spuntaTerminata = totaleCoda > 0 && inAttesa === 0` era `true` perché l'unico spuntista era appena passato da `IN_ATTESA` a `TURNO_ATTIVO`. **Fix**: aggiunto `turnoAttivoCount` nella query e nella condizione: `spuntaTerminata = totaleCoda > 0 && inAttesa === 0 && turnoAttivoCount === 0`.
+>
+> **File modificati:**
+> - `PresenzePage.tsx` (Frontend/App): card spunta con numero posteggio + indicatore fase dinamico
+> - `presenze-live.js` (Backend): fix race condition spunta_terminata con check TURNO_ATTIVO
 >
 > ---
 > ### CHANGELOG v10.2.9 (05 Mag 2026)
