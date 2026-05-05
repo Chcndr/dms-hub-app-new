@@ -1,7 +1,25 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.17 (Fix ON CONFLICT SPUNTA + logica presenze spunta)
+> **Versione:** 10.2.18 (Fix record fantasma, protezione checkin, JOIN graduatoria SPUNTA)
 > **Data:** 05 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.18 (05 Mag 2026)
+> **Fix record fantasma €0.00, protezione checkin senza posteggio, JOIN graduatoria SPUNTA corretto**
+>
+> **Problemi risolti:**
+> 1. **BUG — Record fantasma €0.00 nella lista Concessionari**: Un checkin CONCESSION senza stall_id creava un record `vendor_presences` con tipo_presenza='CONCESSION', stall_id=NULL, importo=0.00. Questo appariva come riga fantasma nella lista concessionari del popup storico. **Fix**: aggiunta protezione 2c — se stall_id è NULL e tipo_presenza non è SPUNTA, il checkin viene bloccato (errore STALL_OBBLIGATORIO).
+> 2. **BUG — JOIN graduatoria SPUNTA in chiusura/dettaglio**: La query di chiusura mercato e l'endpoint /sessioni/:id/dettaglio usavano `COALESCE(gp.stall_id, 0) = COALESCE(vp.stall_id, 0)` che per SPUNTA non matchava correttamente (vp.stall_id = posteggio assegnato ≠ gp.stall_id = NULL). **Fix**: per tipo SPUNTA, il JOIN usa `gp.stall_id IS NULL`; per CONCESSION mantiene il COALESCE.
+> 3. **BUG — Duplicati session_details alla chiusura multipla**: Se il mercato veniva chiuso più volte, i details si accumulavano. **Fix**: aggiunto `DELETE FROM market_session_details WHERE session_id = $1` prima dell'INSERT.
+>
+> **DB cleanup eseguito:**
+> - Eliminato record fantasma vendor_presences id=2800 (CONCESSION, stall_id=NULL, importo=0.00)
+> - Corretti 2 record graduatoria SPUNTA con stall_id non-NULL (ri-impostato a NULL)
+> - Ricreati 10 session_details corretti per sessione 520 (eliminati 17 duplicati/errati)
+>
+> **File modificati:**
+> - `presenze-live.js`: protezione 2c checkin senza stall_id
+> - `presenze.js`: JOIN graduatoria SPUNTA corretto in chiusura e dettaglio, DELETE duplicati session_details
 >
 > ---
 > ### CHANGELOG v10.2.17 (05 Mag 2026)
