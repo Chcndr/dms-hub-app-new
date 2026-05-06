@@ -550,9 +550,8 @@ async function syncUserWithBackend(
     effectiveRole = backendSyncData?.role || role;
   }
 
-  // impresaId viene settato SOLO se il ruolo effettivo NON è citizen.
-  const shouldSetImpresa =
-    effectiveRole !== "citizen" && !!legacyUser?.impresa_id;
+  // impresaId viene settato SEMPRE se presente nel backend (serve a SpuntaNotifier + PresenzePage)
+  const shouldSetImpresa = !!legacyUser?.impresa_id;
 
   const miohubUser: MioHubUser = {
     uid: firebaseUser.uid,
