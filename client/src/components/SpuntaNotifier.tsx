@@ -56,27 +56,11 @@ export default function SpuntaNotifier() {
   useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
 
   // Risolvi impresaId da localStorage
-  // Per utenti con ruolo 'pa' (admin): si attiva SOLO nella pagina presenze
-  // Per utenti business/citizen: si attiva ovunque
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
-
-  // Ascolta cambi di route (SPA navigation)
+  // Si disattiva SOLO se c'è impersonation attiva (= vista PA su iPad)
+  // Sul cellulare (app impresa) non c'è mai impersonation → funziona sempre
   useEffect(() => {
-    const checkPath = () => {
-      const newPath = window.location.pathname;
-      if (newPath !== currentPath) setCurrentPath(newPath);
-    };
-    // Controlla ogni 500ms per cambi di route (wouter non emette eventi standard)
-    const interval = setInterval(checkPath, 500);
-    window.addEventListener('popstate', checkPath);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('popstate', checkPath);
-    };
-  }, [currentPath]);
-
-  useEffect(() => {
-    // 1. Se c'è impersonation attiva → vista PA → non attivare
+    // Se c'è impersonation attiva nel sessionStorage → l'utente sta nella vista PA
+    // In quel caso il turno è gestito dal mini-popup in GestioneMercati
     try {
       const imp = sessionStorage.getItem("miohub_impersonation");
       if (imp) {
@@ -88,19 +72,6 @@ export default function SpuntaNotifier() {
       }
     } catch { /* ignore */ }
 
-    // 2. Per utenti admin/pa: attivare SOLO nella pagina presenze
-    try {
-      const fbStr = localStorage.getItem("miohub_firebase_user");
-      if (fbStr) {
-        const fb = JSON.parse(fbStr);
-        if (fb.role === 'pa' && !currentPath.includes('presenze')) {
-          setImpresaId(null);
-          return;
-        }
-      }
-    } catch { /* ignore */ }
-
-    // 3. Leggi impresaId
     let id: number | null = null;
     try {
       const fbStr = localStorage.getItem("miohub_firebase_user");
@@ -119,7 +90,7 @@ export default function SpuntaNotifier() {
       } catch { /* ignore */ }
     }
     setImpresaId(id);
-  }, [currentPath]);
+  }, []);
 
   // Funzione per notificare il backend della scadenza del turno
   const notificaScadenzaTurno = useCallback(async () => {
