@@ -55,8 +55,21 @@ export default function SpuntaNotifier() {
   // Tieni spuntaRef sincronizzato
   useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
 
-  // Risolvi impresaId da localStorage
+  // Risolvi impresaId da localStorage — SOLO se NON siamo in vista PA (impersonation)
   useEffect(() => {
+    // Se c'è impersonation attiva nel sessionStorage → l'utente sta nella vista PA
+    // In quel caso il turno è gestito dal mini-popup in GestioneMercati, non dallo SpuntaNotifier
+    try {
+      const imp = sessionStorage.getItem("miohub_impersonation");
+      if (imp) {
+        const parsed = JSON.parse(imp);
+        if (parsed.isImpersonating) {
+          setImpresaId(null);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+
     let id: number | null = null;
     try {
       const fbStr = localStorage.getItem("miohub_firebase_user");
