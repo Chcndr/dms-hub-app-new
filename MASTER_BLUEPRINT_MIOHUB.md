@@ -1,7 +1,31 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.21 (Fix presenze spuntisti: tipo_presenza dinamico + no stall_id update in graduatoria)
+> **Versione:** 10.2.22 (Fix chiudi-sessione, graduatoria LATERAL JOIN, assegna-posteggio LIMIT 1)
 > **Data:** 06 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.22 (06 Mag 2026)
+> **Fix critico: inversione presenze nello storico, duplicato graduatoria SUAP, fantasma SPUNTA residuo**
+>
+> **Root cause (4 bug interconnessi):**
+> 1. **presenze.js chiudi-sessione riga 1118**: `UPDATE market_sessions SET updated_at = NOW()` — la colonna `updated_at` NON ESISTE nella tabella `market_sessions`. L'UPDATE falliva silenziosamente, impedendo la corretta chiusura della sessione e causando sessioni multiple.
+> 2. **presenze.js chiudi-sessione query details**: la query prendeva TUTTI i vendor_presences del giorno (inclusi record SPUNTA con stall_id=NULL creati dal checkin APP) senza escludere i fantasmi. Questo generava record session_details con presenze invertite.
+> 3. **presenze.js graduatoria riga 364-368**: la LEFT JOIN con vendor_presences per tipo SPUNTA usava `gp.stall_id IS NULL` che matchava TUTTI i vp SPUNTA della stessa impresa → duplicato nella vista Graduatoria Spuntisti (sezione SUAP).
+> 4. **test-mercato.js assegna-posteggio riga 686**: l'UPDATE senza LIMIT aggiornava potenzialmente TUTTI i record con stall_id IS NULL, causando UNIQUE violation quando esistevano duplicati (checkin APP + avvia-spunta).
+>
+> **Fix applicati:**
+> 1. **presenze.js**: rimosso `updated_at = NOW()` dall'UPDATE market_sessions.
+> 2. **presenze.js chiudi-sessione**: aggiunta clausola `NOT EXISTS` per escludere record SPUNTA stall_id=NULL quando esiste un record SPUNTA con stall_id NOT NULL per la stessa impresa/giorno.
+> 3. **presenze.js graduatoria**: sostituita LEFT JOIN con `LEFT JOIN LATERAL` + `LIMIT 1` + `ORDER BY stall_id IS NOT NULL DESC` — prende solo il record più rilevante per ogni entry graduatoria.
+> 4. **test-mercato.js assegna-posteggio**: aggiunto subquery `WHERE id = (SELECT id ... ORDER BY id DESC LIMIT 1)` + DELETE dei record residui SPUNTA stall_id=NULL dopo l'assegnazione.
+> 5. **DB cleanup**: eliminati record fantasma sessioni 538/540, corretti valori presenze_totali nei session_details.
+>
+> **Deploy confermato**: autodeploy da GitHub → version: '10.2.22'
+>
+> **File modificati:**
+> - `routes/presenze.js`: fix chiudi-sessione (updated_at, NOT EXISTS), fix graduatoria (LATERAL JOIN)
+> - `routes/test-mercato.js`: fix assegna-posteggio (LIMIT 1 + DELETE residui)
+> - `index.js`: version bump a 10.2.22
 >
 > ---
 > ### CHANGELOG v10.2.21 (06 Mag 2026)
