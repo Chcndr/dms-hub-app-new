@@ -1,7 +1,31 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.19 (Fix graduatorie azzerate, consolidamento presenze multi-posteggio, deploy verificato)
+> **Versione:** 10.2.20 (Fix SPUNTA gradStallId=NULL in registra-presenza PA, pulizia record fantasma e duplicati)
 > **Data:** 06 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.20 (06 Mag 2026)
+> **Fix critico: endpoint PA registra-presenza-concessionario creava record SPUNTA con stall_id non-NULL**
+>
+> **Root cause:**
+> L'endpoint `registra-presenza-concessionario` in `presenze.js` usava `stall_id` del posteggio anche per tipo_presenza='SPUNTA'. Questo creava record graduatoria con stall_id specifico del posteggio, invece di stall_id=NULL come richiesto dalla logica SPUNTA (presenze legate all'impresa, non al posteggio).
+>
+> **Fix applicati:**
+> 1. **presenze.js riga 213**: `const gradStallId = (tipo_presenza === 'SPUNTA') ? null : stall_id` — ora l'endpoint PA usa stall_id=NULL per SPUNTA e stall_id specifico per CONCESSION.
+> 2. **DB cleanup Bologna (mercato 14)**: eliminati record SPUNTA con stall_id non-NULL per imprese 39, 40, 41; creati record corretti con stall_id=NULL e presenze consolidate (68, 46, 62).
+> 3. **Eliminati 76 record fantasma €0.00**: tutti i record `market_session_details` con stall_id=NULL, tipo_presenza='CONCESSION', importo_addebitato=0.00 (residui del vecchio bug checkin senza posteggio).
+> 4. **Eliminati 390 duplicati session_details**: deduplicazione globale su (session_id, stall_id, impresa_id, tipo_presenza), mantenuto solo il record più recente.
+> 5. **Version bump**: endpoint /health mostra version '10.2.20'.
+>
+> **Verifica post-fix:**
+> - Nessun altro mercato ha record SPUNTA con stall_id non-NULL (query globale = 0 risultati)
+> - Colonne `market_session_details` verificate: `importo_addebitato` (non `importo`)
+>
+> **Deploy confermato**: autodeploy da GitHub → `curl https://api.mio-hub.me/health` → version: '10.2.20'
+>
+> **File modificati:**
+> - `routes/presenze.js`: gradStallId = (tipo_presenza === 'SPUNTA') ? null : stall_id
+> - `index.js`: version bump a 10.2.20
 >
 > ---
 > ### CHANGELOG v10.2.19 (06 Mag 2026)
