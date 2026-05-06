@@ -658,6 +658,37 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           console.warn(
             `[FirebaseAuth] Bridge completato: id=${miohubUser.miohubId}, impresa_id=${miohubUser.impresaId}, wallet=${miohubUser.walletBalance}`
           );
+
+          // v10.3.0: Verifica se l'utente citizen è un collaboratore autorizzato
+          if (miohubUser.role === 'citizen' && miohubUser.email) {
+            try {
+              const collabRes = await fetch(`${API_BASE}/api/collaboratori/me`, {
+                headers: { Authorization: `Bearer ${idToken}` }
+              });
+              const collabData = await collabRes.json();
+              if (collabData.success && collabData.isCollaborator) {
+                // Aggiorna localStorage con flag collaboratore
+                const updatedLegacy = {
+                  ...legacyUser,
+                  isCollaborator: true,
+                  collaboratorData: collabData.data,
+                  impresa_id: collabData.data.impresa_id,
+                };
+                localStorage.setItem('user', JSON.stringify(updatedLegacy));
+                // Aggiorna anche miohub_firebase_user
+                const updatedMiohub = {
+                  ...miohubUser,
+                  isCollaborator: true,
+                  collaboratorData: collabData.data,
+                  impresaId: collabData.data.impresa_id,
+                };
+                localStorage.setItem('miohub_firebase_user', JSON.stringify(updatedMiohub));
+                console.warn(`[FirebaseAuth] Collaboratore riconosciuto: ${collabData.data.nome_impresa} (impresa_id=${collabData.data.impresa_id})`);
+              }
+            } catch (e) {
+              console.warn('[FirebaseAuth] Collaborator check failed:', e);
+            }
+          }
         } catch (err) {
           console.error("[FirebaseAuth] Errore sync utente:", err);
           setState({

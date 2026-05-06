@@ -403,6 +403,12 @@ export default function PresenzePage() {
             const user = JSON.parse(userStr);
             if (user.impresa_id) id = user.impresa_id;
             if (!personaNome) personaNome = user.name || user.email || "";
+            // v10.3.0: Collaboratore autorizzato - usa impresa_id dal collaboratorData
+            if (!id && user.isCollaborator && user.collaboratorData) {
+              id = user.collaboratorData.impresa_id;
+              nome = user.collaboratorData.nome_impresa || "";
+              if (!personaNome) personaNome = `${user.collaboratorData.nome || ""} ${user.collaboratorData.cognome || ""}`.trim();
+            }
           }
         } catch { /* ignore */ }
       }

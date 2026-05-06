@@ -43,6 +43,7 @@ import {
   GraduationCap,
   CreditCard,
   Heart,
+  Mail,
 } from "lucide-react";
 import { PagaConWallet } from "@/components/PagaConWallet";
 import { Button } from "@/components/ui/button";
@@ -1460,6 +1461,7 @@ interface Collaboratore {
   codice_fiscale: string;
   ruolo: "Titolare" | "Socio" | "Familiare" | "Dipendente" | "Collaboratore";
   telefono: string;
+  email: string;
   autorizzato_presenze: boolean;
 }
 
@@ -1494,6 +1496,7 @@ function CollaboratoriSection({
               codice_fiscale: c.codice_fiscale || "",
               ruolo: c.ruolo || "Collaboratore",
               telefono: c.telefono || "",
+              email: c.email || "",
               autorizzato_presenze: c.autorizzato_presenze ?? false,
             }))
           );
@@ -1520,6 +1523,7 @@ function CollaboratoriSection({
             codice_fiscale: impresa.rappresentante_legale_cf || "",
             ruolo: "Titolare",
             telefono: impresa.telefono || "",
+            email: impresa.email || "",
             autorizzato_presenze: true,
           };
           setCollaboratori([titolare]);
@@ -1569,6 +1573,7 @@ function CollaboratoriSection({
       codice_fiscale: "",
       ruolo: "Collaboratore",
       telefono: "",
+      email: "",
       autorizzato_presenze: false,
     };
     // Salva nel DB
@@ -1653,9 +1658,10 @@ function CollaboratoriSection({
           <div className="flex items-start gap-2">
             <Phone className="w-4 h-4 text-[#14b8a6] mt-0.5 flex-shrink-0" />
             <p className="text-xs sm:text-sm text-[#e8fbff]/70">
-              I collaboratori autorizzati potranno scaricare l'app DMS e
-              registrare le presenze sui posteggi dell'impresa inserendo il
-              numero di telefono associato.
+              I collaboratori autorizzati potranno scaricare l'app DMS Hub,
+              fare login con l'email qui indicata, e registrare le presenze
+              sui posteggi dell'impresa direttamente dalla vista Cittadino.
+              Puoi aggiungere più collaboratori: ognuno farà login con la propria email.
             </p>
           </div>
         </CardContent>
@@ -1729,7 +1735,20 @@ function CollaboratoriSection({
                     <option value="Collaboratore">Collaboratore</option>
                   </select>
                 </div>
-                {/* Riga 3: Telefono */}
+                {/* Riga 3: Email (per presenze da app cittadino) */}
+                <div className="flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                  <input
+                    type="email"
+                    placeholder="email@esempio.com"
+                    value={c.email}
+                    onChange={e =>
+                      updateCollaboratore(c.id, "email", e.target.value.toLowerCase())
+                    }
+                    className="bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg px-2.5 py-1.5 text-sm text-[#e8fbff] placeholder-gray-600 focus:border-[#14b8a6]/50 focus:outline-none flex-1"
+                  />
+                </div>
+                {/* Riga 4: Telefono */}
                 <div className="flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                   <input

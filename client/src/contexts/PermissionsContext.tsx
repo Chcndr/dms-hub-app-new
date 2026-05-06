@@ -197,6 +197,21 @@ function getClientSidePermissions(isImpersonating: boolean): Permission[] {
         });
       }
     }
+    // v10.3.0: Collaboratore autorizzato → SOLO tab presenze (niente wallet, anagrafica, ecc.)
+    else if (user.isCollaborator) {
+      const COLLABORATOR_PERMISSION_CODES = [
+        "tab.view.presenze",
+      ];
+      for (const code of COLLABORATOR_PERMISSION_CODES) {
+        extraPerms.push({
+          id: id++,
+          code,
+          name: code,
+          category: "tab",
+          is_sensitive: false,
+        });
+      }
+    }
     // Citizen → nessun permesso extra (anche se ha impresa_id nel DB).
     // Il ruolo RBAC (citizen/business/pa) è la fonte di verità per i permessi,
     // non la presenza di impresa_id che può essere un'associazione di dati.

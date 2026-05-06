@@ -583,6 +583,18 @@ export default function HomePage() {
                 <Store className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="text-xs sm:text-sm">Vetrine</span>
               </Button>
+              {/* v10.3.0: Bottone Presenze per collaboratori autorizzati */}
+              {canViewTab("presenze") && userRole !== "business" && userRole !== "admin" && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => handleProtectedNavigation("/app/impresa/presenze")}
+                  className="h-16 sm:h-24 sm:w-36 flex-col gap-1 sm:gap-2 bg-primary/20 backdrop-blur-sm hover:bg-primary/30 border-primary/50 col-span-2 sm:col-span-1"
+                >
+                  <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                  <span className="text-xs sm:text-sm font-semibold text-primary">Presenze</span>
+                </Button>
+              )}
             </div>
           )}
 
