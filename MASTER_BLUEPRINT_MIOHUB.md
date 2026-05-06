@@ -18,7 +18,7 @@
 > 2. **presenze.js chiudi-sessione**: aggiunta clausola `NOT EXISTS` per escludere record SPUNTA stall_id=NULL quando esiste un record SPUNTA con stall_id NOT NULL per la stessa impresa/giorno.
 > 3. **presenze.js graduatoria**: sostituita LEFT JOIN con `LEFT JOIN LATERAL` + `LIMIT 1` + `ORDER BY stall_id IS NOT NULL DESC` — prende solo il record più rilevante per ogni entry graduatoria.
 > 4. **test-mercato.js assegna-posteggio**: aggiunto subquery `WHERE id = (SELECT id ... ORDER BY id DESC LIMIT 1)` + DELETE dei record residui SPUNTA stall_id=NULL dopo l'assegnazione.
-> 5. **DB cleanup**: eliminati record fantasma sessioni 538/540, corretti valori presenze_totali nei session_details.
+> 5. **DB cleanup**: eliminati record fantasma sessioni 538/540, corretti valori presenze_totali nei session_details. Pulizia aggiuntiva sessione 542: eliminati 12 session_details triplicati (generati dal codice pre-v10.2.22), eliminato record fantasma 2917 (SPUNTA stall_id=NULL €0.00), rigenerati session_details corretti per sessioni 541 (2 CONCESSION) e 542 (1 SPUNTA posteggio 1008).
 >
 > **Deploy confermato**: autodeploy da GitHub → version: '10.2.22'
 >
