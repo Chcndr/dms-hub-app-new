@@ -310,32 +310,43 @@ export default function WalletImpresaPage() {
 
     setLoading(true);
     try {
-      // Fetch wallet impresa
-      const walletsRes = await fetch(
-        addComuneIdToUrl(
-          `${API_BASE_URL}/api/wallets/company/${resolvedImpresaId}`
-        )
-      );
-      const walletsData = await walletsRes.json();
+      // === FASE 1: Fetch parallelo wallets + dati impresa (light) ===
+      // Prova nome dal localStorage (istantaneo)
+      let denominazione = "Impresa";
+      let partitaIva = "N/A";
+      try {
+        const fbStr = localStorage.getItem("miohub_firebase_user");
+        if (fbStr) {
+          const fbUser = JSON.parse(fbStr);
+          if (fbUser.impresaNome) denominazione = fbUser.impresaNome;
+        }
+      } catch { /* ignore */ }
 
+      // Lancio parallelo: wallets + impresa(light) + sanzioni da pagare + sanzioni pagate
+      const SANCTIONS_URL = import.meta.env.DEV ? MIHUB_URL : "";
+      const needsImpresaFetch = denominazione === "Impresa" || partitaIva === "N/A";
+
+      const [walletsRes, impresaRes, sanzioniRes, sanzioniPagateRes] = await Promise.all([
+        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/company/${resolvedImpresaId}`)),
+        needsImpresaFetch
+          ? fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${resolvedImpresaId}?fields=light`))
+          : Promise.resolve(null),
+        fetch(addComuneIdToUrl(`${SANCTIONS_URL}/api/sanctions/impresa/${resolvedImpresaId}/da-pagare`)).catch(() => null),
+        fetch(addComuneIdToUrl(`${SANCTIONS_URL}/api/sanctions?impresa_id=${resolvedImpresaId}&payment_status=PAGATO&limit=50`)).catch(() => null),
+      ]);
+
+      // Parse wallets
+      const walletsData = await walletsRes.json();
       let spuntaWallets: WalletItem[] = [];
       let concessionWallets: WalletItem[] = [];
 
       if (walletsData.success && walletsData.data) {
         const wallets = walletsData.data;
-        // v3.73.0: Aggiunto supporto per tipo SPUNTISTA (mostrato come GENERICO)
         spuntaWallets = wallets
-          .filter(
-            (w: any) =>
-              w.type === "SPUNTA" ||
-              w.type === "GENERICO" ||
-              w.type === "SPUNTISTA"
-          )
+          .filter((w: any) => w.type === "SPUNTA" || w.type === "GENERICO" || w.type === "SPUNTISTA")
           .map((w: any) => ({
             id: w.id,
-            type: (w.type === "GENERICO" || w.type === "SPUNTISTA"
-              ? "GENERICO"
-              : "SPUNTA") as "SPUNTA" | "GENERICO",
+            type: (w.type === "GENERICO" || w.type === "SPUNTISTA" ? "GENERICO" : "SPUNTA") as "SPUNTA" | "GENERICO",
             balance: parseFloat(w.balance) || 0,
             status: w.status,
             market_id: w.market_id,
@@ -361,131 +372,103 @@ export default function WalletImpresaPage() {
           }));
       }
 
-      // Fetch dati impresa
-      const impresaRes = await fetch(
-        addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${resolvedImpresaId}`)
-      );
-      const impresaData = await impresaRes.json();
+      // Parse impresa (se chiamata)
+      if (impresaRes) {
+        const impresaData = await impresaRes.json();
+        if (impresaData.success && impresaData.data) {
+          denominazione = impresaData.data.denominazione || denominazione;
+          partitaIva = impresaData.data.partita_iva || partitaIva;
+        }
+      }
 
       setCompany({
         company_id: resolvedImpresaId,
-        ragione_sociale: impresaData.success
-          ? impresaData.data?.denominazione
-          : "Impresa",
-        partita_iva: impresaData.success
-          ? impresaData.data?.partita_iva
-          : "N/A",
+        ragione_sociale: denominazione,
+        partita_iva: partitaIva,
         spunta_wallets: spuntaWallets,
         concession_wallets: concessionWallets,
       });
 
-      // Fetch scadenze usando l'endpoint riepilogo con filtro per ragione sociale
-      const ragioneSociale = impresaData.success
-        ? impresaData.data?.denominazione
-        : "";
-      if (ragioneSociale) {
-        const scadenzeRes = await fetch(
-          addComuneIdToUrl(
-            `${API_BASE_URL}/api/canone-unico/riepilogo?impresa_search=${encodeURIComponent(ragioneSociale)}`
-          )
-        );
-        const scadenzeData = await scadenzeRes.json();
-        if (scadenzeData.success) {
-          setScadenze(scadenzeData.data || []);
-        }
-      }
-
-      // v5.9.0: Fetch sanzioni/verbali PM non pagati - usa MIHUB (stesso backend dove vengono create)
-      const SANCTIONS_URL = import.meta.env.DEV ? MIHUB_URL : "";
-      try {
-        const sanzioniRes = await fetch(
-          addComuneIdToUrl(
-            `${SANCTIONS_URL}/api/sanctions/impresa/${resolvedImpresaId}/da-pagare`
-          )
-        );
-        const sanzioniData = await sanzioniRes.json();
-        if (sanzioniData.success) {
-          setSanzioni(sanzioniData.data || []);
-        }
-      } catch (e) {
-        console.error("Errore fetch sanzioni:", e);
-      }
-
-      // v5.9.0: Fetch sanzioni pagate per storico - usa MIHUB (stesso backend dove vengono create)
-      try {
-        const sanzioniPagateRes = await fetch(
-          addComuneIdToUrl(
-            `${SANCTIONS_URL}/api/sanctions?impresa_id=${resolvedImpresaId}&payment_status=PAGATO&limit=50`
-          )
-        );
-        const sanzioniPagateData = await sanzioniPagateRes.json();
-        if (sanzioniPagateData.success) {
-          // Calcola importo effettivo pagato per ogni sanzione
-          const sanzioniConImporto = (sanzioniPagateData.data || []).map(
-            (s: SanzioneAPI) => {
-              // Se reduced_amount è salvato, usalo; altrimenti calcola se pagato in ridotto
-              let importoEffettivo = parseFloat(s.amount);
-              let pagatoInRidotto = false;
-
-              if (s.reduced_amount) {
-                importoEffettivo = parseFloat(s.reduced_amount);
-                pagatoInRidotto = true;
-              } else if (s.paid_date && s.notified_at) {
-                const paidDate = new Date(s.paid_date);
-                const notifiedDate = new Date(s.notified_at);
-                const diffDays = Math.floor(
-                  (paidDate.getTime() - notifiedDate.getTime()) /
-                    (1000 * 60 * 60 * 24)
-                );
-                if (diffDays <= 5) {
-                  importoEffettivo = parseFloat(s.amount) * 0.7;
-                  pagatoInRidotto = true;
-                }
-              }
-
-              return {
-                ...s,
-                importo_effettivo_pagato: importoEffettivo.toFixed(2),
-                pagato_in_ridotto: pagatoInRidotto,
-              };
-            }
-          );
-          setSanzioniPagate(sanzioniConImporto);
-        }
-      } catch (e) {
-        console.error("Errore fetch sanzioni pagate:", e);
-      }
-
-      // v3.73.1: Fetch transazioni per tutti i wallet (storico ricariche)
-      const allWallets = [...spuntaWallets, ...concessionWallets];
-      const allTransactions: any[] = [];
-      for (const wallet of allWallets) {
+      // Parse sanzioni da pagare
+      if (sanzioniRes) {
         try {
-          const txRes = await fetch(
-            addComuneIdToUrl(
-              `${API_BASE_URL}/api/wallets/${wallet.id}/transactions`
-            )
-          );
-          const txData = await txRes.json();
-          if (txData.success && txData.data) {
-            allTransactions.push(
-              ...txData.data.map((tx: any) => ({
-                ...tx,
-                wallet_type: wallet.type,
-                market_name: wallet.market_name,
-              }))
-            );
+          const sanzioniData = await sanzioniRes.json();
+          if (sanzioniData.success) {
+            setSanzioni(sanzioniData.data || []);
           }
         } catch (e) {
-          console.error(`Errore fetch transazioni wallet ${wallet.id}:`, e);
+          console.error("Errore parse sanzioni:", e);
         }
       }
-      // Ordina per data decrescente
-      allTransactions.sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+
+      // Parse sanzioni pagate
+      if (sanzioniPagateRes) {
+        try {
+          const sanzioniPagateData = await sanzioniPagateRes.json();
+          if (sanzioniPagateData.success) {
+            const sanzioniConImporto = (sanzioniPagateData.data || []).map(
+              (s: SanzioneAPI) => {
+                let importoEffettivo = parseFloat(s.amount);
+                let pagatoInRidotto = false;
+                if (s.reduced_amount) {
+                  importoEffettivo = parseFloat(s.reduced_amount);
+                  pagatoInRidotto = true;
+                } else if (s.paid_date && s.notified_at) {
+                  const paidDate = new Date(s.paid_date);
+                  const notifiedDate = new Date(s.notified_at);
+                  const diffDays = Math.floor(
+                    (paidDate.getTime() - notifiedDate.getTime()) / (1000 * 60 * 60 * 24)
+                  );
+                  if (diffDays <= 5) {
+                    importoEffettivo = parseFloat(s.amount) * 0.7;
+                    pagatoInRidotto = true;
+                  }
+                }
+                return { ...s, importo_effettivo_pagato: importoEffettivo.toFixed(2), pagato_in_ridotto: pagatoInRidotto };
+              }
+            );
+            setSanzioniPagate(sanzioniConImporto);
+          }
+        } catch (e) {
+          console.error("Errore parse sanzioni pagate:", e);
+        }
+      }
+
+      // === FASE 2: Fetch scadenze (dipende da denominazione) + transazioni wallet in parallelo ===
+      const ragioneSociale = denominazione !== "Impresa" ? denominazione : "";
+      const allWallets = [...spuntaWallets, ...concessionWallets];
+
+      const phase2Promises: Promise<any>[] = [];
+      if (ragioneSociale) {
+        phase2Promises.push(
+          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/canone-unico/riepilogo?impresa_search=${encodeURIComponent(ragioneSociale)}`))
+            .then(r => r.json())
+            .then(data => { if (data.success) setScadenze(data.data || []); })
+            .catch(() => {})
+        );
+      }
+
+      // Fetch transazioni per tutti i wallet in parallelo
+      const txPromises = allWallets.map(wallet =>
+        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/${wallet.id}/transactions`))
+          .then(r => r.json())
+          .then(txData => {
+            if (txData.success && txData.data) {
+              return txData.data.map((tx: any) => ({ ...tx, wallet_type: wallet.type, market_name: wallet.market_name }));
+            }
+            return [];
+          })
+          .catch(() => [])
       );
-      setTransactions(allTransactions);
+      phase2Promises.push(
+        Promise.all(txPromises).then(results => {
+          const allTransactions = results.flat();
+          allTransactions.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          setTransactions(allTransactions);
+        })
+      );
+
+      await Promise.all(phase2Promises);
     } catch (error) {
       console.error("Errore caricamento dati wallet:", error);
     } finally {
