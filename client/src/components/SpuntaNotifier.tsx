@@ -55,26 +55,37 @@ export default function SpuntaNotifier() {
   // Tieni spuntaRef sincronizzato
   useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
 
-  // Risolvi impresaId da localStorage
+  // Risolvi impresaId da localStorage — MA solo per utenti impresa/collaboratore, NON per admin/PA
   useEffect(() => {
     let id: number | null = null;
+    let isAdmin = false;
     try {
       const fbStr = localStorage.getItem("miohub_firebase_user");
       if (fbStr) {
         const fb = JSON.parse(fbStr);
-        if (fb.impresaId) id = fb.impresaId;
+        // Se l'utente è admin/PA, NON attivare SpuntaNotifier
+        // (il turno nella vista PA è gestito dal banner in GestioneMercati)
+        if (fb.role === 'pa' || fb.role === 'admin' || fb.is_super_admin) {
+          isAdmin = true;
+        }
+        if (!isAdmin && fb.impresaId) id = Number(fb.impresaId);
       }
     } catch { /* ignore */ }
-    if (!id) {
+    if (!id && !isAdmin) {
       try {
         const userStr = localStorage.getItem("user");
         if (userStr) {
           const user = JSON.parse(userStr);
-          if (user.impresa_id) id = user.impresa_id;
+          // Controlla anche qui se è admin
+          if (user.base_role === 'admin' || user.is_super_admin || user.role === 'admin') {
+            isAdmin = true;
+          }
+          if (!isAdmin && user.impresa_id) id = Number(user.impresa_id);
         }
       } catch { /* ignore */ }
     }
-    setImpresaId(id);
+    // Solo per utenti impresa/collaboratore
+    if (!isAdmin) setImpresaId(id);
   }, []);
 
   // Funzione per notificare il backend della scadenza del turno

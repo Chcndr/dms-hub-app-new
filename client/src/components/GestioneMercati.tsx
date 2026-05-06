@@ -3445,59 +3445,56 @@ function PosteggiTab({
       </div>
 
       {/* Banner giallo turno corrente spunta live */}
+      {/* Popup turno spunta — fisso in alto a destra (~8x8cm) */}
       {spuntaLiveTurno && spuntaLiveTurno.turno_attivo && (
-        <div className="mb-4 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-lg p-4 shadow-lg shadow-yellow-500/20 animate-pulse">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-white font-black text-lg">
-                  TURNO: {spuntaLiveTurno.impresa_nome}
-                </p>
-                <p className="text-white/80 text-sm">
-                  Posizione {spuntaLiveTurno.posizione}° — {spuntaLiveTurno.spuntisti_rimanenti} spuntisti rimanenti — {spuntaLiveTurno.posteggi_alla_spunta} posteggi alla spunta
-                </p>
-              </div>
+        <div className="fixed top-4 right-4 z-[9998] w-[220px] bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl p-4 shadow-2xl shadow-yellow-500/40 border-2 border-yellow-300/50" style={{ animation: 'pulse 2s infinite' }}>
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+              <Users className="w-5 h-5 text-white" />
             </div>
-            <div className="flex items-center gap-3">
-              {/* Tab Rinuncia */}
-              <button
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm shadow-lg transition-colors"
-                onClick={async () => {
-                  const confirmed = window.confirm(
-                    `Confermi la RINUNCIA per ${spuntaLiveTurno.impresa_nome}?\n\nLo spuntista NON riceverà un posteggio e NON guadagnerà il punto presenza in graduatoria.`
-                  );
-                  if (!confirmed) return;
-                  try {
-                    const rinunciaRes = await authenticatedFetch(
-                      `${API_BASE_URL}/api/presenze-live/spunta/rinuncia`,
-                      {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ coda_id: spuntaLiveTurno.coda_id, session_id: spuntaLiveTurno.session_id }),
-                      }
-                    );
-                    const rinunciaData = await rinunciaRes.json();
-                    if (rinunciaData.success) {
-                      toast.success(`Rinuncia registrata per ${spuntaLiveTurno.impresa_nome}. Nessun punto presenza assegnato. Prossimo turno attivato.`);
-                      await new Promise(r => setTimeout(r, 500));
-                      fetchSpuntaLiveTurno();
-                    } else {
-                      toast.error(rinunciaData.messaggio || 'Errore rinuncia');
+            <p className="text-white font-black text-sm leading-tight">
+              TURNO
+            </p>
+            <p className="text-white font-black text-base leading-tight">
+              {spuntaLiveTurno.impresa_nome}
+            </p>
+            <div className="text-white font-mono text-3xl font-bold">
+              {Math.floor(spuntaTimerSecondi / 60)}:{String(spuntaTimerSecondi % 60).padStart(2, '0')}
+            </div>
+            <p className="text-white/80 text-xs">
+              Pos. {spuntaLiveTurno.posizione}° — {spuntaLiveTurno.spuntisti_rimanenti} rimasti
+            </p>
+            <button
+              className="mt-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs shadow-lg transition-colors w-full"
+              onClick={async () => {
+                const confirmed = window.confirm(
+                  `Confermi la RINUNCIA per ${spuntaLiveTurno.impresa_nome}?\n\nLo spuntista NON riceverà un posteggio e NON guadagnerà il punto presenza in graduatoria.`
+                );
+                if (!confirmed) return;
+                try {
+                  const rinunciaRes = await authenticatedFetch(
+                    `${API_BASE_URL}/api/presenze-live/spunta/rinuncia`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ coda_id: spuntaLiveTurno.coda_id, session_id: spuntaLiveTurno.session_id }),
                     }
-                  } catch (err) {
-                    toast.error('Errore durante la rinuncia');
+                  );
+                  const rinunciaData = await rinunciaRes.json();
+                  if (rinunciaData.success) {
+                    toast.success(`Rinuncia registrata per ${spuntaLiveTurno.impresa_nome}. Nessun punto presenza assegnato. Prossimo turno attivato.`);
+                    await new Promise(r => setTimeout(r, 500));
+                    fetchSpuntaLiveTurno();
+                  } else {
+                    toast.error(rinunciaData.messaggio || 'Errore rinuncia');
                   }
-                }}
-              >
-                ✋ Rinuncia
-              </button>
-              <div className="text-white font-mono text-2xl font-bold">
-                {Math.floor(spuntaTimerSecondi / 60)}:{String(spuntaTimerSecondi % 60).padStart(2, '0')}
-              </div>
-            </div>
+                } catch (err) {
+                  toast.error('Errore durante la rinuncia');
+                }
+              }}
+            >
+              ✋ Rinuncia
+            </button>
           </div>
         </div>
       )}
