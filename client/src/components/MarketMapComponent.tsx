@@ -156,13 +156,16 @@ function MapCenterController(props: MapControllerProps) {
 function StallCenterController({
   stallCenter,
   trigger = 0,
+  disabled = false,
 }: {
   stallCenter?: [number, number];
   trigger?: number;
+  disabled?: boolean;
 }) {
   const map = useMap();
 
   useEffect(() => {
+    if (disabled) return; // In modalità spunta, la mappa resta ferma
     if (!stallCenter) return;
     // Controllo sicurezza per evitare errori toFixed su valori non numerici
     if (
@@ -176,7 +179,7 @@ function StallCenterController({
       duration: 0.8, // Animazione veloce
       easeLinearity: 0.5,
     });
-  }, [stallCenter, trigger, map]);
+  }, [stallCenter, trigger, map, disabled]);
 
   return null;
 }
@@ -378,7 +381,8 @@ export function MarketMapComponent({
           />
 
           {/* Controller per centrare su posteggio selezionato dalla lista */}
-          <StallCenterController stallCenter={selectedStallCenter} trigger={stallCenterTrigger} />
+          {/* In modalità spunta la mappa resta ferma: il vigile clicca velocemente i posteggi */}
+          <StallCenterController stallCenter={selectedStallCenter} trigger={stallCenterTrigger} disabled={isSpuntaMode} />
 
           {/* Routing layer (opzionale) */}
           {routeConfig?.enabled && (
@@ -427,7 +431,7 @@ export function MarketMapComponent({
                     iconAnchor: [16, 16],
                   })}
                 >
-                  <Popup>
+                  <Popup autoPan={false}>
                     <div className="text-sm">
                       <div className="font-semibold text-base mb-1">
                         📍 Centro Mercato
@@ -488,7 +492,7 @@ export function MarketMapComponent({
                   },
                 }}
               >
-                <Popup className="market-popup" minWidth={280}>
+                <Popup className="market-popup" minWidth={280} autoPan={false}>
                   <div
                     className="p-0 bg-[#0b1220] text-gray-100 rounded-md overflow-hidden"
                     style={{ minWidth: "280px" }}
@@ -691,7 +695,7 @@ export function MarketMapComponent({
                     </Tooltip>
 
                     {/* Popup informativo */}
-                    <Popup className="stall-popup" minWidth={280}>
+                    <Popup className="stall-popup" minWidth={280} autoPan={false}>
                       {/* Popup OCCUPA per posteggi liberi/riservati - ROSSO */}
                       {isOccupaMode &&
                       (displayStatus === "libero" ||
