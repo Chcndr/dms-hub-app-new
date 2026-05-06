@@ -1,7 +1,28 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.22 (Fix chiudi-sessione, graduatoria LATERAL JOIN, assegna-posteggio LIMIT 1)
+> **Versione:** 10.2.22 — STABILE (Fix chiudi-sessione, graduatoria LATERAL JOIN, assegna-posteggio LIMIT 1)
 > **Data:** 06 Maggio 2026
+> **Stato:** PUNTO DI RIPRISTINO STABILE — Git tag `v10.2.22-stable`
+>
+> ---
+> ### STATO SISTEMA (06 Mag 2026 — Snapshot stabile)
+>
+> | Componente | Stato | Dettaglio |
+> |---|---|---|
+> | **GitHub Backend** | Allineato | `fe988de` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `3c06032` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online v10.2.22 | `https://api.mio-hub.me/health` |
+> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `3c06032` |
+> | **Neon (DB)** | Integro | 0 duplicati, 0 fantasmi, 0 SPUNTA stall_id errati |
+>
+> **Integrità DB verificata:**
+> - vendor_presences: 9 righe (sessione corrente)
+> - graduatoria_presenze: 80 righe (tutte corrette)
+> - market_session_details: 1819 righe (0 duplicati, 0 fantasmi)
+> - market_sessions: 548 sessioni (tutte CHIUSE)
+> - Nessun record fantasma CONCESSION stall_id=NULL
+> - Nessun record SPUNTA con stall_id non-NULL nella graduatoria
+> - Nessun fantasma SPUNTA residuo nello storico
 >
 > ---
 > ### CHANGELOG v10.2.22 (06 Mag 2026)
