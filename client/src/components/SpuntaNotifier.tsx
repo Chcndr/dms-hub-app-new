@@ -215,7 +215,7 @@ export default function SpuntaNotifier() {
         const data = JSON.parse(event.data);
 
         if (data.type === 'SPUNTA_INIZIATA') {
-          if (data.primo_turno?.impresa_id === impresaId) {
+          if (Number(data.primo_turno?.impresa_id) === impresaId) {
             scadenzaChiamataRef.current = false;
             setSpunta(prev => ({
               ...prev,
@@ -229,7 +229,7 @@ export default function SpuntaNotifier() {
             setTimerSecondi(120);
           }
         } else if (data.type === 'PROSSIMO_TURNO') {
-          if (data.impresa_id === impresaId) {
+          if (Number(data.impresa_id) === impresaId) {
             setSpunta(prev => {
               if (prev.stato === 'TURNO_ATTIVO' && prev.coda_id === data.coda_id) {
                 return prev; // Stesso turno, non resettare
@@ -262,7 +262,7 @@ export default function SpuntaNotifier() {
             });
           }
         } else if (data.type === 'POSTEGGIO_ASSEGNATO') {
-          if (data.impresa_id === impresaId) {
+          if (Number(data.impresa_id) === impresaId) {
             setSpunta(prev => ({
               ...prev,
               stato: 'ASSEGNATO',
