@@ -384,13 +384,14 @@ export default function PresenzePage() {
       let id: number | null = null;
       let nome = "";
 
-      // Strategia 1: miohub_firebase_user
+      // Strategia 1: miohub_firebase_user (veloce, dati già in memoria)
       let personaNome = "";
       try {
         const fbStr = localStorage.getItem("miohub_firebase_user");
         if (fbStr) {
           const fb = JSON.parse(fbStr);
           if (fb.impresaId) id = fb.impresaId;
+          if (fb.impresaNome) nome = fb.impresaNome;
           personaNome = fb.displayName || fb.email || "";
         }
       } catch { /* ignore */ }
@@ -434,22 +435,28 @@ export default function PresenzePage() {
         } catch { /* ignore */ }
       }
 
-      // Carica nome impresa dal server
+      // Imposta dati e vai direttamente a cerca_mercato (senza chiamata API extra)
       if (id) {
         setImpresaId(id);
         setNomeUtente(personaNome);
-        try {
-          const resImpresa = await fetch(`${MIHUB_API_BASE_URL}/api/imprese/${id}`);
-          if (resImpresa.ok) {
-            const dataImpresa = await resImpresa.json();
-            const raw = dataImpresa.success ? dataImpresa.data : dataImpresa;
-            if (raw) {
-              const nomeI = raw.denominazione || raw.ragione_sociale || "";
-              setNomeImpresa(nomeI);
-              setRagioneSociale(nomeI);
+        if (nome) {
+          setNomeImpresa(nome);
+          setRagioneSociale(nome);
+        } else {
+          // Fallback: carica nome impresa dal server SOLO se non disponibile in localStorage
+          try {
+            const resImpresa = await fetch(`${MIHUB_API_BASE_URL}/api/imprese/${id}`);
+            if (resImpresa.ok) {
+              const dataImpresa = await resImpresa.json();
+              const raw = dataImpresa.success ? dataImpresa.data : dataImpresa;
+              if (raw) {
+                const nomeI = raw.denominazione || raw.ragione_sociale || "";
+                setNomeImpresa(nomeI);
+                setRagioneSociale(nomeI);
+              }
             }
-          }
-        } catch { /* ignore */ }
+          } catch { /* ignore */ }
+        }
         if (!nome && !nomeImpresa) setRagioneSociale(personaNome);
         setSchermata("cerca_mercato");
       } else {

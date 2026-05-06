@@ -51,6 +51,7 @@ export interface MioHubUser {
   // Dati dal backend MioHub (orchestratore)
   miohubId?: number;
   impresaId?: number;
+  impresaNome?: string;
   walletBalance?: number;
   assignedRoles?: Array<{
     role_id: number;
@@ -113,6 +114,7 @@ interface LegacyUserData {
   email: string;
   openId?: string;
   impresa_id?: number;
+  denominazione?: string;
   wallet_balance?: number;
   base_role: string;
   is_super_admin?: boolean;
@@ -427,6 +429,7 @@ async function syncUserWithBackend(
     const impresaResult = await lookupImpresaForUser(email, legacyUser.id);
     if (impresaResult) {
       legacyUser.impresa_id = impresaResult.id;
+      legacyUser.denominazione = impresaResult.denominazione;
       console.warn(
         `[FirebaseAuth] Impresa associata via fallback: impresa_id=${impresaResult.id} (${impresaResult.denominazione})`
       );
@@ -562,6 +565,7 @@ async function syncUserWithBackend(
     verified: firebaseUser.emailVerified,
     miohubId: legacyUser?.id || backendSyncData?.id || 0,
     impresaId: shouldSetImpresa ? legacyUser!.impresa_id : undefined,
+    impresaNome: shouldSetImpresa ? (legacyUser!.denominazione || legacyUser!.impresa_nome || "") : undefined,
     walletBalance: legacyUser?.wallet_balance || 0,
     assignedRoles: mergedRoles,
     openId: legacyUser?.openId || undefined,
@@ -658,6 +662,25 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           console.warn(
             `[FirebaseAuth] Bridge completato: id=${miohubUser.miohubId}, impresa_id=${miohubUser.impresaId}, wallet=${miohubUser.walletBalance}`
           );
+
+          // v10.3.0: Per utenti business, carica nome impresa e salvalo nel localStorage
+          // Così PresenzePage lo trova subito senza fare chiamate API extra
+          if (miohubUser.impresaId && !miohubUser.impresaNome) {
+            try {
+              const impRes = await fetch(`${API_BASE}/api/imprese/${miohubUser.impresaId}?fields=light`);
+              if (impRes.ok) {
+                const impData = await impRes.json();
+                const raw = impData.success ? impData.data : impData;
+                if (raw?.denominazione) {
+                  miohubUser.impresaNome = raw.denominazione;
+                  localStorage.setItem('miohub_firebase_user', JSON.stringify(miohubUser));
+                  console.warn(`[FirebaseAuth] Nome impresa salvato: ${raw.denominazione}`);
+                }
+              }
+            } catch (e) {
+              console.warn('[FirebaseAuth] Fetch nome impresa fallito:', e);
+            }
+          }
 
           // v10.3.0: Verifica se l'utente citizen è un collaboratore autorizzato
           if (miohubUser.role === 'citizen' && miohubUser.email) {
