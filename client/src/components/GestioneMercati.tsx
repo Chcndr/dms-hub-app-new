@@ -32,6 +32,7 @@ import {
   Leaf,
   RefreshCw,
   Trash2,
+  CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -2768,7 +2769,7 @@ function PosteggiTab({
                 show: true,
                 messaggio: errData.messaggio || 'Impossibile assegnare il posteggio.',
                 impresa: nomeImpresaSaldo,
-                saldo: errData.saldo || 0
+                saldo: Number(errData.saldo) || 0
               });
               // Rimetti il posteggio a riservato nel frontend
               setStalls(prev =>
@@ -2821,10 +2822,10 @@ function PosteggiTab({
             // Mostra mini-popup verde "Posteggio Assegnato"
             setShowPostoAssegnatoPopup({
               show: true,
-              impresa: spuntista.impresa_name,
-              stall_number: String(data.data.stall_number),
-              costo: costo,
-              saldo: nuovoSaldo
+              impresa: spuntista.impresa_name || 'Spuntista',
+              stall_number: String(data.data.stall_number || ''),
+              costo: Number(costo) || 0,
+              saldo: Number(nuovoSaldo) || 0
             });
             // Auto-chiudi dopo 4 secondi
             setTimeout(() => { setShowPostoAssegnatoPopup(prev => ({...prev, show: false})); }, 4000);
@@ -3450,28 +3451,29 @@ function PosteggiTab({
         </div>
       </div>
 
-      {/* Banner giallo turno corrente spunta live */}
-      {/* Popup turno spunta — fisso in alto a destra (~8x8cm) */}
+      {/* ═══ POPUP SPUNTA PA — fissi in alto a destra (280px) ═══ */}
+
+      {/* Popup TURNO — giallo/amber */}
       {spuntaLiveTurno && spuntaLiveTurno.turno_attivo && (
-        <div className="fixed top-4 right-4 z-[9998] w-[220px] bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl p-4 shadow-2xl shadow-yellow-500/40 border-2 border-yellow-300/50" style={{ animation: 'pulse 2s infinite' }}>
-          <div className="flex flex-col items-center text-center gap-2">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <Users className="w-5 h-5 text-white" />
+        <div className="fixed top-4 right-4 z-[9998] w-[280px] bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl p-5 shadow-2xl shadow-yellow-500/40 border-2 border-yellow-300/50" style={{ animation: 'pulse 2s infinite' }}>
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+              <Users className="w-8 h-8 text-white" />
             </div>
-            <p className="text-white font-black text-sm leading-tight">
+            <p className="text-white font-black text-lg leading-tight">
               TURNO
             </p>
-            <p className="text-white font-black text-base leading-tight">
+            <p className="text-white font-black text-xl leading-tight">
               {spuntaLiveTurno.impresa_nome}
             </p>
-            <div className="text-white font-mono text-3xl font-bold">
+            <div className="text-white font-mono text-4xl font-bold">
               {Math.floor(spuntaTimerSecondi / 60)}:{String(spuntaTimerSecondi % 60).padStart(2, '0')}
             </div>
-            <p className="text-white/80 text-xs">
+            <p className="text-white/80 text-sm">
               Pos. {spuntaLiveTurno.posizione}° — {spuntaLiveTurno.spuntisti_rimanenti} rimasti
             </p>
             <button
-              className="mt-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs shadow-lg transition-colors w-full"
+              className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm shadow-lg transition-colors w-full"
               onClick={async () => {
                 const confirmed = window.confirm(
                   `Confermi la RINUNCIA per ${spuntaLiveTurno.impresa_nome}?\n\nLo spuntista NON riceverà un posteggio e NON guadagnerà il punto presenza in graduatoria.`
@@ -3505,66 +3507,70 @@ function PosteggiTab({
         </div>
       )}
 
-
-      {/* Popup mini saldo negativo — fisso in alto a destra */}
+      {/* Popup SALDO NEGATIVO — rosso */}
       {showSaldoNegativoPopup.show && (
-        <div className="fixed top-4 right-4 z-[9998] w-[220px] bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-4 shadow-2xl shadow-red-500/40 border-2 border-red-400/50" style={{ animation: 'pulse 2s infinite' }}>
-          <div className="flex flex-col items-center text-center gap-2">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="text-2xl">⛔</span>
+        <div className="fixed top-4 right-4 z-[9998] w-[280px] bg-gradient-to-br from-red-600 to-red-800 rounded-2xl p-5 shadow-2xl shadow-red-500/40 border-2 border-red-400/50" style={{ animation: 'pulse 2s infinite' }}>
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-3xl">⛔</span>
             </div>
-            <p className="text-white font-black text-sm leading-tight">
+            <p className="text-white font-black text-lg leading-tight">
               SALDO NEGATIVO
             </p>
-            <p className="text-white font-black text-base leading-tight">
+            <p className="text-white font-black text-xl leading-tight">
               {showSaldoNegativoPopup.impresa}
             </p>
-            <p className="text-red-200 text-2xl font-bold">
-              €{showSaldoNegativoPopup.saldo.toFixed(2)}
+            <p className="text-red-200 text-3xl font-bold">
+              €{(showSaldoNegativoPopup.saldo ?? 0).toFixed(2)}
             </p>
-            <p className="text-white/70 text-xs">
+            <p className="text-white/70 text-sm">
               Passaggio al prossimo...
             </p>
-            <div className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full mx-auto"></div>
+            <div className="animate-spin w-6 h-6 border-3 border-white/30 border-t-white rounded-full mx-auto"></div>
           </div>
         </div>
       )}
-      {/* Popup mini posteggio assegnato — fisso in alto a destra (verde) */}
+
+      {/* Popup POSTEGGIO ASSEGNATO — verde (stile uguale all'app) */}
       {showPostoAssegnatoPopup.show && (
-        <div className="fixed top-4 right-4 z-[9998] w-[220px] bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 shadow-2xl shadow-green-500/40 border-2 border-green-300/50" onClick={() => setShowPostoAssegnatoPopup(prev => ({...prev, show: false}))}>
-          <div className="flex flex-col items-center text-center gap-2">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="text-2xl">✅</span>
+        <div className="fixed top-4 right-4 z-[9998] w-[280px] bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-5 shadow-2xl shadow-green-500/40 border-2 border-green-300/50" onClick={() => setShowPostoAssegnatoPopup(prev => ({...prev, show: false}))}>
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-9 h-9 text-white" />
             </div>
-            <p className="text-white font-black text-sm leading-tight">
-              POSTEGGIO ASSEGNATO
+            <p className="text-white font-black text-lg leading-tight">
+              POSTEGGIO ASSEGNATO!
             </p>
-            <p className="text-white font-black text-base leading-tight">
+            <p className="text-white font-bold text-xl leading-tight">
               {showPostoAssegnatoPopup.impresa}
             </p>
-            <p className="text-white text-2xl font-bold">
-              N° {showPostoAssegnatoPopup.stall_number}
+            <p className="text-white text-3xl font-bold">
+              Posteggio {showPostoAssegnatoPopup.stall_number}
             </p>
-            <p className="text-white/80 text-xs">
-              Costo: €{showPostoAssegnatoPopup.costo.toFixed(2)} | Saldo: €{showPostoAssegnatoPopup.saldo.toFixed(2)}
+            <p className="text-white/80 text-sm">
+              Importo: €{(showPostoAssegnatoPopup.costo ?? 0).toFixed(2)}
+            </p>
+            <p className="text-white/80 text-sm">
+              Saldo: €{(showPostoAssegnatoPopup.saldo ?? 0).toFixed(2)}
             </p>
           </div>
         </div>
       )}
-      {/* Popup mini spunta finita — fisso in alto a destra (giallo) */}
+
+      {/* Popup SPUNTA FINITA — giallo */}
       {showSpuntaFinitaPopup && (
-        <div className="fixed top-4 right-4 z-[9998] w-[220px] bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl p-4 shadow-2xl shadow-yellow-500/40 border-2 border-yellow-300/50" onClick={() => { setShowSpuntaFinitaPopup(false); spuntaFinitaGiaVistaRef.current = true; }}>
-          <div className="flex flex-col items-center text-center gap-2">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="text-2xl">✅</span>
+        <div className="fixed top-4 right-4 z-[9998] w-[280px] bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl p-5 shadow-2xl shadow-yellow-500/40 border-2 border-yellow-300/50" onClick={() => { setShowSpuntaFinitaPopup(false); spuntaFinitaGiaVistaRef.current = true; }}>
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-3xl">✅</span>
             </div>
-            <p className="text-white font-black text-sm leading-tight">
+            <p className="text-white font-black text-lg leading-tight">
               SPUNTA FINITA!
             </p>
-            <p className="text-white/80 text-sm mt-1">
+            <p className="text-white/80 text-base mt-1">
               Tutti gli spuntisti processati.
             </p>
-            <button className="mt-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white font-bold rounded-lg text-xs border border-white/40 w-full" onClick={(e) => { e.stopPropagation(); setShowSpuntaFinitaPopup(false); spuntaFinitaGiaVistaRef.current = true; }}>CHIUDI</button>
+            <button className="mt-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-bold rounded-xl text-sm border border-white/40 w-full" onClick={(e) => { e.stopPropagation(); setShowSpuntaFinitaPopup(false); spuntaFinitaGiaVistaRef.current = true; }}>CHIUDI</button>
           </div>
         </div>
       )}

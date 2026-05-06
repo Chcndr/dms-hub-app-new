@@ -55,37 +55,51 @@ export default function SpuntaNotifier() {
   // Tieni spuntaRef sincronizzato
   useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
 
-  // Risolvi impresaId da localStorage — MA solo per utenti impresa/collaboratore, NON per admin/PA
+  // Risolvi impresaId da localStorage — attivo per TUTTI gli utenti che hanno un impresaId
+  // (incluso MIO TEST che è admin ma usa l'app anche come impresa).
+  // Lo SpuntaNotifier si disattiva SOLO se l'utente sta usando la vista PA (impersonation attiva)
+  // perché in quel caso il turno è gestito dal mini-popup in GestioneMercati.
   useEffect(() => {
     let id: number | null = null;
-    let isAdmin = false;
+
+    // Se c'è impersonation attiva (sessionStorage), l'utente sta usando la vista PA
+    // → NON mostrare SpuntaNotifier (il turno è nel mini-popup GestioneMercati)
+    try {
+      const impersonation = sessionStorage.getItem("miohub_impersonation");
+      if (impersonation) {
+        const imp = JSON.parse(impersonation);
+        if (imp.active) {
+          // Vista PA attiva — non attivare SpuntaNotifier
+          setImpresaId(null);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+
+    // Altrimenti, cerca impresaId normalmente
     try {
       const fbStr = localStorage.getItem("miohub_firebase_user");
       if (fbStr) {
         const fb = JSON.parse(fbStr);
-        // Se l'utente è admin/PA, NON attivare SpuntaNotifier
-        // (il turno nella vista PA è gestito dal banner in GestioneMercati)
-        if (fb.role === 'pa' || fb.role === 'admin' || fb.is_super_admin) {
-          isAdmin = true;
+        // Se il ruolo CORRENTE è 'pa' (non business), non attivare
+        // Ma se ha impresaId è perché sta usando l'app come impresa
+        if (fb.role === 'pa' && !fb.impresaId) {
+          setImpresaId(null);
+          return;
         }
-        if (!isAdmin && fb.impresaId) id = Number(fb.impresaId);
+        if (fb.impresaId) id = Number(fb.impresaId);
       }
     } catch { /* ignore */ }
-    if (!id && !isAdmin) {
+    if (!id) {
       try {
         const userStr = localStorage.getItem("user");
         if (userStr) {
           const user = JSON.parse(userStr);
-          // Controlla anche qui se è admin
-          if (user.base_role === 'admin' || user.is_super_admin || user.role === 'admin') {
-            isAdmin = true;
-          }
-          if (!isAdmin && user.impresa_id) id = Number(user.impresa_id);
+          if (user.impresa_id) id = Number(user.impresa_id);
         }
       } catch { /* ignore */ }
     }
-    // Solo per utenti impresa/collaboratore
-    if (!isAdmin) setImpresaId(id);
+    setImpresaId(id);
   }, []);
 
   // Funzione per notificare il backend della scadenza del turno
