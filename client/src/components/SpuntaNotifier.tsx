@@ -55,38 +55,13 @@ export default function SpuntaNotifier() {
   // Tieni spuntaRef sincronizzato
   useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
 
-  // Risolvi impresaId da localStorage — attivo per TUTTI gli utenti che hanno un impresaId
-  // (incluso MIO TEST che è admin ma usa l'app anche come impresa).
-  // Lo SpuntaNotifier si disattiva SOLO se l'utente sta usando la vista PA (impersonation attiva)
-  // perché in quel caso il turno è gestito dal mini-popup in GestioneMercati.
+  // Risolvi impresaId da localStorage
   useEffect(() => {
     let id: number | null = null;
-
-    // Se c'è impersonation attiva (sessionStorage), l'utente sta usando la vista PA
-    // → NON mostrare SpuntaNotifier (il turno è nel mini-popup GestioneMercati)
-    try {
-      const impersonation = sessionStorage.getItem("miohub_impersonation");
-      if (impersonation) {
-        const imp = JSON.parse(impersonation);
-        if (imp.active) {
-          // Vista PA attiva — non attivare SpuntaNotifier
-          setImpresaId(null);
-          return;
-        }
-      }
-    } catch { /* ignore */ }
-
-    // Altrimenti, cerca impresaId normalmente
     try {
       const fbStr = localStorage.getItem("miohub_firebase_user");
       if (fbStr) {
         const fb = JSON.parse(fbStr);
-        // Se il ruolo CORRENTE è 'pa' (non business), non attivare
-        // Ma se ha impresaId è perché sta usando l'app come impresa
-        if (fb.role === 'pa' && !fb.impresaId) {
-          setImpresaId(null);
-          return;
-        }
         if (fb.impresaId) id = Number(fb.impresaId);
       }
     } catch { /* ignore */ }
