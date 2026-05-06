@@ -55,15 +55,35 @@ export default function SpuntaNotifier() {
   // Tieni spuntaRef sincronizzato
   useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
 
-  // Risolvi impresaId da localStorage — SOLO se NON siamo in vista PA (impersonation)
+  // Risolvi impresaId da localStorage — SOLO se l'utente sta usando l'app impresa
+  // NON attivare nella vista PA (dashboard-pa, impersonation, o ruolo pa senza pagina presenze)
   useEffect(() => {
-    // Se c'è impersonation attiva nel sessionStorage → l'utente sta nella vista PA
-    // In quel caso il turno è gestito dal mini-popup in GestioneMercati, non dallo SpuntaNotifier
+    // 1. Se c'è impersonation attiva → vista PA → non attivare
     try {
       const imp = sessionStorage.getItem("miohub_impersonation");
       if (imp) {
         const parsed = JSON.parse(imp);
         if (parsed.isImpersonating) {
+          setImpresaId(null);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+
+    // 2. Se siamo nella dashboard PA → non attivare
+    const path = window.location.pathname;
+    if (path.includes('dashboard-pa') || path.includes('dashboard_pa')) {
+      setImpresaId(null);
+      return;
+    }
+
+    // 3. Se il ruolo è 'pa' (admin) e NON siamo nella pagina presenze → non attivare
+    //    Lo SpuntaNotifier per admin si attiva SOLO nella pagina presenze (app impresa)
+    try {
+      const fbStr = localStorage.getItem("miohub_firebase_user");
+      if (fbStr) {
+        const fb = JSON.parse(fbStr);
+        if (fb.role === 'pa' && !path.includes('presenze')) {
           setImpresaId(null);
           return;
         }
