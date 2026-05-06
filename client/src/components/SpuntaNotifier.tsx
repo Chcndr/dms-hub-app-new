@@ -55,12 +55,10 @@ export default function SpuntaNotifier() {
   // Tieni spuntaRef sincronizzato
   useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
 
-  // Risolvi impresaId da localStorage
+  // Risolvi impresaId — stessa logica della PresenzePage (3 strategie)
   // Si disattiva SOLO se c'è impersonation attiva (= vista PA su iPad)
-  // Sul cellulare (app impresa) non c'è mai impersonation → funziona sempre
   useEffect(() => {
-    // Se c'è impersonation attiva nel sessionStorage → l'utente sta nella vista PA
-    // In quel caso il turno è gestito dal mini-popup in GestioneMercati
+    // Se c'è impersonation attiva nel sessionStorage → vista PA → non attivare
     try {
       const imp = sessionStorage.getItem("miohub_impersonation");
       if (imp) {
@@ -72,24 +70,57 @@ export default function SpuntaNotifier() {
       }
     } catch { /* ignore */ }
 
-    let id: number | null = null;
-    try {
-      const fbStr = localStorage.getItem("miohub_firebase_user");
-      if (fbStr) {
-        const fb = JSON.parse(fbStr);
-        if (fb.impresaId) id = Number(fb.impresaId);
-      }
-    } catch { /* ignore */ }
-    if (!id) {
+    const resolveImpresa = async () => {
+      let id: number | null = null;
+
+      // Strategia 1: miohub_firebase_user
       try {
-        const userStr = localStorage.getItem("user");
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          if (user.impresa_id) id = Number(user.impresa_id);
+        const fbStr = localStorage.getItem("miohub_firebase_user");
+        if (fbStr) {
+          const fb = JSON.parse(fbStr);
+          if (fb.impresaId) id = Number(fb.impresaId);
         }
       } catch { /* ignore */ }
-    }
-    setImpresaId(id);
+
+      // Strategia 2: localStorage['user'] (legacy bridge + collaboratore)
+      if (!id) {
+        try {
+          const userStr = localStorage.getItem("user");
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            if (user.impresa_id) id = Number(user.impresa_id);
+            // Collaboratore autorizzato
+            if (!id && user.isCollaborator && user.collaboratorData) {
+              id = Number(user.collaboratorData.impresa_id);
+            }
+          }
+        } catch { /* ignore */ }
+      }
+
+      // Strategia 3: cerca per user_id su orchestratore (per utenti citizen con impresa)
+      if (!id) {
+        try {
+          const fbStr = localStorage.getItem("miohub_firebase_user");
+          const userStr = localStorage.getItem("user");
+          let userId = 0;
+          if (fbStr) { const fb = JSON.parse(fbStr); userId = fb.miohubId || 0; }
+          if (!userId && userStr) { const u = JSON.parse(userStr); userId = u.id || 0; }
+          if (userId) {
+            const res = await fetch(`${MIHUB_API_BASE_URL}/api/imprese?user_id=${userId}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && data.data?.length > 0) {
+                id = Number(data.data[0].id);
+              }
+            }
+          }
+        } catch { /* ignore */ }
+      }
+
+      setImpresaId(id);
+    };
+
+    resolveImpresa();
   }, []);
 
   // Funzione per notificare il backend della scadenza del turno
