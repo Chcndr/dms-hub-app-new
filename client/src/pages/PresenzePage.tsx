@@ -390,7 +390,7 @@ export default function PresenzePage() {
         const fbStr = localStorage.getItem("miohub_firebase_user");
         if (fbStr) {
           const fb = JSON.parse(fbStr);
-          if (fb.impresaId) id = fb.impresaId;
+          if (fb.impresaId) id = Number(fb.impresaId);
           if (fb.impresaNome) nome = fb.impresaNome;
           personaNome = fb.displayName || fb.email || "";
         }
@@ -402,11 +402,11 @@ export default function PresenzePage() {
           const userStr = localStorage.getItem("user");
           if (userStr) {
             const user = JSON.parse(userStr);
-            if (user.impresa_id) id = user.impresa_id;
+            if (user.impresa_id) id = Number(user.impresa_id);
             if (!personaNome) personaNome = user.name || user.email || "";
             // v10.3.0: Collaboratore autorizzato - usa impresa_id dal collaboratorData
             if (!id && user.isCollaborator && user.collaboratorData) {
-              id = user.collaboratorData.impresa_id;
+              id = Number(user.collaboratorData.impresa_id);
               nome = user.collaboratorData.nome_impresa || "";
               if (!personaNome) personaNome = `${user.collaboratorData.nome || ""} ${user.collaboratorData.cognome || ""}`.trim();
             }
@@ -427,7 +427,7 @@ export default function PresenzePage() {
             if (res.ok) {
               const data = await res.json();
               if (data.success && data.data?.length > 0) {
-                id = data.data[0].id;
+                id = Number(data.data[0].id);
                 nome = data.data[0].ragione_sociale || data.data[0].denominazione || "";
               }
             }
@@ -437,7 +437,7 @@ export default function PresenzePage() {
 
       // Imposta dati e vai direttamente a cerca_mercato (senza chiamata API extra)
       if (id) {
-        setImpresaId(id);
+        setImpresaId(Number(id)); // IMPORTANTE: forza Number per evitare mismatch === con SSE (che manda numeri)
         setNomeUtente(personaNome);
         if (nome) {
           setNomeImpresa(nome);
