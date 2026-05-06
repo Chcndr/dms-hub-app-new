@@ -50,27 +50,32 @@
 >
 > ---
 > ### PROGETTO v10.3.0 — Presenze Dipendenti via App Cittadino (In attesa sviluppo)
-> **Obiettivo:** Consentire ai dipendenti/soci registrati nel TEAM dell'impresa di fare presenza dal tab Cittadino (app pubblica), senza accedere ai dati sensibili dell'app Impresa.
+> **Obiettivo:** Consentire a **più dipendenti/soci** registrati nel TEAM dell'impresa di fare presenza dal tab Cittadino (app pubblica), senza accedere ai dati sensibili dell'app Impresa.
+>
+> **Multi-collaboratore:** Ogni impresa può avere N collaboratori autorizzati. Ognuno fa login con la propria email e fa presenza per la stessa impresa.
 >
 > **Meccanismo:** Il collaboratore fa login nell'app con la sua email → il sistema verifica in `collaboratori_impresa` → se autorizzato, inietta client-side SOLO `tab.view.presenze` → appare il bottone "Presenze" nella HomePage cittadino.
 >
 > **Modifiche DB:**
 > - `ALTER TABLE collaboratori_impresa ADD COLUMN email VARCHAR(255)`
 > - `CREATE UNIQUE INDEX idx_collaboratori_email ON collaboratori_impresa (email) WHERE email IS NOT NULL`
+> - Nota: indice univoco globale (un'email = una sola impresa), ma N email diverse per stessa impresa
 >
 > **Modifiche Backend (`routes/collaboratori.js`):**
-> - CRUD aggiornato per campo `email`
+> - CRUD aggiornato per campo `email` (validazione unicità)
 > - Nuovo endpoint `GET /api/collaboratori/me` — verifica se l'utente loggato (email JWT) è collaboratore autorizzato
 > - Fallback in `presenze-live.js` checkin: se citizen senza impresa_id, cerca in collaboratori_impresa per email
 >
 > **Modifiche Frontend Impresa (`AnagraficaPage.tsx`):**
 > - Campo email aggiunto nel form Team (sotto telefono, che resta)
+> - Supporto multi-collaboratore già presente (lista dinamica con map)
 > - Testo informativo aggiornato
 >
 > **Modifiche Frontend Cittadino:**
-> - `FirebaseAuthContext.tsx`: dopo login citizen, chiama `/api/collaboratori/me` → salva `isCollaborator` + `collaboratorData`
+> - `FirebaseAuthContext.tsx`: dopo login citizen, chiama `/api/collaboratori/me` → salva `isCollaborator` + `collaboratorData` + `impresaId`
 > - `PermissionsContext.tsx`: se `user.isCollaborator` → inietta `tab.view.presenze` (SOLO quello)
 > - `HomePage.tsx`: bottone "Presenze" grande nella sezione cittadino (visibile solo se collaboratore)
+> - `PresenzePage.tsx`: aggiunto step risoluzione impresaId da `collaboratorData.impresa_id`
 >
 > **Sicurezza:** Il collaboratore resta `citizen` (NO accesso a wallet, anagrafica, notifiche impresa). Revoca immediata disattivando "Autorizzato Presenze" nel Team.
 >

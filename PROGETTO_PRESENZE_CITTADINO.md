@@ -1,6 +1,6 @@
 # Progetto: Presenza Dipendenti via App Cittadino (MioHub)
 
-**Versione:** 1.1.0
+**Versione:** 1.2.0
 **Data:** 6 Maggio 2026
 **Stato:** In attesa di sviluppo
 
@@ -8,7 +8,7 @@
 
 ## Obiettivo
 
-Consentire ai dipendenti/soci di un'impresa di registrare la presenza al mercato (check-in) utilizzando l'app pubblica "Cittadino" (DMS Hub), senza dover accedere all'app "Impresa" che contiene dati sensibili (wallet, fatture, anagrafica completa).
+Consentire a **più dipendenti/soci** di un'impresa di registrare la presenza al mercato (check-in) utilizzando l'app pubblica "Cittadino" (DMS Hub), senza dover accedere all'app "Impresa" che contiene dati sensibili (wallet, fatture, anagrafica completa).
 
 Il sistema sfrutta il meccanismo di permessi già esistente (tab SICUREZZA della Dashboard PA) per iniettare **solo** il permesso `tab.view.presenze` quando riconosce che l'utente cittadino è un collaboratore autorizzato.
 
@@ -32,6 +32,29 @@ Il frontend usa `canViewTab(tabId)` che verifica se `tab.view.{tabId}` è presen
 | `admin` / `super_admin` | TUTTI (28 tab PA + tab impresa) |
 | `business` | `tab.view.wallet_impresa`, `tab.view.anagrafica`, `tab.view.presenze`, `quick.view.hub_operatore`, `quick.view.notifiche` |
 | `citizen` | Nessun tab impresa (solo funzioni pubbliche: Mappa, Route, Wallet, Segnala, Vetrine) |
+| `citizen` + collaboratore | **SOLO** `tab.view.presenze` (NUOVO) |
+
+---
+
+## Supporto Multi-Collaboratore
+
+La tabella `collaboratori_impresa` è **già predisposta** per più collaboratori per impresa:
+
+- Non esiste un vincolo UNIQUE su `impresa_id` → più righe per la stessa impresa
+- Il CRUD nel tab Team (`AnagraficaPage.tsx`) usa `collaboratori.map(...)` → lista dinamica
+- Il bottone "Aggiungi Collaboratore" è già presente
+- L'endpoint `GET /api/collaboratori?impresa_id=X` restituisce un array
+
+**Scenario multi-collaboratore:**
+
+| Impresa | Collaboratore | Email | Ruolo | Autorizzato |
+|---------|--------------|-------|-------|-------------|
+| MIO TEST | Mario Rossi | mario.rossi@gmail.com | Titolare | Si |
+| MIO TEST | Andrea Checchi | checchi@me.com | Socio | Si |
+| MIO TEST | Luca Bianchi | luca.bianchi@email.it | Dipendente | Si |
+| MIO TEST | Sara Verdi | sara.verdi@email.it | Dipendente | No |
+
+In questo esempio, Mario, Andrea e Luca possono tutti fare presenza dall'app cittadino. Sara no (non autorizzata). Tutti fanno presenza **per la stessa impresa** (MIO TEST).
 
 ---
 
@@ -45,9 +68,12 @@ La tabella mantiene il campo `telefono` (utile per contatti) e aggiunge `email` 
 -- Aggiunta campo email ai collaboratori
 ALTER TABLE collaboratori_impresa ADD COLUMN email VARCHAR(255);
 
--- Indice univoco per garantire che un'email sia associata a una sola impresa
+-- Indice univoco GLOBALE sull'email (un'email può essere associata a una sola impresa)
+-- Il WHERE email IS NOT NULL permette di avere collaboratori senza email (non abilitati app)
 CREATE UNIQUE INDEX idx_collaboratori_email ON collaboratori_impresa (email) WHERE email IS NOT NULL;
 ```
+
+**Nota multi-collaboratore:** L'indice univoco è sull'email (non su impresa_id+email), garantendo che una persona non possa essere collaboratore di due imprese diverse. Più collaboratori della stessa impresa avranno email diverse.
 
 **Struttura risultante `collaboratori_impresa`:**
 
@@ -62,6 +88,7 @@ CREATE UNIQUE INDEX idx_collaboratori_email ON collaboratori_impresa (email) WHE
 | `telefono` | VARCHAR(20) | Numero di telefono (mantenuto) |
 | `email` | VARCHAR(255) | **NUOVO** — Email per login app cittadino |
 | `autorizzato_presenze` | BOOLEAN | Se può fare presenze |
+| `status` | VARCHAR(20) | Stato del collaboratore |
 | `created_at` | TIMESTAMP | Data creazione |
 | `updated_at` | TIMESTAMP | Data ultimo aggiornamento |
 
@@ -74,8 +101,8 @@ CREATE UNIQUE INDEX idx_collaboratori_email ON collaboratori_impresa (email) WHE
 Aggiornare gli endpoint esistenti per gestire il campo `email`:
 
 - **GET** `/api/collaboratori?impresa_id=X` → restituisce anche `email`
-- **POST** `/api/collaboratori` → accetta `email` nel body
-- **PUT** `/api/collaboratori/:id` → permette di aggiornare `email`
+- **POST** `/api/collaboratori` → accetta `email` nel body, validazione unicità
+- **PUT** `/api/collaboratori/:id` → permette di aggiornare `email`, validazione unicità
 
 ### 2.2 Nuovo Endpoint: Verifica Collaboratore (`routes/collaboratori.js`)
 
@@ -84,6 +111,7 @@ Aggiornare gli endpoint esistenti per gestire il campo `email`:
  * GET /api/collaboratori/me
  * Verifica se l'utente loggato (email dal JWT) è un collaboratore autorizzato.
  * Chiamato dall'app cittadino dopo il login.
+ * Supporta multi-collaboratore: restituisce i dati dell'impresa associata.
  */
 router.get('/me', authenticateToken, async (req, res) => {
   try {
@@ -100,6 +128,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       return res.json({ success: true, isCollaborator: false });
     }
     
+    // Un'email può essere associata a una sola impresa (indice univoco)
     const collab = result.rows[0];
     res.json({
       success: true,
@@ -122,16 +151,13 @@ router.get('/me', authenticateToken, async (req, res) => {
 
 ### 2.3 Aggiornamento Check-in Presenze (`routes/presenze-live.js`)
 
-L'endpoint `POST /api/presenze-live/checkin` attualmente richiede `impresa_id` nel body. Dobbiamo aggiungere un fallback:
-
-- Se l'utente ha ruolo `business` → funziona come prima (usa `impresa_id` dal body)
-- Se l'utente ha ruolo `citizen` → verifica che sia un collaboratore autorizzato, e usa l'`impresa_id` dal record collaboratore
+L'endpoint `POST /api/presenze-live/checkin` attualmente richiede `impresa_id` nel body. Dobbiamo aggiungere un fallback per i collaboratori:
 
 ```javascript
 // Dentro il checkin handler, PRIMA della logica esistente:
 let effectiveImpresaId = req.body.impresa_id;
 
-// Se non ha impresa_id nel body, verifica se è un collaboratore
+// Se non ha impresa_id nel body, verifica se è un collaboratore autorizzato
 if (!effectiveImpresaId && req.user.email) {
   const collabCheck = await query(`
     SELECT impresa_id FROM collaboratori_impresa 
@@ -159,14 +185,16 @@ Nel form di aggiunta/modifica collaboratore, aggiungere un campo `email` sotto i
 - **Label:** "Email (per presenze da app)"
 - **Tipo:** `<input type="email">`
 - **Placeholder:** "email@esempio.com"
-- **Validazione:** formato email valido
+- **Validazione:** formato email valido + unicità (errore se già usata da altro collaboratore)
 - **Obbligatorio:** Solo se "Autorizzato Presenze" è attivo
+
+Il form supporta già la lista multipla di collaboratori (ogni riga ha il proprio form con i campi). Si aggiunge semplicemente il campo email a ciascuna riga.
 
 ### 3.2 Aggiornamento testo informativo
 
 Il banner informativo nel tab Team diventa:
 
-> *"I collaboratori autorizzati potranno scaricare l'app DMS Hub, fare login con l'email qui indicata, e registrare le presenze sui posteggi dell'impresa direttamente dalla vista Cittadino."*
+> *"I collaboratori autorizzati potranno scaricare l'app DMS Hub, fare login con l'email qui indicata, e registrare le presenze sui posteggi dell'impresa direttamente dalla vista Cittadino. Puoi aggiungere più collaboratori: ognuno farà login con la propria email."*
 
 ---
 
@@ -186,8 +214,13 @@ if (effectiveRole === 'citizen') {
     const collabData = await collabRes.json();
     
     if (collabData.success && collabData.isCollaborator) {
-      // Salva in localStorage per il PermissionsContext
-      const updatedUser = { ...user, isCollaborator: true, collaboratorData: collabData.data };
+      // Salva in localStorage per il PermissionsContext e per PresenzePage
+      const updatedUser = { 
+        ...user, 
+        isCollaborator: true, 
+        collaboratorData: collabData.data,
+        impresaId: collabData.data.impresa_id  // Necessario per PresenzePage!
+      };
       localStorage.setItem('user', JSON.stringify(updatedUser));
     }
   } catch (e) {
@@ -239,41 +272,67 @@ Il bottone "Presenze" è già presente nella sezione impresa (riga 643-654). Dob
 )}
 ```
 
-### 4.4 Accesso alla pagina Presenze per collaboratori
+### 4.4 Risoluzione `impresaId` in PresenzePage (`PresenzePage.tsx`)
 
-La pagina `/app/impresa/presenze` deve accettare anche utenti `citizen` con flag `isCollaborator`. L'`impresa_id` viene preso da `collaboratorData.impresa_id` salvato in localStorage.
+**Punto critico:** La pagina `PresenzePage.tsx` risolve l'`impresaId` con una strategia a 3 step:
+1. `miohub_firebase_user.impresaId`
+2. Legacy `user.impresa_id`
+3. Lookup `/api/imprese?user_id=...`
+
+Per i collaboratori, dobbiamo aggiungere uno **step 1.5** che legge `collaboratorData.impresa_id` dal localStorage:
+
+```typescript
+// Dentro la funzione di risoluzione impresaId, dopo step 1:
+if (!impresaId) {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    if (user.isCollaborator && user.collaboratorData?.impresa_id) {
+      impresaId = user.collaboratorData.impresa_id;
+      console.log('[PresenzePage] impresaId da collaboratorData:', impresaId);
+    }
+  }
+}
+```
+
+Questo garantisce che la pagina funzioni sia per il titolare (business) che per qualsiasi collaboratore (citizen).
 
 ---
 
-## 5. Flusso Completo
+## 5. Flusso Completo (Multi-Collaboratore)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │ 1. TITOLARE (App Impresa)                                           │
-│    Anagrafica > Team > Aggiungi Collaboratore                       │
-│    → Nome: Mario Rossi                                              │
-│    → Email: mario.rossi@gmail.com                                   │
-│    → Telefono: 3358373961 (opzionale)                               │
-│    → Ruolo: Dipendente                                              │
-│    → Autorizzato Presenze: ✓                                        │
+│    Anagrafica > Team > Aggiungi Collaboratore (×N)                  │
+│    → Collaboratore 1: Mario Rossi, mario@gmail.com, Dipendente ✓    │
+│    → Collaboratore 2: Luca Bianchi, luca@email.it, Dipendente ✓    │
+│    → Collaboratore 3: Sara Verdi, sara@email.it, Dipendente ✗      │
 ├─────────────────────────────────────────────────────────────────────┤
-│ 2. DIPENDENTE (App Cittadino)                                       │
-│    Scarica app → Login con mario.rossi@gmail.com                    │
+│ 2. DIPENDENTE 1 (App Cittadino)                                     │
+│    Scarica app → Login con mario@gmail.com                          │
+│                                                                     │
+│    DIPENDENTE 2 (App Cittadino)                                     │
+│    Scarica app → Login con luca@email.it                            │
+│                                                                     │
+│    DIPENDENTE 3 (App Cittadino)                                     │
+│    Scarica app → Login con sara@email.it → NON vede Presenze       │
 ├─────────────────────────────────────────────────────────────────────┤
-│ 3. SISTEMA (Automatico)                                             │
+│ 3. SISTEMA (Automatico, per ogni login)                             │
 │    syncUserWithBackend() → ruolo = citizen                          │
-│    GET /api/collaboratori/me → isCollaborator = true                │
-│    PermissionsContext → inietta tab.view.presenze                   │
+│    GET /api/collaboratori/me → isCollaborator = true/false          │
+│    PermissionsContext → inietta tab.view.presenze (se autorizzato)  │
 ├─────────────────────────────────────────────────────────────────────┤
-│ 4. DIPENDENTE (Vede nella HomePage)                                 │
+│ 4. DIPENDENTE 1 o 2 (Vede nella HomePage)                          │
 │    [Mappa] [Route] [Wallet] [Segnala] [Vetrine]                    │
-│    [═══════════ PRESENZE ═══════════]  ← NUOVO, grande             │
+│    [═══════════ PRESENZE ═══════════]  ← VISIBILE                  │
 │                                                                     │
 │    NON vede: Wallet Imp., Hub Op., Notifiche, Anagrafica            │
 ├─────────────────────────────────────────────────────────────────────┤
 │ 5. DIPENDENTE (Fa la presenza)                                      │
 │    Clicca Presenze → Sceglie mercato → Check-in                    │
-│    Backend registra presenza per l'impresa X                        │
+│    Backend registra presenza per l'impresa MIO TEST                 │
+│    (indipendentemente da quale collaboratore la fa)                 │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -286,7 +345,9 @@ La pagina `/app/impresa/presenze` deve accettare anche utenti `citizen` con flag
 | **Dati sensibili** | Il collaboratore NON vede wallet, fatture, anagrafica, notifiche dell'impresa |
 | **Ruolo RBAC** | Resta `citizen` — nessun accesso ai tab PA o impresa (tranne presenze) |
 | **Unicità email** | L'indice univoco impedisce che un'email sia associata a più imprese |
+| **Multi-collaboratore** | Ogni impresa può avere N collaboratori, ognuno con la propria email |
 | **Revoca accesso** | Il titolare può disattivare "Autorizzato Presenze" o rimuovere il collaboratore |
+| **Revoca immediata** | Al prossimo login il flag `isCollaborator` non viene più settato |
 | **Audit** | Il check-in registra chi ha fatto la presenza (collaboratore_id tracciabile) |
 
 ---
@@ -295,13 +356,14 @@ La pagina `/app/impresa/presenze` deve accettare anche utenti `citizen` con flag
 
 | File | Tipo Modifica | Complessità |
 |------|---------------|-------------|
-| `collaboratori_impresa` (DB) | ALTER TABLE + INDEX | Bassa |
+| `collaboratori_impresa` (DB) | ALTER TABLE + UNIQUE INDEX | Bassa |
 | `routes/collaboratori.js` | Aggiunta campo email + endpoint `/me` | Media |
 | `routes/presenze-live.js` | Fallback impresa_id per collaboratori | Bassa |
 | `client/src/pages/AnagraficaPage.tsx` | Campo email nel form Team | Bassa |
 | `client/src/contexts/FirebaseAuthContext.tsx` | Chiamata `/api/collaboratori/me` dopo login | Media |
 | `client/src/contexts/PermissionsContext.tsx` | Iniezione `tab.view.presenze` per collaboratori | Bassa |
 | `client/src/pages/HomePage.tsx` | Bottone Presenze nella sezione cittadino | Bassa |
+| `client/src/pages/PresenzePage.tsx` | Risoluzione impresaId da collaboratorData | Bassa |
 
 **Complessità totale stimata:** Media — circa 4-6 ore di sviluppo.
 
@@ -310,9 +372,9 @@ La pagina `/app/impresa/presenze` deve accettare anche utenti `citizen` con flag
 ## 8. Prossimi Passi
 
 1. Approvazione progetto da parte dell'utente
-2. Modifica DB (ALTER TABLE)
+2. Modifica DB (ALTER TABLE + INDEX)
 3. Sviluppo backend (endpoint `/me` + aggiornamento CRUD + fallback checkin)
 4. Sviluppo frontend impresa (campo email nel form Team)
-5. Sviluppo frontend cittadino (verifica collaboratore + iniezione permesso + bottone)
-6. Test flusso completo end-to-end
+5. Sviluppo frontend cittadino (verifica collaboratore + iniezione permesso + bottone + risoluzione impresaId)
+6. Test flusso completo end-to-end (multi-collaboratore)
 7. Deploy e verifica in produzione
