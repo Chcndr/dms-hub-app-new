@@ -1276,6 +1276,57 @@ export default function PresenzePage() {
                               Presenza registrata — in attesa del turno
                             </p>
                           </div>
+                          {/* Quadratino rosso Rinuncia Spunta */}
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const confirmed = window.confirm(
+                                'Sei sicuro di voler RINUNCIARE alla spunta?\n\nNON riceverai un posteggio e NON guadagnerai il punto presenza in graduatoria.'
+                              );
+                              if (!confirmed) return;
+                              try {
+                                const rinunciaRes = await authenticatedFetch(
+                                  `${MIHUB_API_BASE_URL}/api/presenze-live/spunta/rinuncia`,
+                                  {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      coda_id: spuntaCodaId || spuntaTurno?.coda_id || null,
+                                      impresa_id: impresaId,
+                                      session_id: spuntaTurno?.session_id || mercatoSelezionato?.session_id || null
+                                    }),
+                                  }
+                                );
+                                const rinunciaData = await rinunciaRes.json();
+                                if (rinunciaData.success) {
+                                  setPopup({
+                                    tipo: "avviso",
+                                    titolo: "RINUNCIA REGISTRATA",
+                                    messaggio: "Hai rinunciato alla spunta. Non riceverai un posteggio e non guadagni il punto presenza.",
+                                  });
+                                  setMercatoSelezionato(prev => {
+                                    if (!prev) return prev;
+                                    return {
+                                      ...prev,
+                                      concessions: prev.concessions.map(c =>
+                                        c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: false, spunta_stato_coda: 'RINUNCIATO' } : c
+                                      )
+                                    };
+                                  });
+                                  setSpuntaTurno({ stato: 'RINUNCIATO' });
+                                  if (sseRef.current) sseRef.current.close();
+                                } else {
+                                  setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: rinunciaData.messaggio || 'Errore rinuncia' });
+                                }
+                              } catch (err) {
+                                setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: 'Errore durante la rinuncia' });
+                              }
+                            }}
+                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-red-600 hover:bg-red-700 flex items-center justify-center flex-shrink-0 transition-colors active:scale-95"
+                            title="Rinuncia alla spunta"
+                          >
+                            <XCircle className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                          </button>
                         </div>
                       </div>
                     );
@@ -1952,6 +2003,56 @@ export default function PresenzePage() {
             ))
           )}
         </div>
+        {/* Striscia rossa RINUNCIA ALLA SPUNTA in fondo */}
+        <button
+          onClick={async () => {
+            const confirmed = window.confirm(
+              'Sei sicuro di voler RINUNCIARE alla spunta?\n\nNON riceverai un posteggio e NON guadagnerai il punto presenza in graduatoria.'
+            );
+            if (!confirmed) return;
+            try {
+              const rinunciaRes = await authenticatedFetch(
+                `${MIHUB_API_BASE_URL}/api/presenze-live/spunta/rinuncia`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    coda_id: spuntaCodaId || spuntaTurno?.coda_id || null,
+                    impresa_id: impresaId,
+                    session_id: spuntaTurno?.session_id || mercatoSelezionato?.session_id || null
+                  }),
+                }
+              );
+              const rinunciaData = await rinunciaRes.json();
+              if (rinunciaData.success) {
+                setPopup({
+                  tipo: "avviso",
+                  titolo: "RINUNCIA REGISTRATA",
+                  messaggio: "Hai rinunciato alla spunta. Non riceverai un posteggio e non guadagni il punto presenza.",
+                });
+                setMercatoSelezionato(prev => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    concessions: prev.concessions.map(c =>
+                      c.tipo_posteggio === 'Spunta' ? { ...c, gia_presente_oggi: false, spunta_stato_coda: 'RINUNCIATO' } : c
+                    )
+                  };
+                });
+                setSpuntaTurno({ stato: 'RINUNCIATO' });
+                setSchermata('scelta_tipo');
+                if (sseRef.current) sseRef.current.close();
+              } else {
+                setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: rinunciaData.messaggio || 'Errore rinuncia' });
+              }
+            } catch (err) {
+              setPopup({ tipo: "errore", titolo: "ERRORE", messaggio: 'Errore durante la rinuncia' });
+            }
+          }}
+          className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-4 flex-shrink-0 transition-colors active:scale-[0.98]"
+        >
+          RINUNCIA ALLA SPUNTA
+        </button>
       </div>
     );
   }
