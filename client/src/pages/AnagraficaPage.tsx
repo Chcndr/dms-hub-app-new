@@ -4003,99 +4003,104 @@ export default function AnagraficaPage() {
       else setLoading(true);
 
       try {
-        // Usa fields=light per evitare di caricare vetrina_immagine_principale (4.8MB base64)
-        const impresaRes = await fetch(
-          addComuneIdToUrl(
-            `${API_BASE_URL}/api/imprese/${IMPRESA_ID}?fields=light`
-          )
-        );
-        const impresaJson = await impresaRes.json();
-        if (impresaJson.success) setImpresa(impresaJson.data);
+        // === PARALLELIZZAZIONE: tutte le chiamate indipendenti partono insieme ===
+        const [
+          impresaRes,
+          vendorsRes,
+          qualRes,
+          autRes,
+          domRes,
+          presRes,
+          giustRes,
+        ] = await Promise.all([
+          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${IMPRESA_ID}?fields=light`)).catch(() => null),
+          fetch(`${API_BASE_URL}/api/vendors`).catch(() => null),
+          fetch(`${API_BASE_URL}/api/qualificazioni/impresa/${IMPRESA_ID}`).catch(() => null),
+          fetch(`${API_BASE_URL}/api/autorizzazioni?impresa_id=${IMPRESA_ID}`).catch(() => null),
+          fetch(`${API_BASE_URL}/api/domande-spunta?impresa_id=${IMPRESA_ID}`).catch(() => null),
+          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/presenze/impresa/${IMPRESA_ID}`)).catch(() => null),
+          fetch(`${API_BASE_URL}/api/giustificazioni/impresa/${IMPRESA_ID}`).catch(() => null),
+        ]);
 
-        try {
-          // Step 1: Trova il vendor_id associato all'impresa (Number() per evitare mismatch string/number)
-          const vendorsRes = await fetch(`${API_BASE_URL}/api/vendors`);
-          const vendorsJson = await vendorsRes.json();
-          const impresaIdNum = Number(IMPRESA_ID);
-          const myVendors = (vendorsJson.data || []).filter(
-            (v: any) => Number(v.impresa_id) === impresaIdNum
-          );
+        // Processa impresa
+        if (impresaRes) {
+          try {
+            const impresaJson = await impresaRes.json();
+            if (impresaJson.success) setImpresa(impresaJson.data);
+          } catch { /* silenzioso */ }
+        }
 
-          if (myVendors.length > 0) {
-            // Step 2: Carica concessioni per ogni vendor dell'impresa
-            const allConcessioni: ConcessioneData[] = [];
-            for (const vendor of myVendors) {
-              const concRes = await fetch(
-                addComuneIdToUrl(
-                  `${API_BASE_URL}/api/concessions?vendor_id=${vendor.id}`
+        // Processa vendors → concessioni (sequenziale solo per i vendor dell'impresa)
+        if (vendorsRes) {
+          try {
+            const vendorsJson = await vendorsRes.json();
+            const impresaIdNum = Number(IMPRESA_ID);
+            const myVendors = (vendorsJson.data || []).filter(
+              (v: any) => Number(v.impresa_id) === impresaIdNum
+            );
+            if (myVendors.length > 0) {
+              // Carica concessioni per tutti i vendor in PARALLELO
+              const concResults = await Promise.all(
+                myVendors.map((vendor: any) =>
+                  fetch(addComuneIdToUrl(`${API_BASE_URL}/api/concessions?vendor_id=${vendor.id}`))
+                    .then(r => r.json())
+                    .catch(() => ({ success: false, data: [] }))
                 )
               );
-              const concJson = await concRes.json();
-              if (concJson.success && concJson.data) {
-                allConcessioni.push(...concJson.data);
+              const allConcessioni: ConcessioneData[] = [];
+              for (const concJson of concResults) {
+                if (concJson.success && concJson.data) {
+                  allConcessioni.push(...concJson.data);
+                }
               }
+              setConcessioni(allConcessioni);
+            } else {
+              setConcessioni([]);
             }
-            setConcessioni(allConcessioni);
-          } else {
-            setConcessioni([]);
-          }
-        } catch {
-          /* silenzioso */
+          } catch { setConcessioni([]); }
         }
 
-        try {
-          const qualRes = await fetch(
-            `${API_BASE_URL}/api/qualificazioni/impresa/${IMPRESA_ID}`
-          );
-          const qualJson = await qualRes.json();
-          if (qualJson.success) setQualificazioni(qualJson.data || []);
-        } catch {
-          /* silenzioso */
+        // Processa qualificazioni
+        if (qualRes) {
+          try {
+            const qualJson = await qualRes.json();
+            if (qualJson.success) setQualificazioni(qualJson.data || []);
+          } catch { /* silenzioso */ }
         }
 
-        try {
-          const autRes = await fetch(
-            `${API_BASE_URL}/api/autorizzazioni?impresa_id=${IMPRESA_ID}`
-          );
-          const autJson = await autRes.json();
-          if (autJson.success) setAutorizzazioni(autJson.data || []);
-        } catch {
-          /* silenzioso */
+        // Processa autorizzazioni
+        if (autRes) {
+          try {
+            const autJson = await autRes.json();
+            if (autJson.success) setAutorizzazioni(autJson.data || []);
+          } catch { /* silenzioso */ }
         }
 
-        try {
-          const domRes = await fetch(
-            `${API_BASE_URL}/api/domande-spunta?impresa_id=${IMPRESA_ID}`
-          );
-          const domJson = await domRes.json();
-          if (domJson.success) setDomande(domJson.data || []);
-        } catch {
-          /* silenzioso */
+        // Processa domande spunta
+        if (domRes) {
+          try {
+            const domJson = await domRes.json();
+            if (domJson.success) setDomande(domJson.data || []);
+          } catch { /* silenzioso */ }
         }
 
-        try {
-          const presRes = await fetch(
-            addComuneIdToUrl(
-              `${API_BASE_URL}/api/presenze/impresa/${IMPRESA_ID}`
-            )
-          );
-          const presJson = await presRes.json();
-          if (presJson.success) {
-            setPresenze(presJson.data || []);
-            setPresenzeStats(presJson.stats || null);
-          }
-        } catch {
-          /* silenzioso */
+        // Processa presenze
+        if (presRes) {
+          try {
+            const presJson = await presRes.json();
+            if (presJson.success) {
+              setPresenze(presJson.data || []);
+              setPresenzeStats(presJson.stats || null);
+            }
+          } catch { /* silenzioso */ }
         }
 
-        try {
-          const giustRes = await fetch(
-            `${API_BASE_URL}/api/giustificazioni/impresa/${IMPRESA_ID}`
-          );
-          const giustJson = await giustRes.json();
-          if (giustJson.success) setGiustificazioni(giustJson.data || []);
-        } catch {
-          /* silenzioso */
+        // Processa giustificazioni
+        if (giustRes) {
+          try {
+            const giustJson = await giustRes.json();
+            if (giustJson.success) setGiustificazioni(giustJson.data || []);
+          } catch { /* silenzioso */ }
         }
       } catch (err) {
         console.error("Errore fetch anagrafica:", err);

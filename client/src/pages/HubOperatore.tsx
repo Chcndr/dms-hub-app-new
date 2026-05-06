@@ -435,8 +435,9 @@ export default function HubOperatore() {
   }, [getToken, authToken]);
 
   // Carica dati iniziali quando abbiamo un operatore valido e il token
-  // loadTransactions viene chiamato da loadOperatorWallet con l'impresaId risolto
+  // IMPORTANTE: NON eseguire finché authToken non è disponibile per evitare doppio fetch (sfarfallio)
   useEffect(() => {
+    if (!authToken) return; // Aspetta che il token sia pronto
     if (operatore.id > 0 || operatore.impresaId) {
       loadOperatorWallet();
       // Verifica se oggi c'e' un mercato-hub attivo per l'operatore
@@ -990,64 +991,67 @@ export default function HubOperatore() {
         </Link>
       </div>
 
-      {/* Banner connessione API */}
-      {apiConnected === false && (
-        <div className="bg-red-600/90 px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <WifiOff className="w-4 h-4 text-white" />
+      {/* Banner area con altezza riservata per evitare layout shift */}
+      <div className="min-h-[36px]">
+        {/* Banner connessione API */}
+        {apiConnected === false && (
+          <div className="bg-red-600/90 px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <WifiOff className="w-4 h-4 text-white" />
+              <span className="text-sm text-white">
+                API TCC non raggiungibile — Verifica la connessione
+              </span>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-white hover:bg-white/20"
+              onClick={() => {
+                loadOperatorWallet();
+                loadTransactions();
+                loadTccConfig();
+              }}
+            >
+              <RefreshCw className="w-4 h-4 mr-1" />
+              Riprova
+            </Button>
+          </div>
+        )}
+
+        {/* Banner hub-today: mostra se oggi c'e' un mercato-hub attivo */}
+        {hubToday &&
+          (hubToday.isActive ? (
+            <div className="bg-[#10b981]/90 px-4 py-2 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-white" />
+              <span className="text-sm text-white font-medium">
+                Oggi operi a:{" "}
+                {hubToday.markets.map(m => `${m.name} (${m.giorno})`).join(", ")}
+              </span>
+              <div className="w-2 h-2 rounded-full bg-white animate-pulse ml-auto" />
+            </div>
+          ) : (
+            <div className="bg-gray-600/50 px-4 py-2 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-300">
+                Nessun mercato-hub oggi
+              </span>
+              <div className="w-2 h-2 rounded-full bg-gray-400 ml-auto" />
+            </div>
+          ))}
+
+        {/* Banner utente non autenticato */}
+        {operatore.id <= 0 && (
+          <div className="bg-amber-600/90 px-4 py-2 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-white" />
             <span className="text-sm text-white">
-              API TCC non raggiungibile — Verifica la connessione
+              Effettua il login per accedere al wallet TCC
             </span>
+            <Link href="/login" className="text-white underline text-sm ml-2">
+              Accedi
+            </Link>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-white hover:bg-white/20"
-            onClick={() => {
-              loadOperatorWallet();
-              loadTransactions();
-              loadTccConfig();
-            }}
-          >
-            <RefreshCw className="w-4 h-4 mr-1" />
-            Riprova
-          </Button>
-        </div>
-      )}
-
-      {/* Banner hub-today: mostra se oggi c'e' un mercato-hub attivo */}
-      {hubToday &&
-        (hubToday.isActive ? (
-          <div className="bg-[#10b981]/90 px-4 py-2 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-white" />
-            <span className="text-sm text-white font-medium">
-              Oggi operi a:{" "}
-              {hubToday.markets.map(m => `${m.name} (${m.giorno})`).join(", ")}
-            </span>
-            <div className="w-2 h-2 rounded-full bg-white animate-pulse ml-auto" />
-          </div>
-        ) : (
-          <div className="bg-gray-600/50 px-4 py-2 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-300">
-              Nessun mercato-hub oggi
-            </span>
-            <div className="w-2 h-2 rounded-full bg-gray-400 ml-auto" />
-          </div>
-        ))}
-
-      {/* Banner utente non autenticato */}
-      {operatore.id <= 0 && (
-        <div className="bg-amber-600/90 px-4 py-2 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-white" />
-          <span className="text-sm text-white">
-            Effettua il login per accedere al wallet TCC
-          </span>
-          <Link href="/login" className="text-white underline text-sm ml-2">
-            Accedi
-          </Link>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Header (v4.3.3 - fix mobile overflow + dati corretti) */}
       <header className="bg-gradient-to-r from-[#f97316] to-[#f59e0b] p-3 sm:p-4 shadow-lg mt-2">
