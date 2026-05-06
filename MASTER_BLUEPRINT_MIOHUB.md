@@ -1,7 +1,27 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.20 (Fix SPUNTA gradStallId=NULL in registra-presenza PA, pulizia record fantasma e duplicati)
+> **Versione:** 10.2.21 (Fix presenze spuntisti: tipo_presenza dinamico + no stall_id update in graduatoria)
 > **Data:** 06 Maggio 2026
+>
+> ---
+> ### CHANGELOG v10.2.21 (06 Mag 2026)
+> **Fix critico: presenze spuntisti azzerate + record fantasma CONCESSION con stall_id=NULL**
+>
+> **Root cause (2 bug interconnessi):**
+> 1. **presenze-live.js riga 585**: l'INSERT in `vendor_presences` usava `'CONCESSION'` hardcoded come tipo_presenza. Quando MIO TEST (che ha sia concessioni che wallet SPUNTA) faceva checkin dall'APP come spuntista (tipo_presenza='SPUNTA', stall_id=null), la protezione anti-fantasma non bloccava (perché tipo='SPUNTA'), ma il record veniva scritto con tipo='CONCESSION' → creava il record fantasma €0.00.
+> 2. **test-mercato.js riga 702**: `assegna-posteggio-spunta` faceva `UPDATE graduatoria_presenze SET stall_id = posteggio_occupato`. Questo cambiava lo stall_id del record SPUNTA da NULL al posteggio temporaneo. Alla sessione successiva, `avvia-spunta` cercava `stall_id IS NULL` → non trovava il record → ne creava uno NUOVO con presenze=0, azzerando la graduatoria.
+>
+> **Fix applicati:**
+> 1. **presenze-live.js**: `const tipoPresenzaEffettivo = stall_id ? 'CONCESSION' : (tipo_presenza || 'CONCESSION')` — ora usa il tipo dalla request se stall_id è null.
+> 2. **test-mercato.js**: rimosso `SET stall_id = $2` dall'UPDATE graduatoria_presenze in assegna-posteggio-spunta. Il record SPUNTA nella graduatoria mantiene SEMPRE stall_id=NULL.
+> 3. **DB cleanup**: eliminato record fantasma 2895 (CONCESSION, stall_id=NULL, €0.00); fixati stall_id graduatorie SPUNTA per imprese 39 e 41 (riportati a NULL).
+>
+> **Deploy confermato**: autodeploy da GitHub → version: '10.2.21'
+>
+> **File modificati:**
+> - `routes/presenze-live.js`: tipoPresenzaEffettivo dinamico nell'INSERT vendor_presences
+> - `routes/test-mercato.js`: rimosso SET stall_id dall'UPDATE graduatoria_presenze
+> - `index.js`: version bump a 10.2.21
 >
 > ---
 > ### CHANGELOG v10.2.20 (06 Mag 2026)
