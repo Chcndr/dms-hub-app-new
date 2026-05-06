@@ -1,18 +1,18 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.2.22 — STABILE (Fix chiudi-sessione, graduatoria LATERAL JOIN, assegna-posteggio LIMIT 1)
-> **Data:** 06 Maggio 2026
-> **Stato:** PUNTO DI RIPRISTINO STABILE — Git tag `v10.2.22-stable`
+> **Versione:** 10.3.0 — STABILE (Popup PA mini, SpuntaNotifier fix race condition, impresaId citizen fix)
+> **Data:** 07 Maggio 2026
+> **Stato:** PUNTO DI RIPRISTINO STABILE — Git tag `v10.3.0-stable`
 >
 > ---
-> ### STATO SISTEMA (06 Mag 2026 — Snapshot stabile)
+> ### STATO SISTEMA (07 Mag 2026 — Snapshot stabile)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `fe988de` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `3c06032` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online v10.2.22 | `https://api.mio-hub.me/health` |
-> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `3c06032` |
+> | **GitHub Backend** | Allineato | `d42ea36` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `6b0689d` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online v10.3.0 | `https://api.mio-hub.me/health` |
+> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `6b0689d` |
 > | **Neon (DB)** | Integro | 0 duplicati, 0 fantasmi, 0 SPUNTA stall_id errati |
 >
 > **Integrità DB verificata:**
@@ -23,6 +23,50 @@
 > - Nessun record fantasma CONCESSION stall_id=NULL
 > - Nessun record SPUNTA con stall_id non-NULL nella graduatoria
 > - Nessun fantasma SPUNTA residuo nello storico
+>
+> ---
+> ### CHANGELOG v10.3.0 (07 Mag 2026)
+> **Popup PA mini fissi, SpuntaNotifier fix race condition, impresaId citizen fix, 31 nuovi endpoint registrati**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `d42ea36` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `d42ea36` | Autodeploy v10.3.0 |
+> | GitHub `dms-hub-app-new` master | `6b0689d` | Allineato |
+> | Vercel frontend | `6b0689d` | Autodeploy |
+>
+> **FRONTEND (14 commit: `da79625` → `6b0689d`):**
+>
+> **GestioneMercati — Popup PA Mini (vista vigili):**
+> - **Popup Turno (giallo/amber):** Trasformato da fullscreen a mini-popup fisso `fixed top-4 right-4` (280px). Mostra nome spuntista, timer countdown, posizione e posteggi rimasti. Pulsante Rinuncia integrato.
+> - **Popup Saldo Negativo (rosso):** Trasformato da fullscreen a mini-popup fisso (280px). Auto-chiusura 3s con auto-skip al prossimo spuntista.
+> - **Popup Posteggio Assegnato (verde):** NUOVO — mini-popup fisso (280px) con icona CheckCircle, nome impresa, numero posteggio, importo addebitato e saldo residuo. Auto-chiusura 4s. Uguale al popup dell'app impresa.
+> - **Popup Spunta Finita (giallo/amber):** Trasformato da fullscreen a mini-popup fisso (280px). Pulsante CHIUDI.
+> - **Tutti i popup:** z-[9998], `rounded-2xl`, icone 14x14, testi lg/xl/3xl/4xl.
+>
+> **SpuntaNotifier — Fix Race Condition (app impresa):**
+> - **Problema:** Lo SpuntaNotifier si montava PRIMA che il FirebaseAuthContext completasse il login asincrono. Leggeva `impresaId = undefined` dal localStorage e non si riattivava mai.
+> - **Fix:** Aggiunto meccanismo a 3 livelli: (1) tentativo immediato, (2) retry ogni 2s per max 30s, (3) listener `storage` event. Quando il login completa e salva `impresaId` nel localStorage, lo SpuntaNotifier si attiva automaticamente.
+> - **Fix type mismatch:** Aggiunto `Number()` a tutti i confronti `data.impresa_id === impresaId` nel handler SSE (backend manda numero, localStorage poteva avere stringa).
+> - **Fix vista PA:** Lo SpuntaNotifier fullscreen NON appare quando `sessionStorage` ha `miohub_impersonation` attiva (= utente sta usando la vista PA/GestioneMercati).
+>
+> **FirebaseAuthContext — Fix impresaId per Citizen:**
+> - **Problema:** MIO TEST entra come citizen ma ha `impresa_id=38` nel backend. Il check `shouldSetImpresa = effectiveRole !== 'citizen'` impediva il salvataggio nel localStorage.
+> - **Fix:** Rimosso il check del ruolo: `shouldSetImpresa = !!legacyUser?.impresa_id`. Ora `impresaId` viene salvato SEMPRE se presente nel backend, indipendentemente dal ruolo scelto al login.
+>
+> **SpuntaNotifier — 3 Strategie Risoluzione impresaId:**
+> - Strategia 1: `localStorage miohub_firebase_user.impresaId` (business)
+> - Strategia 2: `localStorage user.impresa_id` + collaboratorData (legacy bridge)
+> - Strategia 3: API `/api/imprese?user_id=X` (citizen con impresa associata)
+>
+> **Crash Fix:**
+> - **Rinuncia crash** (`null is not an object 'la.saldo.toFixed'`): Tutti i `.toFixed()` protetti con `?? 0`. Valori forzati con `Number()` al set.
+>
+> **REGISTRO ENDPOINT (MIO-hub/api/index.json → v43):**
+> - Aggiunti **31 endpoint** mancanti al registro Guardian/Integrazioni.
+> - Categorie: Presenze Live (22), Presenze Live - Spunta (8), Collaboratori (1), Test Mercato (2), Presenze (5).
+> - Totale endpoint registrati: da 998 a **1029** (inventario index.json).
 >
 > ---
 > ### CHANGELOG v10.2.22 (06 Mag 2026)
@@ -2561,7 +2605,14 @@ Tutte le date e gli orari devono usare il timezone `Europe/Rome`:
 | `/api/presenze/mercato/:id/chiudi` | POST | presenze.js | Chiudi sessione mercato |
 | `/api/graduatoria/mercato/:id` | GET | presenze.js | Graduatoria presenze per mercato e tipo |
 | `/api/markets/:id/stalls` | GET | markets.js | Posteggi con wallet, concessioni e spuntisti |
+| `/api/presenze-live/spunta/scadenza-turno` | POST | presenze-live.js | Notifica scadenza turno dal frontend |
+| `/api/presenze-live/spunta/stato-impresa/:impresaId` | GET | presenze-live.js | Stato impresa nella coda spunta (polling SpuntaNotifier) |
+| `/api/presenze-live/spunta/sse/:sessionId` | GET | presenze-live.js | Stream SSE eventi spunta (PROSSIMO_TURNO, POSTEGGIO_ASSEGNATO, FINE_SPUNTA) |
+| `/api/presenze-live/conferma-assegnazione` | POST | presenze-live.js | PA conferma assegnazione posteggi batch |
+| `/api/presenze-live/termina-sessione/:sessionId` | POST | presenze-live.js | PA termina sessione mercato |
+| `/api/collaboratori/me` | GET | collaboratori.js | Dati collaboratore corrente (per risoluzione impresaId) |
 | `/api/test-mercato/avvia-spunta` | POST | test-mercato.js | Bridge: prepara spunta (NON MODIFICARE) |
+| `/api/test-mercato/assegna-posteggio-spunta` | POST | test-mercato.js | Bridge: assegna posteggio (NON MODIFICARE) |
 
 ### 6. Bug Risolti in Sessione v10.1.4 (03 Maggio 2026)
 
@@ -3285,7 +3336,7 @@ Includono: `agent_brain`, `agent_context`, `agent_projects`, `agent_tasks`, `api
 
 ## 🔌 API ENDPOINTS
 
-### Endpoint Index (998 endpoint totali)
+### Endpoint Index (1029 endpoint totali)
 
 Gli endpoint sono documentati in:
 
