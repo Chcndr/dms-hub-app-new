@@ -55,8 +55,8 @@ export default function SpuntaNotifier() {
   // Tieni spuntaRef sincronizzato
   useEffect(() => { spuntaRef.current = spunta; }, [spunta]);
 
-  // Risolvi impresaId — stessa logica della PresenzePage (3 strategie)
-  // Si disattiva SOLO se c'è impersonation attiva (= vista PA su iPad)
+  // Risolvi impresaId — con retry e storage listener per gestire la race condition
+  // (il FirebaseAuthContext potrebbe non aver ancora salvato impresaId nel localStorage)
   useEffect(() => {
     // Se c'è impersonation attiva nel sessionStorage → vista PA → non attivare
     try {
@@ -70,7 +70,7 @@ export default function SpuntaNotifier() {
       }
     } catch { /* ignore */ }
 
-    const resolveImpresa = async () => {
+    const tryResolve = (): number | null => {
       let id: number | null = null;
 
       // Strategia 1: miohub_firebase_user
@@ -97,30 +97,50 @@ export default function SpuntaNotifier() {
         } catch { /* ignore */ }
       }
 
-      // Strategia 3: cerca per user_id su orchestratore (per utenti citizen con impresa)
-      if (!id) {
-        try {
-          const fbStr = localStorage.getItem("miohub_firebase_user");
-          const userStr = localStorage.getItem("user");
-          let userId = 0;
-          if (fbStr) { const fb = JSON.parse(fbStr); userId = fb.miohubId || 0; }
-          if (!userId && userStr) { const u = JSON.parse(userStr); userId = u.id || 0; }
-          if (userId) {
-            const res = await fetch(`${MIHUB_API_BASE_URL}/api/imprese?user_id=${userId}`);
-            if (res.ok) {
-              const data = await res.json();
-              if (data.success && data.data?.length > 0) {
-                id = Number(data.data[0].id);
-              }
-            }
-          }
-        } catch { /* ignore */ }
-      }
-
-      setImpresaId(id);
+      return id;
     };
 
-    resolveImpresa();
+    // Primo tentativo immediato
+    const immediateId = tryResolve();
+    if (immediateId) {
+      console.log(`[SpuntaNotifier] impresaId trovato subito: ${immediateId}`);
+      setImpresaId(immediateId);
+      return;
+    }
+
+    console.log('[SpuntaNotifier] impresaId non trovato subito, attendo login...');
+
+    // Retry ogni 2 secondi per max 30 secondi (il login potrebbe essere in corso)
+    let attempts = 0;
+    const maxAttempts = 15;
+    const retryInterval = setInterval(() => {
+      attempts++;
+      const id = tryResolve();
+      if (id) {
+        console.log(`[SpuntaNotifier] impresaId trovato dopo ${attempts * 2}s: ${id}`);
+        setImpresaId(id);
+        clearInterval(retryInterval);
+      } else if (attempts >= maxAttempts) {
+        console.log('[SpuntaNotifier] impresaId non trovato dopo 30s, rinuncio');
+        clearInterval(retryInterval);
+      }
+    }, 2000);
+
+    // Ascolta anche l'evento storage (il FirebaseAuthContext fa window.dispatchEvent(new Event('storage')))
+    const onStorage = () => {
+      const id = tryResolve();
+      if (id) {
+        console.log(`[SpuntaNotifier] impresaId trovato via storage event: ${id}`);
+        setImpresaId(id);
+        clearInterval(retryInterval);
+      }
+    };
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      clearInterval(retryInterval);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   // Funzione per notificare il backend della scadenza del turno
