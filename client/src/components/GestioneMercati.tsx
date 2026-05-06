@@ -2299,9 +2299,11 @@ function PosteggiTab({
   const [selectedSpuntistaForDetail, setSelectedSpuntistaForDetail] =
     useState<any>(null);
 
-  // Popup fullscreen saldo negativo
+  // Popup mini saldo negativo (rosso)
   const [showSaldoNegativoPopup, setShowSaldoNegativoPopup] = useState<{show: boolean, messaggio: string, impresa: string, saldo: number}>({show: false, messaggio: '', impresa: '', saldo: 0});
-  // Popup fullscreen spunta finita
+  // Popup mini posteggio assegnato (verde)
+  const [showPostoAssegnatoPopup, setShowPostoAssegnatoPopup] = useState<{show: boolean, impresa: string, stall_number: string, costo: number, saldo: number}>({show: false, impresa: '', stall_number: '', costo: 0, saldo: 0});
+  // Popup mini spunta finita (giallo)
   const [showSpuntaFinitaPopup, setShowSpuntaFinitaPopup] = useState(false);
   const spuntaFinitaGiaVistaRef = React.useRef(false); // true dopo che il popup è stato mostrato e chiuso — non mostrarlo mai più
   const spuntaStartedAtRef = React.useRef<number>(0); // timestamp di quando la spunta è stata avviata — cooldown anti-popup
@@ -2816,12 +2818,16 @@ function PosteggiTab({
             const costo = data.data.costo_posteggio;
             const nuovoSaldo = data.data.nuovo_saldo_wallet;
 
-            toast.success(
-              `🎯 Posteggio ${data.data.stall_number} assegnato a ${spuntista.impresa_name}\n` +
-                `💰 Costo: ${costo.toFixed(2)}€ | Saldo: ${nuovoSaldo}€\n` +
-                `📊 Presenze: ${spuntista.nuove_presenze_totali}`,
-              { duration: 4000 }
-            );
+            // Mostra mini-popup verde "Posteggio Assegnato"
+            setShowPostoAssegnatoPopup({
+              show: true,
+              impresa: spuntista.impresa_name,
+              stall_number: String(data.data.stall_number),
+              costo: costo,
+              saldo: nuovoSaldo
+            });
+            // Auto-chiudi dopo 4 secondi
+            setTimeout(() => { setShowPostoAssegnatoPopup(prev => ({...prev, show: false})); }, 4000);
 
             setStalls(prev =>
               prev.map(s =>
@@ -3500,31 +3506,65 @@ function PosteggiTab({
       )}
 
 
-      {/* Popup fullscreen saldo negativo */}
+      {/* Popup mini saldo negativo — fisso in alto a destra */}
       {showSaldoNegativoPopup.show && (
-        <div className="fixed inset-0 bg-red-900/95 flex items-center justify-center z-[9999]" onClick={async () => { setShowSaldoNegativoPopup(prev => ({...prev, show: false})); await fetchSpuntaLiveTurno(); await fetchStallsAndPresenzeOnly(); }}>
-          <div className="text-center p-8 max-w-lg">
-            <div className="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="text-5xl">⛔</span>
+        <div className="fixed top-4 right-4 z-[9998] w-[220px] bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-4 shadow-2xl shadow-red-500/40 border-2 border-red-400/50" style={{ animation: 'pulse 2s infinite' }}>
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-2xl">⛔</span>
             </div>
-            <h1 className="text-white text-4xl font-black mb-4">SALDO NEGATIVO</h1>
-            <p className="text-white/90 text-xl mb-2">{showSaldoNegativoPopup.impresa}</p>
-            <p className="text-red-200 text-3xl font-bold mb-6">€{showSaldoNegativoPopup.saldo.toFixed(2)}</p>
-            <p className="text-white/70 text-lg mb-8">Impossibile assegnare il posteggio.<br/>Passaggio automatico al prossimo spuntista...</p>
-            <div className="animate-spin w-8 h-8 border-4 border-white/30 border-t-white rounded-full mx-auto"></div>
+            <p className="text-white font-black text-sm leading-tight">
+              SALDO NEGATIVO
+            </p>
+            <p className="text-white font-black text-base leading-tight">
+              {showSaldoNegativoPopup.impresa}
+            </p>
+            <p className="text-red-200 text-2xl font-bold">
+              €{showSaldoNegativoPopup.saldo.toFixed(2)}
+            </p>
+            <p className="text-white/70 text-xs">
+              Passaggio al prossimo...
+            </p>
+            <div className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full mx-auto"></div>
           </div>
         </div>
       )}
-      {/* Popup fullscreen SPUNTA FINITA */}
-      {showSpuntaFinitaPopup && (
-        <div className="fixed inset-0 bg-yellow-700/95 flex items-center justify-center z-[9999]" onClick={() => { setShowSpuntaFinitaPopup(false); spuntaFinitaGiaVistaRef.current = true; }}>
-          <div className="text-center p-8 max-w-lg">
-            <div className="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="text-5xl">✅</span>
+      {/* Popup mini posteggio assegnato — fisso in alto a destra (verde) */}
+      {showPostoAssegnatoPopup.show && (
+        <div className="fixed top-4 right-4 z-[9998] w-[220px] bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 shadow-2xl shadow-green-500/40 border-2 border-green-300/50" onClick={() => setShowPostoAssegnatoPopup(prev => ({...prev, show: false}))}>
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-2xl">✅</span>
             </div>
-            <h1 className="text-white text-4xl font-black mb-4">SPUNTA FINITA!</h1>
-            <p className="text-white/90 text-xl mb-8">Tutti gli spuntisti sono stati processati.<br/>La spunta è terminata.</p>
-            <button className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 text-xl px-12 py-4 rounded-2xl font-bold" onClick={(e) => { e.stopPropagation(); setShowSpuntaFinitaPopup(false); spuntaFinitaGiaVistaRef.current = true; }}>CHIUDI</button>
+            <p className="text-white font-black text-sm leading-tight">
+              POSTEGGIO ASSEGNATO
+            </p>
+            <p className="text-white font-black text-base leading-tight">
+              {showPostoAssegnatoPopup.impresa}
+            </p>
+            <p className="text-white text-2xl font-bold">
+              N° {showPostoAssegnatoPopup.stall_number}
+            </p>
+            <p className="text-white/80 text-xs">
+              Costo: €{showPostoAssegnatoPopup.costo.toFixed(2)} | Saldo: €{showPostoAssegnatoPopup.saldo.toFixed(2)}
+            </p>
+          </div>
+        </div>
+      )}
+      {/* Popup mini spunta finita — fisso in alto a destra (giallo) */}
+      {showSpuntaFinitaPopup && (
+        <div className="fixed top-4 right-4 z-[9998] w-[220px] bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl p-4 shadow-2xl shadow-yellow-500/40 border-2 border-yellow-300/50" onClick={() => { setShowSpuntaFinitaPopup(false); spuntaFinitaGiaVistaRef.current = true; }}>
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-2xl">✅</span>
+            </div>
+            <p className="text-white font-black text-sm leading-tight">
+              SPUNTA FINITA!
+            </p>
+            <p className="text-white/80 text-sm mt-1">
+              Tutti gli spuntisti processati.
+            </p>
+            <button className="mt-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white font-bold rounded-lg text-xs border border-white/40 w-full" onClick={(e) => { e.stopPropagation(); setShowSpuntaFinitaPopup(false); spuntaFinitaGiaVistaRef.current = true; }}>CHIUDI</button>
           </div>
         </div>
       )}
