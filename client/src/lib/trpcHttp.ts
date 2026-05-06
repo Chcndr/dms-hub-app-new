@@ -27,7 +27,8 @@ const REST_BASE = `${MIHUB_API_BASE_URL}/api`;
  */
 const PROCEDURE_MAP: Record<string, string> = {
   // Integrations
-  "integrations.apiStats.today": "/api/dashboard/integrations/endpoint-count",
+  "integrations.apiStats.today": "/api/dashboard/integrations/stats-today",
+  "integrations.endpointCount": "/api/dashboard/integrations/endpoint-count",
   "integrations.connections.list": "/api/integrations/connections",
   "integrations.connections.healthCheck":
     "/api/integrations/connections/health-check",
