@@ -1,18 +1,18 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.4.0 — STABILE (Fix mappa spunta PA, Rinuncia Spunta App, stato_presenza storico)
-> **Data:** 07 Maggio 2026
-> **Stato:** PUNTO DI RIPRISTINO STABILE — Git tag `v10.4.0-stable`
+> **Versione:** 10.5.0 — STABILE (Popup saldo negativo spunta, protezione SPUNTA_TERMINATA, fix storico aggregazione)
+> **Data:** 08 Maggio 2026
+> **Stato:** PUNTO DI RIPRISTINO STABILE — Git tag `v10.5.0-stable`
 >
 > ---
-> ### STATO SISTEMA (07 Mag 2026 — Snapshot stabile)
+> ### STATO SISTEMA (08 Mag 2026 — Snapshot stabile)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `94be06d` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `7b32118` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online v10.4.0 | `https://api.mio-hub.me/health` |
-> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `7b32118` |
+> | **GitHub Backend** | Allineato | `f204097` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `2b847e3` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online v10.5.0 | `https://api.mio-hub.me/health` |
+> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `2b847e3` |
 > | **Neon (DB)** | Integro | 0 duplicati, 0 fantasmi, colonna `stato_presenza` aggiunta |
 >
 > **Integrità DB verificata:**
@@ -23,6 +23,40 @@
 > - Nessun record fantasma CONCESSION stall_id=NULL
 > - Nessun record SPUNTA con stall_id non-NULL nella graduatoria
 > - Nessun fantasma SPUNTA residuo nello storico
+>
+> ---
+> ### CHANGELOG v10.5.0 (08 Mag 2026)
+> **Popup saldo negativo spunta, protezione SPUNTA_TERMINATA, fix storico aggregazione sessioni**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `f204097` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `f204097` | Autodeploy v10.5.0 |
+> | GitHub `dms-hub-app-new` master | `2b847e3` | Allineato |
+> | Vercel frontend | `2b847e3` | Autodeploy |
+>
+> **FRONTEND (1 commit: `0261efb` → `2b847e3`):**
+>
+> **SpuntaNotifier — Popup SALDO INSUFFICIENTE alla scelta posteggio:**
+> - **Problema:** Quando uno spuntista con wallet negativo sceglieva un posteggio, il backend restituiva 403 `SALDO_NEGATIVO` ma il frontend faceva solo `console.error` senza mostrare nulla all'utente.
+> - **Fix:** Aggiunto nuovo stato `SALDO_NEGATIVO` all'interfaccia `SpuntaState`. Quando il backend risponde 403, il frontend setta lo stato e mostra un **overlay fullscreen rosso** identico a quello della presenza concessione (icona X, titolo "SALDO INSUFFICIENTE", messaggio saldo, pulsante CHIUDI).
+> - Aggiunti campi `saldo_messaggio` e `stall_number_scelto` all'interfaccia per memorizzare i dettagli.
+>
+> **SpuntaNotifier — Protezione SPUNTA_TERMINATA non sovrascrive popup ultimo spuntista:**
+> - **Problema:** Quando l'ultimo spuntista sceglieva il posteggio, il backend emetteva `SPUNTA_TERMINATA` via SSE che arrivava al frontend PRIMA o CONTEMPORANEAMENTE al popup POSTEGGIO_ASSEGNATO, sovrascrivendolo.
+> - **Fix frontend:** Nel handler SSE `SPUNTA_TERMINATA`, aggiunto check: se lo stato è già `ASSEGNATO` o `SALDO_NEGATIVO`, il messaggio viene **ignorato** (return prev). La chiusura SSE avviene con `setTimeout(500ms)` per sicurezza.
+> - **Fix backend:** Il `broadcastSSE(sessionId, fineEvt)` di `SPUNTA_TERMINATA` ora viene emesso con un **ritardo di 3 secondi** (`setTimeout(() => broadcastSSE(...), 3000)`) per dare tempo al popup dell'ultimo spuntista di apparire.
+>
+> **BACKEND (2 commit: `94be06d` → `f204097`):**
+>
+> **presenze.js — Fix storico aggregazione sessioni:**
+> - **Problema:** L'endpoint `GET /sessioni/:id/dettaglio` aveva un fallback che, quando una sessione non aveva record in `market_session_details`, cercava TUTTE le sessioni dello stesso giorno (`allSessionIds`) e le aggregava. Questo causava 40+ record nello storico del 06/05 (giorno con molti test).
+> - **Fix:** Rimosso completamente il fallback `allSessionIds`. Ora: (1) cerca in `market_session_details` per la sessione specifica, (2) se vuoto, fallback su `vendor_presences` per la sola sessione. Nessuna aggregazione cross-sessione.
+>
+> **presenze-live.js — Ritardo SPUNTA_TERMINATA:**
+> - Aggiunto `setTimeout(() => broadcastSSE(sessionId, fineEvt), 3000)` nella funzione `attivaProssimoTurno` quando non ci sono più spuntisti in coda.
+> - Questo dà 3 secondi di tempo al popup POSTEGGIO_ASSEGNATO o SALDO_NEGATIVO dell'ultimo spuntista di apparire prima che `SPUNTA_TERMINATA` venga inviato a tutti.
 >
 > ---
 > ### CHANGELOG v10.4.0 (07 Mag 2026)
