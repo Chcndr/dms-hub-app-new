@@ -571,6 +571,38 @@ export default function SpuntaNotifier() {
             ))
           )}
         </div>
+        {/* Striscia rossa RINUNCIA ALLA SPUNTA in fondo */}
+        <button
+          onClick={async () => {
+            const confirmed = window.confirm(
+              'Sei sicuro di voler RINUNCIARE alla spunta?\n\nNON riceverai un posteggio e NON guadagnerai il punto presenza in graduatoria.'
+            );
+            if (!confirmed) return;
+            try {
+              const res = await fetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/rinuncia`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  coda_id: spunta.coda_id || null,
+                  impresa_id: impresaId,
+                  session_id: spunta.session_id || null
+                }),
+              });
+              const data = await res.json();
+              if (data.success) {
+                setSpunta({ stato: 'IDLE' });
+                if (sseRef.current) sseRef.current.close();
+              } else {
+                alert(data.messaggio || 'Errore rinuncia');
+              }
+            } catch (err) {
+              alert('Errore durante la rinuncia');
+            }
+          }}
+          className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-4 flex-shrink-0 transition-colors active:scale-95"
+        >
+          RINUNCIA ALLA SPUNTA
+        </button>
         {/* MODALE MAPPA INTERNA — responsive smartphone */}
         {mappaAperta && (
           <div className="fixed inset-0 z-[999999] flex flex-col bg-gray-900" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
