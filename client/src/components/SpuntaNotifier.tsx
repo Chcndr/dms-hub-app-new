@@ -12,7 +12,7 @@ import { Clock, List, MapPin, CheckCircle, X, ArrowLeft } from "lucide-react";
 const MIHUB_API_BASE_URL = "https://api.mio-hub.me";
 
 interface SpuntaState {
-  stato: 'IDLE' | 'IN_ATTESA' | 'TURNO_ATTIVO' | 'LISTA_POSTEGGI' | 'ASSEGNATO' | 'FINE_SPUNTA';
+  stato: 'IDLE' | 'IN_ATTESA' | 'TURNO_ATTIVO' | 'LISTA_POSTEGGI' | 'ASSEGNATO' | 'FINE_SPUNTA' | 'SALDO_NEGATIVO';
   impresa_nome?: string;
   posizione?: number;
   totale_in_coda?: number;
@@ -24,6 +24,7 @@ interface SpuntaState {
   saldo_residuo?: number;
   motivo_fine?: string;
   session_id?: number;
+  saldo_messaggio?: string;
 }
 
 interface PosteggioLibero {
@@ -338,16 +339,24 @@ export default function SpuntaNotifier() {
             }));
           }
         } else if (data.type === 'SPUNTA_TERMINATA') {
-          setSpunta(prev => ({
-            stato: 'FINE_SPUNTA',
-            motivo_fine: data.motivo === 'FINE_POSTEGGI'
-              ? 'Tutti i posteggi alla spunta sono stati assegnati'
-              : 'Tutti i partecipanti alla spunta sono stati chiamati',
-            posteggi_disponibili: data.posteggi_rimanenti,
-            session_id: prev.session_id, // preserva session_id per anti-ripetizione
-          }));
-          es.close();
-          sseRef.current = null;
+          setSpunta(prev => {
+            // Se l'utente ha già ricevuto ASSEGNATO o SALDO_NEGATIVO, NON sovrascrivere
+            if (prev.stato === 'ASSEGNATO' || prev.stato === 'SALDO_NEGATIVO') {
+              return prev;
+            }
+            return {
+              stato: 'FINE_SPUNTA',
+              motivo_fine: data.motivo === 'FINE_POSTEGGI'
+                ? 'Tutti i posteggi alla spunta sono stati assegnati'
+                : 'Tutti i partecipanti alla spunta sono stati chiamati',
+              posteggi_disponibili: data.posteggi_rimanenti,
+              session_id: prev.session_id, // preserva session_id per anti-ripetizione
+            };
+          });
+          // Chiudi SSE solo se non siamo in stato ASSEGNATO/SALDO_NEGATIVO
+          setTimeout(() => {
+            if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+          }, 500);
         }
       } catch (err) { console.error('SpuntaNotifier SSE parse error:', err); }
     };
@@ -437,9 +446,17 @@ export default function SpuntaNotifier() {
           importo: data.importo_addebitato,
           saldo_residuo: data.wallet_saldo_residuo,
         });
+      } else if (data.errore === 'SALDO_NEGATIVO') {
+        // Mostra popup saldo insufficiente
+        setSpunta(prev => ({
+          ...prev,
+          stato: 'SALDO_NEGATIVO',
+          saldo_residuo: data.saldo,
+          saldo_messaggio: data.messaggio,
+        }));
       } else {
         console.error('[SpuntaNotifier] Errore scelta posteggio:', data.messaggio);
-        // Non usare alert() — mostra errore nel log e resta sulla lista
+        alert(data.messaggio || 'Errore nella scelta del posteggio');
       }
     } catch (err) {
       console.error('[SpuntaNotifier] Errore di rete scelta posteggio:', err);
@@ -689,7 +706,35 @@ export default function SpuntaNotifier() {
     );
   }
 
-  // ─── OVERLAY: FINE SPUNTA ───────────────────────────────────────────────────
+  // ─── OVERLAY: SALDO NEGATIVO ────────────────────────────────────────────────────────────
+  if (spunta.stato === 'SALDO_NEGATIVO') {
+    return (
+      <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-gradient-to-b from-red-600 to-red-800 p-6">
+        <div className="text-center">
+          <div className="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
+            <X className="w-14 h-14 text-white" />
+          </div>
+          <h1 className="text-3xl font-black text-white mb-4 uppercase">
+            SALDO INSUFFICIENTE
+          </h1>
+          <p className="text-white/90 text-xl mb-4">
+            {spunta.saldo_messaggio || 'Il wallet ha saldo negativo.'}
+          </p>
+          <p className="text-white/70 text-base mb-8">
+            Ricarica il wallet per poter partecipare alla spunta.
+          </p>
+          <button
+            onClick={chiudiOverlay}
+            className="px-8 py-4 bg-white/20 border-2 border-white/50 text-white font-bold text-xl rounded-2xl"
+          >
+            CHIUDI
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── OVERLAY: FINE SPUNTA ───────────────────────────────────────────────────────────────
   if (spunta.stato === 'FINE_SPUNTA') {
     return (
       <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-gradient-to-b from-yellow-500 to-amber-600 p-6">
