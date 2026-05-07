@@ -1,28 +1,97 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.3.0 — STABILE (Popup PA mini, SpuntaNotifier fix race condition, impresaId citizen fix)
+> **Versione:** 10.4.0 — STABILE (Fix mappa spunta PA, Rinuncia Spunta App, stato_presenza storico)
 > **Data:** 07 Maggio 2026
-> **Stato:** PUNTO DI RIPRISTINO STABILE — Git tag `v10.3.0-stable`
+> **Stato:** PUNTO DI RIPRISTINO STABILE — Git tag `v10.4.0-stable`
 >
 > ---
 > ### STATO SISTEMA (07 Mag 2026 — Snapshot stabile)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `d42ea36` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `6b0689d` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online v10.3.0 | `https://api.mio-hub.me/health` |
-> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `6b0689d` |
-> | **Neon (DB)** | Integro | 0 duplicati, 0 fantasmi, 0 SPUNTA stall_id errati |
+> | **GitHub Backend** | Allineato | `94be06d` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `7b32118` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online v10.4.0 | `https://api.mio-hub.me/health` |
+> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `7b32118` |
+> | **Neon (DB)** | Integro | 0 duplicati, 0 fantasmi, colonna `stato_presenza` aggiunta |
 >
 > **Integrità DB verificata:**
 > - vendor_presences: 9 righe (sessione corrente)
 > - graduatoria_presenze: 80 righe (tutte corrette)
-> - market_session_details: 1819 righe (0 duplicati, 0 fantasmi)
+> - market_session_details: 1819 righe (0 duplicati, 0 fantasmi, colonna `stato_presenza` popolata)
 > - market_sessions: 548 sessioni (tutte CHIUSE)
 > - Nessun record fantasma CONCESSION stall_id=NULL
 > - Nessun record SPUNTA con stall_id non-NULL nella graduatoria
 > - Nessun fantasma SPUNTA residuo nello storico
+>
+> ---
+> ### CHANGELOG v10.4.0 (07 Mag 2026)
+> **Fix sfarfallamento mappa spunta PA, Rinuncia Spunta App, stato_presenza nello storico presenze**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `94be06d` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `94be06d` | Autodeploy v10.4.0 |
+> | GitHub `dms-hub-app-new` master | `7b32118` | Allineato |
+> | Vercel frontend | `7b32118` | Autodeploy |
+>
+> **FRONTEND (4 commit: `841974a` → `7b32118`):**
+>
+> **MarketMapComponent — Fix sfarfallamento mappa durante spunta PA:**
+> - **Problema:** Quando il vigile cliccava su un posteggio in modalità spunta, la mappa faceva `flyTo` per centrare il posteggio + il popup Leaflet faceva `autoPan` per rendersi visibile → doppio spostamento = sfarfallamento.
+> - **Fix 1:** Aggiunto `autoPan={false}` a tutti i `<Popup>` Leaflet (posteggi, marker centro, mercati Italia).
+> - **Fix 2:** Aggiunto prop `disabled` al `StallCenterController`: quando `isSpuntaMode=true`, il `flyTo` viene disabilitato. La mappa resta ferma durante la spunta, il popup si apre sul posteggio senza spostare nulla.
+> - **Nota:** Il `flyTo` resta attivo nell'app impresa (cellulare) dove `isSpuntaMode=false`.
+>
+> **PresenzePage — Pulsante Rinuncia Spunta nella card ATTESA SPUNTA:**
+> - Aggiunto **quadratino rosso** (icona `XCircle`) sulla destra della card "ATTESA SPUNTA" (stessa dimensione dell'icona orologio a sinistra).
+> - Click → `window.confirm()` → chiama `POST /api/presenze-live/spunta/rinuncia` → mostra popup fullscreen "RINUNCIA REGISTRATA".
+> - Aggiunta anche striscia rossa "RINUNCIA ALLA SPUNTA" nella schermata lista posteggi della PresenzePage.
+>
+> **SpuntaNotifier — Striscia rossa Rinuncia nella lista posteggi:**
+> - Aggiunta **striscia rossa fissa in fondo** alla schermata "SCEGLI POSTEGGIO" nel SpuntaNotifier (il componente globale che appare quando è il turno).
+> - Testo: "RINUNCIA ALLA SPUNTA" — stessa logica: conferma → rinuncia → chiude overlay.
+> - La striscia è `flex-shrink-0` e resta sempre visibile anche scrollando la lista posteggi.
+>
+> **ControlliSanzioniPanel — Badge stato_presenza nella tabella Spuntisti:**
+> - Nella colonna **N°** della tabella Spuntisti (storico presenze), quando `stall_number` è null mostra un badge colorato:
+>   - `RINUNCIATO` (arancione, `bg-orange-500/20 text-orange-400`) — rinuncia volontaria o tempo scaduto
+>   - `SALDO NEG.` (rosso, `bg-red-500/20 text-red-400`) — saldo wallet negativo
+>   - `NO POSTI` (rosso, `bg-red-500/20 text-red-400`) — non c'erano più posteggi disponibili
+> - Aggiunto campo `stato_presenza?: string | null` all'interfaccia `SessionDetail`.
+>
+> **BACKEND (3 commit: `401e312` → `94be06d`):**
+>
+> **Database — Nuova colonna `stato_presenza`:**
+> - `ALTER TABLE market_session_details ADD COLUMN stato_presenza VARCHAR(30) DEFAULT NULL`
+> - Valori possibili: `presente`, `rinunciato`, `saldo_negativo`, `rinuncia_forzata`, `NULL` (concessionari)
+> - Popolati tutti i record esistenti con migrazione (854 presente, 10 rinunciato)
+>
+> **presenze.js — Chiusura mercato manuale:**
+> - Query SELECT per `market_session_details` ora include `LEFT JOIN LATERAL spunta_coda` per calcolare `stato_presenza`.
+> - INSERT include il campo `stato_presenza` ($17).
+> - Endpoint `GET /sessioni/:id/dettaglio`: usa `COALESCE(msd.stato_presenza, CASE...JOIN spunta_coda)` — prima legge la colonna salvata, poi fallback al JOIN per vecchi record senza colonna.
+>
+> **market-auto-phases.js — Chiusura automatica:**
+> - Stessa modifica: JOIN con `spunta_coda` + INSERT con `stato_presenza`.
+>
+> **test-mercato.js — Chiusura test:**
+> - Stessa modifica: JOIN con `spunta_coda` + INSERT con `stato_presenza`.
+>
+> **Logica CASE per stato_presenza (tutte le query):**
+> ```sql
+> CASE
+>   WHEN sc.stato = 'ASSEGNATO' THEN 'presente'
+>   WHEN sc.stato = 'RINUNCIATO' THEN 'rinunciato'
+>   WHEN sc.stato = 'SALTATO' AND wallet.balance < 0 THEN 'saldo_negativo'
+>   WHEN sc.stato = 'SALTATO' THEN 'rinunciato'
+>   WHEN sc.stato = 'SCADUTO' THEN 'rinunciato'
+>   WHEN sc.stato IN ('COMPLETATO') AND stall_id IS NULL THEN 'rinuncia_forzata'
+>   WHEN stall_id IS NOT NULL THEN 'presente'
+>   ELSE NULL
+> END
+> ```
 >
 > ---
 > ### CHANGELOG v10.3.0 (07 Mag 2026)
