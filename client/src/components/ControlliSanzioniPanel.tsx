@@ -251,6 +251,7 @@ interface SessionDetail {
   importo_addebitato: string;
   presenze_totali: number;
   assenze_non_giustificate: number;
+  stato_presenza?: string | null;
 }
 
 interface Transgression {
@@ -4149,8 +4150,30 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
                                   key={`${detail.id}-${idx}`}
                                   className="border-b border-[#8b5cf6]/10 hover:bg-[#0d1520]/50"
                                 >
-                                  <td className="py-2 px-3 text-[#3b82f6] font-medium">
-                                    {detail.stall_number}
+                                  <td className="py-2 px-3 font-medium">
+                                    {detail.stall_number ? (
+                                      <span className="text-[#3b82f6]">{detail.stall_number}</span>
+                                    ) : detail.tipo_presenza === 'SPUNTA' ? (
+                                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                                        detail.stato_presenza === 'saldo_negativo'
+                                          ? 'bg-red-500/20 text-red-400'
+                                          : detail.stato_presenza === 'rinuncia_forzata'
+                                          ? 'bg-red-500/20 text-red-400'
+                                          : detail.stato_presenza === 'rinunciato'
+                                          ? 'bg-orange-500/20 text-orange-400'
+                                          : 'bg-gray-500/20 text-gray-400'
+                                      }`}>
+                                        {detail.stato_presenza === 'saldo_negativo'
+                                          ? 'SALDO NEG.'
+                                          : detail.stato_presenza === 'rinuncia_forzata'
+                                          ? 'NO POSTI'
+                                          : detail.stato_presenza === 'rinunciato'
+                                          ? 'RINUNCIATO'
+                                          : '-'}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-500">-</span>
+                                    )}
                                   </td>
                                   <td className="py-2 px-3">
                                     <p className="text-[#e8fbff] text-sm">
