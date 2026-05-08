@@ -34,7 +34,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://mihub-backend-rest.onrender.com";
+import { MIHUB_API_BASE_URL } from "@/config/api";
+import { addAssociazioneIdToUrl, isAssociazioneImpersonation, addComuneIdToUrl } from "@/hooks/useImpersonation";
+
+const API_BASE_URL = MIHUB_API_BASE_URL;
 
 // Tipo attestato → label leggibile
 const TIPO_ATTESTATO_LABELS: Record<string, string> = {
@@ -81,6 +84,7 @@ interface MatriceEntry {
     data_rilascio: string;
     data_scadenza: string | null;
     ente: string | null;
+    attestato_id?: number | null;
   }>;
   mancanti: string[];
   completezza: number;
@@ -129,9 +133,18 @@ export default function TeamFormazionePanel({ impresaId }: { impresaId: number |
     if (!impresaId) return;
     setLoading(true);
     try {
+      let matriceUrl = `${API_BASE_URL}/api/collaboratori/team/matrice?impresa_id=${impresaId}`;
+      let scadenzeUrl = `${API_BASE_URL}/api/collaboratori/team/scadenze?impresa_id=${impresaId}&giorni=90`;
+      if (isAssociazioneImpersonation()) {
+        matriceUrl = addAssociazioneIdToUrl(matriceUrl);
+        scadenzeUrl = addAssociazioneIdToUrl(scadenzeUrl);
+      } else {
+        matriceUrl = addComuneIdToUrl(matriceUrl);
+        scadenzeUrl = addComuneIdToUrl(scadenzeUrl);
+      }
       const [matriceRes, scadenzeRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/collaboratori/team/matrice?impresa_id=${impresaId}`),
-        fetch(`${API_BASE_URL}/api/collaboratori/team/scadenze?impresa_id=${impresaId}&giorni=90`),
+        fetch(matriceUrl),
+        fetch(scadenzeUrl),
       ]);
       const matriceJson = await matriceRes.json();
       const scadenzeJson = await scadenzeRes.json();
@@ -365,6 +378,15 @@ export default function TeamFormazionePanel({ impresaId }: { impresaId: number |
                                stato === "PROSSIMO" ? "Prossimo" :
                                stato === "IN_SCADENZA" ? "In Scadenza" : "Scaduto"}
                             </Badge>
+                            {att && att.attestato_id && (
+                              <button
+                                onClick={() => downloadAttestatoPdf(att.attestato_id!)}
+                                className="text-blue-400 hover:text-blue-300 ml-1"
+                                title="Scarica PDF attestato"
+                              >
+                                <Download className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       );
@@ -383,9 +405,20 @@ export default function TeamFormazionePanel({ impresaId }: { impresaId: number |
                                 {TIPO_ATTESTATO_LABELS[tipo] || tipo}
                               </span>
                             </div>
-                            <Badge className="text-[8px] border bg-blue-500/15 text-blue-400 border-blue-500/30">
-                              Extra
-                            </Badge>
+                            <div className="flex items-center gap-1">
+                              <Badge className="text-[8px] border bg-blue-500/15 text-blue-400 border-blue-500/30">
+                                Extra
+                              </Badge>
+                              {att && att.attestato_id && (
+                                <button
+                                  onClick={() => downloadAttestatoPdf(att.attestato_id!)}
+                                  className="text-blue-400 hover:text-blue-300"
+                                  title="Scarica PDF attestato"
+                                >
+                                  <Download className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         );
                       })}

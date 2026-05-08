@@ -99,6 +99,7 @@ interface MatriceEntry {
 interface TeamFormazioneData {
   tipo_impresa: string;
   adempimenti_obbligatori: string[];
+  tutti_tipi_attestati: string[];
   matrice: MatriceEntry[];
   statistiche: {
     totale_collaboratori: number;
@@ -756,7 +757,7 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="text-xs">Collaboratore</TableHead>
-                            {teamData.adempimenti_obbligatori.map(tipo => (
+                            {(teamData.tutti_tipi_attestati || teamData.adempimenti_obbligatori).map(tipo => (
                               <TableHead key={tipo} className="text-[9px] text-center px-1">
                                 {(TIPO_ATTESTATO_LABELS[tipo] || tipo).split(" ")[0]}
                               </TableHead>
@@ -781,7 +782,7 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
                                   </div>
                                 </div>
                               </TableCell>
-                              {teamData.adempimenti_obbligatori.map(tipo => {
+                              {(teamData.tutti_tipi_attestati || teamData.adempimenti_obbligatori).map(tipo => {
                                 const att = entry.attestati[tipo];
                                 const stato = att ? att.stato : "MANCANTE";
                                 return (
