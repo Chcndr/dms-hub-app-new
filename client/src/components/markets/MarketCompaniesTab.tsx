@@ -2228,8 +2228,33 @@ function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
         addComuneIdToUrl(`${API_BASE_URL}/api/collaboratori/team/matrice?impresa_id=${impresaId}`)
       );
       const data = await res.json();
-      if (data.success) setMatrice(data.data);
-      else setMatrice(null);
+      if (data.success) {
+        // Trasformare la risposta API nella struttura attesa dal rendering
+        const collaboratori = (data.matrice || []).map((item: any) => ({
+          nome: item.collaboratore.nome,
+          cognome: item.collaboratore.cognome,
+          ruolo: item.collaboratore.ruolo,
+          codice_fiscale: item.collaboratore.codice_fiscale,
+          conforme: item.completezza === 100,
+          attestati: [
+            ...Object.entries(item.attestati || {}).map(([tipo, att]: [string, any]) => ({
+              tipo,
+              stato: att.stato || "valido",
+              data_scadenza: att.data_scadenza
+            })),
+            ...(item.mancanti || []).map((tipo: string) => ({
+              tipo,
+              stato: "mancante"
+            }))
+          ]
+        }));
+        setMatrice({
+          collaboratori,
+          conformita_percentuale: data.statistiche?.percentuale_conformita || 0,
+          adempimenti_obbligatori: data.adempimenti_obbligatori || [],
+          tipo_impresa: data.tipo_impresa
+        });
+      } else setMatrice(null);
     } catch {
       setMatrice(null);
     } finally {
@@ -2265,7 +2290,7 @@ function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
             Seleziona Impresa
           </h3>
           <p className="text-sm text-gray-400 mb-4">
-            Clicca su un'impresa per visualizzare la conformit\u00e0 formativa del team
+            Clicca su un'impresa per visualizzare la conformità formativa del team
           </p>
           <div className="space-y-2 max-h-[500px] overflow-y-auto">
             {companies.map(company => (
@@ -2294,7 +2319,7 @@ function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
             </h3>
             {matrice && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">Conformit\u00e0:</span>
+                <span className="text-sm text-gray-400">Conformità:</span>
                 <span className={`text-sm font-bold ${
                   matrice.conformita_percentuale >= 80 ? "text-green-400" :
                   matrice.conformita_percentuale >= 50 ? "text-yellow-400" : "text-red-400"
@@ -2308,7 +2333,7 @@ function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
           {!selectedCompany ? (
             <div className="text-center py-16 text-gray-400">
               <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p>Seleziona un'impresa per visualizzare la conformit\u00e0 formativa</p>
+              <p>Seleziona un'impresa per visualizzare la conformità formativa</p>
             </div>
           ) : loading ? (
             <div className="text-center py-16 text-gray-400">
@@ -2323,7 +2348,7 @@ function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Barra conformit\u00e0 */}
+              {/* Barra conformità */}
               <div className="w-full bg-gray-700 rounded-full h-3">
                 <div
                   className={`h-3 rounded-full transition-all ${
@@ -2702,10 +2727,16 @@ function QualificazioneModal({
               <option value="ANTIMAFIA">
                 ANTIMAFIA - Dichiarazione (Art. 67 D.Lgs. 159/2011)
               </option>
+              {/* Formazione Obbligatoria Sicurezza */}
+              <option value="SICUREZZA_LAVORO">SICUREZZA LAVORATORI - Formazione Base (D.Lgs. 81/08)</option>
+              <option value="ANTINCENDIO">ANTINCENDIO - Addetto Prevenzione Incendi (D.M. 02/09/2021)</option>
+              <option value="PRIMO_SOCCORSO">PRIMO SOCCORSO - Addetto (D.M. 388/2003)</option>
+              <option value="RSPP">RSPP - Responsabile Sicurezza (D.Lgs. 81/08 Art. 34)</option>
+              <option value="PREPOSTO">PREPOSTO - Formazione Preposti (D.Lgs. 81/08 Art. 37)</option>
               {/* Certificazioni Alimentari */}
-              <option value="HACCP">HACCP - Sicurezza Alimentare</option>
+              <option value="HACCP">HACCP - Sicurezza Alimentare (Reg. CE 852/2004)</option>
               <option value="SAB">
-                SAB - Somministrazione Alimenti e Bevande
+                SAB - Somministrazione Alimenti e Bevande (L. 287/91)
               </option>
               <option value="REC">REC - Registro Esercenti Commercio</option>
               <option value="CORSO_ALIMENTARE">

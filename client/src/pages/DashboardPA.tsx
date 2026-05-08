@@ -6711,12 +6711,28 @@ export default function DashboardPA() {
                               ANTIMAFIA - Dichiarazione (Art. 67 D.Lgs.
                               159/2011)
                             </option>
+                            {/* Formazione Obbligatoria Sicurezza */}
+                            <option value="SICUREZZA_LAVORO">
+                              SICUREZZA LAVORATORI - Formazione Base (D.Lgs. 81/08)
+                            </option>
+                            <option value="ANTINCENDIO">
+                              ANTINCENDIO - Addetto Prevenzione Incendi (D.M. 02/09/2021)
+                            </option>
+                            <option value="PRIMO_SOCCORSO">
+                              PRIMO SOCCORSO - Addetto (D.M. 388/2003)
+                            </option>
+                            <option value="RSPP">
+                              RSPP - Responsabile Sicurezza (D.Lgs. 81/08 Art. 34)
+                            </option>
+                            <option value="PREPOSTO">
+                              PREPOSTO - Formazione Preposti (D.Lgs. 81/08 Art. 37)
+                            </option>
                             {/* Certificazioni Alimentari */}
                             <option value="HACCP">
-                              HACCP - Sicurezza Alimentare
+                              HACCP - Sicurezza Alimentare (Reg. CE 852/2004)
                             </option>
                             <option value="SAB">
-                              SAB - Somministrazione Alimenti e Bevande
+                              SAB - Somministrazione Alimenti e Bevande (L. 287/91)
                             </option>
                             <option value="REC">
                               REC - Registro Esercenti Commercio
