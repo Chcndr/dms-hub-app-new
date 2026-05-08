@@ -3042,6 +3042,7 @@ function FormazioneSection({
   }>({ importo: 0, descrizione: "" });
   const [iscrizioneModal, setIscrizioneModal] = useState<{ open: boolean; corso: any | null }>({ open: false, corso: null });
   const [selectedCollaboratore, setSelectedCollaboratore] = useState<string>("");
+  const [collaboratoriScaduti, setCollaboratoriScaduti] = useState<any[]>([]);
 
   useEffect(() => {
     if (!impresaId) {
@@ -3100,10 +3101,45 @@ function FormazioneSection({
     load();
   }, [impresaId]);
 
-  const handleIscrizione = (corso: any) => {
+  const handleIscrizione = async (corso: any) => {
     if (!impresaId) return;
-    setIscrizioneModal({ open: true, corso });
     setSelectedCollaboratore("");
+    setCollaboratoriScaduti([]);
+    setIscrizioneModal({ open: true, corso });
+
+    // Carica matrice per trovare chi ha questo tipo di attestato scaduto/mancante
+    try {
+      const tipoCorso = corso.tipo_attestato || corso.tipo || "";
+      const res = await fetch(
+        addComuneIdToUrl(`${API_BASE_URL}/api/collaboratori/team/matrice/${impresaId}`)
+      );
+      const data = await res.json();
+      if (data.success && data.matrice) {
+        // Filtra collaboratori che hanno questo tipo di attestato scaduto o mancante
+        const filtrati = data.matrice.filter((m: any) => {
+          if (!m.attestati || m.attestati.length === 0) return true; // nessun attestato = tutti mancanti
+          const attestatoCorso = m.attestati.find((a: any) =>
+            a.tipo?.toUpperCase() === tipoCorso.toUpperCase() ||
+            a.tipo_qualifica?.toUpperCase() === tipoCorso.toUpperCase()
+          );
+          if (!attestatoCorso) return true; // mancante
+          if (attestatoCorso.stato === 'SCADUTO' || attestatoCorso.scaduto) return true; // scaduto
+          if (attestatoCorso.data_scadenza && new Date(attestatoCorso.data_scadenza) < new Date()) return true;
+          return false;
+        }).map((m: any) => ({
+          id: m.collaboratore?.id || m.id,
+          nome: m.collaboratore?.nome || m.nome,
+          cognome: m.collaboratore?.cognome || m.cognome,
+          ruolo: m.collaboratore?.ruolo || m.ruolo || "Collaboratore",
+        }));
+        setCollaboratoriScaduti(filtrati.length > 0 ? filtrati : collaboratori);
+      } else {
+        setCollaboratoriScaduti(collaboratori);
+      }
+    } catch {
+      // Fallback: mostra tutti i collaboratori
+      setCollaboratoriScaduti(collaboratori);
+    }
   };
 
   const confermaIscrizione = async () => {
@@ -3348,12 +3384,17 @@ function FormazioneSection({
               className="w-full p-3 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg text-[#e8fbff] focus:border-[#14b8a6] focus:outline-none mb-4"
             >
               <option value="">Titolare / Impresa</option>
-              {collaboratori.map(c => (
+              {collaboratoriScaduti.map(c => (
                 <option key={c.id} value={c.id}>
                   {c.nome} {c.cognome} ({c.ruolo || "Collaboratore"})
                 </option>
               ))}
             </select>
+            {collaboratoriScaduti.length > 0 && collaboratoriScaduti.length < collaboratori.length && (
+              <p className="text-xs text-amber-400 mb-3 -mt-2">
+                Mostrati solo i collaboratori con attestato scaduto o mancante per questo corso
+              </p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setIscrizioneModal({ open: false, corso: null })}
