@@ -66,6 +66,9 @@ interface IscrizioneCorso {
   corso_titolo: string;
   impresa_id: number;
   impresa_nome: string;
+  collaboratore_id?: number;
+  collaboratore_nome?: string;
+  collaboratore_ruolo?: string;
   stato: "iscritta" | "completata" | "annullata";
   data_iscrizione: string;
   attestato_rilasciato: boolean;
@@ -637,6 +640,11 @@ const GestioneCorsiAssociazionePanel = memo(function GestioneCorsiAssociazionePa
                       <div>
                         <p className="text-sm text-[#e8fbff]">
                           {i.impresa_nome}
+                          {i.collaboratore_nome && (
+                            <span className="text-[#14b8a6] ml-2 text-xs font-medium">
+                              → {i.collaboratore_nome}{i.collaboratore_ruolo ? ` (${i.collaboratore_ruolo})` : ''}
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-[#e8fbff]/50">
                           {i.corso_titolo} ·{" "}
