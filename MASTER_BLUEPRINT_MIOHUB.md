@@ -1921,6 +1921,37 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+### Sessione 08 Maggio 2026 — Modulo TEAM e Formazione Obbligatoria (v9.1.0)
+
+**Contesto:** Implementazione del sistema completo di gestione della formazione obbligatoria per i collaboratori delle imprese (Modulo TEAM), generazione automatica degli attestati PDF conformi all'Accordo Stato-Regioni 59/2025 e integrazione dei controlli nella Dashboard PA.
+
+**Stato:** ✅ COMPLETATO
+
+**Database (mihub-backend-rest) — Aggiornamenti Schema:**
+- ✅ **Nuova tabella `attestati_pdf`:** Archiviazione e storicizzazione dei PDF generati, con riferimenti a collaboratore, corso, impresa e codice univoco.
+- ✅ **Nuova sequenza `seq_codice_attestato`:** Generazione automatica dei codici univoci (es. `ATT-SIC-2026-00001`).
+- ✅ **Aggiornamento `formazione_corsi`:** Normalizzazione dei `tipo_attestato` e adeguamento di `prezzo` e `durata_ore` secondo i valori di mercato.
+- ✅ **Aggiornamento `adempimenti_tipo_impresa`:** Aggiunti 6 nuovi adempimenti formativi obbligatori (Sicurezza Lavoratori, Antincendio, Primo Soccorso, RSPP, SAB, HACCP).
+
+**Backend (mihub-backend-rest) — Nuovi Endpoint:**
+- ✅ `GET /api/collaboratori/team/matrice` — Genera la matrice incrociata collaboratori/attestati, calcola la `% di conformità` e restituisce gli adempimenti mancanti per l'impresa.
+- ✅ `POST /api/attestati/genera` — Generazione dinamica PDF tramite `pdfkit`, inclusione di tutti i 6 dati obbligatori di legge (normative D.Lgs. 81/08, D.M. 388/03, ecc.) e salvataggio nel DB.
+- ✅ `PUT /api/formazione/corsi/:id/prezzo` — Modifica inline del prezzo dei corsi.
+- ✅ `PUT /api/formazione/corsi/:id` — Modifica completa dei dati del corso.
+- ✅ `DELETE /api/formazione/corsi/:id` — Eliminazione corso con aggiornamento contatori ente.
+- ✅ Aggiornamento `POST /api/associazioni/:id/rilascia-attestato` per includere la generazione e l'archiviazione del PDF al momento del rilascio.
+
+**Frontend (dms-hub-app-new) — Nuovi Componenti e UI:**
+- ✅ **`FormazioneTeamSection`:** Nuovo sotto-tab nel pannello Qualificazioni della Dashboard PA (per PM e Ispettorato del Lavoro) che mostra la matrice di conformità formativa del team aziendale.
+- ✅ **`TeamFormazionePanel`:** Cruscotto TEAM integrato nell'App Impresa (sezione Anagrafica -> Collaboratori) per visualizzare lo stato formativo dei propri dipendenti.
+- ✅ **`GestioneCorsiAssociazionePanel`:** Aggiunto il download diretto del PDF dell'attestato dopo il rilascio.
+- ✅ **`DashboardPA`:** Aggiunti pulsanti inline per la modifica del prezzo e l'eliminazione dei corsi nella vista "Corsi Disponibili".
+
+**Flusso Operativo Implementato:**
+1. L'impresa iscrive il collaboratore a un corso obbligatorio.
+2. L'Ente/Associazione segna il corso come completato e clicca su "Rilascia Attestato".
+3. Il sistema genera il PDF conforme alla normativa, lo salva in `attestati_pdf` e genera un codice univoco.
+4. L'attestato diventa immediatamente scaricabile dall'Ente, dall'Impresa e visibile alla PA/PM nel tab "Formazione Team" con stato di validità calcolato dinamicamente.
 
 ### Sessione 25 Febbraio 2026 — v9.0.2 — Migrazione Completa API URL a Backend Unico
 
