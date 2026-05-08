@@ -85,11 +85,13 @@ const EMPTY_CORSO: Omit<Corso, "id" | "posti_occupati"> = {
 
 const CATEGORIE_CORSI = [
   "sicurezza",
+  "antincendio",
+  "primo_soccorso",
+  "rspp",
+  "preposti",
   "haccp",
+  "alimentare",
   "normativa",
-  "digitale",
-  "marketing",
-  "gestione",
   "altro",
 ];
 
