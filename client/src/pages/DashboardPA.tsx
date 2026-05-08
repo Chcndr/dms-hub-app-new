@@ -6400,13 +6400,13 @@ export default function DashboardPA() {
                             <div className="flex justify-between items-center text-sm">
                               <div className="text-[#e8fbff]/70">
                                 <span className="text-cyan-400 font-bold">
-                                  €{corso.costo || 0}
+                                  €{corso.prezzo || 0}
                                 </span>{" "}
                                 · {corso.durata_ore || 0}h
                               </div>
                               <div className="text-[#e8fbff]/50">
                                 {corso.posti_disponibili || 0}/
-                                {corso.max_partecipanti || 0} posti
+                                {corso.posti_totali || 0} posti
                               </div>
                             </div>
                             {corso.data_inizio && (
