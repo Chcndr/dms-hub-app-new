@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
+import TeamFormazionePanel from "@/components/TeamFormazionePanel";
 import {
   ArrowLeft,
   Building2,
@@ -4314,7 +4315,12 @@ export default function AnagraficaPage() {
           />
         )}
         {activeTab === "collaboratori" && (
-          <CollaboratoriSection impresaId={IMPRESA_ID} impresa={impresa} />
+          <>
+            <TeamFormazionePanel impresaId={IMPRESA_ID} />
+            <div className="mt-4">
+              <CollaboratoriSection impresaId={IMPRESA_ID} impresa={impresa} />
+            </div>
+          </>
         )}
         {activeTab === "giustificazioni" && (
           <GiustificazioniSection
