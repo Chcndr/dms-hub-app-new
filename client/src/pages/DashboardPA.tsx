@@ -175,6 +175,7 @@ import {
   isAssociazioneImpersonation,
   addComuneIdToUrl,
   authenticatedFetch,
+  getImpersonationParams,
 } from "@/hooks/useImpersonation";
 
 // 👻 GHOSTBUSTER: MioChatMessage sostituito con DirectMioMessage
@@ -6390,7 +6391,12 @@ export default function DashboardPA() {
                                   {corso.titolo}
                                 </div>
                                 <div className="text-xs text-[#e8fbff]/50">
-                                  {corso.ente_nome}
+                                  {(() => {
+                                    const impState = getImpersonationParams();
+                                    return impState.isImpersonating && impState.associazioneNome
+                                      ? impState.associazioneNome
+                                      : corso.ente_nome;
+                                  })()}
                                 </div>
                               </div>
                               <Badge
@@ -6481,7 +6487,7 @@ export default function DashboardPA() {
                   <CardHeader>
                     <CardTitle className="text-[#e8fbff] flex items-center gap-2">
                       <AlertTriangle className="h-5 w-5 text-[#f59e0b]" />
-                      Scadenze Attestati Imprese
+                      Scadenze Attestati Imprese e Team
                       {realData.formazioneStats?.stats?.scadenze_imprese && (
                         <span className="text-xs text-[#10b981] ml-2">
                           ● Live
@@ -6489,7 +6495,7 @@ export default function DashboardPA() {
                       )}
                     </CardTitle>
                     <CardDescription className="text-[#e8fbff]/50">
-                      Attestati in scadenza e scaduti ordinati per data
+                      Attestati impresa e collaboratori in scadenza/scaduti
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -6515,12 +6521,20 @@ export default function DashboardPA() {
                               <span className="text-[#e8fbff] font-medium">
                                 {item.impresa_nome}
                               </span>
+                              {item.collaboratore_nome && (
+                                <Badge className="bg-purple-500/20 text-purple-300 text-[10px] ml-1">
+                                  👤 {item.collaboratore_nome}
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex items-center gap-4 mt-1 text-xs text-[#e8fbff]/50">
                               <span className="flex items-center gap-1">
                                 <FileCheck className="w-3 h-3" />
                                 {item.tipo}
                               </span>
+                              {item.destinatario_tipo === 'collaboratore' && (
+                                <span className="text-purple-400">TEAM</span>
+                              )}
                               <span>{item.ente_rilascio}</span>
                               {item.numero_certificato && (
                                 <span>#{item.numero_certificato}</span>
@@ -6751,6 +6765,51 @@ export default function DashboardPA() {
                             name="tipo_qualifica"
                             required
                             className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] focus:border-[#10b981] focus:outline-none"
+                            onChange={(e) => {
+                              const tipo = e.target.value;
+                              // Mappa validità (anni) e ore formazione per tipo attestato
+                              const CONFIG: Record<string, {anni: number, ore: number}> = {
+                                'DURC': {anni: 1, ore: 0},
+                                'ONORABILITA': {anni: 5, ore: 0},
+                                'ANTIMAFIA': {anni: 1, ore: 0},
+                                'SICUREZZA_LAVORO': {anni: 5, ore: 8},
+                                'ANTINCENDIO': {anni: 3, ore: 8},
+                                'PRIMO_SOCCORSO': {anni: 3, ore: 12},
+                                'RSPP': {anni: 5, ore: 32},
+                                'PREPOSTO': {anni: 2, ore: 8},
+                                'HACCP': {anni: 3, ore: 8},
+                                'SAB': {anni: 5, ore: 120},
+                                'REC': {anni: 5, ore: 0},
+                                'CORSO_ALIMENTARE': {anni: 3, ore: 8},
+                                'ISO 9001': {anni: 3, ore: 0},
+                                'ISO 14001': {anni: 3, ore: 0},
+                                'ISO 22000': {anni: 3, ore: 0},
+                                'CONCESSIONE MERCATO': {anni: 10, ore: 0},
+                              };
+                              const config = CONFIG[tipo];
+                              if (config) {
+                                // Auto-calcola data scadenza dalla data rilascio
+                                const dataRilascioInput = document.querySelector('input[name="data_rilascio"]') as HTMLInputElement;
+                                const dataScadenzaInput = document.querySelector('input[name="data_scadenza"]') as HTMLInputElement;
+                                const oreInput = document.querySelector('input[name="ore_formazione"]') as HTMLInputElement;
+                                
+                                if (dataRilascioInput && dataRilascioInput.value && dataScadenzaInput) {
+                                  const rilascio = new Date(dataRilascioInput.value);
+                                  rilascio.setFullYear(rilascio.getFullYear() + config.anni);
+                                  dataScadenzaInput.value = rilascio.toISOString().split('T')[0];
+                                } else if (dataScadenzaInput) {
+                                  // Se non c'è data rilascio, usa oggi come base
+                                  const oggi = new Date();
+                                  oggi.setFullYear(oggi.getFullYear() + config.anni);
+                                  dataScadenzaInput.value = oggi.toISOString().split('T')[0];
+                                }
+                                
+                                // Auto-compila ore formazione
+                                if (oreInput && config.ore > 0) {
+                                  oreInput.value = String(config.ore);
+                                }
+                              }
+                            }}
                           >
                             <option value="">Seleziona tipo...</option>
                             {/* Requisiti Obbligatori */}
@@ -6822,6 +6881,24 @@ export default function DashboardPA() {
                             name="data_rilascio"
                             required
                             className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] focus:border-[#10b981] focus:outline-none"
+                            onChange={(e) => {
+                              // Ricalcola data scadenza quando cambia data rilascio
+                              const CONFIG: Record<string, number> = {
+                                'DURC': 1, 'ONORABILITA': 5, 'ANTIMAFIA': 1,
+                                'SICUREZZA_LAVORO': 5, 'ANTINCENDIO': 3, 'PRIMO_SOCCORSO': 3,
+                                'RSPP': 5, 'PREPOSTO': 2, 'HACCP': 3, 'SAB': 5,
+                                'REC': 5, 'CORSO_ALIMENTARE': 3,
+                                'ISO 9001': 3, 'ISO 14001': 3, 'ISO 22000': 3,
+                                'CONCESSIONE MERCATO': 10,
+                              };
+                              const tipoSelect = document.querySelector('select[name="tipo_qualifica"]') as HTMLSelectElement;
+                              const dataScadenzaInput = document.querySelector('input[name="data_scadenza"]') as HTMLInputElement;
+                              if (tipoSelect && tipoSelect.value && CONFIG[tipoSelect.value] && dataScadenzaInput && e.target.value) {
+                                const rilascio = new Date(e.target.value);
+                                rilascio.setFullYear(rilascio.getFullYear() + CONFIG[tipoSelect.value]);
+                                dataScadenzaInput.value = rilascio.toISOString().split('T')[0];
+                              }
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
