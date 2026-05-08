@@ -2224,7 +2224,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
   const [pagaInfo, setPagaInfo] = useState<{
     importo: number;
     descrizione: string;
-    tipo: "quota_associativa" | "servizio" | "corso";
+    tipo: "quota_associativa" | "rinnovo_quota" | "servizio" | "corso";
     riferimentoId?: number;
   }>({ importo: 0, descrizione: "", tipo: "quota_associativa" });
   const [richiestaInCorso, setRichiestaInCorso] = useState(false);
@@ -2383,55 +2383,19 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
   // Al successo del pagamento, crea tesseramento diretto
   const onPagamentoSuccess = async () => {
     if (!impresaId || !selectedAssociazione) return;
-    // Calcola scadenza 1 anno da oggi
+    // Il tesseramento e' stato creato e pagato dal PagaConWallet (2 step).
+    // Aggiorna lo stato locale per mostrare la scheda tesserato.
     const scadenza = new Date();
     scadenza.setFullYear(scadenza.getFullYear() + 1);
     const dataScadenza = scadenza.toISOString().split("T")[0];
 
-    try {
-      const res = await authenticatedFetch(
-        `${API_BASE_URL}/api/tesseramenti/richiedi-e-paga`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            impresa_id: impresaId,
-            associazione_id: selectedAssociazione.id,
-            pagamento_confermato: true,
-          }),
-        }
-      );
-      const data = await res.json();
-      if (data.success) {
-        setTesseramento(
-          data.data || {
-            stato: "ATTIVO",
-            associazione_nome: selectedAssociazione.nome,
-            quota_pagata: true,
-            data_scadenza: dataScadenza,
-            quota_annuale: selectedAssociazione.quota_annuale || "50",
-          }
-        );
-      } else {
-        // Backend ha gia' creato il tesseramento via /api/pagamenti/quota
-        setTesseramento({
-          stato: "ATTIVO",
-          associazione_nome: selectedAssociazione.nome,
-          quota_pagata: true,
-          data_scadenza: dataScadenza,
-          quota_annuale: selectedAssociazione.quota_annuale || "50",
-        });
-      }
-    } catch {
-      // Fallback: il pagamento e' andato, mostra comunque come attivo
-      setTesseramento({
-        stato: "ATTIVO",
-        associazione_nome: selectedAssociazione.nome,
-        quota_pagata: true,
-        data_scadenza: dataScadenza,
-        quota_annuale: selectedAssociazione.quota_annuale || "50",
-      });
-    }
+    setTesseramento({
+      stato: "ATTIVO",
+      associazione_nome: selectedAssociazione.nome,
+      quota_pagata: true,
+      data_scadenza: dataScadenza,
+      quota_annuale: selectedAssociazione.quota_annuale || "50",
+    });
   };
 
   // Fallback: richiesta senza pagamento (flusso legacy)
@@ -2544,7 +2508,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
                     setPagaInfo({
                       importo: parseFloat(tesseramento.quota_annuale || "50"),
                       descrizione: `Quota Associativa ${new Date().getFullYear()} — ${tesseramento.associazione_nome}`,
-                      tipo: "quota_associativa",
+                      tipo: "rinnovo_quota",
                       riferimentoId: tesseramento.id,
                     });
                     setPagaOpen(true);

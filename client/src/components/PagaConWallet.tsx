@@ -21,7 +21,7 @@ interface PagaConWalletProps {
   onSuccess?: () => void;
   importo: number;
   descrizione: string;
-  tipo: "quota_associativa" | "servizio" | "corso" | "generico";
+  tipo: "quota_associativa" | "rinnovo_quota" | "servizio" | "corso" | "generico";
   riferimentoId?: number;
   impresaId: number | null;
 }
@@ -104,32 +104,95 @@ export function PagaConWallet({
       };
 
       // Adatta payload e endpoint in base al tipo di pagamento
-      let endpoint = "/api/pagamenti/servizio";
-      if (tipo === "quota_associativa") {
-        endpoint = "/api/pagamenti/quota";
-        payload.tesseramento_id = riferimentoId;
-        payload.note = descrizione;
-      } else if (tipo === "corso") {
-        endpoint = "/api/pagamenti/corso";
-        payload.corso_id = riferimentoId;
-        payload.note = descrizione;
-      } else {
-        payload.tipo = tipo;
-        payload.descrizione = descrizione;
-        if (riferimentoId) payload.riferimento_id = riferimentoId;
-      }
+      if (tipo === "rinnovo_quota") {
+        // Già tesserato: paga direttamente con tesseramento_id esistente
+        const res = await authenticatedFetch(
+          `${API_BASE_URL}/api/pagamenti/quota`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              impresa_id: impresaId,
+              tesseramento_id: riferimentoId,
+              importo,
+              note: descrizione,
+            }),
+          }
+        );
+        const data = await res.json();
+        if (data.success) {
+          setPaid(true);
+          onSuccess?.();
+        } else {
+          alert(data.error || "Errore durante il pagamento");
+        }
+      } else if (tipo === "quota_associativa") {
+        // Flusso 2 step: 1) Crea tessera 2) Paga quota
+        // Step 1: Crea tesseramento (stato IN_ATTESA_PAGAMENTO)
+        const tessRes = await authenticatedFetch(
+          `${API_BASE_URL}/api/tesseramenti/richiedi-e-paga`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              impresa_id: impresaId,
+              associazione_id: riferimentoId,
+              pagamento_confermato: true,
+            }),
+          }
+        );
+        const tessData = await tessRes.json();
+        if (!tessData.success) {
+          alert(tessData.error || "Errore nella creazione del tesseramento");
+          return;
+        }
+        const tesseramentoId = tessData.data?.tesseramento_id || tessData.data?.id;
 
-      const res = await authenticatedFetch(`${API_BASE_URL}${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setPaid(true);
-        onSuccess?.();
+        // Step 2: Paga quota con il tesseramento_id appena creato
+        const pagaRes = await authenticatedFetch(
+          `${API_BASE_URL}/api/pagamenti/quota`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              impresa_id: impresaId,
+              tesseramento_id: tesseramentoId,
+              importo,
+              note: descrizione,
+            }),
+          }
+        );
+        const pagaData = await pagaRes.json();
+        if (pagaData.success) {
+          setPaid(true);
+          onSuccess?.();
+        } else {
+          alert(pagaData.error || "Errore durante il pagamento");
+        }
       } else {
-        alert(data.error || "Errore durante il pagamento");
+        let endpoint = "/api/pagamenti/servizio";
+        if (tipo === "corso") {
+          endpoint = "/api/pagamenti/corso";
+          payload.corso_id = riferimentoId;
+          payload.note = descrizione;
+        } else {
+          payload.tipo = tipo;
+          payload.descrizione = descrizione;
+          if (riferimentoId) payload.riferimento_id = riferimentoId;
+        }
+
+        const res = await authenticatedFetch(`${API_BASE_URL}${endpoint}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setPaid(true);
+          onSuccess?.();
+        } else {
+          alert(data.error || "Errore durante il pagamento");
+        }
       }
     } catch {
       alert("Errore di connessione");
