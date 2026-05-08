@@ -69,6 +69,8 @@ export interface QualificazioneDTO {
   data_scadenza: string;
   stato: "ATTIVA" | "SCADUTA" | "IN_VERIFICA";
   note?: string;
+  numero_certificato?: string;
+  attestato_pdf_id?: number;
 }
 
 interface CollaboratoreFormazione {
@@ -594,6 +596,7 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
                           <TableHead>Ente</TableHead>
                           <TableHead>Scadenza</TableHead>
                           <TableHead>Stato</TableHead>
+                          <TableHead>PDF</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -609,6 +612,19 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
                               {new Date(qual.data_scadenza).toLocaleDateString("it-IT")}
                             </TableCell>
                             <TableCell>{getStatoBadge(qual.stato)}</TableCell>
+                            <TableCell>
+                              {(qual as any).attestato_pdf_id ? (
+                                <button
+                                  onClick={() => downloadPdf((qual as any).attestato_pdf_id)}
+                                  className="text-blue-500 hover:text-blue-400 flex items-center gap-1"
+                                  title="Visualizza/Scarica PDF"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </button>
+                              ) : (
+                                <span className="text-gray-400 text-xs">—</span>
+                              )}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

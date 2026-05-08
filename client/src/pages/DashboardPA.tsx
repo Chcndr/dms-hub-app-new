@@ -6920,6 +6920,10 @@ export default function DashboardPA() {
                             type="text"
                             name="ente_rilascio"
                             placeholder="Nome ente formatore"
+                            defaultValue={(() => {
+                              const imp = getImpersonationParams();
+                              return imp.isImpersonating && imp.associazioneNome ? imp.associazioneNome : '';
+                            })()}
                             className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] placeholder-[#e8fbff]/30 focus:border-[#10b981] focus:outline-none"
                           />
                         </div>
