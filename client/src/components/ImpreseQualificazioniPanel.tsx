@@ -215,10 +215,11 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
       const fetchTeam = async () => {
         setLoadingTeam(true);
         try {
+          const teamUrl = `${API_BASE_URL}/api/collaboratori/team/matrice?impresa_id=${selectedImpresa.id}`;
           const response = await fetch(
-            addComuneIdToUrl(
-              `${API_BASE_URL}/api/collaboratori/team/matrice?impresa_id=${selectedImpresa.id}`
-            )
+            isAssociazioneImpersonation()
+              ? addAssociazioneIdToUrl(teamUrl)
+              : addComuneIdToUrl(teamUrl)
           );
           const data = await response.json();
           if (data.success) {

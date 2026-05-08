@@ -2239,12 +2239,14 @@ function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
           attestati: [
             ...Object.entries(item.attestati || {}).map(([tipo, att]: [string, any]) => ({
               tipo,
-              stato: att.stato || "valido",
-              data_scadenza: att.data_scadenza
+              stato: att.stato || "VALIDO",
+              data_scadenza: att.data_scadenza,
+              attestato_id: att.attestato_id || null
             })),
             ...(item.mancanti || []).map((tipo: string) => ({
               tipo,
-              stato: "mancante"
+              stato: "MANCANTE",
+              attestato_id: null
             }))
           ]
         }));
@@ -2268,15 +2270,28 @@ function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "valido":
-        return <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400">Valido</span>;
-      case "scaduto":
-        return <span className="px-2 py-0.5 text-xs rounded-full bg-red-500/20 text-red-400">Scaduto</span>;
-      case "in_scadenza":
-        return <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-500/20 text-yellow-400">In Scadenza</span>;
-      default:
-        return <span className="px-2 py-0.5 text-xs rounded-full bg-gray-500/20 text-gray-400">Mancante</span>;
+    const s = (status || "").toUpperCase();
+    if (s === "VALIDO") return <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400">Valido</span>;
+    if (s === "SCADUTO") return <span className="px-2 py-0.5 text-xs rounded-full bg-red-500/20 text-red-400">Scaduto</span>;
+    if (s === "IN_SCADENZA" || s === "URGENTE") return <span className="px-2 py-0.5 text-xs rounded-full bg-orange-500/20 text-orange-400">In Scadenza</span>;
+    if (s === "PROSSIMO") return <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-500/20 text-yellow-400">Prossimo</span>;
+    if (s === "MANCANTE" || s === "") return <span className="px-2 py-0.5 text-xs rounded-full bg-gray-500/20 text-gray-400">Mancante</span>;
+    return <span className="px-2 py-0.5 text-xs rounded-full bg-gray-500/20 text-gray-400">Mancante</span>;
+  };
+
+  const downloadPdf = async (attestatoId: number) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/attestati/${attestatoId}/pdf`);
+      if (!res.ok) throw new Error("PDF non disponibile");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `attestato_${attestatoId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Errore download PDF:", err);
     }
   };
 
@@ -2403,6 +2418,15 @@ function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
                               <div key={i} className="text-center">
                                 {getStatusBadge(att.stato)}
                                 <div className="text-[10px] text-gray-500 mt-0.5">{att.tipo}</div>
+                                {att.attestato_id && (
+                                  <button
+                                    onClick={() => downloadPdf(att.attestato_id)}
+                                    className="text-[9px] text-blue-400 hover:text-blue-300 mt-0.5"
+                                    title="Scarica PDF"
+                                  >
+                                    📄
+                                  </button>
+                                )}
                               </div>
                             ))}
                             {(!collab.attestati || collab.attestati.length === 0) && (
