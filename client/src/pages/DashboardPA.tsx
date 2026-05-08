@@ -6583,10 +6583,12 @@ export default function DashboardPA() {
                         e.preventDefault();
                         const form = e.target as HTMLFormElement;
                         const formData = new FormData(form);
+                        const collaboratoreId = formData.get("collaboratore_id");
                         const data = {
                           impresa_id: parseInt(
                             formData.get("impresa_id") as string
                           ),
+                          collaboratore_id: collaboratoreId ? parseInt(collaboratoreId as string) : null,
                           tipo_qualifica: formData.get("tipo_qualifica"),
                           ente_rilascio: formData.get("ente_rilascio"),
                           numero_attestato: formData.get("numero_attestato"),
@@ -6621,8 +6623,8 @@ export default function DashboardPA() {
                       }}
                       className="space-y-4"
                     >
-                      {/* Ricerca Impresa */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Ricerca Impresa + Selettore Destinatario */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <label className="text-sm text-[#e8fbff]/70">
                             Cerca Impresa *
@@ -6689,6 +6691,58 @@ export default function DashboardPA() {
                             className="w-full p-2 bg-[#0b1220]/50 border border-[#10b981]/30 rounded text-[#10b981] text-sm"
                           />
                         </div>
+
+                        {/* Selettore Destinatario: Impresa o Collaboratore */}
+                        <div className="space-y-2">
+                          <label className="text-sm text-[#e8fbff]/70">
+                            Destinatario *
+                          </label>
+                          <select
+                            id="destinatario_tipo"
+                            className="w-full p-3 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg text-[#e8fbff] focus:border-[#10b981] focus:outline-none"
+                            onChange={async (e) => {
+                              const tipo = e.target.value;
+                              const collabSelect = document.getElementById('collaboratore_select') as HTMLSelectElement;
+                              const collabContainer = document.getElementById('collaboratore_container');
+                              if (tipo === 'collaboratore') {
+                                if (collabContainer) collabContainer.style.display = 'block';
+                                // Carica collaboratori dell'impresa selezionata
+                                const impresaId = (document.getElementById('impresa_id') as HTMLInputElement)?.value;
+                                if (impresaId && collabSelect) {
+                                  try {
+                                    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/collaboratori?impresa_id=${impresaId}`);
+                                    const data = await res.json();
+                                    collabSelect.innerHTML = '<option value="">Seleziona collaboratore...</option>';
+                                    if (data.success && data.data) {
+                                      data.data.forEach((c: any) => {
+                                        const opt = document.createElement('option');
+                                        opt.value = String(c.id);
+                                        opt.textContent = `${c.nome} ${c.cognome} - ${c.ruolo || 'Collaboratore'}`;
+                                        collabSelect.appendChild(opt);
+                                      });
+                                    }
+                                  } catch {}
+                                }
+                              } else {
+                                if (collabContainer) collabContainer.style.display = 'none';
+                              }
+                            }}
+                          >
+                            <option value="impresa">Impresa (DURC, Antimafia...)</option>
+                            <option value="collaboratore">Collaboratore (Sicurezza, HACCP...)</option>
+                          </select>
+                          <div id="collaboratore_container" style={{display: 'none'}}>
+                            <select
+                              id="collaboratore_select"
+                              name="collaboratore_id"
+                              className="w-full p-2 mt-2 bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#14b8a6] text-sm focus:border-[#10b981] focus:outline-none"
+                            >
+                              <option value="">Seleziona collaboratore...</option>
+                            </select>
+                            <p className="text-xs text-[#e8fbff]/40 mt-1">Seleziona prima un'impresa per caricare i collaboratori</p>
+                          </div>
+                        </div>
+
                         <div className="space-y-2">
                           <label className="text-sm text-[#e8fbff]/70">
                             Tipo Attestato *
