@@ -34,6 +34,7 @@ import {
   Euro,
   Award,
   MapPin,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -68,6 +69,8 @@ interface IscrizioneCorso {
   stato: "iscritta" | "completata" | "annullata";
   data_iscrizione: string;
   attestato_rilasciato: boolean;
+  attestato_codice?: string;
+  attestato_pdf_url?: string;
 }
 
 const EMPTY_CORSO: Omit<Corso, "id" | "posti_occupati"> = {
@@ -644,9 +647,21 @@ const GestioneCorsiAssociazionePanel = memo(function GestioneCorsiAssociazionePa
                       </div>
                       <div className="flex items-center gap-2">
                         {i.attestato_rilasciato ? (
-                          <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30">
-                            <Award className="h-3 w-3 mr-1" /> Attestato
-                          </Badge>
+                          <div className="flex items-center gap-1.5">
+                            <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30">
+                              <Award className="h-3 w-3 mr-1" /> {i.attestato_codice || 'Attestato'}
+                            </Badge>
+                            {i.attestato_pdf_url && (
+                              <a
+                                href={`${API_BASE}${i.attestato_pdf_url}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[9px] hover:bg-blue-500/25 transition-colors"
+                              >
+                                <Download className="h-2.5 w-2.5" /> PDF
+                              </a>
+                            )}
+                          </div>
                         ) : i.stato === "iscritta" ? (
                           <Button
                             size="sm"
