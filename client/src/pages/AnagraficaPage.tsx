@@ -3029,6 +3029,7 @@ function FormazioneSection({
 }) {
   const [corsi, setCorsi] = useState<any[]>([]);
   const [iscrizioni, setIscrizioni] = useState<any[]>([]);
+  const [collaboratori, setCollaboratori] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState<"attestati" | "corsi" | "iscrizioni">(
     "attestati"
@@ -3039,6 +3040,8 @@ function FormazioneSection({
     descrizione: string;
     riferimentoId?: number;
   }>({ importo: 0, descrizione: "" });
+  const [iscrizioneModal, setIscrizioneModal] = useState<{ open: boolean; corso: any | null }>({ open: false, corso: null });
+  const [selectedCollaboratore, setSelectedCollaboratore] = useState<string>("");
 
   useEffect(() => {
     if (!impresaId) {
@@ -3076,6 +3079,19 @@ function FormazioneSection({
               ? iscrData
               : [];
         setIscrizioni(iscrList);
+        // Carica collaboratori dell'impresa
+        try {
+          const collabRes = await fetch(
+            addComuneIdToUrl(`${API_BASE_URL}/api/collaboratori?impresa_id=${impresaId}`)
+          );
+          const collabData = await collabRes.json();
+          const collabList = Array.isArray(collabData.data)
+            ? collabData.data
+            : Array.isArray(collabData)
+              ? collabData
+              : [];
+          setCollaboratori(collabList);
+        } catch { /* silenzioso */ }
       } catch {
         /* silenzioso */
       }
@@ -3084,20 +3100,34 @@ function FormazioneSection({
     load();
   }, [impresaId]);
 
-  const handleIscrizione = async (corso: any) => {
+  const handleIscrizione = (corso: any) => {
     if (!impresaId) return;
+    setIscrizioneModal({ open: true, corso });
+    setSelectedCollaboratore("");
+  };
+
+  const confermaIscrizione = async () => {
+    if (!impresaId || !iscrizioneModal.corso) return;
+    const corso = iscrizioneModal.corso;
     try {
       const res = await authenticatedFetch(
         `${API_BASE_URL}/api/formazione/iscrizioni`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ impresa_id: impresaId, corso_id: corso.id }),
+          body: JSON.stringify({
+            impresa_id: impresaId,
+            corso_id: corso.id,
+            collaboratore_id: selectedCollaboratore ? parseInt(selectedCollaboratore) : null,
+          }),
         }
       );
       const data = await res.json();
       if (data.success) {
-        alert("Iscrizione al corso completata!");
+        const collabNome = selectedCollaboratore
+          ? collaboratori.find(c => c.id === parseInt(selectedCollaboratore))
+          : null;
+        alert(`Iscrizione completata${collabNome ? ` per ${collabNome.nome} ${collabNome.cognome}` : ""}!`);
         setIscrizioni(prev => [
           ...prev,
           data.data || {
@@ -3105,14 +3135,16 @@ function FormazioneSection({
             corso_nome: corso.nome,
             stato: "ISCRITTO",
             created_at: new Date().toISOString(),
+            collaboratore_nome: collabNome ? `${collabNome.nome} ${collabNome.cognome}` : null,
           },
         ]);
+        setIscrizioneModal({ open: false, corso: null });
         // Pagamento se il corso ha un prezzo > 0
         const prezzoCorso = parseFloat(corso.prezzo || "0") || 0;
         if (prezzoCorso > 0) {
           setPagaInfo({
             importo: prezzoCorso,
-            descrizione: `Iscrizione: ${corso.titolo || corso.nome}`,
+            descrizione: `Iscrizione: ${corso.titolo || corso.nome}${collabNome ? ` - ${collabNome.nome} ${collabNome.cognome}` : ""}`,
             riferimentoId: data.data?.id || corso.id,
           });
           setPagaOpen(true);
@@ -3295,6 +3327,50 @@ function FormazioneSection({
             </Card>
           ))
         ))}
+
+      {/* Modal selezione collaboratore per iscrizione */}
+      {iscrizioneModal.open && iscrizioneModal.corso && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a2332] border border-[#14b8a6]/30 rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-[#e8fbff] mb-2">Iscrizione al Corso</h3>
+            <p className="text-sm text-gray-400 mb-4">{iscrizioneModal.corso.nome}</p>
+            {iscrizioneModal.corso.prezzo && parseFloat(iscrizioneModal.corso.prezzo) > 0 && (
+              <p className="text-sm text-[#14b8a6] font-medium mb-4">
+                Costo: &euro;{parseFloat(iscrizioneModal.corso.prezzo).toFixed(2)}
+              </p>
+            )}
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Per chi è il corso?
+            </label>
+            <select
+              value={selectedCollaboratore}
+              onChange={e => setSelectedCollaboratore(e.target.value)}
+              className="w-full p-3 bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg text-[#e8fbff] focus:border-[#14b8a6] focus:outline-none mb-4"
+            >
+              <option value="">Titolare / Impresa</option>
+              {collaboratori.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.nome} {c.cognome} ({c.ruolo || "Collaboratore"})
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIscrizioneModal({ open: false, corso: null })}
+                className="flex-1 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={confermaIscrizione}
+                className="flex-1 px-4 py-2 bg-[#14b8a6] text-white rounded-lg hover:bg-[#14b8a6]/80 transition-colors font-medium"
+              >
+                Conferma Iscrizione
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <PagaConWallet
         open={pagaOpen}
