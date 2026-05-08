@@ -1,18 +1,18 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.5.0 — STABILE (Popup saldo negativo spunta, protezione SPUNTA_TERMINATA, fix storico aggregazione)
+> **Versione:** 10.6.0 — STABILE (Fix Modulo TEAM: PDF Attestati compatti, Matrice Formazione, Auto-calcolo Scadenze)
 > **Data:** 08 Maggio 2026
-> **Stato:** PUNTO DI RIPRISTINO STABILE — Git tag `v10.5.0-stable`
+> **Stato:** PUNTO DI RIPRISTINO STABILE — Git tag `v10.6.0-stable`
 >
 > ---
 > ### STATO SISTEMA (08 Mag 2026 — Snapshot stabile)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `f204097` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `2b847e3` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online v10.5.0 | `https://api.mio-hub.me/health` |
-> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `2b847e3` |
+> | **GitHub Backend** | Allineato | `51a1ac0` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `13c3ef9` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online v10.6.0 | `https://api.mio-hub.me/health` |
+> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `13c3ef9` |
 > | **Neon (DB)** | Integro | 0 duplicati, 0 fantasmi, colonna `stato_presenza` aggiunta |
 >
 > **Integrità DB verificata:**
@@ -23,6 +23,44 @@
 > - Nessun record fantasma CONCESSION stall_id=NULL
 > - Nessun record SPUNTA con stall_id non-NULL nella graduatoria
 > - Nessun fantasma SPUNTA residuo nello storico
+>
+> ---
+> ### CHANGELOG v10.6.0 (08 Mag 2026)
+> **Fix Modulo TEAM: PDF Attestati compatti in una pagina, Matrice Formazione completa, Auto-calcolo Scadenze e Ore**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `51a1ac0` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `51a1ac0` | Autodeploy v10.6.0 |
+> | GitHub `dms-hub-app-new` master | `13c3ef9` | Allineato |
+> | Vercel frontend | `13c3ef9` | Autodeploy |
+>
+> **FRONTEND (Commits `2b847e3` → `13c3ef9`):**
+>
+> **Form "Registra Nuovo Attestato":**
+> - **Auto-calcolo data scadenza:** Selezionando il tipo di attestato, la data di scadenza si calcola automaticamente in base alla normativa (es. HACCP +3 anni, Sicurezza +5 anni, Preposto +2 anni).
+> - **Auto-compilazione ore:** Il campo ore si compila automaticamente in base al tipo di corso.
+> - **Auto-compilazione Ente Rilascio:** Quando si è in modalità impersonificazione, il nome dell'associazione si inserisce automaticamente come ente di rilascio.
+>
+> **Dashboard PA & Pannelli:**
+> - **Card Corsi:** Le card dei corsi nella sezione "Enti Formatori" ora mostrano il nome dell'associazione impersonificata invece dei nomi hardcoded dal DB.
+> - **Liste Scadenze:** Aggiunti i collaboratori (membri del team) con attestati scaduti/in scadenza, non solo le qualifiche impresa. Mostra il nome del collaboratore con un badge "TEAM".
+> - **Matrice Formazione Team (`MarketCompaniesTab`):** 
+>   - Risolto bug critico di rendering (`getStatusBadge`) che mostrava tutto come "Mancante" a causa di case-sensitivity (stati in MAIUSCOLO dal backend).
+>   - La matrice ora mostra **TUTTI** gli attestati posseduti dal collaboratore (anche se non obbligatori) e quelli mancanti rispetto agli obbligatori.
+>   - Aggiunta icona "📄" per il download immediato del PDF dell'attestato direttamente dalla matrice.
+>
+> **BACKEND (Commits `f204097` → `51a1ac0`):**
+>
+> **Generazione PDF Attestati:**
+> - **Compressione Layout:** Riscritto il codice PDFKit (`attestati.js`) per comprimere il layout in **una sola pagina A4** (ridotti margini a 40px, font sizes ottimizzati, spazi `moveDown` ridotti del 40-60%).
+> - **Integrazione Flusso Manuale:** Il `POST /formazione/attestati` ora genera automaticamente il PDF in `attestati_pdf` anche quando l'attestato viene registrato manualmente dalla PA/Associazione.
+>
+> **Gestione Dati TEAM vs Impresa:**
+> - **Separazione Corretta:** Il salvataggio degli attestati ora distingue correttamente tra impresa e collaboratore. Se `collaboratore_id` è presente, l'attestato viene salvato **SOLO** in `qualificazioni_collaboratori` e non in `qualificazioni` (impresa).
+> - **Matrice Formazione:** L'endpoint `team/matrice` ora restituisce `tutti_tipi_attestati` e l'`attestato_id` per permettere il download del PDF dal frontend.
+> - **Scadenze:** La query delle scadenze ora usa una `UNION ALL` per includere anche le `qualificazioni_collaboratori` con il calcolo dei giorni reali alla scadenza.
 >
 > ---
 > ### CHANGELOG v10.5.0 (08 Mag 2026)
