@@ -634,6 +634,7 @@ export default function WalletImpresaPage() {
       const description = walletLabel;
 
       // Recupera comune_id dal wallet selezionato o da qualsiasi wallet disponibile
+      // Per wallet GENERICO/SPUNTISTA senza market_id, comune_id non è necessario
       const allWallets = [
         ...(company?.spunta_wallets || []),
         ...(company?.concession_wallets || []),
@@ -642,12 +643,14 @@ export default function WalletImpresaPage() {
         selectedWalletRicarica.comune_id ||
         allWallets.find(w => w.comune_id)?.comune_id;
 
-      if (!comuneId) {
-        alert(
-          "Errore: impossibile determinare il comune. Ricarica la pagina e riprova."
-        );
-        setIsProcessingRicarica(false);
-        return;
+      // Costruisci body - comune_id è opzionale per wallet GENERICO/SPUNTISTA
+      const bodyData: any = {
+        wallet_id: selectedWalletRicarica.id,
+        amount: parseFloat(ricaricaAmount),
+        description,
+      };
+      if (comuneId) {
+        bodyData.comune_id = comuneId;
       }
 
       const response = await authenticatedFetch(
@@ -655,12 +658,7 @@ export default function WalletImpresaPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            wallet_id: selectedWalletRicarica.id,
-            amount: parseFloat(ricaricaAmount),
-            description,
-            comune_id: comuneId,
-          }),
+          body: JSON.stringify(bodyData),
         }
       );
 
