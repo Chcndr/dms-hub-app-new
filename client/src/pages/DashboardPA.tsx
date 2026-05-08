@@ -99,6 +99,8 @@ import {
   Heart,
   CreditCard,
   ClipboardList,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import {
   Card,
@@ -6404,9 +6406,51 @@ export default function DashboardPA() {
                                 </span>{" "}
                                 · {corso.durata_ore || 0}h
                               </div>
-                              <div className="text-[#e8fbff]/50">
-                                {corso.posti_disponibili || 0}/
-                                {corso.posti_totali || 0} posti
+                              <div className="flex items-center gap-2">
+                                <div className="text-[#e8fbff]/50">
+                                  {corso.posti_disponibili || 0}/
+                                  {corso.posti_totali || 0} posti
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const nuovoPrezzo = prompt(`Modifica prezzo per "${corso.titolo}"\nPrezzo attuale: €${corso.prezzo || 0}\n\nInserisci nuovo prezzo:`, corso.prezzo || "0");
+                                    if (nuovoPrezzo !== null && !isNaN(Number(nuovoPrezzo))) {
+                                      fetch(`${MIHUB_API_BASE_URL}/formazione/corsi/${corso.id}/prezzo`, {
+                                        method: "PUT",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ prezzo: parseFloat(nuovoPrezzo) })
+                                      }).then(r => r.json()).then(d => {
+                                        if (d.success) {
+                                          toast.success(`Prezzo aggiornato a €${nuovoPrezzo}`);
+                                          // Ricarica stats
+                                          window.location.reload();
+                                        } else toast.error("Errore aggiornamento prezzo");
+                                      }).catch(() => toast.error("Errore di rete"));
+                                    }
+                                  }}
+                                  className="p-1 text-[#3b82f6] hover:text-[#60a5fa] transition-colors"
+                                  title="Modifica prezzo"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Eliminare il corso "${corso.titolo}"?`)) {
+                                      fetch(`${MIHUB_API_BASE_URL}/formazione/corsi/${corso.id}`, {
+                                        method: "DELETE"
+                                      }).then(r => r.json()).then(d => {
+                                        if (d.success) {
+                                          toast.success("Corso eliminato");
+                                          window.location.reload();
+                                        } else toast.error("Errore eliminazione");
+                                      }).catch(() => toast.error("Errore di rete"));
+                                    }
+                                  }}
+                                  className="p-1 text-[#ef4444] hover:text-[#f87171] transition-colors"
+                                  title="Elimina corso"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
                               </div>
                             </div>
                             {corso.data_inizio && (

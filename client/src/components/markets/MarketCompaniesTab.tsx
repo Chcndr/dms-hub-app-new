@@ -373,7 +373,7 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<
-    "impresa" | "concessione" | "qualificazione" | "autorizzazione"
+    "impresa" | "concessione" | "qualificazione" | "autorizzazione" | "formazione_team"
   >("impresa");
   const [impresaFilter, setImpresaFilter] = useState<
     "all" | "ambulanti" | "negozi_hub"
@@ -998,6 +998,18 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
                 >
                   <FileBadge className="w-4 h-4" />
                   Autorizzazioni
+                </button>
+
+                <button
+                  onClick={() => setSearchType("formazione_team")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                    searchType === "formazione_team"
+                      ? "bg-teal-600 text-white"
+                      : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  Formazione Team
                 </button>
               </div>
             </div>
@@ -2148,6 +2160,11 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
         </>
       )}
 
+      {/* Sezione Formazione Team */}
+      {searchType === "formazione_team" && (
+        <FormazioneTeamSection companies={companies} />
+      )}
+
       {searchType === "autorizzazione" && (
         <MarketAutorizzazioniTab
           companies={companies}
@@ -2194,6 +2211,217 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
     </div>
   );
 });
+
+// ============================================================================
+// FORMAZIONE TEAM SECTION (per controlli PM/Ispettorato)
+// ============================================================================
+
+function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
+  const [selectedCompany, setSelectedCompany] = useState<CompanyRow | null>(null);
+  const [matrice, setMatrice] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadMatrice = async (impresaId: number | string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        addComuneIdToUrl(`${API_BASE_URL}/api/collaboratori/team/matrice?impresa_id=${impresaId}`)
+      );
+      const data = await res.json();
+      if (data.success) setMatrice(data.data);
+      else setMatrice(null);
+    } catch {
+      setMatrice(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectCompany = (company: CompanyRow) => {
+    setSelectedCompany(company);
+    loadMatrice(company.id);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "valido":
+        return <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400">Valido</span>;
+      case "scaduto":
+        return <span className="px-2 py-0.5 text-xs rounded-full bg-red-500/20 text-red-400">Scaduto</span>;
+      case "in_scadenza":
+        return <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-500/20 text-yellow-400">In Scadenza</span>;
+      default:
+        return <span className="px-2 py-0.5 text-xs rounded-full bg-gray-500/20 text-gray-400">Mancante</span>;
+    }
+  };
+
+  return (
+    <section className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Colonna sinistra: lista imprese */}
+        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+            <Building2 className="w-5 h-5" />
+            Seleziona Impresa
+          </h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Clicca su un'impresa per visualizzare la conformit\u00e0 formativa del team
+          </p>
+          <div className="space-y-2 max-h-[500px] overflow-y-auto">
+            {companies.map(company => (
+              <div
+                key={company.id}
+                onClick={() => handleSelectCompany(company)}
+                className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                  selectedCompany?.id === company.id
+                    ? "bg-teal-600/30 border border-teal-500"
+                    : "bg-gray-900/50 hover:bg-gray-800 border border-transparent"
+                }`}
+              >
+                <div className="font-medium text-white">{company.denominazione}</div>
+                <div className="text-sm text-gray-400">P.IVA: {company.partita_iva}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Colonna destra: matrice formazione team */}
+        <div className="lg:col-span-2 bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Formazione Team
+            </h3>
+            {matrice && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">Conformit\u00e0:</span>
+                <span className={`text-sm font-bold ${
+                  matrice.conformita_percentuale >= 80 ? "text-green-400" :
+                  matrice.conformita_percentuale >= 50 ? "text-yellow-400" : "text-red-400"
+                }`}>
+                  {matrice.conformita_percentuale?.toFixed(0) || 0}%
+                </span>
+              </div>
+            )}
+          </div>
+
+          {!selectedCompany ? (
+            <div className="text-center py-16 text-gray-400">
+              <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <p>Seleziona un'impresa per visualizzare la conformit\u00e0 formativa</p>
+            </div>
+          ) : loading ? (
+            <div className="text-center py-16 text-gray-400">
+              <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin" />
+              <p>Caricamento matrice formazione...</p>
+            </div>
+          ) : !matrice || !matrice.collaboratori || matrice.collaboratori.length === 0 ? (
+            <div className="text-center py-16 text-gray-400">
+              <AlertCircle className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <p>Nessun collaboratore registrato per {selectedCompany.denominazione}</p>
+              <p className="text-xs mt-2">L'impresa non ha ancora inserito i dati del team</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Barra conformit\u00e0 */}
+              <div className="w-full bg-gray-700 rounded-full h-3">
+                <div
+                  className={`h-3 rounded-full transition-all ${
+                    matrice.conformita_percentuale >= 80 ? "bg-green-500" :
+                    matrice.conformita_percentuale >= 50 ? "bg-yellow-500" : "bg-red-500"
+                  }`}
+                  style={{ width: `${matrice.conformita_percentuale || 0}%` }}
+                />
+              </div>
+
+              {/* Statistiche rapide */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-gray-900/50 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-white">{matrice.collaboratori?.length || 0}</div>
+                  <div className="text-xs text-gray-400">Collaboratori</div>
+                </div>
+                <div className="bg-gray-900/50 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-green-400">
+                    {matrice.collaboratori?.filter((c: any) => c.conforme).length || 0}
+                  </div>
+                  <div className="text-xs text-gray-400">Conformi</div>
+                </div>
+                <div className="bg-gray-900/50 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-red-400">
+                    {matrice.collaboratori?.filter((c: any) => !c.conforme).length || 0}
+                  </div>
+                  <div className="text-xs text-gray-400">Non Conformi</div>
+                </div>
+              </div>
+
+              {/* Tabella collaboratori */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left py-2 px-3 text-gray-400 font-medium">Collaboratore</th>
+                      <th className="text-left py-2 px-3 text-gray-400 font-medium">Ruolo</th>
+                      <th className="text-center py-2 px-3 text-gray-400 font-medium">Attestati</th>
+                      <th className="text-center py-2 px-3 text-gray-400 font-medium">Stato</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matrice.collaboratori.map((collab: any, idx: number) => (
+                      <tr key={idx} className="border-b border-gray-800 hover:bg-gray-800/50">
+                        <td className="py-2 px-3 text-white font-medium">
+                          {collab.nome} {collab.cognome}
+                        </td>
+                        <td className="py-2 px-3 text-gray-400">{collab.ruolo || "Dipendente"}</td>
+                        <td className="py-2 px-3">
+                          <div className="flex flex-wrap gap-1 justify-center">
+                            {collab.attestati?.map((att: any, i: number) => (
+                              <div key={i} className="text-center">
+                                {getStatusBadge(att.stato)}
+                                <div className="text-[10px] text-gray-500 mt-0.5">{att.tipo}</div>
+                              </div>
+                            ))}
+                            {(!collab.attestati || collab.attestati.length === 0) && (
+                              <span className="text-xs text-gray-500">Nessuno</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 text-center">
+                          {collab.conforme ? (
+                            <CheckCircle className="w-5 h-5 text-green-400 mx-auto" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-400 mx-auto" />
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Adempimenti obbligatori mancanti */}
+              {matrice.adempimenti_mancanti && matrice.adempimenti_mancanti.length > 0 && (
+                <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Adempimenti Formativi Mancanti
+                  </h4>
+                  <ul className="space-y-1">
+                    {matrice.adempimenti_mancanti.map((a: any, i: number) => (
+                      <li key={i} className="text-sm text-gray-300 flex items-center gap-2">
+                        <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                        {a.descrizione || a.tipo_attestato}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 // ============================================================================
 // QUALIFICAZIONE MODAL
