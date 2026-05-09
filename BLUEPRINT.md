@@ -676,3 +676,7 @@ Sono stati verificati gli endpoint pubblici `GET /api/associazioni/1/corsi`, `GE
 Sul frontend impresa, nella scheda **La Mia Associazione**, la lista delle associazioni pubbliche viene caricata anche quando esiste già un tesseramento attivo. In questo modo un’impresa tesserata con Confcommercio Bologna può vedere **Altre Associazioni Disponibili**, inclusa Confesercenti Modena, consultarne la scheda pubblica e avviare il flusso di adesione/pagamento o richiesta legacy.
 
 Verifica tecnica: `pnpm build` completato correttamente. `pnpm check` resta bloccato da errori TypeScript preesistenti non collegati a questa modifica in `FirebaseAuthContext.tsx` e `HomePage.tsx`.
+
+## Nota operativa catalogo formazione — 2026-05-09
+
+Il catalogo formazione pubblico deve contenere **solo i 9 corsi canonici generabili dal sistema**. I corsi legacy o duplicati di test non devono restare nel catalogo globale, perché dashboard e app impresa leggono lo stesso catalogo e non devono compensare dati sporchi tramite filtri frontend. La pulizia dati del 2026-05-09 ha lasciato operativi i 9 corsi canonici di Confcommercio Bologna e rimosso i duplicati legacy di Confesercenti Modena dal catalogo test.
