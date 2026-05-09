@@ -1749,6 +1749,9 @@ export default function DashboardPA() {
   const [hubList, setHubList] = useState<any[]>([]);
   const [impreseList, setImpreseList] = useState<any[]>([]);
   const [invioNotificaLoading, setInvioNotificaLoading] = useState(false);
+  const [entiTargetTipo, setEntiTargetTipo] = useState("TUTTI");
+  const [entiCorsoDettagliAperti, setEntiCorsoDettagliAperti] = useState(false);
+  const [entiCorsoModalita, setEntiCorsoModalita] = useState<"ONLINE" | "SEDE">("ONLINE");
   const [assocTargetTipo, setAssocTargetTipo] = useState("TUTTI");
   const [assocCorsoDettagliAperti, setAssocCorsoDettagliAperti] = useState(false);
   const [assocCorsoModalita, setAssocCorsoModalita] = useState<"ONLINE" | "SEDE">("ONLINE");
@@ -7295,7 +7298,48 @@ export default function DashboardPA() {
                         try {
                           const targetTipo = formData.get("target_tipo");
                           const targetId = formData.get("target_id");
+                          const impersonation = getImpersonationParams();
+                          const associazioneId = impersonation.associazioneId || new URLSearchParams(window.location.search).get("associazione_id") || "1";
                           let targetNome = null;
+
+                          if (targetTipo === "CORSO") {
+                            const corsoId = formData.get("corso_id");
+                            if (!corsoId) {
+                              alert("Seleziona il corso a cui inviare la notifica.");
+                              setInvioNotificaLoading(false);
+                              return;
+                            }
+
+                            const response = await authenticatedFetch(
+                              `${MIHUB_API}/associazioni/${associazioneId}/notifiche-corso`,
+                              {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  corso_id: parseInt(corsoId as string, 10),
+                                  titolo: formData.get("titolo"),
+                                  messaggio: formData.get("messaggio"),
+                                  tipo_messaggio: formData.get("tipo_messaggio"),
+                                  modalita: formData.get("modalita_corso") || "ONLINE",
+                                  link_corso: formData.get("link_corso") || null,
+                                  sede_corso: formData.get("sede_corso") || null,
+                                }),
+                              }
+                            );
+                            const data = await response.json();
+                            if (data.success) {
+                              alert(
+                                `✅ Notifica corso inviata a ${data.data.destinatari} imprese iscritte a "${data.data.corso_titolo}".`
+                              );
+                              form.reset();
+                              setEntiTargetTipo("TUTTI");
+                              setEntiCorsoDettagliAperti(false);
+                              setEntiCorsoModalita("ONLINE");
+                            } else {
+                              alert("❌ Errore: " + data.error);
+                            }
+                            return;
+                          }
 
                           if (targetTipo === "MERCATO" && targetId) {
                             const mercato = mercatiList.find(
@@ -7357,9 +7401,14 @@ export default function DashboardPA() {
                           <select
                             name="target_tipo"
                             id="enti_target_tipo"
+                            value={entiTargetTipo}
                             className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
                             required
                             onChange={e => {
+                              setEntiTargetTipo(e.target.value);
+                              if (e.target.value !== "CORSO") {
+                                setEntiCorsoDettagliAperti(false);
+                              }
                               const targetIdSelect = document.getElementById(
                                 "enti_target_id"
                               ) as HTMLSelectElement;
@@ -7407,6 +7456,7 @@ export default function DashboardPA() {
                             }}
                           >
                             <option value="TUTTI">Tutte le Imprese</option>
+                            <option value="CORSO">Imprese iscritte a un corso...</option>
                             <option value="MERCATO">
                               Imprese del Mercato...
                             </option>
@@ -7430,6 +7480,116 @@ export default function DashboardPA() {
                           </select>
                         </div>
                       </div>
+                      {entiTargetTipo === "CORSO" && (
+                        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                Corso
+                              </label>
+                              <select
+                                name="corso_id"
+                                className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
+                                required={entiTargetTipo === "CORSO"}
+                              >
+                                <option value="">Seleziona il corso...</option>
+                                {(realData.formazioneStats?.corsi || []).map((corso: any) => (
+                                  <option key={corso.id} value={corso.id}>
+                                    {corso.titolo} — {corso.ente_nome || corso.sede || "corso"}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex items-end">
+                              <button
+                                type="button"
+                                onClick={() => setEntiCorsoDettagliAperti(true)}
+                                className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-[#3b82f6] to-[#8b5cf6] text-white font-medium hover:opacity-90"
+                              >
+                                Configura link online o sede
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-[#e8fbff]/50">
+                            La notifica verrà inviata solo alle imprese iscritte al corso selezionato.
+                          </p>
+                        </div>
+                      )}
+
+                      {entiCorsoDettagliAperti && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+                          <div className="w-full max-w-2xl rounded-xl border border-blue-500/30 bg-[#111827] p-5 shadow-2xl">
+                            <div className="flex items-start justify-between gap-4 mb-4">
+                              <div>
+                                <h3 className="text-lg font-semibold text-[#e8fbff]">
+                                  Dettagli accesso corso
+                                </h3>
+                                <p className="text-sm text-[#e8fbff]/60">
+                                  Inserisci il collegamento streaming oppure le specifiche della sede. Verranno aggiunti al messaggio inviato alle imprese iscritte.
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setEntiCorsoDettagliAperti(false)}
+                                className="px-3 py-1 rounded-md border border-white/10 text-[#e8fbff]/70 hover:bg-white/10"
+                              >
+                                Chiudi
+                              </button>
+                            </div>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                  Modalità corso
+                                </label>
+                                <select
+                                  name="modalita_corso"
+                                  value={entiCorsoModalita}
+                                  onChange={e => setEntiCorsoModalita(e.target.value as "ONLINE" | "SEDE")}
+                                  className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
+                                >
+                                  <option value="ONLINE">Corso online / streaming</option>
+                                  <option value="SEDE">Corso in sede</option>
+                                </select>
+                              </div>
+                              {entiCorsoModalita === "ONLINE" ? (
+                                <div>
+                                  <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                    Link accesso piattaforma streaming
+                                  </label>
+                                  <input
+                                    type="url"
+                                    name="link_corso"
+                                    placeholder="https://..."
+                                    className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
+                                  />
+                                </div>
+                              ) : (
+                                <div>
+                                  <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                    Specifiche sede corso
+                                  </label>
+                                  <textarea
+                                    name="sede_corso"
+                                    rows={3}
+                                    placeholder="Es: Bologna, Via..., aula..., orario..., referente..."
+                                    className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
+                                  />
+                                </div>
+                              )}
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEntiCorsoDettagliAperti(false)}
+                                  className="px-4 py-2 rounded-lg bg-[#3b82f6] text-white font-medium hover:bg-blue-600"
+                                >
+                                  Salva dettagli
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <div
                         id="enti_target_id_container"
                         style={{ display: "none" }}
