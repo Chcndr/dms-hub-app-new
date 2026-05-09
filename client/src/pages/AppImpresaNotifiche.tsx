@@ -100,6 +100,7 @@ export default function AppImpresaNotifiche() {
       return {
         id: user.impresa_id || null,
         nome: user.impresa_nome || user.name || "Impresa",
+        email: user.email || user.impresa_email || user.username || "",
       };
     }
     return { id: null, nome: "Impresa" };
@@ -107,6 +108,7 @@ export default function AppImpresaNotifiche() {
   const impresaData = getImpresaData();
   const IMPRESA_ID = impresaData.id;
   const IMPRESA_NOME = impresaData.nome;
+  const IMPRESA_EMAIL = impresaData.email;
 
   // v5.9.0: Usa MIHUB Hetzner (stesso backend dove le notifiche vengono create da ControlliSanzioniPanel)
   // In produzione usa proxy Vercel (/api/notifiche/* → mihub Hetzner), in dev URL diretto
@@ -363,6 +365,45 @@ export default function AppImpresaNotifiche() {
       default:
         return null;
     }
+  };
+
+  const isNotificaCorso = (notifica: Notifica | null) => {
+    if (!notifica) return false;
+    return (
+      notifica.target_tipo === "CORSO" ||
+      notifica.tipo_messaggio === "ISCRIZIONE_CORSO" ||
+      notifica.mittente_tipo === "ENTE_FORMATORE" ||
+      /corso/i.test(notifica.titolo || "")
+    );
+  };
+
+  const normalizzaLinkCorso = (link: string | null) => {
+    if (!link) return null;
+    const raw = link.trim();
+    if (!raw) return null;
+    const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    try {
+      const url = new URL(withProtocol);
+      if (IMPRESA_EMAIL) {
+        if (url.hostname.includes("meet.google.com")) {
+          url.searchParams.set("authuser", IMPRESA_EMAIL);
+        } else if (!url.searchParams.has("email")) {
+          url.searchParams.set("email", IMPRESA_EMAIL);
+        }
+      }
+      return url.toString();
+    } catch {
+      return withProtocol;
+    }
+  };
+
+  const apriLinkCorso = (notifica: Notifica) => {
+    const corsoUrl = normalizzaLinkCorso(notifica.link_riferimento);
+    if (!corsoUrl) {
+      alert("Nessun link corso allegato a questa notifica. Contatta l'associazione o l'ente formatore.");
+      return;
+    }
+    window.open(corsoUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -802,56 +843,88 @@ export default function AppImpresaNotifiche() {
                     )}
 
                   {/* Azioni Rapide */}
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                    <Button
-                      variant="outline"
-                      className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10 text-sm"
-                      onClick={() =>
-                        setRispostaText(
-                          "Vorrei richiedere un appuntamento per discutere di questo argomento."
-                        )
-                      }
-                    >
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Appuntamento
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="border-[#10b981]/30 text-[#10b981] hover:bg-[#10b981]/10 text-sm"
-                      onClick={() =>
-                        setRispostaText(
-                          "Vorrei iscrivermi al corso menzionato. Potete inviarmi maggiori dettagli?"
-                        )
-                      }
-                    >
-                      <GraduationCap className="w-4 h-4 mr-2" />
-                      Iscriviti al Corso
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-sm"
-                      onClick={() =>
-                        setRispostaText(
-                          "Vorrei richiedere il rinnovo del DURC. Potete assistirmi nella procedura?"
-                        )
-                      }
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      Rinnovo DURC
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10 text-sm"
-                      onClick={() =>
-                        setRispostaText(
-                          "Vorrei richiedere assistenza per la pratica SCIA. Potete aiutarmi?"
-                        )
-                      }
-                    >
-                      <FileCheck className="w-4 h-4 mr-2" />
-                      Assistenza SCIA
-                    </Button>
-                  </div>
+                  {isNotificaCorso(notificaSelezionata) ? (
+                    <div className="bg-gradient-to-r from-[#10b981]/10 to-[#3b82f6]/10 border border-[#10b981]/30 rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-[#10b981]/20 flex items-center justify-center flex-shrink-0">
+                            <GraduationCap className="w-5 h-5 text-[#10b981]" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[#e8fbff] font-medium text-sm sm:text-base">Accesso al corso</p>
+                            <p className="text-[#e8fbff]/50 text-xs sm:text-sm">
+                              Apri il collegamento; se sul telefono è installata l'app del corso, si aprirà automaticamente, altrimenti si aprirà il browser.
+                            </p>
+                            {notificaSelezionata.link_riferimento && (
+                              <p className="text-[#10b981]/80 text-xs mt-1 break-all">
+                                {normalizzaLinkCorso(notificaSelezionata.link_riferimento)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="bg-[#10b981] hover:bg-[#059669] text-white w-full sm:w-auto"
+                          onClick={() => apriLinkCorso(notificaSelezionata)}
+                          disabled={!notificaSelezionata.link_riferimento}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Apri link corso
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                      <Button
+                        variant="outline"
+                        className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10 text-sm"
+                        onClick={() =>
+                          setRispostaText(
+                            "Vorrei richiedere un appuntamento per discutere di questo argomento."
+                          )
+                        }
+                      >
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Appuntamento
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="border-[#10b981]/30 text-[#10b981] hover:bg-[#10b981]/10 text-sm"
+                        onClick={() =>
+                          setRispostaText(
+                            "Vorrei iscrivermi al corso menzionato. Potete inviarmi maggiori dettagli?"
+                          )
+                        }
+                      >
+                        <GraduationCap className="w-4 h-4 mr-2" />
+                        Iscriviti al Corso
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-sm"
+                        onClick={() =>
+                          setRispostaText(
+                            "Vorrei richiedere il rinnovo del DURC. Potete assistirmi nella procedura?"
+                          )
+                        }
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Rinnovo DURC
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10 text-sm"
+                        onClick={() =>
+                          setRispostaText(
+                            "Vorrei richiedere assistenza per la pratica SCIA. Potete aiutarmi?"
+                          )
+                        }
+                      >
+                        <FileCheck className="w-4 h-4 mr-2" />
+                        Assistenza SCIA
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Form Risposta */}
                   <div className="bg-[#0b1220] rounded-lg p-4 border border-[#3b82f6]/10">

@@ -1752,9 +1752,13 @@ export default function DashboardPA() {
   const [entiTargetTipo, setEntiTargetTipo] = useState("TUTTI");
   const [entiCorsoDettagliAperti, setEntiCorsoDettagliAperti] = useState(false);
   const [entiCorsoModalita, setEntiCorsoModalita] = useState<"ONLINE" | "SEDE">("ONLINE");
+  const [entiCorsoLink, setEntiCorsoLink] = useState("");
+  const [entiCorsoSede, setEntiCorsoSede] = useState("");
   const [assocTargetTipo, setAssocTargetTipo] = useState("TUTTI");
   const [assocCorsoDettagliAperti, setAssocCorsoDettagliAperti] = useState(false);
   const [assocCorsoModalita, setAssocCorsoModalita] = useState<"ONLINE" | "SEDE">("ONLINE");
+  const [assocCorsoLink, setAssocCorsoLink] = useState("");
+  const [assocCorsoSede, setAssocCorsoSede] = useState("");
   const [selectedNotifica, setSelectedNotifica] = useState<any>(null);
   const [notificheNonLette, setNotificheNonLette] = useState(0);
   const [filtroMessaggiEnti, setFiltroMessaggiEnti] = useState<
@@ -1765,6 +1769,34 @@ export default function DashboardPA() {
   >("tutti");
   const [messaggiInviatiEnti, setMessaggiInviatiEnti] = useState<any[]>([]);
   const [messaggiInviatiAssoc, setMessaggiInviatiAssoc] = useState<any[]>([]);
+
+  const espandiMessaggiInviatiPerImpresa = (messaggi: any[] = []) =>
+    messaggi.flatMap((m: any) => {
+      const dettagli = Array.isArray(m.destinatari_dettaglio)
+        ? m.destinatari_dettaglio
+        : [];
+      if (dettagli.length === 0) {
+        return [
+          {
+            ...m,
+            destinatari: m.totale_destinatari || 0,
+            lette: m.letti || 0,
+          },
+        ];
+      }
+      return dettagli.map((d: any, idx: number) => ({
+        ...m,
+        destinatario_impresa_id: d.impresa_id,
+        destinatario_impresa_nome: d.impresa_nome || `Impresa #${d.impresa_id}`,
+        destinatario_stato: d.stato,
+        destinatario_data_lettura: d.data_lettura,
+        destinatari_totali: m.totale_destinatari || dettagli.length,
+        destinatari: 1,
+        lette: d.stato === "LETTO" ? 1 : 0,
+        _rigaDestinatario: true,
+        _rowKey: `${m.id}-${d.impresa_id || "dest"}-${idx}`,
+      }));
+    });
 
   // --- SCIA & Pratiche (Associazioni) --- gestito interamente da SuapPanel mode="associazione"
 
@@ -1841,29 +1873,22 @@ export default function DashboardPA() {
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
-          setMessaggiInviatiEnti(
-            data.data.map((m: any) => ({
-              ...m,
-              destinatari: m.totale_destinatari || 0,
-              lette: m.letti || 0,
-            }))
-          );
+          setMessaggiInviatiEnti(espandiMessaggiInviatiPerImpresa(data.data));
         }
       })
       .catch(err => console.error("Messaggi inviati Enti fetch error:", err));
 
-    // Fetch messaggi inviati - Associazioni (ID=2)
-    fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/2?filtro=inviati`)
+    // Fetch messaggi inviati - Associazioni: usa la stessa associazione attiva dell'invio, non un ID fisso
+    const impersonationForMessages = getImpersonationParams();
+    const associazioneMessaggiId =
+      impersonationForMessages.associazioneId ||
+      new URLSearchParams(window.location.search).get("associazione_id") ||
+      "1";
+    fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/${associazioneMessaggiId}?filtro=inviati`)
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
-          setMessaggiInviatiAssoc(
-            data.data.map((m: any) => ({
-              ...m,
-              destinatari: m.totale_destinatari || 0,
-              lette: m.letti || 0,
-            }))
-          );
+          setMessaggiInviatiAssoc(espandiMessaggiInviatiPerImpresa(data.data));
         }
       })
       .catch(err => console.error("Messaggi inviati Assoc fetch error:", err));
@@ -7321,8 +7346,8 @@ export default function DashboardPA() {
                                   messaggio: formData.get("messaggio"),
                                   tipo_messaggio: formData.get("tipo_messaggio"),
                                   modalita: formData.get("modalita_corso") || "ONLINE",
-                                  link_corso: formData.get("link_corso") || null,
-                                  sede_corso: formData.get("sede_corso") || null,
+                                  link_corso: entiCorsoModalita === "ONLINE" ? entiCorsoLink.trim() || null : null,
+                                  sede_corso: entiCorsoModalita === "SEDE" ? entiCorsoSede.trim() || null : null,
                                 }),
                               }
                             );
@@ -7335,6 +7360,8 @@ export default function DashboardPA() {
                               setEntiTargetTipo("TUTTI");
                               setEntiCorsoDettagliAperti(false);
                               setEntiCorsoModalita("ONLINE");
+                              setEntiCorsoLink("");
+                              setEntiCorsoSede("");
                             } else {
                               alert("❌ Errore: " + data.error);
                             }
@@ -7408,6 +7435,8 @@ export default function DashboardPA() {
                               setEntiTargetTipo(e.target.value);
                               if (e.target.value !== "CORSO") {
                                 setEntiCorsoDettagliAperti(false);
+                                setEntiCorsoLink("");
+                                setEntiCorsoSede("");
                               }
                               const targetIdSelect = document.getElementById(
                                 "enti_target_id"
@@ -7560,6 +7589,8 @@ export default function DashboardPA() {
                                     type="url"
                                     name="link_corso"
                                     placeholder="https://..."
+                                    value={entiCorsoLink}
+                                    onChange={e => setEntiCorsoLink(e.target.value)}
                                     className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
                                   />
                                 </div>
@@ -7572,6 +7603,8 @@ export default function DashboardPA() {
                                     name="sede_corso"
                                     rows={3}
                                     placeholder="Es: Bologna, Via..., aula..., orario..., referente..."
+                                    value={entiCorsoSede}
+                                    onChange={e => setEntiCorsoSede(e.target.value)}
                                     className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
                                   />
                                 </div>
@@ -7704,7 +7737,7 @@ export default function DashboardPA() {
                         (messaggiInviatiEnti || []).map(
                           (msg: any, idx: number) => (
                             <div
-                              key={`inv-${idx}`}
+                              key={msg._rowKey || `inv-${msg.id || idx}`}
                               className="p-3 rounded-lg border bg-blue-500/5 border-blue-500/20"
                             >
                               <div className="flex items-center justify-between mb-2">
@@ -7714,7 +7747,9 @@ export default function DashboardPA() {
                                     Inviato
                                   </span>
                                   <Badge className="bg-blue-500/20 text-blue-400 text-xs">
-                                    → {msg.destinatari || 0} imprese
+                                    {msg.destinatario_impresa_nome
+                                      ? `→ ${msg.destinatario_impresa_nome}`
+                                      : `→ ${msg.destinatari || 0} imprese`}
                                   </Badge>
                                 </div>
                                 <span className="text-xs text-[#e8fbff]/50">
@@ -7734,7 +7769,9 @@ export default function DashboardPA() {
                               </p>
                               <div className="flex items-center gap-2 mt-2">
                                 <span className="text-xs text-[#e8fbff]/50">
-                                  Letti: {msg.lette || 0}/{msg.destinatari || 0}
+                                  {msg.destinatario_impresa_nome
+                                    ? `Stato: ${msg.destinatario_stato || "INVIATO"}`
+                                    : `Letti: ${msg.lette || 0}/${msg.destinatari || 0}`}
                                 </span>
                               </div>
                             </div>
@@ -8559,8 +8596,8 @@ export default function DashboardPA() {
                                   messaggio: formData.get("messaggio"),
                                   tipo_messaggio: formData.get("tipo_messaggio"),
                                   modalita: formData.get("modalita_corso") || "ONLINE",
-                                  link_corso: formData.get("link_corso") || null,
-                                  sede_corso: formData.get("sede_corso") || null,
+                                  link_corso: assocCorsoModalita === "ONLINE" ? assocCorsoLink.trim() || null : null,
+                                  sede_corso: assocCorsoModalita === "SEDE" ? assocCorsoSede.trim() || null : null,
                                 }),
                               }
                             );
@@ -8573,6 +8610,8 @@ export default function DashboardPA() {
                               setAssocTargetTipo("TUTTI");
                               setAssocCorsoDettagliAperti(false);
                               setAssocCorsoModalita("ONLINE");
+                              setAssocCorsoLink("");
+                              setAssocCorsoSede("");
                             } else {
                               alert("❌ Errore: " + data.error);
                             }
@@ -8647,6 +8686,8 @@ export default function DashboardPA() {
                               setAssocTargetTipo(e.target.value);
                               if (e.target.value !== "CORSO") {
                                 setAssocCorsoDettagliAperti(false);
+                                setAssocCorsoLink("");
+                                setAssocCorsoSede("");
                               }
                               const targetIdSelect = document.getElementById(
                                 "assoc_target_id"
@@ -8799,6 +8840,8 @@ export default function DashboardPA() {
                                     type="url"
                                     name="link_corso"
                                     placeholder="https://..."
+                                    value={assocCorsoLink}
+                                    onChange={e => setAssocCorsoLink(e.target.value)}
                                     className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
                                   />
                                 </div>
@@ -8811,6 +8854,8 @@ export default function DashboardPA() {
                                     name="sede_corso"
                                     rows={3}
                                     placeholder="Es: Bologna, Via..., aula..., orario..., referente..."
+                                    value={assocCorsoSede}
+                                    onChange={e => setAssocCorsoSede(e.target.value)}
                                     className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
                                   />
                                 </div>
@@ -8943,7 +8988,7 @@ export default function DashboardPA() {
                         (messaggiInviatiAssoc || []).map(
                           (msg: any, idx: number) => (
                             <div
-                              key={`inv-${idx}`}
+                              key={msg._rowKey || `inv-${msg.id || idx}`}
                               className="p-3 rounded-lg border bg-emerald-500/5 border-emerald-500/20"
                             >
                               <div className="flex items-center justify-between mb-2">
@@ -8953,7 +8998,9 @@ export default function DashboardPA() {
                                     Inviato
                                   </span>
                                   <Badge className="bg-emerald-500/20 text-emerald-400 text-xs">
-                                    → {msg.destinatari || 0} imprese
+                                    {msg.destinatario_impresa_nome
+                                      ? `→ ${msg.destinatario_impresa_nome}`
+                                      : `→ ${msg.destinatari || 0} imprese`}
                                   </Badge>
                                 </div>
                                 <span className="text-xs text-[#e8fbff]/50">
@@ -8973,7 +9020,9 @@ export default function DashboardPA() {
                               </p>
                               <div className="flex items-center gap-2 mt-2">
                                 <span className="text-xs text-[#e8fbff]/50">
-                                  Letti: {msg.lette || 0}/{msg.destinatari || 0}
+                                  {msg.destinatario_impresa_nome
+                                    ? `Stato: ${msg.destinatario_stato || "INVIATO"}`
+                                    : `Letti: ${msg.lette || 0}/${msg.destinatari || 0}`}
                                 </span>
                               </div>
                             </div>
