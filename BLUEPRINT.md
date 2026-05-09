@@ -657,3 +657,22 @@ La correzione è volutamente **chirurgica**: si mantiene invariata la logica SQL
 |---|---|---|
 | `/api/mihub/get-messages` | `postgres` | Dichiarare il pacchetto nelle dipendenze di produzione Vercel per evitare `ERR_MODULE_NOT_FOUND` |
 
+
+---
+
+## Aggiornamento operativo 2026-05-09 — Formazione obbligatoria multi-associazione
+
+La sezione **Formazione** è stata riallineata al modello funzionale corretto: i 9 corsi obbligatori per le imprese non devono essere visibili soltanto tramite **Confcommercio Bologna**, ma devono essere disponibili anche per **Confesercenti Modena** e per le associazioni attive abilitate come enti formatori.
+
+L’intervento dati su Neon ha mantenuto il catalogo pulito a 9 categorie canoniche per associazione, creando l’ente formativo mancante **Confesercenti Modena** e sincronizzando gli stessi tipi attestato già presenti per Confcommercio Bologna. Il catalogo effettivo ora espone **18 corsi attivi complessivi**, cioè 9 per ciascuna delle 2 associazioni attive.
+
+| Associazione | Ente formativo | Corsi canonici visibili | Tipi attestato |
+| --- | ---: | ---: | --- |
+| Confcommercio Bologna | 6 | 9 | SICUREZZA_LAVORO, RSPP, ANTINCENDIO, PRIMO_SOCCORSO, PREPOSTO, HACCP, SAB, RLS, DIRIGENTE |
+| Confesercenti Modena | 7 | 9 | SICUREZZA_LAVORO, RSPP, ANTINCENDIO, PRIMO_SOCCORSO, PREPOSTO, HACCP, SAB, RLS, DIRIGENTE |
+
+Sono stati verificati gli endpoint pubblici `GET /api/associazioni/1/corsi`, `GET /api/associazioni/2/corsi`, `GET /api/associazioni/1/scheda-pubblica`, `GET /api/associazioni/2/scheda-pubblica` e `GET /api/associazioni/pubbliche`. Le due schede pubbliche restituiscono `corsi_count = 9`, mentre l’elenco pubblico continua a restituire entrambe le associazioni attive.
+
+Sul frontend impresa, nella scheda **La Mia Associazione**, la lista delle associazioni pubbliche viene caricata anche quando esiste già un tesseramento attivo. In questo modo un’impresa tesserata con Confcommercio Bologna può vedere **Altre Associazioni Disponibili**, inclusa Confesercenti Modena, consultarne la scheda pubblica e avviare il flusso di adesione/pagamento o richiesta legacy.
+
+Verifica tecnica: `pnpm build` completato correttamente. `pnpm check` resta bloccato da errori TypeScript preesistenti non collegati a questa modifica in `FirebaseAuthContext.tsx` e `HomePage.tsx`.

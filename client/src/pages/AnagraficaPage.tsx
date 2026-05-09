@@ -2314,7 +2314,6 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     }
     const load = async () => {
       setLoading(true);
-      let hasTesseramento = false;
       try {
         // Verifica tesseramento attivo — prova endpoint v9 (Manus), poi fallback legacy
         let tess: any = null;
@@ -2343,52 +2342,50 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
 
         if (tess && normalizeStatoTesseramento(tess.stato) === "ATTIVO") {
           setTesseramento(normalizeTesseramento(tess));
-          hasTesseramento = true;
         } else {
           setTesseramento(null);
         }
       } catch {
         setTesseramento(null);
       }
-      // Carica lista associazioni disponibili
-      if (!hasTesseramento) {
-        try {
-          let assocList: any[] = [];
-          const assocRes = await fetch(
-            addComuneIdToUrl(`${API_BASE_URL}/api/associazioni/pubbliche`)
+      // Carica sempre la lista associazioni disponibili: anche un'impresa gia' tesserata
+      // deve poter vedere e sottoscrivere associazioni alternative, ad esempio Confesercenti Modena.
+      try {
+        let assocList: any[] = [];
+        const assocRes = await fetch(
+          addComuneIdToUrl(`${API_BASE_URL}/api/associazioni/pubbliche`)
+        );
+        const assocData = await assocRes.json();
+        // Supporta entrambi i formati: { success, data: [...] } e { associazioni: [...] }
+        const pubblicheList = Array.isArray(assocData.data)
+          ? assocData.data
+          : Array.isArray(assocData.associazioni)
+            ? assocData.associazioni
+            : Array.isArray(assocData)
+              ? assocData
+              : [];
+        if (pubblicheList.length > 0) {
+          assocList = pubblicheList;
+        } else {
+          // Fallback: carica tutte le associazioni (stesso endpoint della dashboard admin)
+          const fallbackRes = await fetch(
+            addComuneIdToUrl(`${API_BASE_URL}/api/associazioni`)
           );
-          const assocData = await assocRes.json();
-          // Supporta entrambi i formati: { success, data: [...] } e { associazioni: [...] }
-          const pubblicheList = Array.isArray(assocData.data)
-            ? assocData.data
-            : Array.isArray(assocData.associazioni)
-              ? assocData.associazioni
-              : Array.isArray(assocData)
-                ? assocData
+          const fallbackData = await fallbackRes.json();
+          const fallbackList = Array.isArray(fallbackData.data)
+            ? fallbackData.data
+            : Array.isArray(fallbackData.associazioni)
+              ? fallbackData.associazioni
+              : Array.isArray(fallbackData)
+                ? fallbackData
                 : [];
-          if (pubblicheList.length > 0) {
-            assocList = pubblicheList;
-          } else {
-            // Fallback: carica tutte le associazioni (stesso endpoint della dashboard admin)
-            const fallbackRes = await fetch(
-              addComuneIdToUrl(`${API_BASE_URL}/api/associazioni`)
-            );
-            const fallbackData = await fallbackRes.json();
-            const fallbackList = Array.isArray(fallbackData.data)
-              ? fallbackData.data
-              : Array.isArray(fallbackData.associazioni)
-                ? fallbackData.associazioni
-                : Array.isArray(fallbackData)
-                  ? fallbackData
-                  : [];
-            assocList = fallbackList.filter(
-              (a: any) => a.attiva !== false && a.stato !== "INATTIVA"
-            );
-          }
-          setAssociazioni(assocList);
-        } catch {
-          /* silenzioso */
+          assocList = fallbackList.filter(
+            (a: any) => a.attiva !== false && a.stato !== "INATTIVA"
+          );
         }
+        setAssociazioni(assocList);
+      } catch {
+        /* silenzioso */
       }
       setLoading(false);
     };
@@ -2488,6 +2485,25 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
   };
 
   if (loading) return <LoadingSpinner />;
+
+  const associazioneAttivaId = tesseramento?.associazione_id
+    ? String(tesseramento.associazione_id)
+    : "";
+  const associazioneAttivaNome = String(
+    tesseramento?.associazione_nome || ""
+  )
+    .trim()
+    .toLowerCase();
+  const associazioniAlternative = associazioni.filter((assoc: any) => {
+    const sameId =
+      associazioneAttivaId && String(assoc.id) === associazioneAttivaId;
+    const sameName =
+      associazioneAttivaNome &&
+      String(assoc.nome || "")
+        .trim()
+        .toLowerCase() === associazioneAttivaNome;
+    return !sameId && !sameName;
+  });
 
   // Impresa tesserata
   if (tesseramento && tesseramento.stato === "ATTIVO") {
@@ -2591,6 +2607,164 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
             </div>
           </div>
         </SectionCard>
+
+        {associazioniAlternative.length > 0 && (
+          <SectionCard icon={Heart} title="Altre Associazioni Disponibili">
+            <div className="space-y-3">
+              <p className="text-xs sm:text-sm text-[#e8fbff]/60">
+                Sei gia' tesserato con {tesseramento.associazione_nome || "la tua associazione"},
+                ma puoi aderire anche a un'altra associazione disponibile.
+              </p>
+
+              {selectedAssociazione &&
+                associazioniAlternative.some(
+                  (assoc: any) => String(assoc.id) === String(selectedAssociazione.id)
+                ) && (
+                  <Card className="bg-[#0b1220]/50 border-emerald-500/30 py-0 gap-0 rounded-lg">
+                    <CardContent className="p-3 sm:p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                            <Landmark className="w-5 h-5 text-emerald-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-base font-semibold text-[#e8fbff] truncate">
+                              {selectedAssociazione.nome}
+                            </p>
+                            {selectedAssociazione.sigla && (
+                              <p className="text-xs text-[#e8fbff]/50">
+                                {selectedAssociazione.sigla}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedAssociazione(null);
+                            setSchedaPubblica(null);
+                          }}
+                          className="text-[#e8fbff]/50 text-xs"
+                        >
+                          Chiudi
+                        </Button>
+                      </div>
+
+                      {loadingScheda ? (
+                        <div className="flex justify-center py-4">
+                          <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+                        </div>
+                      ) : schedaPubblica ? (
+                        <div className="space-y-2">
+                          {(schedaPubblica.descrizione || schedaPubblica.descrizione_breve) && (
+                            <p className="text-sm text-[#e8fbff]/70">
+                              {schedaPubblica.descrizione || schedaPubblica.descrizione_breve}
+                            </p>
+                          )}
+                          {schedaPubblica.benefici?.length > 0 && (
+                            <ul className="space-y-1">
+                              {schedaPubblica.benefici.slice(0, 3).map((b: string, i: number) => (
+                                <li
+                                  key={i}
+                                  className="text-xs text-[#e8fbff]/70 flex items-center gap-1"
+                                >
+                                  <span className="text-emerald-400">&#10003;</span> {b}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[#e8fbff]/40 italic">
+                          Informazioni non ancora disponibili
+                        </p>
+                      )}
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#e8fbff]/10">
+                        <div className="text-xs text-[#e8fbff]/50">
+                          Quota: <span className="text-[#e8fbff] font-bold">
+                            &euro;{parseFloat(selectedAssociazione.quota_annuale || "50").toFixed(2)}/anno
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs"
+                          onClick={() => handleAssociatiEPaga(selectedAssociazione)}
+                        >
+                          <Wallet className="w-3 h-3 mr-1" /> Associati e Paga
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+              {associazioniAlternative.map(assoc => (
+                <Card
+                  key={assoc.id}
+                  className="bg-[#1a2332] border-[#14b8a6]/20 hover:border-[#14b8a6]/40 transition-all py-0 gap-0 rounded-lg cursor-pointer"
+                  onClick={() => viewSchedaPubblica(assoc)}
+                >
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                        <Landmark className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-semibold text-[#e8fbff]">
+                          {assoc.nome}
+                        </p>
+                        {assoc.descrizione && (
+                          <p className="text-xs text-[#e8fbff]/50 mt-1 line-clamp-2">
+                            {assoc.descrizione}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                          {assoc.quota_annuale && (
+                            <span>
+                              Quota: &euro;{parseFloat(assoc.quota_annuale).toFixed(2)}/anno
+                            </span>
+                          )}
+                          {assoc.servizi_count && <span>{assoc.servizi_count} servizi</span>}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <Button
+                            size="sm"
+                            className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs h-7"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleAssociatiEPaga(assoc);
+                            }}
+                          >
+                            <Wallet className="w-3 h-3 mr-1" /> Associati e Paga
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-emerald-500/30 text-emerald-400 text-xs h-7"
+                            disabled={richiestaInCorso}
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleRichiestaAssociazione(assoc.id);
+                            }}
+                          >
+                            {richiestaInCorso ? (
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            ) : (
+                              <Heart className="w-3 h-3 mr-1" />
+                            )}
+                            Solo Richiesta
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </SectionCard>
+        )}
+
         <PagaConWallet
           open={pagaOpen}
           onClose={() => setPagaOpen(false)}
@@ -2600,7 +2774,11 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
           riferimentoId={pagaInfo.riferimentoId}
           impresaId={impresaId}
           onSuccess={() => {
-            setTesseramento({ ...tesseramento, quota_pagata: true });
+            if (pagaInfo.tipo === "quota_associativa") {
+              onPagamentoSuccess();
+            } else {
+              setTesseramento({ ...tesseramento, quota_pagata: true });
+            }
           }}
         />
       </div>
