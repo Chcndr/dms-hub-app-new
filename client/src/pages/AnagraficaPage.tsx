@@ -2229,6 +2229,70 @@ function PresenzeSection({
 // ============================================================================
 // SUB-SECTION: LA MIA ASSOCIAZIONE
 // ============================================================================
+const normalizeStatoTesseramento = (stato: any) =>
+  String(stato || "")
+    .trim()
+    .toUpperCase();
+
+const normalizeTesseramento = (raw: any) => {
+  if (!raw) return null;
+  const quotaAnnuale = parseFloat(
+    raw.quota_annuale ??
+      raw.importo_annuale ??
+      raw.associazione?.quota_annuale ??
+      "0"
+  );
+  const importoPagato = parseFloat(raw.importo_pagato ?? "0");
+
+  return {
+    ...raw,
+    stato: normalizeStatoTesseramento(raw.stato),
+    associazione_id: raw.associazione_id ?? raw.associazione?.id,
+    associazione_nome: raw.associazione_nome ?? raw.associazione?.nome,
+    associazione_email: raw.associazione_email ?? raw.associazione?.email,
+    associazione_telefono:
+      raw.associazione_telefono ?? raw.associazione?.telefono,
+    quota_annuale: Number.isFinite(quotaAnnuale)
+      ? quotaAnnuale
+      : raw.quota_annuale,
+    importo_pagato: Number.isFinite(importoPagato) ? importoPagato : 0,
+    quota_pagata:
+      raw.quota_pagata === true ||
+      importoPagato > 0 ||
+      (Number.isFinite(quotaAnnuale) &&
+        quotaAnnuale > 0 &&
+        importoPagato >= quotaAnnuale),
+  };
+};
+
+const extractTesseramenti = (payload: any): any[] => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload.tesseramenti)) return payload.tesseramenti;
+  if (Array.isArray(payload.data?.tesseramenti))
+    return payload.data.tesseramenti;
+  if (payload.tesseramento) return [payload.tesseramento];
+  if (payload.data && !Array.isArray(payload.data)) return [payload.data];
+  if (payload.stato) return [payload];
+  return [];
+};
+
+const findTesseramentoAttivo = (payload: any) => {
+  const list = extractTesseramenti(payload)
+    .map(normalizeTesseramento)
+    .filter(Boolean);
+
+  return (
+    list.find(
+      (t: any) =>
+        t.stato === "ATTIVO" && parseFloat(t.importo_pagato || "0") > 0
+    ) ||
+    list.find((t: any) => t.stato === "ATTIVO") ||
+    null
+  );
+};
+
 function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
   const [tesseramento, setTesseramento] = useState<any>(null);
   const [associazioni, setAssociazioni] = useState<any[]>([]);
@@ -2261,21 +2325,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
             )
           );
           const tessV9Data = await tessV9Res.json();
-          const tessV9List = Array.isArray(tessV9Data.data)
-            ? tessV9Data.data
-            : Array.isArray(tessV9Data.tesseramenti)
-              ? tessV9Data.tesseramenti
-              : Array.isArray(tessV9Data)
-                ? tessV9Data
-                : [];
-          // Cerca il primo tesseramento ATTIVO con importo_pagato > 0
-          tess =
-            tessV9List.find(
-              (t: any) =>
-                t.stato === "ATTIVO" && parseFloat(t.importo_pagato || "0") > 0
-            ) ||
-            tessV9List.find((t: any) => t.stato === "ATTIVO") ||
-            null;
+          tess = findTesseramentoAttivo(tessV9Data);
         } catch {
           /* fallback sotto */
         }
@@ -2288,18 +2338,11 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
             )
           );
           const tessData = await tessRes.json();
-          tess =
-            tessData.data ||
-            tessData.tesseramento ||
-            (tessData.stato ? tessData : null);
+          tess = findTesseramentoAttivo(tessData);
         }
 
-        if (tess && tess.stato === "ATTIVO") {
-          // Normalizza: importo_pagato > 0 => quota_pagata
-          if (parseFloat(tess.importo_pagato || "0") > 0) {
-            tess.quota_pagata = true;
-          }
-          setTesseramento(tess);
+        if (tess && normalizeStatoTesseramento(tess.stato) === "ATTIVO") {
+          setTesseramento(normalizeTesseramento(tess));
           hasTesseramento = true;
         } else {
           setTesseramento(null);
