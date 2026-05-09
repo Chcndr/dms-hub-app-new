@@ -70,6 +70,7 @@ interface Tesseramento {
   data_tesseramento: string;
   data_scadenza?: string;
   quota_annuale?: number;
+  importo_annuale?: number;
   stato: "attivo" | "scaduto" | "sospeso" | "revocato";
   note?: string;
   // Dati impresa dal JOIN
@@ -203,6 +204,16 @@ const STATO_LABELS: Record<string, string> = {
   revocato: "Revocato",
 };
 
+const formatQuotaInput = (value: unknown) => {
+  const numero = Number(value);
+  return Number.isFinite(numero) ? numero.toFixed(2) : "";
+};
+
+const formatQuotaText = (value: unknown) => {
+  const quota = formatQuotaInput(value);
+  return quota ? `${quota} EUR` : "—";
+};
+
 const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
   const [tesseramenti, setTesseramenti] = useState<Tesseramento[]>([]);
   const [stats, setStats] = useState<TesseramentiStats | null>(null);
@@ -246,6 +257,8 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
     null
   );
   const [nuovoAnno, setNuovoAnno] = useState(new Date().getFullYear());
+  const [quotaAssociativa, setQuotaAssociativa] = useState("");
+  const [quotaLoading, setQuotaLoading] = useState(false);
   const [nuovaQuota, setNuovaQuota] = useState("");
   const [nuoveNote, setNuoveNote] = useState("");
 
@@ -254,6 +267,24 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
   const associazioneNome = impState.associazioneNome
     ? decodeURIComponent(impState.associazioneNome)
     : null;
+
+  const loadAssociazioneQuota = useCallback(async () => {
+    if (!associazioneId) return;
+    setQuotaLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        const quota = formatQuotaInput(data.data.quota_annuale ?? 50);
+        setQuotaAssociativa(quota);
+        setNuovaQuota(quota);
+      }
+    } catch (error) {
+      console.error("Errore caricamento quota associazione:", error);
+    } finally {
+      setQuotaLoading(false);
+    }
+  }, [associazioneId]);
 
   const loadTesseramenti = useCallback(async () => {
     if (!associazioneId) return;
@@ -293,8 +324,23 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
   }, [associazioneId]);
 
   useEffect(() => {
+    loadAssociazioneQuota();
     loadTesseramenti();
-  }, [loadTesseramenti]);
+  }, [loadAssociazioneQuota, loadTesseramenti]);
+
+  useEffect(() => {
+    const handleQuotaUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ associazioneId?: number | string; quota_annuale?: number }>).detail;
+      if (String(detail?.associazioneId) === String(associazioneId)) {
+        const quota = formatQuotaInput(detail?.quota_annuale);
+        setQuotaAssociativa(quota);
+        setNuovaQuota(quota);
+        loadTesseramenti();
+      }
+    };
+    window.addEventListener("miohub:quota-associazione-updated", handleQuotaUpdated);
+    return () => window.removeEventListener("miohub:quota-associazione-updated", handleQuotaUpdated);
+  }, [associazioneId, loadTesseramenti]);
 
   // Carica scheda associato
   const loadSchedaAssociato = useCallback(
@@ -351,9 +397,6 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
           body: JSON.stringify({
             numero_tessera: editForm.numero_tessera || null,
             data_scadenza: editForm.data_scadenza || null,
-            importo_annuale: editForm.importo_annuale
-              ? parseFloat(editForm.importo_annuale)
-              : null,
             importo_pagato: editForm.importo_pagato
               ? parseFloat(editForm.importo_pagato)
               : null,
@@ -413,8 +456,39 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
       toast.error("Seleziona un'impresa");
       return;
     }
+    const quotaValue = Number(nuovaQuota);
+    if (!Number.isFinite(quotaValue) || quotaValue < 0) {
+      toast.error("Inserisci una quota associativa valida");
+      return;
+    }
+
     setSaving(true);
     try {
+      const quotaCorrente = Number(quotaAssociativa);
+      if (!Number.isFinite(quotaCorrente) || quotaValue !== quotaCorrente) {
+        const quotaRes = await authenticatedFetch(
+          `${API_BASE_URL}/api/associazioni/${associazioneId}/quota`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quota_annuale: quotaValue }),
+          }
+        );
+        const quotaData = await quotaRes.json();
+        if (!quotaData.success) {
+          toast.error(quotaData.error || "Errore aggiornamento quota associativa");
+          return;
+        }
+        const quota = formatQuotaInput(quotaData.data.quota_annuale);
+        setQuotaAssociativa(quota);
+        setNuovaQuota(quota);
+        window.dispatchEvent(
+          new CustomEvent("miohub:quota-associazione-updated", {
+            detail: { associazioneId, quota_annuale: quotaValue },
+          })
+        );
+      }
+
       const res = await authenticatedFetch(
         `${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti`,
         {
@@ -423,7 +497,6 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
           body: JSON.stringify({
             impresa_id: selectedImpresa.id,
             anno: nuovoAnno,
-            quota_annuale: nuovaQuota ? parseFloat(nuovaQuota) : null,
             note: nuoveNote || null,
           }),
         }
@@ -480,7 +553,7 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
     setImpreseSuggestions([]);
     setSelectedImpresa(null);
     setNuovoAnno(new Date().getFullYear());
-    setNuovaQuota("");
+    setNuovaQuota(quotaAssociativa);
     setNuoveNote("");
   };
 
@@ -650,15 +723,19 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[#e8fbff]">Quota Annuale (EUR)</Label>
+                <Label className="text-[#e8fbff]">Quota associativa annua (EUR)</Label>
                 <Input
                   type="number"
                   step="0.01"
+                  min="0"
                   value={nuovaQuota}
                   onChange={e => setNuovaQuota(e.target.value)}
-                  placeholder="Es. 150.00"
+                  placeholder={quotaLoading ? "Caricamento..." : "Es. 50.00"}
                   className="bg-[#0b1220] border-[#3b82f6]/20 text-[#e8fbff] placeholder-[#e8fbff]/30"
                 />
+                <p className="text-[11px] text-[#e8fbff]/45">
+                  Questo campo aggiorna la quota dell'associazione: la stessa cifra sarà visibile nel tab Anagrafica e nell'app impresa.
+                </p>
               </div>
             </div>
 
@@ -792,9 +869,9 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
                         <p className="text-xs text-[#e8fbff]/40 flex items-center gap-1 mt-0.5">
                           <Calendar className="h-3 w-3" />
                           Anno {t.anno}
-                          {t.quota_annuale != null && (
+                          {(t.quota_annuale ?? t.importo_annuale) != null && (
                             <span>
-                              · Quota: {t.quota_annuale.toFixed(2)} EUR
+                              · Quota associativa: {formatQuotaText(t.quota_annuale ?? t.importo_annuale)}
                             </span>
                           )}
                         </p>
@@ -1072,21 +1149,20 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
                       </div>
                       <div>
                         <Label className="text-[#e8fbff]/50 text-xs">
-                          Importo Annuale (€)
+                          Quota associativa annua (€)
                         </Label>
                         <Input
                           type="number"
                           step="0.01"
                           value={editForm.importo_annuale}
-                          onChange={e =>
-                            setEditForm(prev => ({
-                              ...prev,
-                              importo_annuale: e.target.value,
-                            }))
-                          }
-                          className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm"
+                          readOnly
+                          disabled
+                          className="bg-[#1a2332] border-[#334155] text-[#e8fbff]/70 h-8 text-sm"
                           placeholder="0.00"
                         />
+                        <p className="text-[10px] text-[#e8fbff]/40 mt-1">
+                          Modifica la quota dal campo quota associativa, non dalla singola scheda.
+                        </p>
                       </div>
                       <div>
                         <Label className="text-[#e8fbff]/50 text-xs">
@@ -1205,7 +1281,7 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
                       </div>
                       <div>
                         <p className="text-[#e8fbff]/50 text-xs">
-                          Importo Annuale
+                          Quota associativa annua
                         </p>
                         <p className="text-[#e8fbff]">
                           {parseFloat(schedaData.tesseramento.importo_annuale) >

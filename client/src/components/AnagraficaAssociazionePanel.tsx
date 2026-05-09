@@ -23,9 +23,12 @@ import {
   Loader2,
   ClipboardCheck,
   Hash,
+  Save,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getImpersonationParams } from "@/hooks/useImpersonation";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getImpersonationParams, authenticatedFetch } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
@@ -46,6 +49,7 @@ interface AssociazioneData {
   presidente?: string;
   data_costituzione?: string;
   num_associati?: number;
+  quota_annuale?: number | string;
   stato?: string;
 }
 
@@ -68,6 +72,11 @@ interface Fattura {
   descrizione?: string;
 }
 
+const formatQuotaInput = (value: unknown) => {
+  const numero = Number(value);
+  return Number.isFinite(numero) ? numero.toFixed(2) : "";
+};
+
 const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() {
   const [associazione, setAssociazione] = useState<AssociazioneData | null>(
     null
@@ -75,6 +84,8 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
   const [contratti, setContratti] = useState<Contratto[]>([]);
   const [fatture, setFatture] = useState<Fattura[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quotaInput, setQuotaInput] = useState("");
+  const [quotaSaving, setQuotaSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("dati");
 
   const impState = getImpersonationParams();
@@ -96,6 +107,7 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
       const assocData = await assocRes.json();
       if (assocData.success && assocData.data) {
         setAssociazione(assocData.data);
+        setQuotaInput(formatQuotaInput(assocData.data.quota_annuale ?? 50));
       }
 
       const contrattiData = await contrattiRes.json();
@@ -118,6 +130,56 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    const handleQuotaUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ associazioneId?: number | string; quota_annuale?: number }>).detail;
+      if (String(detail?.associazioneId) === String(associazioneId)) {
+        const quota = formatQuotaInput(detail?.quota_annuale);
+        setQuotaInput(quota);
+        setAssociazione(prev => prev ? { ...prev, quota_annuale: quota } : prev);
+      }
+    };
+    window.addEventListener("miohub:quota-associazione-updated", handleQuotaUpdated);
+    return () => window.removeEventListener("miohub:quota-associazione-updated", handleQuotaUpdated);
+  }, [associazioneId]);
+
+  const handleSaveQuota = async () => {
+    if (!associazioneId) return;
+    const quota = Number(quotaInput);
+    if (!Number.isFinite(quota) || quota < 0) {
+      toast.error("Inserisci una quota associativa valida");
+      return;
+    }
+
+    setQuotaSaving(true);
+    try {
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/quota`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quota_annuale: quota }),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        const formatted = formatQuotaInput(data.data.quota_annuale);
+        setQuotaInput(formatted);
+        setAssociazione(prev => prev ? { ...prev, quota_annuale: formatted } : prev);
+        window.dispatchEvent(
+          new CustomEvent("miohub:quota-associazione-updated", {
+            detail: { associazioneId, quota_annuale: quota },
+          })
+        );
+        toast.success("Quota associativa aggiornata");
+      } else {
+        toast.error(data.error || "Errore aggiornamento quota associativa");
+      }
+    } catch (error) {
+      console.error("Errore salvataggio quota associazione:", error);
+      toast.error("Errore di connessione");
+    } finally {
+      setQuotaSaving(false);
+    }
+  };
 
   if (!associazioneId) {
     return (
@@ -239,6 +301,39 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
                     label="Tipo"
                     value={associazione.tipo}
                   />
+                  <div className="flex items-start gap-3 p-3 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
+                    <Euro className="h-4 w-4 text-[#3b82f6] mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Label className="text-xs text-[#e8fbff]/50">Quota associativa annua</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={quotaInput}
+                          onChange={e => setQuotaInput(e.target.value)}
+                          className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm"
+                          placeholder="50.00"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleSaveQuota}
+                          disabled={quotaSaving}
+                          className="bg-[#3b82f6] text-white hover:bg-[#2563eb]"
+                        >
+                          {quotaSaving ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-[#e8fbff]/45">
+                        Valore unico usato anche dal tab Tesserati e dall'app impresa.
+                      </p>
+                    </div>
+                  </div>
                   <InfoRow
                     icon={MapPin}
                     label="Indirizzo"

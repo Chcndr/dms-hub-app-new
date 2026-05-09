@@ -594,3 +594,17 @@ Richiesta HTTP → CORS → Rate Limiter (IPv6 safe) → validateImpersonation m
 - **Backend**: GitHub = Hetzner → commit `abc2053` (v8.21.0 sanctions filtro + auto-stato qualificazioni)
 - **Branch Claude**: eliminato (mergiato in master)
 - **DB Neon**: colonne lat/lng su comuni, sanctions pulite, qualificazioni corrette, log azzerati
+
+## Aggiornamento quota associativa unica — 2026-05-09
+
+La **quota associativa annua** è stata normalizzata come dato canonico dell'associazione, usando `associazioni.quota_annuale` come **single source of truth** per tab amministrativo, tab operativo tesserati e app impresa. La modifica evita che la stessa quota venga mantenuta in modo divergente nei singoli record di `tesseramenti_associazione.importo_annuale`.
+
+| Area | Comportamento previsto |
+|---|---|
+| Anagrafica associazione | La quota è modificabile dal tab dati anagrafici tramite endpoint dedicato `PUT /api/associazioni/:id/quota`. |
+| Tesserati associazione | Il form di nuovo tesseramento mostra/modifica la stessa quota associativa; se viene cambiata, viene aggiornata prima della creazione del tesseramento. |
+| Scheda associato | L'importo annuo è mostrato come quota associativa di riferimento e non viene più salvato sul singolo tesseramento. |
+| App impresa | I tesseramenti restituiscono `quota_annuale` e `importo_annuale` calcolati da `associazioni.quota_annuale`, con fallback al valore storico del tesseramento solo se la quota associazione è assente. |
+| Backend | Le query lista, dettaglio, statistiche e scheda associato usano `COALESCE(a.quota_annuale, t.importo_annuale)`; l'endpoint quota riallinea anche i tesseramenti aperti per retrocompatibilità operativa. |
+
+Questa decisione mantiene compatibilità con dati storici, ma impedisce nuove divergenze tra l'importo visto dall'associazione e quello visualizzato/pagato dall'impresa.
