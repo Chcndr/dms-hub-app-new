@@ -599,12 +599,46 @@ Richiesta HTTP → CORS → Rate Limiter (IPv6 safe) → validateImpersonation m
 
 La **quota associativa annua** è stata normalizzata come dato canonico dell'associazione, usando `associazioni.quota_annuale` come **single source of truth** per tab amministrativo, tab operativo tesserati e app impresa. La modifica evita che la stessa quota venga mantenuta in modo divergente nei singoli record di `tesseramenti_associazione.importo_annuale`.
 
-| Area | Comportamento previsto |
-|---|---|
-| Anagrafica associazione | La quota è modificabile dal tab dati anagrafici tramite endpoint dedicato `PUT /api/associazioni/:id/quota`. |
-| Tesserati associazione | Il form di nuovo tesseramento mostra/modifica la stessa quota associativa; se viene cambiata, viene aggiornata prima della creazione del tesseramento. |
-| Scheda associato | L'importo annuo è mostrato come quota associativa di riferimento e non viene più salvato sul singolo tesseramento. |
-| App impresa | I tesseramenti restituiscono `quota_annuale` e `importo_annuale` calcolati da `associazioni.quota_annuale`, con fallback al valore storico del tesseramento solo se la quota associazione è assente. |
-| Backend | Le query lista, dettaglio, statistiche e scheda associato usano `COALESCE(a.quota_annuale, t.importo_annuale)`; l'endpoint quota riallinea anche i tesseramenti aperti per retrocompatibilità operativa. |
+| Area                    | Comportamento previsto                                                                                                                                                                                   |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Anagrafica associazione | La quota è modificabile dal tab dati anagrafici tramite endpoint dedicato `PUT /api/associazioni/:id/quota`.                                                                                             |
+| Tesserati associazione  | Il form di nuovo tesseramento mostra/modifica la stessa quota associativa; se viene cambiata, viene aggiornata prima della creazione del tesseramento.                                                   |
+| Scheda associato        | L'importo annuo è mostrato come quota associativa di riferimento e non viene più salvato sul singolo tesseramento.                                                                                       |
+| App impresa             | I tesseramenti restituiscono `quota_annuale` e `importo_annuale` calcolati da `associazioni.quota_annuale`, con fallback al valore storico del tesseramento solo se la quota associazione è assente.     |
+| Backend                 | Le query lista, dettaglio, statistiche e scheda associato usano `COALESCE(a.quota_annuale, t.importo_annuale)`; l'endpoint quota riallinea anche i tesseramenti aperti per retrocompatibilità operativa. |
 
 Questa decisione mantiene compatibilità con dati storici, ma impedisce nuove divergenze tra l'importo visto dall'associazione e quello visualizzato/pagato dall'impresa.
+
+## Decisione architetturale — Fonte unica per servizi, corsi, domande di aiuto e pagamenti enti/associazioni
+
+Data: **09 maggio 2026**
+Autore: **Manus AI**
+
+L’intervento richiesto estende il principio della **fonte unica** dalla quota associativa ai flussi operativi collegati a enti e associazioni. Il perimetro comprende il tab **ASSOCIAZIONE** e il tab **ENTI E ASSOCIAZIONI** della dashboard impersonalizzata, oltre all’app impresa. L’obiettivo è evitare sistemi paralleli: servizi, tipi di servizio, corsi, iscrizioni, domande di aiuto e pagamenti devono essere letti e aggiornati dagli stessi record canonici, con propagazione coerente tra dashboard e app.
+
+| Dominio                               | Fonte canonica proposta                                                                                      | Regola di interoperabilità                                                                                                                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Catalogo servizi associazione         | `servizi_associazioni`                                                                                       | I due tab dashboard e l’app impresa devono leggere gli stessi servizi, prezzi e categorie. Le modifiche del catalogo si riflettono ovunque.                                    |
+| Tipi/categorie servizio               | `servizi_associazioni.categoria` e categorie esistenti del dominio bandi/servizi                             | La categoria non deve essere duplicata in liste locali non sincronizzate; va usata come classificazione comune del catalogo.                                                   |
+| Domande/richieste di aiuto o servizio | `richieste_servizi`                                                                                          | Quando l’impresa invia una domanda dall’app, la richiesta deve apparire nella lista operativa della dashboard associazione con stato, impresa, servizio e importi coerenti.    |
+| Catalogo corsi                        | `formazione_corsi`                                                                                           | I corsi mostrati nell’app e modificati dalla dashboard devono provenire dallo stesso catalogo.                                                                                 |
+| Iscrizioni ai corsi                   | `formazione_iscrizioni`                                                                                      | Quando l’impresa clicca l’iscrizione a un corso dall’app, l’iscrizione deve essere registrata e visibile nella dashboard dell’associazione/ente competente.                    |
+| Pagamenti wallet                      | `wallet_transactions`, `wallet_associazione`, `transazioni_wallet_associazione` più record dominio collegati | Il frontend non deve essere fonte dell’importo finale: deve inviare gli ID; il backend calcola l’importo dalla fonte canonica e registra lo stato pagato nel record operativo. |
+
+La regola tecnica da applicare è **backend price authority**: per servizi, corsi e quote il backend deve ricalcolare o validare l’importo usando le tabelle canoniche prima di scalare il wallet. Il frontend potrà continuare a mostrare l’importo previsto, ma non dovrà essere considerato autoritativo nel pagamento.
+
+## Decisione architetturale — catalogo corsi formazione attestabili e fonte unica prezzi
+
+Data: 2026-05-09. Il catalogo corsi formazione esposto all’app impresa e alla dashboard associazione deve contenere esclusivamente corsi collegati alle qualifiche attestabili dal sistema PDF/qualificazioni. La tassonomia canonica ammessa è: `SICUREZZA_LAVORO`, `RSPP`, `ANTINCENDIO`, `PRIMO_SOCCORSO`, `PREPOSTO`, `HACCP`, `SAB`, `RLS`, `DIRIGENTE`. I valori seed legacy `Sicurezza`, `Antincendio` e `PrimoSoccorso` vengono normalizzati rispettivamente in `SICUREZZA_LAVORO`, `ANTINCENDIO` e `PRIMO_SOCCORSO`; `ALTRO` e categorie generiche non devono essere visibili né creabili nei flussi app/dashboard.
+
+La pulizia del catalogo segue un criterio conservativo: i corsi non canonici senza iscrizioni, qualificazioni o attestati collegati possono essere eliminati fisicamente; quelli con storico vengono mantenuti a fini di audit ma marcati `attivo = false` e quindi esclusi dai cataloghi operativi. La colonna `formazione_corsi.attivo` è il flag di visibilità catalogo, distinto da `stato`, che resta lo stato operativo del corso (`programmato`, `in_corso`, `completato`, `annullato`).
+
+Per i pagamenti, il backend è l’autorità sull’importo. Il frontend può mostrare un importo indicativo per UX, ma i router di pagamento ricalcolano sempre l’importo da `servizi_associazioni`, `formazione_corsi` o `associazioni.quota_annuale` prima del prelievo wallet, dell’accredito al wallet associazione e dell’aggiornamento stato richiesta/iscrizione/tesseramento. Questo mantiene interoperabili app impresa, tab ASSOCIAZIONE e tab ENTI E ASSOCIAZIONI su una fonte dati unica.
+
+## Stato implementazione — catalogo canonico e pagamenti server-authoritative
+
+Data: 2026-05-09. L’implementazione allinea backend e frontend alla tassonomia canonica dei nove attestati. Il backend espone e accetta nei cataloghi operativi solo i corsi con `tipo_attestato` canonico, normalizza gli alias storici più ricorrenti e impedisce la creazione o l’aggiornamento di corsi con categorie generiche non attestabili. La migrazione `056_corsi_formazione_catalogo_canonico.sql` introduce `formazione_corsi.attivo`, normalizza i seed legacy e applica una pulizia sicura: eliminazione solo dei corsi non canonici orfani e disattivazione dei corsi non canonici con storico collegato.
+
+I router di pagamento ora trattano l’importo inviato dal frontend come non autoritativo: per servizi, corsi e quota associativa il server ricalcola l’importo dalle tabelle canoniche e registra wallet, stato dominio e notifiche usando tale valore. L’app impresa e il pannello gestione corsi associazione inviano quindi identificativi di corso, iscrizione, servizio, richiesta o tesseramento; il prezzo resta mostrato a video solo come informazione di UX. Il pannello corsi associazione usa gli stessi nove codici canonici e gli stati iscrizione compatibili con il backend (`ISCRITTO`, `COMPLETATO`).
+
+Controlli eseguiti: `node --check` sui router backend modificati e `pnpm run build` sul frontend completano con esito positivo. Il controllo TypeScript globale `pnpm run check` resta bloccato da errori preesistenti fuori dal perimetro della modifica, in `FirebaseAuthContext.tsx` e `HomePage.tsx`, che non sono stati alterati da questo intervento chirurgico.

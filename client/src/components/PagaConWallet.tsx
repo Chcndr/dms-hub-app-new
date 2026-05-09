@@ -21,8 +21,15 @@ interface PagaConWalletProps {
   onSuccess?: () => void;
   importo: number;
   descrizione: string;
-  tipo: "quota_associativa" | "rinnovo_quota" | "servizio" | "corso" | "generico";
+  tipo:
+    | "quota_associativa"
+    | "rinnovo_quota"
+    | "servizio"
+    | "corso"
+    | "generico";
   riferimentoId?: number;
+  riferimentoTipo?: "richiesta" | "servizio";
+  iscrizioneId?: number;
   impresaId: number | null;
 }
 
@@ -34,6 +41,8 @@ export function PagaConWallet({
   descrizione,
   tipo,
   riferimentoId,
+  riferimentoTipo,
+  iscrizioneId,
   impresaId,
 }: PagaConWalletProps) {
   const [saldo, setSaldo] = useState<number | null>(null);
@@ -100,7 +109,6 @@ export function PagaConWallet({
     try {
       const payload: Record<string, any> = {
         impresa_id: impresaId,
-        importo,
       };
 
       // Adatta payload e endpoint in base al tipo di pagamento
@@ -114,7 +122,6 @@ export function PagaConWallet({
             body: JSON.stringify({
               impresa_id: impresaId,
               tesseramento_id: riferimentoId,
-              importo,
               note: descrizione,
             }),
           }
@@ -154,7 +161,9 @@ export function PagaConWallet({
             );
             const existData = await existRes.json();
             const found = existData.tesseramenti?.find(
-              (t: any) => t.associazione?.id === riferimentoId && t.stato === 'IN_ATTESA_PAGAMENTO'
+              (t: any) =>
+                t.associazione?.id === riferimentoId &&
+                t.stato === "IN_ATTESA_PAGAMENTO"
             );
             if (found) {
               tesseramentoId = found.id;
@@ -179,7 +188,6 @@ export function PagaConWallet({
             body: JSON.stringify({
               impresa_id: impresaId,
               tesseramento_id: tesseramentoId,
-              importo,
               note: descrizione,
             }),
           }
@@ -195,7 +203,24 @@ export function PagaConWallet({
         let endpoint = "/api/pagamenti/servizio";
         if (tipo === "corso") {
           endpoint = "/api/pagamenti/corso";
+          if (!riferimentoId) {
+            alert("Corso non valido");
+            return;
+          }
           payload.corso_id = riferimentoId;
+          if (iscrizioneId) payload.iscrizione_id = iscrizioneId;
+          payload.note = descrizione;
+        } else if (tipo === "servizio") {
+          endpoint = "/api/pagamenti/servizio";
+          if (!riferimentoId) {
+            alert("Servizio non valido");
+            return;
+          }
+          if (riferimentoTipo === "servizio") {
+            payload.servizio_id = riferimentoId;
+          } else {
+            payload.richiesta_id = riferimentoId;
+          }
           payload.note = descrizione;
         } else {
           payload.tipo = tipo;

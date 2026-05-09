@@ -533,7 +533,9 @@ function ConcessioniSection({
                     </div>
                     <p className="text-xs sm:text-sm text-gray-400 mt-1 truncate">
                       {c.tipo_concessione
-                        ? (c.tipo_concessione === 'bando_bolkestein' ? 'BANDO BOLKESTEIN' : c.tipo_concessione.toUpperCase())
+                        ? c.tipo_concessione === "bando_bolkestein"
+                          ? "BANDO BOLKESTEIN"
+                          : c.tipo_concessione.toUpperCase()
                         : ""}{" "}
                       \u2014{" "}
                       {c.ragione_sociale || c.impresa_denominazione || "N/A"}
@@ -590,7 +592,10 @@ function ConcessioneDetailView({
           <Badge className={getStatoBadgeClass(stato)}>{stato}</Badge>
         </h3>
         <p className="text-xs sm:text-sm text-gray-400 mt-1">
-          {concessione.tipo_concessione === 'bando_bolkestein' ? 'BANDO BOLKESTEIN' : (concessione.tipo_concessione?.toUpperCase() || '')} \u2014{" "}
+          {concessione.tipo_concessione === "bando_bolkestein"
+            ? "BANDO BOLKESTEIN"
+            : concessione.tipo_concessione?.toUpperCase() || ""}{" "}
+          \u2014{" "}
           {concessione.ragione_sociale ||
             concessione.impresa_denominazione ||
             "N/A"}{" "}
@@ -613,7 +618,11 @@ function ConcessioneDetailView({
           />
           <InfoField
             label="Tipo Concessione"
-            value={concessione.tipo_concessione === 'bando_bolkestein' ? 'Bando Bolkestein' : concessione.tipo_concessione}
+            value={
+              concessione.tipo_concessione === "bando_bolkestein"
+                ? "Bando Bolkestein"
+                : concessione.tipo_concessione
+            }
           />
           <InfoField
             label="Durata"
@@ -1659,10 +1668,11 @@ function CollaboratoriSection({
           <div className="flex items-start gap-2">
             <Phone className="w-4 h-4 text-[#14b8a6] mt-0.5 flex-shrink-0" />
             <p className="text-xs sm:text-sm text-[#e8fbff]/70">
-              I collaboratori autorizzati potranno scaricare l'app DMS Hub,
-              fare login con l'email qui indicata, e registrare le presenze
-              sui posteggi dell'impresa direttamente dalla vista Cittadino.
-              Puoi aggiungere più collaboratori: ognuno farà login con la propria email.
+              I collaboratori autorizzati potranno scaricare l'app DMS Hub, fare
+              login con l'email qui indicata, e registrare le presenze sui
+              posteggi dell'impresa direttamente dalla vista Cittadino. Puoi
+              aggiungere più collaboratori: ognuno farà login con la propria
+              email.
             </p>
           </div>
         </CardContent>
@@ -1744,7 +1754,11 @@ function CollaboratoriSection({
                     placeholder="email@esempio.com"
                     value={c.email}
                     onChange={e =>
-                      updateCollaboratore(c.id, "email", e.target.value.toLowerCase())
+                      updateCollaboratore(
+                        c.id,
+                        "email",
+                        e.target.value.toLowerCase()
+                      )
                     }
                     className="bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg px-2.5 py-1.5 text-sm text-[#e8fbff] placeholder-gray-600 focus:border-[#14b8a6]/50 focus:outline-none flex-1"
                   />
@@ -2766,6 +2780,7 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
     importo: number;
     descrizione: string;
     riferimentoId?: number;
+    riferimentoTipo?: "richiesta" | "servizio";
   }>({ importo: 0, descrizione: "" });
 
   useEffect(() => {
@@ -2844,10 +2859,12 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
             servizio.prezzo_associati || servizio.prezzo_base || "0"
           ) || 0;
         if (prezzoServizio > 0) {
+          const richiestaId = data.data?.id || data.data?.richiesta_id || null;
           setPagaInfo({
             importo: prezzoServizio,
             descrizione: `Servizio: ${servizio.nome}`,
-            riferimentoId: data.data?.id || servizio.id,
+            riferimentoId: richiestaId || servizio.id,
+            riferimentoTipo: richiestaId ? "richiesta" : "servizio",
           });
           setPagaOpen(true);
         }
@@ -2975,6 +2992,7 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
         descrizione={pagaInfo.descrizione}
         tipo="servizio"
         riferimentoId={pagaInfo.riferimentoId}
+        riferimentoTipo={pagaInfo.riferimentoTipo}
         impresaId={impresaId}
       />
     </div>
@@ -3003,9 +3021,14 @@ function FormazioneSection({
     importo: number;
     descrizione: string;
     riferimentoId?: number;
+    iscrizioneId?: number;
   }>({ importo: 0, descrizione: "" });
-  const [iscrizioneModal, setIscrizioneModal] = useState<{ open: boolean; corso: any | null }>({ open: false, corso: null });
-  const [selectedCollaboratore, setSelectedCollaboratore] = useState<string>("");
+  const [iscrizioneModal, setIscrizioneModal] = useState<{
+    open: boolean;
+    corso: any | null;
+  }>({ open: false, corso: null });
+  const [selectedCollaboratore, setSelectedCollaboratore] =
+    useState<string>("");
   const [collaboratoriScaduti, setCollaboratoriScaduti] = useState<any[]>([]);
 
   useEffect(() => {
@@ -3047,7 +3070,9 @@ function FormazioneSection({
         // Carica collaboratori dell'impresa
         try {
           const collabRes = await fetch(
-            addComuneIdToUrl(`${API_BASE_URL}/api/collaboratori?impresa_id=${impresaId}`)
+            addComuneIdToUrl(
+              `${API_BASE_URL}/api/collaboratori?impresa_id=${impresaId}`
+            )
           );
           const collabData = await collabRes.json();
           const collabList = Array.isArray(collabData.data)
@@ -3056,7 +3081,9 @@ function FormazioneSection({
               ? collabData
               : [];
           setCollaboratori(collabList);
-        } catch { /* silenzioso */ }
+        } catch {
+          /* silenzioso */
+        }
       } catch {
         /* silenzioso */
       }
@@ -3075,27 +3102,37 @@ function FormazioneSection({
     try {
       const tipoCorso = corso.tipo_attestato || corso.tipo || "";
       const res = await fetch(
-        addComuneIdToUrl(`${API_BASE_URL}/api/collaboratori/team/matrice/${impresaId}`)
+        addComuneIdToUrl(
+          `${API_BASE_URL}/api/collaboratori/team/matrice/${impresaId}`
+        )
       );
       const data = await res.json();
       if (data.success && data.matrice) {
         // Filtra collaboratori che hanno questo tipo di attestato scaduto o mancante
-        const filtrati = data.matrice.filter((m: any) => {
-          if (!m.attestati || m.attestati.length === 0) return true; // nessun attestato = tutti mancanti
-          const attestatoCorso = m.attestati.find((a: any) =>
-            a.tipo?.toUpperCase() === tipoCorso.toUpperCase() ||
-            a.tipo_qualifica?.toUpperCase() === tipoCorso.toUpperCase()
-          );
-          if (!attestatoCorso) return true; // mancante
-          if (attestatoCorso.stato === 'SCADUTO' || attestatoCorso.scaduto) return true; // scaduto
-          if (attestatoCorso.data_scadenza && new Date(attestatoCorso.data_scadenza) < new Date()) return true;
-          return false;
-        }).map((m: any) => ({
-          id: m.collaboratore?.id || m.id,
-          nome: m.collaboratore?.nome || m.nome,
-          cognome: m.collaboratore?.cognome || m.cognome,
-          ruolo: m.collaboratore?.ruolo || m.ruolo || "Collaboratore",
-        }));
+        const filtrati = data.matrice
+          .filter((m: any) => {
+            if (!m.attestati || m.attestati.length === 0) return true; // nessun attestato = tutti mancanti
+            const attestatoCorso = m.attestati.find(
+              (a: any) =>
+                a.tipo?.toUpperCase() === tipoCorso.toUpperCase() ||
+                a.tipo_qualifica?.toUpperCase() === tipoCorso.toUpperCase()
+            );
+            if (!attestatoCorso) return true; // mancante
+            if (attestatoCorso.stato === "SCADUTO" || attestatoCorso.scaduto)
+              return true; // scaduto
+            if (
+              attestatoCorso.data_scadenza &&
+              new Date(attestatoCorso.data_scadenza) < new Date()
+            )
+              return true;
+            return false;
+          })
+          .map((m: any) => ({
+            id: m.collaboratore?.id || m.id,
+            nome: m.collaboratore?.nome || m.nome,
+            cognome: m.collaboratore?.cognome || m.cognome,
+            ruolo: m.collaboratore?.ruolo || m.ruolo || "Collaboratore",
+          }));
         setCollaboratoriScaduti(filtrati.length > 0 ? filtrati : collaboratori);
       } else {
         setCollaboratoriScaduti(collaboratori);
@@ -3118,7 +3155,9 @@ function FormazioneSection({
           body: JSON.stringify({
             impresa_id: impresaId,
             corso_id: corso.id,
-            collaboratore_id: selectedCollaboratore ? parseInt(selectedCollaboratore) : null,
+            collaboratore_id: selectedCollaboratore
+              ? parseInt(selectedCollaboratore)
+              : null,
           }),
         }
       );
@@ -3127,25 +3166,33 @@ function FormazioneSection({
         const collabNome = selectedCollaboratore
           ? collaboratori.find(c => c.id === parseInt(selectedCollaboratore))
           : null;
-        alert(`Iscrizione completata${collabNome ? ` per ${collabNome.nome} ${collabNome.cognome}` : ""}!`);
+        alert(
+          `Iscrizione completata${collabNome ? ` per ${collabNome.nome} ${collabNome.cognome}` : ""}!`
+        );
         setIscrizioni(prev => [
           ...prev,
           data.data || {
             id: Date.now(),
+            corso_id: corso.id,
             corso_nome: corso.nome,
             stato: "ISCRITTO",
             created_at: new Date().toISOString(),
-            collaboratore_nome: collabNome ? `${collabNome.nome} ${collabNome.cognome}` : null,
+            collaboratore_nome: collabNome
+              ? `${collabNome.nome} ${collabNome.cognome}`
+              : null,
           },
         ]);
         setIscrizioneModal({ open: false, corso: null });
         // Pagamento se il corso ha un prezzo > 0
         const prezzoCorso = parseFloat(corso.prezzo || "0") || 0;
         if (prezzoCorso > 0) {
+          const iscrizioneId =
+            data.data?.id || data.data?.iscrizione_id || null;
           setPagaInfo({
             importo: prezzoCorso,
             descrizione: `Iscrizione: ${corso.titolo || corso.nome}${collabNome ? ` - ${collabNome.nome} ${collabNome.cognome}` : ""}`,
-            riferimentoId: data.data?.id || corso.id,
+            riferimentoId: corso.id,
+            iscrizioneId: iscrizioneId || undefined,
           });
           setPagaOpen(true);
         }
@@ -3332,13 +3379,19 @@ function FormazioneSection({
       {iscrizioneModal.open && iscrizioneModal.corso && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1a2332] border border-[#14b8a6]/30 rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-[#e8fbff] mb-2">Iscrizione al Corso</h3>
-            <p className="text-sm text-gray-400 mb-4">{iscrizioneModal.corso.nome}</p>
-            {iscrizioneModal.corso.prezzo && parseFloat(iscrizioneModal.corso.prezzo) > 0 && (
-              <p className="text-sm text-[#14b8a6] font-medium mb-4">
-                Costo: &euro;{parseFloat(iscrizioneModal.corso.prezzo).toFixed(2)}
-              </p>
-            )}
+            <h3 className="text-lg font-bold text-[#e8fbff] mb-2">
+              Iscrizione al Corso
+            </h3>
+            <p className="text-sm text-gray-400 mb-4">
+              {iscrizioneModal.corso.nome}
+            </p>
+            {iscrizioneModal.corso.prezzo &&
+              parseFloat(iscrizioneModal.corso.prezzo) > 0 && (
+                <p className="text-sm text-[#14b8a6] font-medium mb-4">
+                  Costo: &euro;
+                  {parseFloat(iscrizioneModal.corso.prezzo).toFixed(2)}
+                </p>
+              )}
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Per chi è il corso?
             </label>
@@ -3354,11 +3407,13 @@ function FormazioneSection({
                 </option>
               ))}
             </select>
-            {collaboratoriScaduti.length > 0 && collaboratoriScaduti.length < collaboratori.length && (
-              <p className="text-xs text-amber-400 mb-3 -mt-2">
-                Mostrati solo i collaboratori con attestato scaduto o mancante per questo corso
-              </p>
-            )}
+            {collaboratoriScaduti.length > 0 &&
+              collaboratoriScaduti.length < collaboratori.length && (
+                <p className="text-xs text-amber-400 mb-3 -mt-2">
+                  Mostrati solo i collaboratori con attestato scaduto o mancante
+                  per questo corso
+                </p>
+              )}
             <div className="flex gap-3">
               <button
                 onClick={() => setIscrizioneModal({ open: false, corso: null })}
@@ -3384,6 +3439,7 @@ function FormazioneSection({
         descrizione={pagaInfo.descrizione}
         tipo="corso"
         riferimentoId={pagaInfo.riferimentoId}
+        iscrizioneId={pagaInfo.iscrizioneId}
         impresaId={impresaId}
       />
     </div>
@@ -4095,13 +4151,29 @@ export default function AnagraficaPage() {
           presRes,
           giustRes,
         ] = await Promise.all([
-          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${IMPRESA_ID}?fields=light`)).catch(() => null),
+          fetch(
+            addComuneIdToUrl(
+              `${API_BASE_URL}/api/imprese/${IMPRESA_ID}?fields=light`
+            )
+          ).catch(() => null),
           fetch(`${API_BASE_URL}/api/vendors`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/qualificazioni/impresa/${IMPRESA_ID}`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/autorizzazioni?impresa_id=${IMPRESA_ID}`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/domande-spunta?impresa_id=${IMPRESA_ID}`).catch(() => null),
-          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/presenze/impresa/${IMPRESA_ID}`)).catch(() => null),
-          fetch(`${API_BASE_URL}/api/giustificazioni/impresa/${IMPRESA_ID}`).catch(() => null),
+          fetch(
+            `${API_BASE_URL}/api/qualificazioni/impresa/${IMPRESA_ID}`
+          ).catch(() => null),
+          fetch(
+            `${API_BASE_URL}/api/autorizzazioni?impresa_id=${IMPRESA_ID}`
+          ).catch(() => null),
+          fetch(
+            `${API_BASE_URL}/api/domande-spunta?impresa_id=${IMPRESA_ID}`
+          ).catch(() => null),
+          fetch(
+            addComuneIdToUrl(
+              `${API_BASE_URL}/api/presenze/impresa/${IMPRESA_ID}`
+            )
+          ).catch(() => null),
+          fetch(
+            `${API_BASE_URL}/api/giustificazioni/impresa/${IMPRESA_ID}`
+          ).catch(() => null),
         ]);
 
         // Processa impresa
@@ -4109,7 +4181,9 @@ export default function AnagraficaPage() {
           try {
             const impresaJson = await impresaRes.json();
             if (impresaJson.success) setImpresa(impresaJson.data);
-          } catch { /* silenzioso */ }
+          } catch {
+            /* silenzioso */
+          }
         }
 
         // Processa vendors → concessioni (sequenziale solo per i vendor dell'impresa)
@@ -4124,7 +4198,11 @@ export default function AnagraficaPage() {
               // Carica concessioni per tutti i vendor in PARALLELO
               const concResults = await Promise.all(
                 myVendors.map((vendor: any) =>
-                  fetch(addComuneIdToUrl(`${API_BASE_URL}/api/concessions?vendor_id=${vendor.id}`))
+                  fetch(
+                    addComuneIdToUrl(
+                      `${API_BASE_URL}/api/concessions?vendor_id=${vendor.id}`
+                    )
+                  )
                     .then(r => r.json())
                     .catch(() => ({ success: false, data: [] }))
                 )
@@ -4139,7 +4217,9 @@ export default function AnagraficaPage() {
             } else {
               setConcessioni([]);
             }
-          } catch { setConcessioni([]); }
+          } catch {
+            setConcessioni([]);
+          }
         }
 
         // Processa qualificazioni
@@ -4147,7 +4227,9 @@ export default function AnagraficaPage() {
           try {
             const qualJson = await qualRes.json();
             if (qualJson.success) setQualificazioni(qualJson.data || []);
-          } catch { /* silenzioso */ }
+          } catch {
+            /* silenzioso */
+          }
         }
 
         // Processa autorizzazioni
@@ -4155,7 +4237,9 @@ export default function AnagraficaPage() {
           try {
             const autJson = await autRes.json();
             if (autJson.success) setAutorizzazioni(autJson.data || []);
-          } catch { /* silenzioso */ }
+          } catch {
+            /* silenzioso */
+          }
         }
 
         // Processa domande spunta
@@ -4163,7 +4247,9 @@ export default function AnagraficaPage() {
           try {
             const domJson = await domRes.json();
             if (domJson.success) setDomande(domJson.data || []);
-          } catch { /* silenzioso */ }
+          } catch {
+            /* silenzioso */
+          }
         }
 
         // Processa presenze
@@ -4174,7 +4260,9 @@ export default function AnagraficaPage() {
               setPresenze(presJson.data || []);
               setPresenzeStats(presJson.stats || null);
             }
-          } catch { /* silenzioso */ }
+          } catch {
+            /* silenzioso */
+          }
         }
 
         // Processa giustificazioni
@@ -4182,7 +4270,9 @@ export default function AnagraficaPage() {
           try {
             const giustJson = await giustRes.json();
             if (giustJson.success) setGiustificazioni(giustJson.data || []);
-          } catch { /* silenzioso */ }
+          } catch {
+            /* silenzioso */
+          }
         }
       } catch (err) {
         console.error("Errore fetch anagrafica:", err);
