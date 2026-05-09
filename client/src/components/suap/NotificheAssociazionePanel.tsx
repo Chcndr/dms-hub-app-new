@@ -26,6 +26,9 @@ import {
   Clock,
   Users,
   X,
+  BookOpen,
+  Link as LinkIcon,
+  MapPin,
 } from "lucide-react";
 import {
   Card,
@@ -69,6 +72,12 @@ interface NotificaAssociazione {
   non_letti?: number;
 }
 
+interface CorsoAssociazione {
+  id: number;
+  titolo: string;
+  sede?: string;
+}
+
 interface NotificheAssociazionePanelProps {
   onNotificheUpdate?: () => void;
 }
@@ -83,6 +92,17 @@ export default function NotificheAssociazionePanel({
   );
   const [selectedNotifica, setSelectedNotifica] =
     useState<NotificaAssociazione | null>(null);
+  const [corsi, setCorsi] = useState<CorsoAssociazione[]>([]);
+  const [showCorsoModal, setShowCorsoModal] = useState(false);
+  const [selectedCorsoId, setSelectedCorsoId] = useState<number | "">("");
+  const [modalitaCorso, setModalitaCorso] = useState<"ONLINE" | "SEDE">("ONLINE");
+  const [linkCorso, setLinkCorso] = useState("");
+  const [sedeCorso, setSedeCorso] = useState("");
+  const [titoloCorso, setTitoloCorso] = useState("Accesso corso");
+  const [messaggioCorso, setMessaggioCorso] = useState(
+    "Gentile impresa, ti inviamo le informazioni operative per partecipare al corso selezionato."
+  );
+  const [sendingCorso, setSendingCorso] = useState(false);
 
   const { associazioneId } = getImpersonationParams();
 
@@ -107,12 +127,25 @@ export default function NotificheAssociazionePanel({
     }
   }, [associazioneId]);
 
+  const loadCorsi = useCallback(async () => {
+    if (!associazioneId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/corsi`);
+      const data = await res.json();
+      setCorsi(data.success && data.data ? data.data : []);
+    } catch (error) {
+      console.error("Errore caricamento corsi associazione:", error);
+      setCorsi([]);
+    }
+  }, [associazioneId]);
+
   useEffect(() => {
     loadNotifiche();
+    loadCorsi();
     // Polling ogni 30 secondi
     const interval = setInterval(loadNotifiche, 30000);
     return () => clearInterval(interval);
-  }, [loadNotifiche]);
+  }, [loadNotifiche, loadCorsi]);
 
   const markAsRead = async (notificaId: number) => {
     if (!associazioneId) return;
@@ -147,6 +180,51 @@ export default function NotificheAssociazionePanel({
       onNotificheUpdate?.();
     } catch (error) {
       console.error("Errore marcatura tutte notifiche:", error);
+    }
+  };
+
+  const openCorsoModal = () => {
+    const primoCorso = corsi[0];
+    const corsoId = selectedCorsoId || primoCorso?.id || "";
+    setSelectedCorsoId(corsoId);
+    const corso = corsi.find(c => c.id === Number(corsoId)) || primoCorso;
+    if (corso?.sede) setSedeCorso(corso.sede);
+    setTitoloCorso(corso ? `Informazioni corso: ${corso.titolo}` : "Accesso corso");
+    setShowCorsoModal(true);
+  };
+
+  const sendNotificaCorso = async () => {
+    if (!associazioneId || !selectedCorsoId || !titoloCorso.trim() || !messaggioCorso.trim()) return;
+    setSendingCorso(true);
+    try {
+      const res = await authenticatedFetch(
+        `${API_BASE_URL}/api/associazioni/${associazioneId}/notifiche-corso`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            corso_id: Number(selectedCorsoId),
+            titolo: titoloCorso,
+            messaggio: messaggioCorso,
+            modalita: modalitaCorso,
+            link_corso: modalitaCorso === "ONLINE" ? linkCorso.trim() : undefined,
+            sede_corso: modalitaCorso === "SEDE" ? sedeCorso.trim() : undefined,
+            tipo_messaggio: modalitaCorso === "ONLINE" ? "CORSO_ONLINE" : "CORSO_SEDE",
+          }),
+        }
+      );
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Errore invio notifica corso");
+      setShowCorsoModal(false);
+      setLinkCorso("");
+      await loadNotifiche();
+      onNotificheUpdate?.();
+      window.dispatchEvent(new CustomEvent("mihub:toast", { detail: { type: "success", message: data.message || "Notifica corso inviata" } }));
+    } catch (error) {
+      console.error("Errore invio notifica corso:", error);
+      window.dispatchEvent(new CustomEvent("mihub:toast", { detail: { type: "error", message: error instanceof Error ? error.message : "Errore invio notifica corso" } }));
+    } finally {
+      setSendingCorso(false);
     }
   };
 
@@ -209,6 +287,49 @@ export default function NotificheAssociazionePanel({
 
   return (
     <div className="space-y-6">
+      {/* Invio notifiche corso */}
+      <Card className="bg-[#1a2332] border-[#8b5cf6]/20">
+        <CardHeader>
+          <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-[#8b5cf6]" />
+            Notifica imprese iscritte a un corso
+          </CardTitle>
+          <CardDescription className="text-[#e8fbff]/50">
+            Seleziona un corso e invia in un unico passaggio il link alla piattaforma di streaming oppure le indicazioni della sede.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col md:flex-row gap-3 md:items-center">
+          <select
+            className="flex-1 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg px-3 py-2 text-sm text-[#e8fbff]"
+            value={selectedCorsoId}
+            onChange={e => {
+              const value = e.target.value ? Number(e.target.value) : "";
+              setSelectedCorsoId(value);
+              const corso = corsi.find(c => c.id === Number(value));
+              if (corso) {
+                setTitoloCorso(`Informazioni corso: ${corso.titolo}`);
+                setSedeCorso(corso.sede || "");
+              }
+            }}
+          >
+            <option value="">Scegli corso</option>
+            {corsi.map(corso => (
+              <option key={corso.id} value={corso.id}>
+                {corso.titolo}
+              </option>
+            ))}
+          </select>
+          <Button
+            onClick={openCorsoModal}
+            disabled={corsi.length === 0}
+            className="bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Prepara invio
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Lista Messaggi - Layout identico al NotificationManager SUAP */}
       <Card className="bg-[#1a2332] border-[#3b82f6]/20">
         <CardHeader>
@@ -395,6 +516,133 @@ export default function NotificheAssociazionePanel({
           </div>
         </CardContent>
       </Card>
+
+      {/* Popup invio notifica corso */}
+      {showCorsoModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="bg-[#1a2332] border-[#8b5cf6]/30 w-full max-w-2xl max-h-[88vh] overflow-y-auto">
+            <CardHeader className="border-b border-[#8b5cf6]/20">
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                    <Send className="w-5 h-5 text-[#8b5cf6]" />
+                    Invio alle imprese del corso
+                  </CardTitle>
+                  <CardDescription className="text-[#e8fbff]/50 mt-1">
+                    Il messaggio sarà recapitato solo alle imprese iscritte al corso selezionato.
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCorsoModal(false)}
+                  className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              <div>
+                <label className="text-xs text-[#e8fbff]/50">Corso</label>
+                <select
+                  className="w-full mt-1 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg px-3 py-2 text-sm text-[#e8fbff]"
+                  value={selectedCorsoId}
+                  onChange={e => {
+                    const value = e.target.value ? Number(e.target.value) : "";
+                    setSelectedCorsoId(value);
+                    const corso = corsi.find(c => c.id === Number(value));
+                    if (corso) {
+                      setTitoloCorso(`Informazioni corso: ${corso.titolo}`);
+                      setSedeCorso(corso.sede || "");
+                    }
+                  }}
+                >
+                  <option value="">Scegli corso</option>
+                  {corsi.map(corso => (
+                    <option key={corso.id} value={corso.id}>
+                      {corso.titolo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={modalitaCorso === "ONLINE" ? "default" : "outline"}
+                  onClick={() => setModalitaCorso("ONLINE")}
+                  className={modalitaCorso === "ONLINE" ? "bg-[#3b82f6]" : "border-[#3b82f6]/30 text-[#e8fbff]/70"}
+                >
+                  <LinkIcon className="w-4 h-4 mr-2" /> Link corso online
+                </Button>
+                <Button
+                  variant={modalitaCorso === "SEDE" ? "default" : "outline"}
+                  onClick={() => setModalitaCorso("SEDE")}
+                  className={modalitaCorso === "SEDE" ? "bg-[#10b981]" : "border-[#3b82f6]/30 text-[#e8fbff]/70"}
+                >
+                  <MapPin className="w-4 h-4 mr-2" /> Specifiche sede
+                </Button>
+              </div>
+
+              {modalitaCorso === "ONLINE" ? (
+                <div>
+                  <label className="text-xs text-[#e8fbff]/50">Collegamento alla piattaforma streaming</label>
+                  <input
+                    className="w-full mt-1 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg px-3 py-2 text-sm text-[#e8fbff]"
+                    placeholder="https://..."
+                    value={linkCorso}
+                    onChange={e => setLinkCorso(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs text-[#e8fbff]/50">Sede e indicazioni operative</label>
+                  <input
+                    className="w-full mt-1 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg px-3 py-2 text-sm text-[#e8fbff]"
+                    placeholder="Indirizzo, aula, orario, note ingresso..."
+                    value={sedeCorso}
+                    onChange={e => setSedeCorso(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs text-[#e8fbff]/50">Titolo notifica</label>
+                <input
+                  className="w-full mt-1 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg px-3 py-2 text-sm text-[#e8fbff]"
+                  value={titoloCorso}
+                  onChange={e => setTitoloCorso(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-[#e8fbff]/50">Messaggio</label>
+                <textarea
+                  className="w-full mt-1 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg px-3 py-2 text-sm text-[#e8fbff] min-h-[120px] resize-y"
+                  value={messaggioCorso}
+                  onChange={e => setMessaggioCorso(e.target.value)}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCorsoModal(false)}
+                  className="border-[#ef4444]/30 text-[#ef4444]"
+                >
+                  Annulla
+                </Button>
+                <Button
+                  onClick={sendNotificaCorso}
+                  disabled={sendingCorso || !selectedCorsoId || !titoloCorso.trim() || !messaggioCorso.trim()}
+                  className="bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white"
+                >
+                  {sendingCorso ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                  Invia alle imprese iscritte
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Modal Dettaglio Messaggio - Identico al NotificationManager SUAP */}
       {selectedNotifica && (

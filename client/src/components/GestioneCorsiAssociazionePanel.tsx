@@ -8,6 +8,7 @@
  *   PUT    /api/associazioni/:id/corsi/:cid
  *   DELETE /api/associazioni/:id/corsi/:cid
  *   GET    /api/associazioni/:id/iscrizioni-corsi
+ *   POST   /api/associazioni/:id/corsi/:cid/iscrizioni/:iscrizioneId/completa
  *   POST   /api/associazioni/:id/corsi/:cid/rilascia-attestato
  *
  * @version 1.0.0
@@ -71,6 +72,7 @@ interface IscrizioneCorso {
   collaboratore_ruolo?: string;
   stato: string;
   data_iscrizione: string;
+  data_completamento?: string;
   attestato_rilasciato: boolean;
   attestato_codice?: string;
   attestato_pdf_url?: string;
@@ -206,6 +208,25 @@ const GestioneCorsiAssociazionePanel = memo(
           loadData();
         } else {
           toast.error(data.error || "Errore eliminazione");
+        }
+      } catch (error) {
+        toast.error("Errore di rete");
+      }
+    };
+
+    const segnaCorsoFatto = async (corsoId: number, iscrizioneId: number) => {
+      if (!associazioneId) return;
+      try {
+        const res = await authenticatedFetch(
+          `${API_BASE}/api/associazioni/${associazioneId}/corsi/${corsoId}/iscrizioni/${iscrizioneId}/completa`,
+          { method: "POST" }
+        );
+        const data = await res.json();
+        if (data.success) {
+          toast.success("Corso segnato come fatto");
+          loadData();
+        } else {
+          toast.error(data.error || "Errore completamento corso");
         }
       } catch (error) {
         toast.error("Errore di rete");
@@ -671,12 +692,12 @@ const GestioneCorsiAssociazionePanel = memo(
                             )}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
                           {i.attestato_rilasciato ? (
                             <div className="flex items-center gap-1.5">
                               <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30">
                                 <Award className="h-3 w-3 mr-1" />{" "}
-                                {i.attestato_codice || "Attestato"}
+                                {i.attestato_codice || "Attestato generato"}
                               </Badge>
                               {i.attestato_pdf_url && (
                                 <a
@@ -689,22 +710,44 @@ const GestioneCorsiAssociazionePanel = memo(
                                 </a>
                               )}
                             </div>
+                          ) : isStatoCompletato(i.stato) ? (
+                            <>
+                              <Badge className="bg-[#3b82f6]/20 text-[#3b82f6] border-[#3b82f6]/30">
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Corso fatto
+                              </Badge>
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  rilasciaAttestato(i.corso_id, i.id)
+                                }
+                                className="bg-[#10b981] hover:bg-[#10b981]/80 text-white h-7 text-xs"
+                              >
+                                <Award className="h-3 w-3 mr-1" /> Genera attestato
+                              </Button>
+                            </>
                           ) : isStatoIscritto(i.stato) ? (
-                            <Button
-                              size="sm"
-                              onClick={() =>
-                                rilasciaAttestato(i.corso_id, i.id)
-                              }
-                              className="bg-[#10b981] hover:bg-[#10b981]/80 text-white h-7 text-xs"
-                            >
-                              <Award className="h-3 w-3 mr-1" /> Rilascia
-                              Attestato
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => segnaCorsoFatto(i.corso_id, i.id)}
+                                className="border-[#3b82f6]/30 text-[#3b82f6] h-7 text-xs"
+                              >
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Corso fatto
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  rilasciaAttestato(i.corso_id, i.id)
+                                }
+                                className="bg-[#10b981] hover:bg-[#10b981]/80 text-white h-7 text-xs"
+                              >
+                                <Award className="h-3 w-3 mr-1" /> Genera attestato
+                              </Button>
+                            </>
                           ) : (
                             <Badge className="bg-[#ef4444]/20 text-[#ef4444]">
-                              {isStatoCompletato(i.stato)
-                                ? "COMPLETATO"
-                                : i.stato}
+                              {i.stato}
                             </Badge>
                           )}
                         </div>
