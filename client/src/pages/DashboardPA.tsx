@@ -308,15 +308,15 @@ function useDashboardData() {
         .catch(err => console.error("Stats qualificazione fetch error:", err));
 
     // Fetch formazione stats (enti formatori e corsi)
-    fetch(`${MIHUB_API}/formazione/stats`)
+    fetch(`${MIHUB_API}/formazione/stats${assocFilter}`)
       .then(res => res.json())
       .then(async data => {
         if (data.success) {
           // Fetch anche lista enti, corsi e iscrizioni
           const [entiRes, corsiRes, iscrizioniRes] = await Promise.all([
             fetch(`${MIHUB_API}/formazione/enti`).then(r => r.json()),
-            fetch(`${MIHUB_API}/formazione/corsi`).then(r => r.json()),
-            fetch(`${MIHUB_API}/formazione/iscrizioni/stats`).then(r =>
+            fetch(`${MIHUB_API}/formazione/corsi${assocFilter}`).then(r => r.json()),
+            fetch(`${MIHUB_API}/formazione/iscrizioni/stats${assocFilter}`).then(r =>
               r.json()
             ),
           ]);
@@ -1749,6 +1749,9 @@ export default function DashboardPA() {
   const [hubList, setHubList] = useState<any[]>([]);
   const [impreseList, setImpreseList] = useState<any[]>([]);
   const [invioNotificaLoading, setInvioNotificaLoading] = useState(false);
+  const [assocTargetTipo, setAssocTargetTipo] = useState("TUTTI");
+  const [assocCorsoDettagliAperti, setAssocCorsoDettagliAperti] = useState(false);
+  const [assocCorsoModalita, setAssocCorsoModalita] = useState<"ONLINE" | "SEDE">("ONLINE");
   const [selectedNotifica, setSelectedNotifica] = useState<any>(null);
   const [notificheNonLette, setNotificheNonLette] = useState(0);
   const [filtroMessaggiEnti, setFiltroMessaggiEnti] = useState<
@@ -7149,7 +7152,7 @@ export default function DashboardPA() {
                               </div>
                             )}
                           </div>
-                          <div className="text-right">
+                          <div className="text-right min-w-[230px]">
                             <div className="text-sm text-[#e8fbff]/70">
                               {item.corso_data
                                 ? new Date(item.corso_data).toLocaleDateString(
@@ -7169,6 +7172,83 @@ export default function DashboardPA() {
                                     item.data_iscrizione
                                   ).toLocaleDateString("it-IT")
                                 : "-"}
+                            </div>
+                            <div className="mt-2 flex flex-wrap justify-end gap-2">
+                              {item.stato === "COMPLETATO" ? (
+                                <span className="px-2 py-1 rounded-md bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs">
+                                  Corso fatto
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="px-2 py-1 rounded-md bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 text-xs"
+                                  onClick={async () => {
+                                    if (!item.corso_id) {
+                                      alert("ID corso mancante: aggiorna la pagina e riprova.");
+                                      return;
+                                    }
+                                    const impersonation = getImpersonationParams();
+                                    const assocId = impersonation.associazioneId || new URLSearchParams(window.location.search).get("associazione_id") || "1";
+                                    const MIHUB_API =
+                                      import.meta.env.VITE_MIHUB_API_BASE_URL ||
+                                      "https://api.mio-hub.me/api";
+                                    try {
+                                      const response = await authenticatedFetch(
+                                        `${MIHUB_API}/associazioni/${assocId}/corsi/${item.corso_id}/iscrizioni/${item.id}/completa`,
+                                        { method: "POST" }
+                                      );
+                                      const data = await response.json();
+                                      if (data.success) {
+                                        alert("✅ Corso segnato come fatto.");
+                                        window.location.reload();
+                                      } else {
+                                        alert("❌ Errore: " + data.error);
+                                      }
+                                    } catch (err) {
+                                      alert("❌ Errore durante il completamento del corso");
+                                    }
+                                  }}
+                                >
+                                  Corso fatto
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className="px-2 py-1 rounded-md bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs disabled:opacity-50"
+                                disabled={Boolean(item.attestato_rilasciato)}
+                                onClick={async () => {
+                                  if (!item.corso_id) {
+                                    alert("ID corso mancante: aggiorna la pagina e riprova.");
+                                    return;
+                                  }
+                                  const impersonation = getImpersonationParams();
+                                  const assocId = impersonation.associazioneId || new URLSearchParams(window.location.search).get("associazione_id") || "1";
+                                  const MIHUB_API =
+                                    import.meta.env.VITE_MIHUB_API_BASE_URL ||
+                                    "https://api.mio-hub.me/api";
+                                  try {
+                                    const response = await authenticatedFetch(
+                                      `${MIHUB_API}/associazioni/${assocId}/corsi/${item.corso_id}/rilascia-attestato`,
+                                      {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ iscrizione_id: item.id }),
+                                      }
+                                    );
+                                    const data = await response.json();
+                                    if (data.success) {
+                                      alert("✅ Attestato generato e inviato all'impresa.");
+                                      window.location.reload();
+                                    } else {
+                                      alert("❌ Errore: " + data.error);
+                                    }
+                                  } catch (err) {
+                                    alert("❌ Errore durante la generazione attestato");
+                                  }
+                                }}
+                              >
+                                {item.attestato_rilasciato ? "Attestato inviato" : "Genera attestato"}
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -8295,7 +8375,49 @@ export default function DashboardPA() {
                         try {
                           const targetTipo = formData.get("target_tipo");
                           const targetId = formData.get("target_id");
+                          const impersonation = getImpersonationParams();
+                          const associazioneId = impersonation.associazioneId || new URLSearchParams(window.location.search).get("associazione_id") || "1";
+                          const associazioneNome = impersonation.associazioneNome || new URLSearchParams(window.location.search).get("associazione_nome") || "Associazione di Categoria";
                           let targetNome = null;
+
+                          if (targetTipo === "CORSO") {
+                            const corsoId = formData.get("corso_id");
+                            if (!corsoId) {
+                              alert("Seleziona il corso a cui inviare la notifica.");
+                              setInvioNotificaLoading(false);
+                              return;
+                            }
+
+                            const response = await authenticatedFetch(
+                              `${MIHUB_API}/associazioni/${associazioneId}/notifiche-corso`,
+                              {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  corso_id: parseInt(corsoId as string, 10),
+                                  titolo: formData.get("titolo"),
+                                  messaggio: formData.get("messaggio"),
+                                  tipo_messaggio: formData.get("tipo_messaggio"),
+                                  modalita: formData.get("modalita_corso") || "ONLINE",
+                                  link_corso: formData.get("link_corso") || null,
+                                  sede_corso: formData.get("sede_corso") || null,
+                                }),
+                              }
+                            );
+                            const data = await response.json();
+                            if (data.success) {
+                              alert(
+                                `✅ Notifica corso inviata a ${data.data.destinatari} imprese iscritte a "${data.data.corso_titolo}".`
+                              );
+                              form.reset();
+                              setAssocTargetTipo("TUTTI");
+                              setAssocCorsoDettagliAperti(false);
+                              setAssocCorsoModalita("ONLINE");
+                            } else {
+                              alert("❌ Errore: " + data.error);
+                            }
+                            return;
+                          }
 
                           if (targetTipo === "MERCATO" && targetId) {
                             const mercato = mercatiList.find(
@@ -8321,8 +8443,8 @@ export default function DashboardPA() {
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({
                                 mittente_tipo: "ASSOCIAZIONE",
-                                mittente_id: 2,
-                                mittente_nome: "Associazione di Categoria",
+                                mittente_id: parseInt(associazioneId, 10),
+                                mittente_nome: associazioneNome,
                                 titolo: formData.get("titolo"),
                                 messaggio: formData.get("messaggio"),
                                 tipo_messaggio: formData.get("tipo_messaggio"),
@@ -8338,6 +8460,7 @@ export default function DashboardPA() {
                               `✅ Notifica inviata con successo a ${data.data.destinatari_count} destinatari!`
                             );
                             form.reset();
+                            setAssocTargetTipo("TUTTI");
                           } else {
                             alert("❌ Errore: " + data.error);
                           }
@@ -8357,9 +8480,14 @@ export default function DashboardPA() {
                           <select
                             name="target_tipo"
                             id="assoc_target_tipo"
+                            value={assocTargetTipo}
                             className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
                             required
                             onChange={e => {
+                              setAssocTargetTipo(e.target.value);
+                              if (e.target.value !== "CORSO") {
+                                setAssocCorsoDettagliAperti(false);
+                              }
                               const targetIdSelect = document.getElementById(
                                 "assoc_target_id"
                               ) as HTMLSelectElement;
@@ -8407,6 +8535,7 @@ export default function DashboardPA() {
                             }}
                           >
                             <option value="TUTTI">Tutte le Imprese</option>
+                            <option value="CORSO">Imprese iscritte a un corso...</option>
                             <option value="MERCATO">
                               Imprese del Mercato...
                             </option>
@@ -8425,11 +8554,121 @@ export default function DashboardPA() {
                           >
                             <option value="INFORMATIVA">Informativa</option>
                             <option value="PROMOZIONALE">
-                              Promozionale (Bandi/Servizi)
+                              Promozionale (Bandi/Servizi/Corsi)
                             </option>
                           </select>
                         </div>
                       </div>
+                      {assocTargetTipo === "CORSO" && (
+                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                Corso
+                              </label>
+                              <select
+                                name="corso_id"
+                                className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
+                                required={assocTargetTipo === "CORSO"}
+                              >
+                                <option value="">Seleziona il corso...</option>
+                                {(realData.formazioneStats?.corsi || []).map((corso: any) => (
+                                  <option key={corso.id} value={corso.id}>
+                                    {corso.titolo} — {corso.ente_nome || corso.sede || "corso"}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex items-end">
+                              <button
+                                type="button"
+                                onClick={() => setAssocCorsoDettagliAperti(true)}
+                                className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-medium hover:opacity-90"
+                              >
+                                Configura link online o sede
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-[#e8fbff]/50">
+                            La notifica verrà inviata solo alle imprese iscritte al corso selezionato.
+                          </p>
+                        </div>
+                      )}
+
+                      {assocCorsoDettagliAperti && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+                          <div className="w-full max-w-2xl rounded-xl border border-emerald-500/30 bg-[#111827] p-5 shadow-2xl">
+                            <div className="flex items-start justify-between gap-4 mb-4">
+                              <div>
+                                <h3 className="text-lg font-semibold text-[#e8fbff]">
+                                  Dettagli accesso corso
+                                </h3>
+                                <p className="text-sm text-[#e8fbff]/60">
+                                  Inserisci il collegamento streaming oppure le specifiche della sede. Verranno aggiunti al messaggio inviato alle imprese iscritte.
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setAssocCorsoDettagliAperti(false)}
+                                className="px-3 py-1 rounded-md border border-white/10 text-[#e8fbff]/70 hover:bg-white/10"
+                              >
+                                Chiudi
+                              </button>
+                            </div>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                  Modalità corso
+                                </label>
+                                <select
+                                  name="modalita_corso"
+                                  value={assocCorsoModalita}
+                                  onChange={e => setAssocCorsoModalita(e.target.value as "ONLINE" | "SEDE")}
+                                  className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
+                                >
+                                  <option value="ONLINE">Corso online / streaming</option>
+                                  <option value="SEDE">Corso in sede</option>
+                                </select>
+                              </div>
+                              {assocCorsoModalita === "ONLINE" ? (
+                                <div>
+                                  <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                    Link accesso piattaforma streaming
+                                  </label>
+                                  <input
+                                    type="url"
+                                    name="link_corso"
+                                    placeholder="https://..."
+                                    className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
+                                  />
+                                </div>
+                              ) : (
+                                <div>
+                                  <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                    Specifiche sede corso
+                                  </label>
+                                  <textarea
+                                    name="sede_corso"
+                                    rows={3}
+                                    placeholder="Es: Bologna, Via..., aula..., orario..., referente..."
+                                    className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
+                                  />
+                                </div>
+                              )}
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setAssocCorsoDettagliAperti(false)}
+                                  className="px-4 py-2 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600"
+                                >
+                                  Salva dettagli
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <div
                         id="assoc_target_id_container"
                         style={{ display: "none" }}
