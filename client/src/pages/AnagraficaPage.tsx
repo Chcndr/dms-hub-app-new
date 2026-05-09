@@ -142,7 +142,11 @@ interface QualificazioneData {
   data_scadenza: string;
   stato: string;
   note: string;
-  documento_url: string;
+  documento_url?: string;
+  attestato_pdf_url?: string;
+  attestato_pdf_id?: number | string;
+  attestato_id?: number | string;
+  pdf_url?: string;
 }
 
 interface AutorizzazioneData {
@@ -275,6 +279,61 @@ const formatDate = (dateStr: string | null | undefined): string => {
     return "-";
   }
 };
+
+const buildApiFileUrl = (url?: string | null): string | null => {
+  if (!url) return null;
+  const cleaned = String(url).trim();
+  if (!cleaned) return null;
+  if (/^https?:\/\//i.test(cleaned)) return cleaned;
+  return `${API_BASE_URL}${cleaned.startsWith("/") ? "" : "/"}${cleaned}`;
+};
+
+const getQualificazionePdfUrl = (q: Partial<QualificazioneData> | any): string | null => {
+  const directUrl = buildApiFileUrl(q?.attestato_pdf_url || q?.documento_url || q?.pdf_url);
+  if (directUrl) return directUrl;
+  const pdfId = q?.attestato_pdf_id || q?.attestato_id;
+  return pdfId ? `${API_BASE_URL}/api/attestati/${pdfId}/pdf` : null;
+};
+
+const openExternalUrl = (url: string | null) => {
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
+};
+
+const getCourseTitle = (c: any): string =>
+  c?.titolo || c?.nome || c?.corso_titolo || c?.corso_nome || c?.tipo_attestato || "Corso";
+
+const getCourseCategory = (c: any): string =>
+  c?.categoria || c?.tipo_attestato || c?.tipo || c?.area || "";
+
+const getCourseDuration = (c: any): string => {
+  if (c?.durata_ore) return `${c.durata_ore} ore`;
+  return c?.durata || c?.ore || "";
+};
+
+const getCourseDateLabel = (c: any): string => {
+  const start = c?.data_inizio || c?.data || c?.created_at;
+  const end = c?.data_fine;
+  if (start && end) return `${formatDate(start)} - ${formatDate(end)}`;
+  return start ? formatDate(start) : "";
+};
+
+const getCoursePrice = (c: any): number =>
+  parseFloat(c?.prezzo_scontato || c?.prezzo || c?.prezzo_base || "0") || 0;
+
+const getAdempimentoTitle = (item: any): string =>
+  item?.tipo_qualifica || item?.tipo_adempimento || item?.tipo || "Adempimento";
+
+const getAdempimentoNormativa = (item: any): string =>
+  item?.normativa || item?.normativa_riferimento || item?.riferimento_normativo || item?.legge || "";
+
+const getAdempimentoDescrizione = (item: any): string =>
+  item?.descrizione || item?.descrizione_adempimento || item?.dettaglio ||
+  "Questo adempimento risulta mancante o non regolare per l'impresa. Consulta il dettaglio e, se necessario, invia una richiesta di supporto all'associazione.";
+
+const getAdempimentoAzione = (item: any): string =>
+  item?.azioneRichiesta || item?.azione_richiesta || item?.cosa_fare ||
+  "Verifica la documentazione richiesta, programma l'eventuale corso o aggiornamento e carica/aggiorna l'attestato quando disponibile.";
 
 const getStatoBadgeClass = (stato: string | null | undefined): string => {
   switch (stato?.toUpperCase()) {
@@ -703,6 +762,7 @@ function QualificazioniSection({
   const [adempimenti, setAdempimenti] = useState<any[]>([]);
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<any>(null);
+  const [selectedAdempimentoInfo, setSelectedAdempimentoInfo] = useState<any>(null);
   const [alertMessage, setAlertMessage] = useState("");
   const [sendingAlert, setSendingAlert] = useState(false);
 
@@ -862,39 +922,118 @@ function QualificazioniSection({
               />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[#e8fbff]">
-                  {item.tipo_qualifica || "Adempimento"}
+                  {getAdempimentoTitle(item)}
                 </p>
                 {item.alertType === "scaduta" && (
                   <p className="text-xs text-red-400 mt-0.5">
                     Scaduta il {formatDate((item as any).data_scadenza)}
                   </p>
                 )}
-                {item.alertType === "mancante" && (item as any).normativa && (
+                {getAdempimentoNormativa(item) && (
                   <p className="text-xs text-[#e8fbff]/50 mt-0.5">
-                    {(item as any).normativa}
+                    {getAdempimentoNormativa(item)}
                   </p>
                 )}
-                {(item as any).azioneRichiesta && (
-                  <p className="text-xs text-[#e8fbff]/60 mt-1">
-                    {(item as any).azioneRichiesta}
-                  </p>
-                )}
-                <Button
-                  size="sm"
-                  className="mt-2 bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs h-7"
-                  onClick={() => {
-                    setSelectedAlert(item);
-                    setShowAlertDialog(true);
-                  }}
-                >
-                  <Send className="w-3 h-3 mr-1" />
-                  Segnala all'Associazione e Chiedi Aiuto
-                </Button>
+                <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">
+                  {getAdempimentoDescrizione(item)}
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-[#f59e0b]/30 text-[#f59e0b] hover:bg-[#f59e0b]/10 text-xs h-7"
+                    onClick={() => setSelectedAdempimentoInfo(item)}
+                  >
+                    <Eye className="w-3 h-3 mr-1" />
+                    Informativa
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs h-7"
+                    onClick={() => {
+                      setSelectedAlert(item);
+                      setShowAlertDialog(true);
+                    }}
+                  >
+                    <Send className="w-3 h-3 mr-1" />
+                    Segnala all'Associazione e Chiedi Aiuto
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       ))}
+
+      {/* Dialog informativa adempimento */}
+      {selectedAdempimentoInfo && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedAdempimentoInfo(null)}
+        >
+          <Card
+            className="bg-[#1a2332] border-[#f59e0b]/30 w-full max-w-md py-0 gap-0"
+            onClick={e => e.stopPropagation()}
+          >
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <FileWarning className="w-5 h-5 text-[#f59e0b]" />
+                <h3 className="text-base font-semibold text-[#e8fbff]">
+                  Informativa Adempimento
+                </h3>
+              </div>
+              <div className="bg-[#0b1220]/50 rounded-lg p-3 border border-[#f59e0b]/20 space-y-3">
+                <div>
+                  <p className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Adempimento</p>
+                  <p className="text-base font-medium text-[#e8fbff]">
+                    {getAdempimentoTitle(selectedAdempimentoInfo)}
+                  </p>
+                </div>
+                {getAdempimentoNormativa(selectedAdempimentoInfo) && (
+                  <div>
+                    <p className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Normativa</p>
+                    <p className="text-sm text-[#e8fbff]/80">
+                      {getAdempimentoNormativa(selectedAdempimentoInfo)}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Dettaglio</p>
+                  <p className="text-sm text-[#e8fbff]/80">
+                    {getAdempimentoDescrizione(selectedAdempimentoInfo)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Cosa fare</p>
+                  <p className="text-sm text-[#e8fbff]/80">
+                    {getAdempimentoAzione(selectedAdempimentoInfo)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  className="flex-1 text-[#e8fbff]/50"
+                  onClick={() => setSelectedAdempimentoInfo(null)}
+                >
+                  Chiudi
+                </Button>
+                <Button
+                  className="flex-1 bg-[#f59e0b] hover:bg-[#d97706] text-white"
+                  onClick={() => {
+                    setSelectedAlert(selectedAdempimentoInfo);
+                    setSelectedAdempimentoInfo(null);
+                    setShowAlertDialog(true);
+                  }}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Chiedi Aiuto
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Dialog invio allerta */}
       {showAlertDialog && selectedAlert && (
@@ -916,7 +1055,7 @@ function QualificazioniSection({
               <div className="bg-[#0b1220]/50 rounded-lg p-3 border border-[#f59e0b]/20">
                 <p className="text-sm text-[#e8fbff]/60">Anomalia</p>
                 <p className="text-base font-medium text-[#e8fbff]">
-                  {selectedAlert.tipo_qualifica || "Adempimento mancante"}
+                  {getAdempimentoTitle(selectedAlert)}
                 </p>
               </div>
               <div>
@@ -1008,7 +1147,19 @@ function QualificazioniSection({
                     )}
                   </div>
                 </div>
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 flex items-center gap-2">
+                  {getQualificazionePdfUrl(q) && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                      title="Apri attestato PDF"
+                      onClick={() => openExternalUrl(getQualificazionePdfUrl(q))}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  )}
                   {isScaduta ? (
                     <XCircle className="w-5 h-5 text-red-400" />
                   ) : (
@@ -2306,6 +2457,12 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     riferimentoId?: number;
   }>({ importo: 0, descrizione: "", tipo: "quota_associativa" });
   const [richiestaInCorso, setRichiestaInCorso] = useState(false);
+  const [contactDialog, setContactDialog] = useState<any>(null);
+  const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [serviceAssociation, setServiceAssociation] = useState<any>(null);
+  const [associationServices, setAssociationServices] = useState<any[]>([]);
+  const [loadingAssociationServices, setLoadingAssociationServices] = useState(false);
+  const [serviceRequestingId, setServiceRequestingId] = useState<number | string | null>(null);
 
   useEffect(() => {
     if (!impresaId) {
@@ -2452,6 +2609,98 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     });
   };
 
+  const getAssociationId = (assoc: any) =>
+    assoc?.associazione_id || assoc?.id || assoc?.associazione?.id || assoc?.riferimentoId;
+
+  const getAssociationName = (assoc: any) =>
+    assoc?.associazione_nome || assoc?.nome || assoc?.associazione?.nome || "Associazione";
+
+  const getAssociationContactPayload = (assoc: any, scheda?: any) => {
+    const contatti = scheda?.contatti || {};
+    return {
+      nome: getAssociationName(assoc),
+      email: contatti.email || assoc?.associazione_email || assoc?.email || assoc?.associazione?.email || "",
+      telefono: contatti.telefono || assoc?.associazione_telefono || assoc?.telefono || assoc?.associazione?.telefono || "",
+      referente_nome: contatti.referente_nome || assoc?.referente_nome || "",
+      referente_ruolo: contatti.referente_ruolo || assoc?.referente_ruolo || "",
+      sito_web: scheda?.sito_web || assoc?.sito_web || assoc?.website || "",
+      descrizione: scheda?.descrizione || assoc?.descrizione || "",
+    };
+  };
+
+  const fetchSchedaAssociazione = async (assoc: any) => {
+    const assocId = getAssociationId(assoc);
+    if (!assocId) return null;
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/associazioni/${assocId}/scheda-pubblica`
+      );
+      const data = await res.json();
+      return data.data || data.scheda || (data.descrizione !== undefined ? data : null);
+    } catch {
+      return null;
+    }
+  };
+
+  const handleContattaAssociazione = async (assoc: any) => {
+    const scheda = await fetchSchedaAssociazione(assoc);
+    setContactDialog(getAssociationContactPayload(assoc, scheda));
+  };
+
+  const handleApriServiziAssociazione = async (assoc: any) => {
+    const assocId = getAssociationId(assoc);
+    setServiceAssociation(assoc);
+    setAssociationServices([]);
+    setServiceDialogOpen(true);
+    setLoadingAssociationServices(true);
+    try {
+      const url = assocId
+        ? `${API_BASE_URL}/api/bandi/servizi?associazione_id=${assocId}`
+        : `${API_BASE_URL}/api/bandi/servizi`;
+      const res = await fetch(addComuneIdToUrl(url));
+      const data = await res.json();
+      const list = Array.isArray(data.data)
+        ? data.data
+        : Array.isArray(data.servizi)
+          ? data.servizi
+          : Array.isArray(data)
+            ? data
+            : [];
+      setAssociationServices(list.filter((s: any) => s.attivo !== false));
+    } catch {
+      setAssociationServices([]);
+    } finally {
+      setLoadingAssociationServices(false);
+    }
+  };
+
+  const handleRichiestaServizioAssociazione = async (servizio: any) => {
+    if (!impresaId) return;
+    setServiceRequestingId(servizio.id);
+    try {
+      const res = await authenticatedFetch(`${API_BASE_URL}/api/bandi/richieste`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          impresa_id: impresaId,
+          servizio_id: servizio.id,
+          note_richiesta: `Richiesta inviata dalla scheda La Mia Associazione per ${getAssociationName(serviceAssociation)}`,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Richiesta servizio inviata all'associazione!");
+        setServiceDialogOpen(false);
+      } else {
+        alert(data.error || "Errore invio richiesta servizio");
+      }
+    } catch {
+      alert("Errore di connessione");
+    } finally {
+      setServiceRequestingId(null);
+    }
+  };
+
   // Fallback: richiesta senza pagamento (flusso legacy)
   const handleRichiestaAssociazione = async (associazioneId: number) => {
     if (!impresaId) return;
@@ -2563,6 +2812,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
                 size="sm"
                 variant="outline"
                 className="border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                onClick={() => handleContattaAssociazione(tesseramento)}
               >
                 <Send className="w-3 h-3 mr-1" /> Contatta
               </Button>
@@ -2570,6 +2820,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
                 size="sm"
                 variant="outline"
                 className="border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10"
+                onClick={() => handleApriServiziAssociazione(tesseramento)}
               >
                 <Briefcase className="w-3 h-3 mr-1" /> Richiedi Servizio
               </Button>
@@ -2763,6 +3014,154 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
               ))}
             </div>
           </SectionCard>
+        )}
+
+        {contactDialog && (
+          <div
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            onClick={() => setContactDialog(null)}
+          >
+            <Card
+              className="bg-[#1a2332] border-[#14b8a6]/30 w-full max-w-md py-0 gap-0"
+              onClick={e => e.stopPropagation()}
+            >
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Send className="w-5 h-5 text-[#14b8a6]" />
+                  <h3 className="text-base font-semibold text-[#e8fbff]">
+                    Contatta {contactDialog.nome}
+                  </h3>
+                </div>
+                {contactDialog.descrizione && (
+                  <p className="text-sm text-[#e8fbff]/65">
+                    {contactDialog.descrizione}
+                  </p>
+                )}
+                <div className="space-y-2">
+                  {contactDialog.referente_nome && (
+                    <div className="bg-[#0b1220]/50 rounded-lg p-3 border border-[#14b8a6]/10">
+                      <p className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Referente</p>
+                      <p className="text-sm text-[#e8fbff]">
+                        {contactDialog.referente_nome}
+                        {contactDialog.referente_ruolo ? ` — ${contactDialog.referente_ruolo}` : ""}
+                      </p>
+                    </div>
+                  )}
+                  {contactDialog.telefono ? (
+                    <a
+                      href={`tel:${contactDialog.telefono}`}
+                      className="flex items-center justify-between bg-[#0b1220]/50 rounded-lg p-3 border border-[#14b8a6]/10 text-[#e8fbff] hover:border-[#14b8a6]/40"
+                    >
+                      <span className="flex items-center gap-2 text-sm"><Phone className="w-4 h-4 text-[#14b8a6]" /> {contactDialog.telefono}</span>
+                      <ChevronRight className="w-4 h-4 text-[#e8fbff]/40" />
+                    </a>
+                  ) : null}
+                  {contactDialog.email ? (
+                    <a
+                      href={`mailto:${contactDialog.email}?subject=Richiesta%20da%20MIO%20Hub`}
+                      className="flex items-center justify-between bg-[#0b1220]/50 rounded-lg p-3 border border-[#14b8a6]/10 text-[#e8fbff] hover:border-[#14b8a6]/40"
+                    >
+                      <span className="flex items-center gap-2 text-sm"><Mail className="w-4 h-4 text-[#14b8a6]" /> {contactDialog.email}</span>
+                      <ChevronRight className="w-4 h-4 text-[#e8fbff]/40" />
+                    </a>
+                  ) : null}
+                  {!contactDialog.telefono && !contactDialog.email && (
+                    <p className="text-sm text-[#e8fbff]/55 bg-[#0b1220]/50 rounded-lg p-3 border border-[#14b8a6]/10">
+                      I contatti pubblici dell'associazione non sono ancora stati configurati.
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  className="w-full text-[#e8fbff]/60"
+                  onClick={() => setContactDialog(null)}
+                >
+                  Chiudi
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {serviceDialogOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            onClick={() => setServiceDialogOpen(false)}
+          >
+            <Card
+              className="bg-[#1a2332] border-[#8b5cf6]/30 w-full max-w-lg max-h-[85vh] overflow-hidden py-0 gap-0"
+              onClick={e => e.stopPropagation()}
+            >
+              <CardContent className="p-5 space-y-4 overflow-y-auto max-h-[85vh]">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-[#8b5cf6]" />
+                    <div>
+                      <h3 className="text-base font-semibold text-[#e8fbff]">Richiedi Servizio</h3>
+                      <p className="text-xs text-[#e8fbff]/50">{getAssociationName(serviceAssociation)}</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-[#e8fbff]/50"
+                    onClick={() => setServiceDialogOpen(false)}
+                  >
+                    Chiudi
+                  </Button>
+                </div>
+                {loadingAssociationServices ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-[#8b5cf6]" />
+                  </div>
+                ) : associationServices.length === 0 ? (
+                  <p className="text-sm text-[#e8fbff]/55 bg-[#0b1220]/50 rounded-lg p-3 border border-[#8b5cf6]/10">
+                    Nessun servizio disponibile per questa associazione al momento.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {associationServices.map((servizio: any) => {
+                      const prezzo = parseFloat(servizio.prezzo_associati || servizio.prezzo_base || "0") || 0;
+                      return (
+                        <Card key={servizio.id} className="bg-[#0b1220]/50 border-[#8b5cf6]/15 py-0 gap-0">
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-[#e8fbff]">{servizio.nome}</p>
+                                {servizio.descrizione && (
+                                  <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{servizio.descrizione}</p>
+                                )}
+                                <div className="flex flex-wrap gap-2 mt-2 text-xs text-[#e8fbff]/45">
+                                  {servizio.categoria && <span>{servizio.categoria}</span>}
+                                  {(servizio.tempo_medio || servizio.tempo_medio_gg) && (
+                                    <span>Tempo: {servizio.tempo_medio || `${servizio.tempo_medio_gg} gg`}</span>
+                                  )}
+                                  {prezzo > 0 && <span className="text-emerald-400">€{prezzo.toFixed(2)}</span>}
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-xs h-8 flex-shrink-0"
+                                disabled={serviceRequestingId === servizio.id}
+                                onClick={() => handleRichiestaServizioAssociazione(servizio)}
+                              >
+                                {serviceRequestingId === servizio.id ? (
+                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Briefcase className="w-3 h-3 mr-1" />
+                                )}
+                                Richiedi
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         <PagaConWallet
@@ -2974,6 +3373,154 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
           </Card>
         ))
       )}
+      {contactDialog && (
+          <div
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            onClick={() => setContactDialog(null)}
+          >
+            <Card
+              className="bg-[#1a2332] border-[#14b8a6]/30 w-full max-w-md py-0 gap-0"
+              onClick={e => e.stopPropagation()}
+            >
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Send className="w-5 h-5 text-[#14b8a6]" />
+                  <h3 className="text-base font-semibold text-[#e8fbff]">
+                    Contatta {contactDialog.nome}
+                  </h3>
+                </div>
+              {contactDialog.descrizione && (
+                  <p className="text-sm text-[#e8fbff]/65">
+                  {contactDialog.descrizione}
+                  </p>
+                )}
+                <div className="space-y-2">
+                {contactDialog.referente_nome && (
+                    <div className="bg-[#0b1220]/50 rounded-lg p-3 border border-[#14b8a6]/10">
+                      <p className="text-xs text-[#e8fbff]/50 uppercase tracking-wide">Referente</p>
+                      <p className="text-sm text-[#e8fbff]">
+                      {contactDialog.referente_nome}
+                      {contactDialog.referente_ruolo ? ` — ${contactDialog.referente_ruolo}` : ""}
+                      </p>
+                    </div>
+                  )}
+                {contactDialog.telefono ? (
+                    <a
+                      href={`tel:${contactDialog.telefono}`}
+                      className="flex items-center justify-between bg-[#0b1220]/50 rounded-lg p-3 border border-[#14b8a6]/10 text-[#e8fbff] hover:border-[#14b8a6]/40"
+                    >
+                      <span className="flex items-center gap-2 text-sm"><Phone className="w-4 h-4 text-[#14b8a6]" /> {contactDialog.telefono}</span>
+                      <ChevronRight className="w-4 h-4 text-[#e8fbff]/40" />
+                    </a>
+                  ) : null}
+                {contactDialog.email ? (
+                    <a
+                      href={`mailto:${contactDialog.email}?subject=Richiesta%20da%20MIO%20Hub`}
+                      className="flex items-center justify-between bg-[#0b1220]/50 rounded-lg p-3 border border-[#14b8a6]/10 text-[#e8fbff] hover:border-[#14b8a6]/40"
+                    >
+                      <span className="flex items-center gap-2 text-sm"><Mail className="w-4 h-4 text-[#14b8a6]" /> {contactDialog.email}</span>
+                      <ChevronRight className="w-4 h-4 text-[#e8fbff]/40" />
+                    </a>
+                  ) : null}
+                  {!contactDialog.telefono && !contactDialog.email && (
+                    <p className="text-sm text-[#e8fbff]/55 bg-[#0b1220]/50 rounded-lg p-3 border border-[#14b8a6]/10">
+                      I contatti pubblici dell'associazione non sono ancora stati configurati.
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  className="w-full text-[#e8fbff]/60"
+                  onClick={() => setContactDialog(null)}
+                >
+                  Chiudi
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+      {serviceDialogOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            onClick={() => setServiceDialogOpen(false)}
+          >
+            <Card
+              className="bg-[#1a2332] border-[#8b5cf6]/30 w-full max-w-lg max-h-[85vh] overflow-hidden py-0 gap-0"
+              onClick={e => e.stopPropagation()}
+            >
+              <CardContent className="p-5 space-y-4 overflow-y-auto max-h-[85vh]">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-[#8b5cf6]" />
+                    <div>
+                      <h3 className="text-base font-semibold text-[#e8fbff]">Richiedi Servizio</h3>
+                      <p className="text-xs text-[#e8fbff]/50">{getAssociationName(serviceAssociation)}</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-[#e8fbff]/50"
+                    onClick={() => setServiceDialogOpen(false)}
+                  >
+                    Chiudi
+                  </Button>
+                </div>
+                {loadingAssociationServices ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-[#8b5cf6]" />
+                  </div>
+                ) : associationServices.length === 0 ? (
+                  <p className="text-sm text-[#e8fbff]/55 bg-[#0b1220]/50 rounded-lg p-3 border border-[#8b5cf6]/10">
+                    Nessun servizio disponibile per questa associazione al momento.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {associationServices.map((servizio: any) => {
+                      const prezzo = parseFloat(servizio.prezzo_associati || servizio.prezzo_base || "0") || 0;
+                      return (
+                        <Card key={servizio.id} className="bg-[#0b1220]/50 border-[#8b5cf6]/15 py-0 gap-0">
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-[#e8fbff]">{servizio.nome}</p>
+                                {servizio.descrizione && (
+                                  <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{servizio.descrizione}</p>
+                                )}
+                                <div className="flex flex-wrap gap-2 mt-2 text-xs text-[#e8fbff]/45">
+                                  {servizio.categoria && <span>{servizio.categoria}</span>}
+                                  {(servizio.tempo_medio || servizio.tempo_medio_gg) && (
+                                    <span>Tempo: {servizio.tempo_medio || `${servizio.tempo_medio_gg} gg`}</span>
+                                  )}
+                                  {prezzo > 0 && <span className="text-emerald-400">€{prezzo.toFixed(2)}</span>}
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-xs h-8 flex-shrink-0"
+                                disabled={serviceRequestingId === servizio.id}
+                                onClick={() => handleRichiestaServizioAssociazione(servizio)}
+                              >
+                                {serviceRequestingId === servizio.id ? (
+                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Briefcase className="w-3 h-3 mr-1" />
+                                )}
+                                Richiedi
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
       <PagaConWallet
         open={pagaOpen}
         onClose={() => setPagaOpen(false)}
@@ -3490,11 +4037,25 @@ function FormazioneSection({
                           {formatDate(q.data_scadenza)}
                         </p>
                       </div>
-                      {isScaduta ? (
-                        <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                      )}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {getQualificazionePdfUrl(q) && (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                            title="Apri attestato PDF"
+                            onClick={() => openExternalUrl(getQualificazionePdfUrl(q))}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {isScaduta ? (
+                          <XCircle className="w-4 h-4 text-red-400" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 text-green-400" />
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -3517,39 +4078,59 @@ function FormazioneSection({
                 className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x"
               >
                 <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm sm:text-base font-semibold text-[#e8fbff]">
-                        {c.nome}
-                      </p>
-                      {c.ente && (
-                        <p className="text-xs text-gray-400 mt-0.5">{c.ente}</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div>
+                        <p className="text-sm sm:text-base font-semibold text-[#e8fbff]">
+                          {getCourseTitle(c)}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          {getCourseCategory(c) && (
+                            <Badge className="bg-[#14b8a6]/15 text-[#14b8a6] border-[#14b8a6]/20 text-[10px]">
+                              {getCourseCategory(c)}
+                            </Badge>
+                          )}
+                          {c.associazione_nome && (
+                            <span className="text-[11px] text-[#e8fbff]/50">
+                              {c.associazione_nome}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {(c.descrizione || c.descrizione_breve) && (
+                        <p className="text-xs text-[#e8fbff]/65 line-clamp-3">
+                          {c.descrizione || c.descrizione_breve}
+                        </p>
                       )}
-                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
-                        {c.data && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-xs text-gray-500">
+                        {getCourseDateLabel(c) && (
                           <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />{" "}
-                            {formatDate(c.data)}
+                            <Calendar className="w-3 h-3" /> {getCourseDateLabel(c)}
                           </span>
                         )}
-                        {c.durata && <span>{c.durata}</span>}
-                        {c.sede && <span>{c.sede}</span>}
-                        {c.posti && <span>Posti: {c.posti}</span>}
+                        {getCourseDuration(c) && <span>Durata: {getCourseDuration(c)}</span>}
+                        {c.sede && <span>Sede: {c.sede}</span>}
+                        {c.modalita && <span>Modalit&agrave;: {c.modalita}</span>}
+                        {(c.posti_totali || c.posti) && (
+                          <span>
+                            Posti: {c.posti_occupati ? `${c.posti_occupati}/` : ""}{c.posti_totali || c.posti}
+                          </span>
+                        )}
                       </div>
-                      {c.prezzo && (
-                        <p className="text-xs text-[#14b8a6] font-medium mt-1">
-                          &euro;{parseFloat(c.prezzo).toFixed(2)}
+                      {getCoursePrice(c) > 0 && (
+                        <p className="text-sm text-[#14b8a6] font-semibold">
+                          &euro;{getCoursePrice(c).toFixed(2)}
                         </p>
                       )}
                     </div>
                     {iscrizioneEsistente ? (
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs h-8 flex items-center">
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs h-8 flex items-center flex-shrink-0">
                         <CheckCircle className="w-3 h-3 mr-1" /> Iscritto
                       </Badge>
                     ) : (
                       <Button
                         size="sm"
-                        className="bg-blue-500 hover:bg-blue-600 text-white text-xs h-8"
+                        className="bg-blue-500 hover:bg-blue-600 text-white text-xs h-8 flex-shrink-0"
                         onClick={() => handleIscrizione(c)}
                       >
                         <GraduationCap className="w-3 h-3 mr-1" /> Iscriviti
@@ -3566,34 +4147,79 @@ function FormazioneSection({
         (iscrizioni.length === 0 ? (
           <EmptyState text="Nessuna iscrizione a corsi" />
         ) : (
-          iscrizioni.map(i => (
-            <Card
-              key={i.id}
-              className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x"
-            >
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-[#e8fbff]">
-                      {i.corso_nome || `Iscrizione #${i.id}`}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {formatDate(i.created_at)}
-                    </p>
+          iscrizioni.map(i => {
+            const corsoAssociato = corsi.find((c: any) => String(c.id) === String(i.corso_id));
+            const corsoInfo = { ...corsoAssociato, ...i };
+            const attestatoUrl = buildApiFileUrl(i.attestato_pdf_url || i.pdf_url) ||
+              (i.attestato_pdf_id ? `${API_BASE_URL}/api/attestati/${i.attestato_pdf_id}/pdf` : null);
+            return (
+              <Card
+                key={i.id}
+                className="bg-[#1a2332] border-[#14b8a6]/20 py-0 gap-0 rounded-none sm:rounded-xl border-x-0 sm:border-x"
+              >
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div>
+                        <p className="text-sm sm:text-base font-semibold text-[#e8fbff]">
+                          {getCourseTitle(corsoInfo)}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          {getCourseCategory(corsoInfo) && (
+                            <Badge className="bg-[#14b8a6]/15 text-[#14b8a6] border-[#14b8a6]/20 text-[10px]">
+                              {getCourseCategory(corsoInfo)}
+                            </Badge>
+                          )}
+                          <span className="text-[11px] text-[#e8fbff]/45">
+                            Iscrizione #{i.id}
+                          </span>
+                        </div>
+                      </div>
+                      {(corsoInfo.descrizione || corsoInfo.descrizione_breve) && (
+                        <p className="text-xs text-[#e8fbff]/65 line-clamp-3">
+                          {corsoInfo.descrizione || corsoInfo.descrizione_breve}
+                        </p>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-xs text-gray-500">
+                        {i.collaboratore_nome && <span>Partecipante: {i.collaboratore_nome}</span>}
+                        {getCourseDateLabel(corsoInfo) && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> {getCourseDateLabel(corsoInfo)}
+                          </span>
+                        )}
+                        {getCourseDuration(corsoInfo) && <span>Durata: {getCourseDuration(corsoInfo)}</span>}
+                        {corsoInfo.sede && <span>Sede: {corsoInfo.sede}</span>}
+                        <span>Iscritto il: {formatDate(i.data_iscrizione || i.created_at)}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <Badge
+                        className={
+                          i.stato === "COMPLETATO"
+                            ? "bg-green-500/20 text-green-400"
+                            : "bg-blue-500/20 text-blue-400"
+                        }
+                      >
+                        {i.stato || "ISCRITTO"}
+                      </Badge>
+                      {attestatoUrl && (
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-[#14b8a6] hover:bg-[#14b8a6]/10"
+                          title="Apri attestato PDF"
+                          onClick={() => openExternalUrl(attestatoUrl)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <Badge
-                    className={
-                      i.stato === "COMPLETATO"
-                        ? "bg-green-500/20 text-green-400"
-                        : "bg-blue-500/20 text-blue-400"
-                    }
-                  >
-                    {i.stato || "ISCRITTO"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            );
+          })
         ))}
 
       {/* Modal selezione collaboratore per iscrizione */}
@@ -3604,7 +4230,7 @@ function FormazioneSection({
               Iscrizione al Corso
             </h3>
             <p className="text-sm text-gray-400 mb-4">
-              {iscrizioneModal.corso.nome}
+              {getCourseTitle(iscrizioneModal.corso)}
             </p>
             {iscrizioneModal.corso.prezzo &&
               parseFloat(iscrizioneModal.corso.prezzo) > 0 && (
