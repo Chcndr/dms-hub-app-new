@@ -642,3 +642,18 @@ Data: 2026-05-09. L’implementazione allinea backend e frontend alla tassonomia
 I router di pagamento ora trattano l’importo inviato dal frontend come non autoritativo: per servizi, corsi e quota associativa il server ricalcola l’importo dalle tabelle canoniche e registra wallet, stato dominio e notifiche usando tale valore. L’app impresa e il pannello gestione corsi associazione inviano quindi identificativi di corso, iscrizione, servizio, richiesta o tesseramento; il prezzo resta mostrato a video solo come informazione di UX. Il pannello corsi associazione usa gli stessi nove codici canonici e gli stati iscrizione compatibili con il backend (`ISCRITTO`, `COMPLETATO`).
 
 Controlli eseguiti: `node --check` sui router backend modificati e `pnpm run build` sul frontend completano con esito positivo. Il controllo TypeScript globale `pnpm run check` resta bloccato da errori preesistenti fuori dal perimetro della modifica, in `FirebaseAuthContext.tsx` e `HomePage.tsx`, che non sono stati alterati da questo intervento chirurgico.
+
+---
+
+## Decisione architetturale — Runtime Vercel per `/api/mihub/get-messages`
+
+**Data:** 2026-05-09
+
+L’endpoint serverless Vercel `api/mihub/get-messages.ts` legge direttamente la tabella `agent_messages` tramite `DATABASE_URL` per alimentare i messaggi multi-agente usati da app e dashboard. Poiché l’endpoint viene eseguito nel runtime serverless di produzione, ogni modulo importato a runtime deve essere dichiarato tra le **dependencies di produzione** del progetto frontend, non soltanto disponibile localmente o indirettamente in sviluppo.
+
+La correzione è volutamente **chirurgica**: si mantiene invariata la logica SQL e si rende esplicita la dipendenza runtime del driver PostgreSQL usato dall’endpoint, evitando modifiche ai flussi MiOHUB già stabilizzati, allo storico iscrizioni/attestati e alle regole server-authoritative sui prezzi.
+
+| Endpoint | Modulo runtime richiesto | Decisione |
+|---|---|---|
+| `/api/mihub/get-messages` | `postgres` | Dichiarare il pacchetto nelle dipendenze di produzione Vercel per evitare `ERR_MODULE_NOT_FOUND` |
+
