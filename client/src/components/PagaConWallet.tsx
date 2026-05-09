@@ -152,23 +152,34 @@ export function PagaConWallet({
         let tesseramentoId: number | null = null;
 
         if (!tessData.success) {
-          // Se 409 (già in attesa pagamento), recupera il tesseramento_id esistente
-          if (tessRes.status === 409) {
-            // Recupera tesseramento esistente
+          // Se il tesseramento per quella specifica associazione esiste gia' ma e' in attesa,
+          // completa il pagamento senza bloccare le imprese multi-associazione.
+          if (tessRes.status === 409 && tessData.code === "TESSERAMENTO_IN_ATTESA_PAGAMENTO") {
+            tesseramentoId = tessData.data?.tesseramento_id || tessData.data?.id || null;
+          } else if (tessRes.status === 409 && tessData.code === "TESSERAMENTO_GIA_ATTIVO") {
+            alert("Sei già tesserato con questa associazione. Ricarica la pagina per selezionarla tra le tue associazioni.");
+            return;
+          } else if (tessRes.status === 409) {
+            // Compatibilità con backend precedenti: recupera tesseramento esistente in attesa pagamento.
             const existRes = await authenticatedFetch(
               `${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`,
               { method: "GET" }
             );
             const existData = await existRes.json();
-            const found = existData.tesseramenti?.find(
+            const existingList = Array.isArray(existData.tesseramenti)
+              ? existData.tesseramenti
+              : Array.isArray(existData.data)
+                ? existData.data
+                : [];
+            const found = existingList.find(
               (t: any) =>
-                t.associazione?.id === riferimentoId &&
+                String(t.associazione?.id || t.associazione_id) === String(riferimentoId) &&
                 t.stato === "IN_ATTESA_PAGAMENTO"
             );
             if (found) {
               tesseramentoId = found.id;
             } else {
-              alert("Tesseramento già attivo per questa associazione.");
+              alert(tessData.error || "Tesseramento già presente per questa associazione.");
               return;
             }
           } else {
@@ -179,7 +190,12 @@ export function PagaConWallet({
           tesseramentoId = tessData.data?.tesseramento_id || tessData.data?.id;
         }
 
-        // Step 2: Paga quota con il tesseramento_id appena creato
+        if (!tesseramentoId) {
+          alert("Tesseramento non trovato per completare il pagamento");
+          return;
+        }
+
+        // Step 2: Paga quota con il tesseramento_id appena creato o recuperato
         const pagaRes = await authenticatedFetch(
           `${API_BASE_URL}/api/pagamenti/quota`,
           {

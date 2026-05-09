@@ -1638,6 +1638,7 @@ function CollaboratoriSection({
 
   useEffect(() => {
     if (!impresaId) {
+      setTesseramenti([]);
       setLoading(false);
       return;
     }
@@ -2446,6 +2447,7 @@ const findTesseramentoAttivo = (payload: any) => {
 
 function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
   const [tesseramento, setTesseramento] = useState<any>(null);
+  const [tesseramenti, setTesseramenti] = useState<any[]>([]);
   const [associazioni, setAssociazioni] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAssociazione, setSelectedAssociazione] = useState<any>(null);
@@ -2472,38 +2474,64 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     const load = async () => {
       setLoading(true);
       try {
-        // Verifica tesseramento attivo — prova endpoint v9 (Manus), poi fallback legacy
+        // Verifica tutti i tesseramenti attivi: l'impresa puo' essere associata a piu' associazioni.
         let tess: any = null;
+        let tessList: any[] = [];
         try {
           const tessV9Res = await fetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/associazioni-v9/tesseramenti?impresa_id=${impresaId}`
             )
           );
-          const tessV9Data = await tessV9Res.json();
-          tess = findTesseramentoAttivo(tessV9Data);
+          if (tessV9Res.ok) {
+            const tessV9Data = await tessV9Res.json();
+            tessList = extractTesseramenti(tessV9Data)
+              .map(normalizeTesseramento)
+              .filter((t: any) => t && normalizeStatoTesseramento(t.stato) === "ATTIVO");
+            tess =
+              tessList.find((t: any) => parseFloat(t.importo_pagato || "0") > 0) ||
+              tessList[0] ||
+              null;
+          }
         } catch {
           /* fallback sotto */
         }
 
         // Fallback: endpoint legacy
-        if (!tess) {
+        if (!tessList.length) {
           const tessRes = await fetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`
             )
           );
           const tessData = await tessRes.json();
-          tess = findTesseramentoAttivo(tessData);
+          tessList = extractTesseramenti(tessData)
+            .map(normalizeTesseramento)
+            .filter((t: any) => t && normalizeStatoTesseramento(t.stato) === "ATTIVO");
+          tess =
+            tessList.find((t: any) => parseFloat(t.importo_pagato || "0") > 0) ||
+            tessList[0] ||
+            null;
         }
 
         if (tess && normalizeStatoTesseramento(tess.stato) === "ATTIVO") {
-          setTesseramento(normalizeTesseramento(tess));
+          const normalized = normalizeTesseramento(tess);
+          setTesseramento(normalized);
+          setTesseramenti(tessList.length ? tessList : [normalized]);
+          if (normalized?.associazione_id) {
+            localStorage.setItem("mihub_active_associazione_id", String(normalized.associazione_id));
+            localStorage.setItem("mihub_active_associazione_nome", normalized.associazione_nome || "");
+            window.dispatchEvent(
+              new CustomEvent("mihub-active-associazione-changed", { detail: normalized })
+            );
+          }
         } else {
           setTesseramento(null);
+          setTesseramenti([]);
         }
       } catch {
         setTesseramento(null);
+        setTesseramenti([]);
       }
       // Carica sempre la lista associazioni disponibili: anche un'impresa gia' tesserata
       // deve poter vedere e sottoscrivere associazioni alternative, ad esempio Confesercenti Modena.
@@ -2591,6 +2619,18 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     setPagaOpen(true);
   };
 
+  const selezionaAssociazioneAttiva = (tess: any) => {
+    if (!tess) return;
+    setTesseramento(tess);
+    if (tess.associazione_id) {
+      localStorage.setItem("mihub_active_associazione_id", String(tess.associazione_id));
+      localStorage.setItem("mihub_active_associazione_nome", tess.associazione_nome || "");
+      window.dispatchEvent(
+        new CustomEvent("mihub-active-associazione-changed", { detail: tess })
+      );
+    }
+  };
+
   // Al successo del pagamento, crea tesseramento diretto
   const onPagamentoSuccess = async () => {
     if (!impresaId || !selectedAssociazione) return;
@@ -2600,13 +2640,20 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     scadenza.setFullYear(scadenza.getFullYear() + 1);
     const dataScadenza = scadenza.toISOString().split("T")[0];
 
-    setTesseramento({
+    const nuovoTesseramento = {
       stato: "ATTIVO",
+      associazione_id: selectedAssociazione.id,
       associazione_nome: selectedAssociazione.nome,
       quota_pagata: true,
+      importo_pagato: selectedAssociazione.quota_annuale || "50",
       data_scadenza: dataScadenza,
       quota_annuale: selectedAssociazione.quota_annuale || "50",
-    });
+    };
+    setTesseramenti(prev => [
+      ...prev.filter((t: any) => String(t.associazione_id) !== String(selectedAssociazione.id)),
+      nuovoTesseramento,
+    ]);
+    selezionaAssociazioneAttiva(nuovoTesseramento);
   };
 
   const getAssociationId = (assoc: any) =>
@@ -2735,22 +2782,28 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
 
   if (loading) return <LoadingSpinner />;
 
-  const associazioneAttivaId = tesseramento?.associazione_id
-    ? String(tesseramento.associazione_id)
-    : "";
-  const associazioneAttivaNome = String(
-    tesseramento?.associazione_nome || ""
-  )
-    .trim()
-    .toLowerCase();
+  const tesseramentiAttivi = (tesseramenti.length
+    ? tesseramenti
+    : tesseramento
+      ? [tesseramento]
+      : []
+  ).filter((t: any) => normalizeStatoTesseramento(t?.stato) === "ATTIVO");
+  const associazioniAttiveIds = new Set(
+    tesseramentiAttivi
+      .map((t: any) => t?.associazione_id)
+      .filter(Boolean)
+      .map((id: any) => String(id))
+  );
+  const associazioniAttiveNomi = new Set(
+    tesseramentiAttivi
+      .map((t: any) => String(t?.associazione_nome || "").trim().toLowerCase())
+      .filter(Boolean)
+  );
   const associazioniAlternative = associazioni.filter((assoc: any) => {
-    const sameId =
-      associazioneAttivaId && String(assoc.id) === associazioneAttivaId;
-    const sameName =
-      associazioneAttivaNome &&
-      String(assoc.nome || "")
-        .trim()
-        .toLowerCase() === associazioneAttivaNome;
+    const sameId = assoc?.id && associazioniAttiveIds.has(String(assoc.id));
+    const sameName = associazioniAttiveNomi.has(
+      String(assoc.nome || "").trim().toLowerCase()
+    );
     return !sameId && !sameName;
   });
 
@@ -2760,6 +2813,39 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
       <div className="space-y-3 sm:space-y-4">
         <SectionCard icon={Landmark} title="La Mia Associazione">
           <div className="space-y-4">
+            {tesseramentiAttivi.length > 1 && (
+              <div className="space-y-2">
+                <p className="text-xs text-[#e8fbff]/50">
+                  Seleziona l'associazione da usare per corsi, servizi e tessera visualizzata
+                </p>
+                <div className="grid gap-2">
+                  {tesseramentiAttivi.map((tess: any) => {
+                    const attiva = String(tess.associazione_id) === String(tesseramento?.associazione_id);
+                    return (
+                      <button
+                        key={tess.id || tess.associazione_id || tess.associazione_nome}
+                        type="button"
+                        onClick={() => selezionaAssociazioneAttiva(tess)}
+                        className={`w-full text-left rounded-lg border p-3 transition-all ${attiva ? "bg-emerald-500/15 border-emerald-400/50" : "bg-[#0b1220]/40 border-[#14b8a6]/10 hover:border-[#14b8a6]/40"}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-semibold text-[#e8fbff]">
+                            {tess.associazione_nome || "Associazione"}
+                          </span>
+                          <Badge className={attiva ? "bg-emerald-500/20 text-emerald-300" : "bg-green-500/20 text-green-400"}>
+                            {attiva ? "Selezionata" : "Tesserato"}
+                          </Badge>
+                        </div>
+                        {tess.numero_tessera && (
+                          <p className="text-xs text-[#e8fbff]/50 mt-1">Tessera {tess.numero_tessera}</p>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <Landmark className="w-6 h-6 text-emerald-400" />
@@ -2863,7 +2949,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
           <SectionCard icon={Heart} title="Altre Associazioni Disponibili">
             <div className="space-y-3">
               <p className="text-xs sm:text-sm text-[#e8fbff]/60">
-                Sei gia' tesserato con {tesseramento.associazione_nome || "la tua associazione"},
+                Sei gia' tesserato con {tesseramentiAttivi.length > 1 ? "piu' associazioni" : tesseramento.associazione_nome || "la tua associazione"},
                 ma puoi aderire anche a un'altra associazione disponibile.
               </p>
 
@@ -3798,6 +3884,24 @@ function FormazioneSection({
   const [selectedCollaboratore, setSelectedCollaboratore] =
     useState<string>("");
   const [collaboratoriScaduti, setCollaboratoriScaduti] = useState<any[]>([]);
+  const [activeAssociazioneId, setActiveAssociazioneId] = useState<string>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("mihub_active_associazione_id") || "" : ""
+  );
+  const [activeAssociazioneNome, setActiveAssociazioneNome] = useState<string>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("mihub_active_associazione_nome") || "" : ""
+  );
+
+  useEffect(() => {
+    const onActiveAssociationChanged = (event: Event) => {
+      const detail = (event as CustomEvent).detail || {};
+      const nextId = detail.associazione_id || localStorage.getItem("mihub_active_associazione_id") || "";
+      const nextName = detail.associazione_nome || localStorage.getItem("mihub_active_associazione_nome") || "";
+      setActiveAssociazioneId(nextId ? String(nextId) : "");
+      setActiveAssociazioneNome(nextName);
+    };
+    window.addEventListener("mihub-active-associazione-changed", onActiveAssociationChanged);
+    return () => window.removeEventListener("mihub-active-associazione-changed", onActiveAssociationChanged);
+  }, []);
 
   useEffect(() => {
     if (!impresaId) {
@@ -3808,9 +3912,10 @@ function FormazioneSection({
       setLoading(true);
       try {
         // Carica corsi disponibili
-        const corsiRes = await fetch(
-          addComuneIdToUrl(`${API_BASE_URL}/api/formazione/corsi`)
-        );
+        const corsiUrl = activeAssociazioneId
+          ? `${API_BASE_URL}/api/formazione/corsi?associazione_id=${activeAssociazioneId}`
+          : `${API_BASE_URL}/api/formazione/corsi`;
+        const corsiRes = await fetch(addComuneIdToUrl(corsiUrl));
         const corsiData = await corsiRes.json();
         const corsiList = Array.isArray(corsiData.data)
           ? corsiData.data
@@ -3858,7 +3963,7 @@ function FormazioneSection({
       setLoading(false);
     };
     load();
-  }, [impresaId]);
+  }, [impresaId, activeAssociazioneId]);
 
   const handleIscrizione = async (corso: any) => {
     if (!impresaId) return;
@@ -4066,9 +4171,17 @@ function FormazioneSection({
 
       {subTab === "corsi" &&
         (corsi.length === 0 ? (
-          <EmptyState text="Nessun corso disponibile" />
+          <EmptyState
+            text={activeAssociazioneNome ? `Nessun corso disponibile per ${activeAssociazioneNome}` : "Nessun corso disponibile"}
+          />
         ) : (
-          corsi.map(c => {
+          <>
+            {activeAssociazioneNome && (
+              <p className="text-xs text-emerald-400/80 px-1">
+                Corsi filtrati per {activeAssociazioneNome}
+              </p>
+            )}
+            {corsi.map(c => {
             const iscrizioneEsistente = iscrizioni.find(
               (i: any) => i.corso_id === c.id
             );
@@ -4140,7 +4253,8 @@ function FormazioneSection({
                 </CardContent>
               </Card>
             );
-          })
+          })}
+          </>
         ))}
 
       {subTab === "iscrizioni" &&
