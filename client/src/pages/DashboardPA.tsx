@@ -1081,10 +1081,19 @@ export default function DashboardPA() {
       setActiveTab("docs");
       setDocsSubTab("scia-pratiche");
     };
+    const handleNavigateToDomandaSpuntaForm = () => {
+      // Switcha al tab Enti & Associazioni e al sotto-tab SCIA & Pratiche
+      setActiveTab("docs");
+      setDocsSubTab("scia-pratiche");
+    };
     window.addEventListener("navigate-to-pratica", handleNavigateToPratica);
     window.addEventListener(
       "navigate-to-concessione",
       handleNavigateToConcessione
+    );
+    window.addEventListener(
+      "navigate-to-domanda-spunta-form",
+      handleNavigateToDomandaSpuntaForm
     );
     return () => {
       window.removeEventListener(
@@ -1094,6 +1103,10 @@ export default function DashboardPA() {
       window.removeEventListener(
         "navigate-to-concessione",
         handleNavigateToConcessione
+      );
+      window.removeEventListener(
+        "navigate-to-domanda-spunta-form",
+        handleNavigateToDomandaSpuntaForm
       );
     };
   }, []);

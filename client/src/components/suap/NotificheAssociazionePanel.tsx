@@ -29,6 +29,8 @@ import {
   BookOpen,
   Link as LinkIcon,
   MapPin,
+  Settings,
+  FileText,
 } from "lucide-react";
 import {
   Card,
@@ -718,6 +720,25 @@ export default function NotificheAssociazionePanel({
                     <Clock className="w-4 h-4" />
                     {selectedNotifica.non_letti ?? 0} non letti
                   </span>
+                </div>
+              )}
+              {/* Bottone Gestisci per notifiche RICHIESTA_SERVIZIO (Domanda Spunta) */}
+              {(selectedNotifica.tipo === "RICHIESTA_SERVIZIO" || selectedNotifica.tipo === "CONFERMA_PAGAMENTO") &&
+                getDirezione(selectedNotifica) === "RICEVUTO" && (
+                <div className="mt-4 pt-4 border-t border-[#3b82f6]/20">
+                  <button
+                    onClick={() => {
+                      setSelectedNotifica(null);
+                      // Naviga al tab SCIA & Pratiche > Domande Spunta > Nuova Domanda
+                      window.dispatchEvent(new CustomEvent("navigate-to-domanda-spunta-form", {
+                        detail: { notifica: selectedNotifica }
+                      }));
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white rounded-lg font-medium transition-all"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Gestisci - Nuova Domanda Spunta
+                  </button>
                 </div>
               )}
             </CardContent>

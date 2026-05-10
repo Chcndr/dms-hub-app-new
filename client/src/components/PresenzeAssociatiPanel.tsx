@@ -43,6 +43,7 @@ import {
   Truck,
   AlertTriangle,
   Clock,
+  GraduationCap,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -162,6 +163,20 @@ interface SchedaAssociato {
     market_municipality: string;
     market_days: string;
     company_name: string;
+  }>;
+  corsi?: Array<{
+    id: number;
+    corso_id: number;
+    stato: string;
+    pagato: boolean;
+    data_iscrizione: string;
+    created_at: string;
+    corso_titolo: string;
+    corso_categoria: string;
+    corso_durata: number;
+    corso_prezzo: number;
+    corso_modalita: string;
+    corso_stato: string;
   }>;
 }
 
@@ -1573,6 +1588,74 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Corsi di Formazione */}
+              {schedaData.corsi && (
+                <Card className="bg-[#0b1220] border-[#8b5cf6]/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-[#8b5cf6] flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" />
+                      Corsi di Formazione
+                      <Badge
+                        variant="outline"
+                        className="text-[#8b5cf6] border-[#8b5cf6]/50 text-xs"
+                      >
+                        {schedaData.corsi.length}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {schedaData.corsi.length === 0 ? (
+                      <p className="text-[#e8fbff]/40 text-sm text-center py-4">
+                        Nessun corso frequentato
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {schedaData.corsi.map(c => (
+                          <div
+                            key={c.id}
+                            className="flex items-center justify-between p-2 bg-[#1a2332] rounded border border-[#334155]"
+                          >
+                            <div>
+                              <p className="text-sm text-[#e8fbff] font-medium">
+                                {c.corso_titolo || `Corso #${c.corso_id}`}
+                              </p>
+                              <p className="text-xs text-[#e8fbff]/50">
+                                {c.corso_categoria && `${c.corso_categoria} · `}
+                                {c.corso_durata && `${c.corso_durata}h · `}
+                                {c.corso_modalita && `${c.corso_modalita} · `}
+                                {c.data_iscrizione && formatDate(c.data_iscrizione)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className={
+                                  c.stato === "completato" || c.stato === "COMPLETATO"
+                                    ? "text-[#10b981] border-[#10b981]/50"
+                                    : c.stato === "attivo" || c.stato === "ATTIVO" || c.stato === "ISCRITTO"
+                                      ? "text-[#3b82f6] border-[#3b82f6]/50"
+                                      : "text-[#e8fbff]/50 border-[#e8fbff]/20"
+                                }
+                              >
+                                {c.stato || "—"}
+                              </Badge>
+                              {c.pagato && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[#10b981] border-[#10b981]/50 text-xs"
+                                >
+                                  Pagato
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Domande Spunta */}
               {schedaData.domande_spunta && (

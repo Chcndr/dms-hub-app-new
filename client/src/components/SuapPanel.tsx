@@ -484,6 +484,13 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
         setSelectedDomandaSpuntaId(domandaId);
       }
     };
+    // Listener per navigazione dalla notifica al form Nuova Domanda Spunta
+    const handleNavigateToDomandaSpuntaForm = () => {
+      setActiveTab("domandespunta");
+      setDomandaSpuntaMode("create");
+      setSelectedDomandaSpuntaId(null);
+      setShowDomandaSpuntaForm(true);
+    };
     window.addEventListener(
       "navigate-to-pratica",
       handleNavigateToPratica as EventListener
@@ -495,6 +502,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
     window.addEventListener(
       "navigate-to-domanda-spunta",
       handleNavigateToDomandaSpunta as EventListener
+    );
+    window.addEventListener(
+      "navigate-to-domanda-spunta-form",
+      handleNavigateToDomandaSpuntaForm as EventListener
     );
     return () => {
       window.removeEventListener(
@@ -508,6 +519,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
       window.removeEventListener(
         "navigate-to-domanda-spunta",
         handleNavigateToDomandaSpunta as EventListener
+      );
+      window.removeEventListener(
+        "navigate-to-domanda-spunta-form",
+        handleNavigateToDomandaSpuntaForm as EventListener
       );
     };
   }, [concessioni]);

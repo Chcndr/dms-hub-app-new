@@ -3637,6 +3637,13 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
     riferimentoTipo?: "richiesta" | "servizio";
   }>({ importo: 0, descrizione: "" });
 
+  // Popup selezione mercato per Domanda Spunta
+  const [showMercatoPopup, setShowMercatoPopup] = useState(false);
+  const [mercatiList, setMercatiList] = useState<any[]>([]);
+  const [selectedMercatoId, setSelectedMercatoId] = useState<string>("");
+  const [pendingServizio, setPendingServizio] = useState<any>(null);
+  const [loadingMercati, setLoadingMercati] = useState(false);
+
   useEffect(() => {
     if (!impresaId) {
       setLoading(false);
@@ -3681,9 +3688,50 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
     load();
   }, [impresaId]);
 
+  // Carica mercati per il popup
+  const loadMercati = async () => {
+    setLoadingMercati(true);
+    try {
+      const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets`));
+      const data = await res.json();
+      if (data.success && data.data) {
+        setMercatiList(data.data);
+      }
+    } catch { /* silenzioso */ }
+    setLoadingMercati(false);
+  };
+
   const handleRichiestaServizio = async (servizio: any) => {
     if (!impresaId) return;
+
+    // Se il servizio è "Domanda Spunta", mostra popup selezione mercato
+    const isDomandaSpunta = servizio.nome?.toLowerCase().includes("domanda spunta") ||
+      servizio.codice?.toLowerCase().includes("domanda_spunta");
+    if (isDomandaSpunta) {
+      setPendingServizio(servizio);
+      setSelectedMercatoId("");
+      loadMercati();
+      setShowMercatoPopup(true);
+      return;
+    }
+
+    await inviaRichiestaServizio(servizio, null);
+  };
+
+  const handleConfirmMercato = async () => {
+    if (!selectedMercatoId || !pendingServizio) return;
+    const mercato = mercatiList.find(m => String(m.id) === selectedMercatoId);
+    setShowMercatoPopup(false);
+    await inviaRichiestaServizio(pendingServizio, mercato);
+    setPendingServizio(null);
+  };
+
+  const inviaRichiestaServizio = async (servizio: any, mercato: any | null) => {
+    if (!impresaId) return;
     try {
+      const noteRichiesta = mercato
+        ? `Mercato: ${mercato.name || mercato.nome} (ID: ${mercato.id})`
+        : undefined;
       const res = await authenticatedFetch(
         `${API_BASE_URL}/api/bandi/richieste`,
         {
@@ -3692,6 +3740,7 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
           body: JSON.stringify({
             impresa_id: impresaId,
             servizio_id: servizio.id,
+            note_richiesta: noteRichiesta,
           }),
         }
       );
@@ -3716,7 +3765,7 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
           const richiestaId = data.data?.id || data.data?.richiesta_id || null;
           setPagaInfo({
             importo: prezzoServizio,
-            descrizione: `Servizio: ${servizio.nome}`,
+            descrizione: `Servizio: ${servizio.nome}${mercato ? ` - ${mercato.name || mercato.nome}` : ""}`,
             riferimentoId: richiestaId || servizio.id,
             riferimentoTipo: richiestaId ? "richiesta" : "servizio",
           });
@@ -3849,6 +3898,63 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
         riferimentoTipo={pagaInfo.riferimentoTipo}
         impresaId={impresaId}
       />
+
+      {/* Popup selezione mercato per Domanda Spunta */}
+      {showMercatoPopup && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a2332] border border-[#14b8a6]/30 rounded-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-[#e8fbff] flex items-center gap-2">
+                <Store className="w-5 h-5 text-[#14b8a6]" />
+                Seleziona Mercato
+              </h3>
+              <button
+                onClick={() => { setShowMercatoPopup(false); setPendingServizio(null); }}
+                className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-[#e8fbff]/60">
+              Per quale mercato vuoi richiedere la Domanda Spunta?
+            </p>
+            {loadingMercati ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-[#14b8a6]" />
+              </div>
+            ) : (
+              <select
+                className="w-full bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg px-3 py-2.5 text-sm text-[#e8fbff]"
+                value={selectedMercatoId}
+                onChange={e => setSelectedMercatoId(e.target.value)}
+              >
+                <option value="">-- Scegli un mercato --</option>
+                {mercatiList.map(m => (
+                  <option key={m.id} value={String(m.id)}>
+                    {m.name || m.nome} {m.comune_nome ? `(${m.comune_nome})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 border-[#ef4444]/30 text-[#ef4444] hover:bg-[#ef4444]/10"
+                onClick={() => { setShowMercatoPopup(false); setPendingServizio(null); }}
+              >
+                Annulla
+              </Button>
+              <Button
+                className="flex-1 bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
+                disabled={!selectedMercatoId}
+                onClick={handleConfirmMercato}
+              >
+                <CheckCircle className="w-4 h-4 mr-1" /> Conferma
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
