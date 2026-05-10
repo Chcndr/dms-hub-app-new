@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { FileText, Printer, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
+import { addComuneIdToUrl, authenticatedFetch, getImpersonationParams } from "@/hooks/useImpersonation";
 
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
@@ -123,8 +123,11 @@ export default function ConcessioneForm({
     // Dati Generali (Frontespizio)
     numero_protocollo: "",
     data_protocollazione: new Date().toISOString().split("T")[0],
-    comune_rilascio: "", // Comune che rilascia la concessione
-    oggetto: "", // Vuoto - da compilare a scelta
+    comune_rilascio: (() => {
+      const imp = getImpersonationParams();
+      return imp.comuneNome || "";
+    })(), // Auto-compilato dal comune impersonalizzato
+    oggetto: "", // Auto-compilato dal tipo concessione
     numero_file: "",
 
     // Dati Concessione
@@ -1111,13 +1114,23 @@ export default function ConcessioneForm({
                 <Label className="text-[#e8fbff]">Tipo Concessione *</Label>
                 <Select
                   value={formData.tipo_concessione}
-                  onValueChange={val =>
+                  onValueChange={val => {
+                    // Mapping tipo concessione → oggetto auto-compilato
+                    const oggettoMap: Record<string, string> = {
+                      nuova: "Rilascio nuova autorizzazione per commercio su area pubblica",
+                      subingresso: "Subingresso nella titolarità della concessione di posteggio",
+                      bando_bolkestein: "Assegnazione posteggio tramite bando pubblico (Direttiva Bolkestein)",
+                      conversione: "Conversione tipologia autorizzazione commercio su area pubblica",
+                      rinnovo: "Rinnovo concessione di posteggio per commercio su area pubblica",
+                      voltura: "Voltura della concessione di posteggio per commercio su area pubblica",
+                    };
                     setFormData({
                       ...formData,
                       tipo_concessione: val,
                       sottotipo_conversione: "",
-                    })
-                  }
+                      oggetto: oggettoMap[val] || formData.oggetto,
+                    });
+                  }}
                 >
                   <SelectTrigger className="bg-[#020817] border-[#1e293b] text-[#e8fbff]">
                     <SelectValue />
