@@ -1,6 +1,6 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.9.0 — STABILE (Anti-Scanner Security + Wallet TCC per impresa)
+> **Versione:** 10.10.0 — STABILE (Fix Notifiche Enti Formatori + Pagamento Corsi)
 > **Data:** 10 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -2028,7 +2028,7 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
-### Sessione 10 Maggio 2026 — Fix Notifiche, Messaggi, Pagamento Corsi e Icone (v9.1.2)
+### Sessione 10 Maggio 2026 — Fix Notifiche, Messaggi, Pagamento Corsi e Icone (v10.10.0)
 
 **Contesto:** Fix di 7 bug nel modulo Enti Formatori e App Impresa: notifiche di iscrizione corso con routing errato, messaggi inviati da Enti Formatori che finivano in Associazioni & Bandi, attestati di formazione che non comparivano nelle scadenze, icona occhio mancante per PDF, messaggi non apribili nella dashboard, e bug pagamento corso dopo ricarica wallet.
 
