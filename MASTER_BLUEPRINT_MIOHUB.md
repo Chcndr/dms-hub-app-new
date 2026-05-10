@@ -1,6 +1,6 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.7.0 — STABILE (Fix SUAP Concessioni + Fix TCC Carbon Credit Wallet Operatore)
+> **Versione:** 10.8.0 — STABILE (Wallet TCC basato su impresa_id — soluzione definitiva)
 > **Data:** 10 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,30 +9,47 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `b6d13d1` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `e83e9cd` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online v10.7.0 | `https://api.mio-hub.me/health` — autodeploy da `b6d13d1` |
-> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `e83e9cd` |
-> | **Neon (DB)** | Integro | Wallet TCC puliti (0 duplicati open per operatore), colonne varchar allargate |
+> | **GitHub Backend** | Allineato | `c335d65` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `a7be7d0` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online v10.8.0 | `https://api.mio-hub.me/health` — autodeploy da `c335d65` |
+> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `a7be7d0` |
+> | **Neon (DB)** | Integro | Wallet TCC per impresa (1 wallet open per impresa), tutti orfani eliminati |
 >
 > **Integrità DB verificata:**
-> - operator_daily_wallet: 0 operatori con >1 wallet open (regola: 1 solo wallet open per operatore)
-> - 19 wallet orfani (operator_id=NULL) eliminati
-> - Wallet 72 (operator 42): corretto tcc_redeemed 113→0, chiuso come processed
-> - Wallet 103 (operator 42): corretto tcc_redeemed 0→113, euro_sales 0→10.00
-> - Colonne concessioni allargate: giorno, dimensioni_lineari, qualita, numero_protocollo, autorizzazione_precedente_pg (varchar 50→255)
+> - operator_daily_wallet: regola = 1 solo wallet open PER IMPRESA (non per operatore)
+> - Solo 2 wallet open: id=102 (impresa_id=9, Intim8, 451 TCC/€40) + id=103 (impresa_id=38, MIO TEST, vuoto)
+> - 10 wallet orfani vuoti chiusi come processed
+> - 19 wallet orfani (operator_id=NULL) eliminati in sessione precedente
+> - Wallet 68 (operator_id=1, orfano): chiuso come processed
+>
+> **Architettura TCC Wallet (NUOVA v10.8.0):**
+> - Il wallet operatore è ora basato su `impresa_id` (non `operator_id`)
+> - Ogni impresa ha UN SOLO wallet open alla volta
+> - Un operatore può gestire più imprese con wallet separati
+> - Il settlement chiude il wallet e ne crea uno nuovo per la stessa impresa
+> - Backward compatibility: se impresa_id non è passato, fallback a operator_id
 >
 > ---
-> ### CHANGELOG v10.7.0 (10 Mag 2026)
-> **Fix SUAP Creazione Concessioni + Fix TCC Carbon Credit Wallet Operatore (Soluzione Definitiva)**
+> ### CHANGELOG v10.8.0 (10 Mag 2026)
+> **Wallet TCC basato su impresa_id — Soluzione Definitiva**
+>
+> **Root cause:** il wallet cercava per operator_id, ma un operatore (Andrea Checchi, id=42) gestisce
+> più imprese (MIO TEST impresa_id=38, Intim8 impresa_id=9). Risultato: transazioni di Intim8 finivano
+> nel wallet di MIO TEST perché entrambe usavano operator_id=42.
+>
+> **Fix implementato:**
+> - Backend: tutti gli endpoint TCC (GET wallet, POST issue, POST redeem-spend, POST settlement)
+>   ora cercano/creano wallet per `impresa_id` invece che per `operator_id`
+> - Frontend: HubOperatore.tsx passa `impresa_id` in tutte le chiamate API
+> - DB: wallet corretti (Intim8: 451 TCC/€40, MIO TEST: azzerato post-settlement)
 >
 > **Stato deploy:**
 > | Sistema | Commit | Stato |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | `b6d13d1` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `b6d13d1` | Autodeploy v10.7.0 |
-> | GitHub `dms-hub-app-new` master | `e83e9cd` | Allineato |
-> | Vercel frontend | `e83e9cd` | Autodeploy |
+> | GitHub `mihub-backend-rest` master | `c335d65` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `c335d65` | Autodeploy v10.8.0 |
+> | GitHub `dms-hub-app-new` master | `a7be7d0` | Allineato |
+> | Vercel frontend | `a7be7d0` | Autodeploy |
 >
 > **BUG FIX #1: SUAP — Creazione Concessioni (Frontend `e83e9cd` + DB fix)**
 >
