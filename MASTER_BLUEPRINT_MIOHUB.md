@@ -1,6 +1,6 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.9.0 — STABILE (Anti-Scanner Security + Wallet TCC per impresa)
+> **Versione:** 10.10.0 — STABILE (DMS Legacy Sospeso + Anti-Scanner + Wallet TCC per impresa)
 > **Data:** 10 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,11 +9,20 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `1d300ef` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `a7be7d0` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online v10.9.0 | `https://api.mio-hub.me/health` — autodeploy da `1d300ef` |
-> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `a7be7d0` |
+> | **GitHub Backend** | Allineato | `12bdb2a` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `adc26bb` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online v10.10.0 | `https://api.mio-hub.me/health` — autodeploy da `12bdb2a` |
+> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `adc26bb` |
 > | **Neon (DB)** | Integro | Wallet TCC per impresa (1 wallet open per impresa), tutti orfani eliminati |
+>
+> **DMS Legacy (Heroku) — SOSPESO:**
+> - Flag `DMS_LEGACY_ENABLED = false` in `routes/dms-legacy.js`
+> - Middleware `legacySuspendedGuard` blocca tutti i 24 endpoint (risponde 503)
+> - Solo `/health` e `/status` restano attivi per monitoraggio
+> - Cron sync ogni ora DISATTIVATO (commentato in `index.js`)
+> - Dashboard: badge arancione "Sospeso" nella sezione Integrazioni
+> - Motivo: l'app presenze è stata ricostruita dentro l'app imprese
+> - Per riattivare: `DMS_LEGACY_ENABLED = true` + decommentare cron in index.js
 >
 > **Sicurezza — Anti-Scanner Middleware v1.0.0:**
 > - Middleware `antiScanner.js` montato PRIMA dell'apiLogger
@@ -21,6 +30,7 @@
 > - Rate limiting 404: 5 errori/min = ban 15min, honeypot = ban 1h
 > - Logging eventi sicurezza in `mio_agent_logs` (agent='security')
 > - Endpoint stats: `GET /api/security/scanner-stats`
+> - Card "Attacchi Bloccati" nel Health Monitor della Dashboard
 > - Rilevati 484 tentativi di scanning a maggio da 20+ IP (Bulgaria, Russia, Corea, USA)
 >
 > **Integrità DB verificata:**
@@ -36,6 +46,49 @@
 > - Un operatore può gestire più imprese con wallet separati
 > - Il settlement chiude il wallet e ne crea uno nuovo per la stessa impresa
 > - Backward compatibility: se impresa_id non è passato, fallback a operator_id
+>
+> **Dashboard Carbon Credit — Rimborsi per impresa:**
+> - `GET /fund/stats` top_operators: GROUP BY impresa_id + JOIN imprese per denominazione
+> - `GET /pending-reimbursements`: JOIN imprese (non più vendors) per nome impresa
+> - `GET /reimbursement-history`: JOIN imprese per nome impresa
+>
+> ---
+> ### CHANGELOG v10.10.0 (10 Mag 2026)
+> **Sospensione DMS Legacy (Heroku) — Reversibile**
+>
+> L'integrazione con il sistema DMS Legacy su Heroku (Lapsy srl) è stata sospesa.
+> L'app presenze è stata ricostruita dentro l'app imprese e non serve più interoperare.
+>
+> **Backend (`12bdb2a`):**
+> - Flag `DMS_LEGACY_ENABLED = false` in `routes/dms-legacy.js`
+> - Middleware `legacySuspendedGuard`: 24 endpoint rispondono 503 "Integrazione sospesa"
+> - `/health` restituisce `status: "suspended"` per monitoraggio dashboard
+> - Cron sync ogni ora commentato (non chiama più Heroku)
+>
+> **Frontend (`adc26bb`):**
+> - Badge arancione "Sospeso" nel ConnessioniV2 (nuovo tipo `suspended`)
+> - Health Check mostra toast info "Integrazione sospesa"
+> - Descrizione aggiornata in `realEndpoints.ts`
+>
+> ---
+> ### CHANGELOG v10.9.0 (10 Mag 2026)
+> **Anti-Scanner Security Middleware + Card Attacchi Bloccati**
+>
+> **Indagine sicurezza:** 484 errori 404 a maggio da 20+ IP scanner (user-agent vuoto).
+> Bot automatizzati cercavano endpoint Flowise, config, admin, debug.
+>
+> **Backend (`1d300ef`):**
+> - `middleware/antiScanner.js`: honeypot (22 trappole), rate limiting 404, ban temporanei
+> - `GET /api/security/scanner-stats`: endpoint per monitoraggio
+>
+> **Frontend (`c98efcc`):**
+> - Card "Attacchi Bloccati" nel Health Monitor con refresh ogni 30s
+> - Colore dinamico: teal (tranquillo) / arancione (ban attivi)
+>
+> **Dashboard Carbon Credit — Rimborsi per impresa (`ebb1d8c`):**
+> - `GET /fund/stats`: top_operators raggruppa per impresa_id con JOIN imprese
+> - `GET /pending-reimbursements`: JOIN imprese per denominazione
+> - `GET /reimbursement-history`: JOIN imprese per denominazione
 >
 > ---
 > ### CHANGELOG v10.8.0 (10 Mag 2026)
