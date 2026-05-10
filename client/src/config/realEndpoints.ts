@@ -1791,7 +1791,7 @@ export interface IntegrationConfig {
   name: string;
   description: string;
   baseUrl: string;
-  status: "active" | "in_preparation" | "inactive" | "suspended";
+  status: "active" | "in_preparation" | "inactive";
   dataOwner: string;
   notes: string;
   endpoints?: string[];
@@ -1802,12 +1802,12 @@ export const integrations: IntegrationConfig[] = [
     id: "dms-legacy",
     name: "DMS Legacy (Heroku)",
     description:
-      "Integrazione SOSPESA con il sistema DMS Legacy su Heroku (Lapsy srl). L'app presenze è stata ricostruita dentro l'app imprese.",
+      "Integrazione attiva con il sistema DMS Legacy su Heroku (Lapsy srl). Proxy API per mercati Bologna/Cervia, ambulanti, concessioni e presenze real-time.",
     baseUrl: "https://api.mio-hub.me",
-    status: "suspended",
+    status: "active",
     dataOwner: "DMS Legacy (Lapsy srl)",
     notes:
-      "Integrazione sospesa dal 10/05/2026. L'app presenze è ora integrata nell'app imprese, non serve più interoperare con Heroku. Sync automatico disattivato. Per riattivare: impostare DMS_LEGACY_ENABLED = true nel backend.",
+      "Integrazione attiva via API Proxy. I dati vengono letti dal backend Heroku e trasformati nel formato MioHub. Sync automatico ogni ora. SOLA LETTURA verso Heroku.",
     endpoints: [
       "/api/integrations/dms-legacy/markets",
       "/api/integrations/dms-legacy/vendors",

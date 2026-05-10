@@ -56,13 +56,6 @@ const ConnessioniV2 = memo(function ConnessioniV2() {
             Inattivo
           </Badge>
         );
-      case "suspended":
-        return (
-          <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            Sospeso
-          </Badge>
-        );
     }
   };
 
@@ -76,11 +69,7 @@ const ConnessioniV2 = memo(function ConnessioniV2() {
           `${API_BASE_URL}/api/integrations/dms-legacy/health`
         );
         const data = await response.json();
-        if (data.success && data.data?.status === "suspended") {
-          toast.info(
-            `DMS Legacy: Integrazione sospesa - ${data.data.reason || "App presenze integrata nell'app imprese"}`
-          );
-        } else if (data.success && data.data?.status === "healthy") {
+        if (data.success && data.data?.status === "healthy") {
           toast.success(
             `DMS Legacy: Connessione OK - Auth ${data.data.auth?.responseTime}, API ${data.data.api?.responseTime}`
           );
