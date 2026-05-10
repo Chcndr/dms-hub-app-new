@@ -2028,6 +2028,29 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
+### Sessione 10 Maggio 2026 — Fix Notifiche Enti Formatori, Scadenze Attestati e Icona PDF (v9.1.1)
+
+**Contesto:** Fix di 3 bug critici nel modulo Enti Formatori: notifiche di iscrizione corso che finivano nel tab Associazioni & Bandi invece che in Enti Formatori, attestati di formazione rilasciati che non comparivano nella lista "Scadenze Attestati Imprese e Team", e icona occhio (Eye) mancante per aprire i PDF degli attestati nell'app impresa.
+
+**Stato:** ✅ COMPLETATO
+
+**Backend (mihub-backend-rest) — Bug Fix:**
+- ✅ **Fix `routes/pagamenti.js`:** La notifica di iscrizione a un corso ora va SEMPRE a `target_tipo='ENTE_FORMATORE'` con `target_id=corso.ente_id`. Prima usava una condizione `corso.associazione_id ? 'ASSOCIAZIONE' : 'ENTE_FORMATORE'` che causava il routing errato quando il LEFT JOIN con la tabella `associazioni` trovava un match per nome.
+- ✅ **Fix `routes/associazioni-v9.js` (rilascia-attestato):** Aggiunto fallback diretto per inserire/aggiornare la qualificazione nella tabella `qualificazioni` anche se la chiamata HTTP interna a `POST /api/attestati/rilascia` fallisce. Fix notifica: ora usa `target_tipo='IMPRESA'` e `mittente_tipo='ENTE_FORMATORE'` (prima usava minuscolo `'impresa'`).
+- ✅ **Fix `routes/qualificazioni.js`:** L'endpoint `GET /api/qualificazioni/impresa/:id` ora include un `LEFT JOIN LATERAL` con `attestati_pdf` per restituire `attestato_pdf_id` e `attestato_pdf_url`. Questo fa comparire l'icona Eye (occhio) nell'AnagraficaPage dell'app impresa per aprire/scaricare il PDF dell'attestato.
+
+**Problemi Risolti:**
+1. **Notifiche invertite:** Le notifiche di iscrizione ai corsi (inviate dall'app impresa) finivano nel tab "Associazioni & Bandi" invece che in "Enti Formatori" nella Dashboard PA. Causa: il backend assegnava `target_tipo='ASSOCIAZIONE'` per errore.
+2. **Scadenze attestati mancanti:** Gli attestati di formazione rilasciati dal bottone "Rilascia Attestato" non comparivano nella lista "Scadenze Attestati Imprese e Team" perché la qualificazione non veniva inserita nella tabella `qualificazioni` (la chiamata HTTP interna falliva silenziosamente).
+3. **Icona occhio mancante:** Nell'app impresa (AnagraficaPage), i tab Qualifiche e Formazione non mostravano l'icona Eye per aprire il PDF perché l'endpoint `/api/qualificazioni/impresa/:id` non restituiva `attestato_pdf_id`.
+
+**Note Tecniche:**
+- Il frontend (DashboardPA.tsx) filtra correttamente le risposte notifiche per `target_tipo === 'ENTE_FORMATORE'` vs `target_tipo === 'ASSOCIAZIONE'` — il bug era solo nel backend.
+- L'endpoint alias `/api/imprese/:id/qualificazioni` (in `imprese.js`) aveva già il LEFT JOIN con `attestati_pdf` — il fix era necessario solo per l'endpoint primario `/api/qualificazioni/impresa/:id` usato dall'AnagraficaPage.
+- Lo script `backfill_qualificazioni.js` è disponibile per recuperare qualificazioni mancanti e correggere notifiche vecchie con `target_tipo` sbagliato.
+
+---
+
 ### Sessione 08 Maggio 2026 — Modulo TEAM e Formazione Obbligatoria (v9.1.0)
 
 **Contesto:** Implementazione del sistema completo di gestione della formazione obbligatoria per i collaboratori delle imprese (Modulo TEAM), generazione automatica degli attestati PDF conformi all'Accordo Stato-Regioni 59/2025 e integrazione dei controlli nella Dashboard PA.
