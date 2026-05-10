@@ -1,28 +1,72 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.6.0 — STABILE (Fix Modulo TEAM: PDF Attestati compatti, Matrice Formazione, Auto-calcolo Scadenze)
-> **Data:** 08 Maggio 2026
-> **Stato:** PUNTO DI RIPRISTINO STABILE — Git tag `v10.6.0-stable`
+> **Versione:** 10.7.0 — STABILE (Fix SUAP Concessioni + Fix TCC Carbon Credit Wallet Operatore)
+> **Data:** 10 Maggio 2026
+> **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (08 Mag 2026 — Snapshot stabile)
+> ### STATO SISTEMA (10 Mag 2026 — Snapshot stabile)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `51a1ac0` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `13c3ef9` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online v10.6.0 | `https://api.mio-hub.me/health` |
-> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `13c3ef9` |
-> | **Neon (DB)** | Integro | 0 duplicati, 0 fantasmi, colonna `stato_presenza` aggiunta |
+> | **GitHub Backend** | Allineato | `b6d13d1` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `e83e9cd` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online v10.7.0 | `https://api.mio-hub.me/health` — autodeploy da `b6d13d1` |
+> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `e83e9cd` |
+> | **Neon (DB)** | Integro | Wallet TCC puliti (0 duplicati open per operatore), colonne varchar allargate |
 >
 > **Integrità DB verificata:**
-> - vendor_presences: 9 righe (sessione corrente)
-> - graduatoria_presenze: 80 righe (tutte corrette)
-> - market_session_details: 1819 righe (0 duplicati, 0 fantasmi, colonna `stato_presenza` popolata)
-> - market_sessions: 548 sessioni (tutte CHIUSE)
-> - Nessun record fantasma CONCESSION stall_id=NULL
-> - Nessun record SPUNTA con stall_id non-NULL nella graduatoria
-> - Nessun fantasma SPUNTA residuo nello storico
+> - operator_daily_wallet: 0 operatori con >1 wallet open (regola: 1 solo wallet open per operatore)
+> - 19 wallet orfani (operator_id=NULL) eliminati
+> - Wallet 72 (operator 42): corretto tcc_redeemed 113→0, chiuso come processed
+> - Wallet 103 (operator 42): corretto tcc_redeemed 0→113, euro_sales 0→10.00
+> - Colonne concessioni allargate: giorno, dimensioni_lineari, qualita, numero_protocollo, autorizzazione_precedente_pg (varchar 50→255)
+>
+> ---
+> ### CHANGELOG v10.7.0 (10 Mag 2026)
+> **Fix SUAP Creazione Concessioni + Fix TCC Carbon Credit Wallet Operatore (Soluzione Definitiva)**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `b6d13d1` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `b6d13d1` | Autodeploy v10.7.0 |
+> | GitHub `dms-hub-app-new` master | `e83e9cd` | Allineato |
+> | Vercel frontend | `e83e9cd` | Autodeploy |
+>
+> **BUG FIX #1: SUAP — Creazione Concessioni (Frontend `e83e9cd` + DB fix)**
+>
+> - **Autocompilazione Comune Rilascio:** Il campo "Comune Rilascio" nel form concessioni ora si compila automaticamente leggendo il comune impersonalizzato via `getImpersonationParams()` invece di restare vuoto.
+> - **Autocompilazione Oggetto:** Il campo "Oggetto" ora si compila automaticamente in base al tipo concessione selezionato (es. "Concessione Tipo A - Posteggio Mercato").
+> - **Fix errore "Failed to create concession":** La colonna `giorno` era `varchar(50)` e troncava i valori. Allargata a `varchar(255)` direttamente su DB Neon, insieme a `dimensioni_lineari`, `qualita`, `numero_protocollo`, `autorizzazione_precedente_pg`.
+>
+> **BUG FIX #2: TCC Carbon Credit — Wallet Operatore (Backend `5c07610` → `b6d13d1` + DB fix)**
+>
+> **Root cause:** Le query in `tcc-v2.js` cercavano `settlement_status = 'open'` senza filtrare per operatore univoco. Poiché il settlement è manuale, i wallet restavano "open" per sempre dalla data di creazione. Quando un operatore (es. Intim8, operator_id=42) aveva un vecchio wallet open (id=72, data 2026-02-17), le transazioni nuove (es. redeem del 10 maggio) aggiornavano il wallet vecchio invece di quello corrente. Risultato: gli incassi non venivano conteggiati nel wallet del giorno.
+>
+> **Soluzione definitiva — Regola: UN SOLO WALLET OPEN PER OPERATORE:**
+> - Ogni operatore ha al massimo 1 wallet con `settlement_status = 'open'` alla volta
+> - Le transazioni (issue, redeem) vanno SEMPRE sul wallet open esistente
+> - Solo il settlement chiude il wallet e ne crea uno nuovo
+> - Il GET wallet restituisce quello open, oppure ne crea uno se non esiste
+>
+> **Endpoint modificati in `routes/tcc-v2.js`:**
+> - `GET /operator/wallet/:operatorId` — cerca l'unico wallet open (qualsiasi data), crea solo se non esiste
+> - `POST /operator/issue` — cerca l'unico wallet open, aggiorna quello
+> - `POST /operator/redeem-spend` — cerca l'unico wallet open, aggiorna quello
+> - `POST /operator/settlement` — chiude l'unico wallet open, ne crea uno nuovo
+>
+> **DB cleanup eseguito:**
+> - Wallet 72 (operator 42, 2026-02-17): `tcc_redeemed` 113→0, chiuso come `processed`
+> - Wallet 100, 101 (operator 260, 2026-05-08): chiusi come `processed` (dati test sporchi)
+> - 19 wallet orfani (operator_id=NULL, 2026-03-04): eliminati
+> - Wallet 103 (operator 42, 2026-05-10): `tcc_redeemed` 0→113, `euro_sales` 0→10.00 (dati corretti)
+>
+> **Vincoli negativi (NON FARE):**
+> - NON creare un nuovo wallet open se ne esiste già uno per l'operatore
+> - NON cercare wallet per `settlement_status = 'open'` senza verificare che sia l'unico
+> - NON filtrare wallet per data nelle transazioni — il wallet open è unico e va usato sempre
+> - I wallet dei cittadini (extended_users.wallet_balance) NON sono coinvolti — sono un campo singolo
 >
 > ---
 > ### CHANGELOG v10.6.0 (08 Mag 2026)
