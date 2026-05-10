@@ -23,6 +23,7 @@ import {
   Server,
   Cloud,
   Shield,
+  ShieldAlert,
   Bot,
   Globe,
   RefreshCw,
@@ -82,6 +83,58 @@ const serviceColors: Record<string, string> = {
   pdnd: "#3b82f6",
   frontend: "#14b8a6",
 };
+
+/**
+ * Card indicatore Attacchi Bloccati — dati da /api/security/scanner-stats
+ */
+function ScannerStatsCard() {
+  const { data: scannerData } = useQuery({
+    queryKey: ["scanner-stats"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/security/scanner-stats`);
+      if (!res.ok) throw new Error("Scanner stats non disponibili");
+      return res.json();
+    },
+    refetchInterval: 30000, // refresh ogni 30s
+    retry: 1,
+  });
+
+  const totalBlocked = scannerData?.stats?.totalBlocked || 0;
+  const activeBans = scannerData?.activeBans?.length || 0;
+  const honeypotHits = scannerData?.stats?.totalHoneypotHits || 0;
+
+  // Colore dinamico: verde se 0 attacchi, arancione se pochi, rosso se molti
+  const cardColor = totalBlocked === 0
+    ? "from-[#14b8a6]/20 to-[#14b8a6]/5 border-[#14b8a6]/30"
+    : activeBans > 0
+      ? "from-orange-500/20 to-orange-500/5 border-orange-500/30"
+      : "from-[#14b8a6]/20 to-[#14b8a6]/5 border-[#14b8a6]/30";
+
+  const numberColor = totalBlocked === 0
+    ? "text-[#14b8a6]"
+    : activeBans > 0
+      ? "text-orange-400"
+      : "text-[#14b8a6]";
+
+  return (
+    <Card className={`bg-gradient-to-br ${cardColor}`}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-[#e8fbff] text-sm flex items-center gap-1">
+          <ShieldAlert className="h-4 w-4" />
+          Attacchi Bloccati
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className={`text-4xl font-bold ${numberColor}`}>
+          {totalBlocked}
+        </div>
+        <p className="text-xs text-[#e8fbff]/60 mt-1">
+          {activeBans > 0 ? `${activeBans} IP bannati ora` : "nessun ban attivo"}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function HealthDashboard() {
   const queryClient = useQueryClient();
@@ -242,7 +295,7 @@ export default function HealthDashboard() {
 
       {/* Summary Cards */}
       {healthData && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card
             className={`bg-gradient-to-br ${getOverallStatusColor(healthData.status)} border`}
           >
@@ -312,6 +365,8 @@ export default function HealthDashboard() {
               </p>
             </CardContent>
           </Card>
+
+          <ScannerStatsCard />
         </div>
       )}
 
