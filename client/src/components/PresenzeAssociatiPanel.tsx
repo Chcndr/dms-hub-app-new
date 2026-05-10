@@ -177,6 +177,8 @@ interface SchedaAssociato {
     corso_prezzo: number;
     corso_modalita: string;
     corso_stato: string;
+    attestato_pdf_url?: string;
+    attestato_codice?: string;
   }>;
 }
 
@@ -1647,6 +1649,18 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
                                 >
                                   Pagato
                                 </Badge>
+                              )}
+                              {(c.stato === "completato" || c.stato === "COMPLETATO") && c.attestato_pdf_url && (
+                                <button
+                                  onClick={() => {
+                                    const baseUrl = (import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api').replace(/\/api$/, '');
+                                    window.open(`${baseUrl}${c.attestato_pdf_url}`, '_blank');
+                                  }}
+                                  className="p-1 rounded hover:bg-[#8b5cf6]/20 transition-colors"
+                                  title="Visualizza attestato PDF"
+                                >
+                                  <Eye className="h-4 w-4 text-[#8b5cf6]" />
+                                </button>
                               )}
                             </div>
                           </div>

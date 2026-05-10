@@ -3644,6 +3644,11 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
   const [pendingServizio, setPendingServizio] = useState<any>(null);
   const [loadingMercati, setLoadingMercati] = useState(false);
 
+  // Popup upload atto notarile per SCIA Subingresso
+  const [showSciaPopup, setShowSciaPopup] = useState(false);
+  const [sciaFile, setSciaFile] = useState<File | null>(null);
+  const [sciaUploading, setSciaUploading] = useState(false);
+
   useEffect(() => {
     if (!impresaId) {
       setLoading(false);
@@ -3715,6 +3720,16 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
       return;
     }
 
+    // Se il servizio è "SCIA Subingresso", mostra popup upload atto notarile
+    const isScia = servizio.nome?.toLowerCase().includes("scia") ||
+      servizio.codice?.toLowerCase().includes("scia");
+    if (isScia) {
+      setPendingServizio(servizio);
+      setSciaFile(null);
+      setShowSciaPopup(true);
+      return;
+    }
+
     await inviaRichiestaServizio(servizio, null);
   };
 
@@ -3724,6 +3739,45 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
     setShowMercatoPopup(false);
     await inviaRichiestaServizio(pendingServizio, mercato);
     setPendingServizio(null);
+  };
+
+  const handleConfirmScia = async () => {
+    if (!pendingServizio || !impresaId) return;
+    setSciaUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('servizio_id', String(pendingServizio.id));
+      formData.append('impresa_id', String(impresaId));
+      if (sciaFile) {
+        formData.append('file', sciaFile);
+        formData.append('note_richiesta', `Atto notarile: ${sciaFile.name}`);
+      }
+      const res = await authenticatedFetch(
+        `${API_BASE_URL}/api/bandi/richieste-con-allegato`,
+        { method: 'POST', body: formData }
+      );
+      const data = await res.json();
+      if (data.success) {
+        alert('Richiesta SCIA inviata con successo!');
+        setRichieste(prev => [...prev, data.data || { id: Date.now(), servizio_nome: pendingServizio.nome, stato: 'RICHIESTA', created_at: new Date().toISOString() }]);
+        // Offri pagamento
+        const prezzoServizio = parseFloat(pendingServizio.prezzo_associati || pendingServizio.prezzo_base || '0') || 0;
+        if (prezzoServizio > 0) {
+          const richiestaId = data.data?.id || data.data?.richiesta_id || null;
+          setPagaInfo({ importo: prezzoServizio, descrizione: `Servizio: ${pendingServizio.nome}`, riferimentoId: richiestaId || pendingServizio.id, riferimentoTipo: richiestaId ? 'richiesta' : 'servizio' });
+          setPagaOpen(true);
+        }
+      } else {
+        alert(data.error || 'Errore invio richiesta SCIA');
+      }
+    } catch {
+      alert('Errore di connessione');
+    } finally {
+      setSciaUploading(false);
+      setShowSciaPopup(false);
+      setPendingServizio(null);
+      setSciaFile(null);
+    }
   };
 
   const inviaRichiestaServizio = async (servizio: any, mercato: any | null) => {
@@ -3950,6 +4004,70 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
                 onClick={handleConfirmMercato}
               >
                 <CheckCircle className="w-4 h-4 mr-1" /> Conferma
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup upload atto notarile per SCIA Subingresso */}
+      {showSciaPopup && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a2332] border border-[#14b8a6]/30 rounded-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-[#e8fbff] flex items-center gap-2">
+                <Upload className="w-5 h-5 text-[#14b8a6]" />
+                SCIA Subingresso
+              </h3>
+              <button
+                onClick={() => { setShowSciaPopup(false); setPendingServizio(null); setSciaFile(null); }}
+                className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-[#e8fbff]/60">
+              Carica l'atto notarile per la richiesta SCIA Subingresso (PDF, JPG, PNG - max 10MB)
+            </p>
+            <div className="space-y-3">
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#14b8a6]/40 rounded-lg cursor-pointer hover:border-[#14b8a6]/70 transition-colors bg-[#0b1220]/50">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <Upload className="w-8 h-8 mb-2 text-[#14b8a6]/60" />
+                  <p className="text-xs text-[#e8fbff]/60">
+                    {sciaFile ? sciaFile.name : "Clicca per selezionare il file"}
+                  </p>
+                  {sciaFile && (
+                    <p className="text-xs text-[#14b8a6] mt-1">
+                      {(sciaFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setSciaFile(e.target.files?.[0] || null)}
+                />
+              </label>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 border-[#ef4444]/30 text-[#ef4444] hover:bg-[#ef4444]/10"
+                onClick={() => { setShowSciaPopup(false); setPendingServizio(null); setSciaFile(null); }}
+              >
+                Annulla
+              </Button>
+              <Button
+                className="flex-1 bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white"
+                disabled={sciaUploading}
+                onClick={handleConfirmScia}
+              >
+                {sciaUploading ? (
+                  <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Invio...</>
+                ) : (
+                  <><CheckCircle className="w-4 h-4 mr-1" /> {sciaFile ? 'Invia con Allegato' : 'Invia senza Allegato'}</>
+                )}
               </Button>
             </div>
           </div>

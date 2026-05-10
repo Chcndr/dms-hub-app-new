@@ -627,6 +627,21 @@ const GestioneServiziAssociazionePanel = memo(function GestioneServiziAssociazio
                               <Settings className="h-3 w-3 mr-1" /> Gestisci
                             </Button>
                           )}
+                          {r.servizio_nome?.toLowerCase().includes("scia") && (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                window.dispatchEvent(
+                                  new CustomEvent("navigate-to-scia-form", {
+                                    detail: { from: "richiesta", richiestaId: r.id, impresaNome: r.impresa_nome, documentiAllegati: r.documenti_allegati }
+                                  })
+                                );
+                              }}
+                              className="bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white h-7 text-xs"
+                            >
+                              <Settings className="h-3 w-3 mr-1" /> Gestisci
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>

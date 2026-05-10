@@ -385,6 +385,7 @@ function useDashboardData() {
         stalls: statsOverview.stalls || 0,
         comuni: statsOverview.comuni || 0,
         imprese: statsOverview.imprese || 0,
+        totale_associati: statsOverview.totale_associati || 0,
         autorizzazioni: statsOverview.autorizzazioni || 0,
         domande_spunta: statsOverview.domande_spunta || 0,
         tcc: statsOverview.tcc || {},
@@ -1086,6 +1087,11 @@ export default function DashboardPA() {
       setActiveTab("docs");
       setDocsSubTab("scia-pratiche");
     };
+    const handleNavigateToSciaForm = () => {
+      // Switcha al tab SCIA & Pratiche per gestire la richiesta SCIA
+      setActiveTab("docs");
+      setDocsSubTab("scia-pratiche");
+    };
     window.addEventListener("navigate-to-pratica", handleNavigateToPratica);
     window.addEventListener(
       "navigate-to-concessione",
@@ -1094,6 +1100,10 @@ export default function DashboardPA() {
     window.addEventListener(
       "navigate-to-domanda-spunta-form",
       handleNavigateToDomandaSpuntaForm
+    );
+    window.addEventListener(
+      "navigate-to-scia-form",
+      handleNavigateToSciaForm
     );
     return () => {
       window.removeEventListener(
@@ -1107,6 +1117,10 @@ export default function DashboardPA() {
       window.removeEventListener(
         "navigate-to-domanda-spunta-form",
         handleNavigateToDomandaSpuntaForm
+      );
+      window.removeEventListener(
+        "navigate-to-scia-form",
+        handleNavigateToSciaForm
       );
     };
   }, []);
@@ -2878,12 +2892,17 @@ export default function DashboardPA() {
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* KPI Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <KPICard
             title="Utenti Totali"
             value={realData.overview?.totalUsers || 0}
             growth={realData.overview?.userGrowth || 0}
             icon={Users}
+          />
+          <KPICard
+            title="Totale Associati"
+            value={realData.overview?.totale_associati || 0}
+            icon={UserCheck}
           />
           <KPICard
             title="Mercati Attivi"

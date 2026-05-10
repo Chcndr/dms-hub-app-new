@@ -724,12 +724,12 @@ export default function NotificheAssociazionePanel({
               )}
               {/* Bottone Gestisci per notifiche RICHIESTA_SERVIZIO (Domanda Spunta) */}
               {(selectedNotifica.tipo === "RICHIESTA_SERVIZIO" || selectedNotifica.tipo === "CONFERMA_PAGAMENTO") &&
-                getDirezione(selectedNotifica) === "RICEVUTO" && (
+                getDirezione(selectedNotifica) === "RICEVUTO" &&
+                (selectedNotifica.titolo?.toLowerCase().includes("domanda spunta") || selectedNotifica.messaggio?.toLowerCase().includes("domanda spunta")) && (
                 <div className="mt-4 pt-4 border-t border-[#3b82f6]/20">
                   <button
                     onClick={() => {
                       setSelectedNotifica(null);
-                      // Naviga al tab SCIA & Pratiche > Domande Spunta > Nuova Domanda
                       window.dispatchEvent(new CustomEvent("navigate-to-domanda-spunta-form", {
                         detail: { notifica: selectedNotifica }
                       }));
@@ -738,6 +738,25 @@ export default function NotificheAssociazionePanel({
                   >
                     <Settings className="w-4 h-4" />
                     Gestisci - Nuova Domanda Spunta
+                  </button>
+                </div>
+              )}
+              {/* Bottone Gestisci per notifiche RICHIESTA_SERVIZIO (SCIA) */}
+              {(selectedNotifica.tipo === "RICHIESTA_SERVIZIO" || selectedNotifica.tipo === "CONFERMA_PAGAMENTO") &&
+                getDirezione(selectedNotifica) === "RICEVUTO" &&
+                (selectedNotifica.titolo?.toLowerCase().includes("scia") || selectedNotifica.messaggio?.toLowerCase().includes("scia")) && (
+                <div className="mt-4 pt-4 border-t border-[#3b82f6]/20">
+                  <button
+                    onClick={() => {
+                      setSelectedNotifica(null);
+                      window.dispatchEvent(new CustomEvent("navigate-to-scia-form", {
+                        detail: { notifica: selectedNotifica }
+                      }));
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white rounded-lg font-medium transition-all"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Gestisci - Nuova SCIA
                   </button>
                 </div>
               )}

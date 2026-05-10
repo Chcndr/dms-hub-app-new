@@ -491,6 +491,11 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
       setSelectedDomandaSpuntaId(null);
       setShowDomandaSpuntaForm(true);
     };
+    // Listener per navigazione dalla notifica/richiesta al form Nuova SCIA
+    const handleNavigateToSciaForm = () => {
+      setActiveTab("pratiche");
+      setShowSciaForm(true);
+    };
     window.addEventListener(
       "navigate-to-pratica",
       handleNavigateToPratica as EventListener
@@ -506,6 +511,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
     window.addEventListener(
       "navigate-to-domanda-spunta-form",
       handleNavigateToDomandaSpuntaForm as EventListener
+    );
+    window.addEventListener(
+      "navigate-to-scia-form",
+      handleNavigateToSciaForm as EventListener
     );
     return () => {
       window.removeEventListener(
@@ -523,6 +532,10 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
       window.removeEventListener(
         "navigate-to-domanda-spunta-form",
         handleNavigateToDomandaSpuntaForm as EventListener
+      );
+      window.removeEventListener(
+        "navigate-to-scia-form",
+        handleNavigateToSciaForm as EventListener
       );
     };
   }, [concessioni]);
