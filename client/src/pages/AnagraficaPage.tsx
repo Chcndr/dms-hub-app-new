@@ -4237,9 +4237,28 @@ function FormazioneSection({
                       )}
                     </div>
                     {iscrizioneEsistente ? (
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs h-8 flex items-center flex-shrink-0">
-                        <CheckCircle className="w-3 h-3 mr-1" /> Iscritto
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs h-8 flex items-center">
+                          <CheckCircle className="w-3 h-3 mr-1" /> Iscritto
+                        </Badge>
+                        {!iscrizioneEsistente.pagato && getCoursePrice(c) > 0 && iscrizioneEsistente.stato !== 'COMPLETATO' && (
+                          <Button
+                            size="sm"
+                            className="bg-amber-500 hover:bg-amber-600 text-white text-xs h-7"
+                            onClick={() => {
+                              setPagaInfo({
+                                importo: getCoursePrice(c),
+                                descrizione: `Iscrizione: ${getCourseTitle(c)}`,
+                                riferimentoId: c.id,
+                                iscrizioneId: iscrizioneEsistente.id,
+                              });
+                              setPagaOpen(true);
+                            }}
+                          >
+                            <Wallet className="w-3 h-3 mr-1" /> Paga
+                          </Button>
+                        )}
+                      </div>
                     ) : (
                       <Button
                         size="sm"
@@ -4316,6 +4335,23 @@ function FormazioneSection({
                       >
                         {i.stato || "ISCRITTO"}
                       </Badge>
+                      {!i.pagato && getCoursePrice(corsoInfo) > 0 && i.stato !== 'COMPLETATO' && (
+                        <Button
+                          size="sm"
+                          className="bg-amber-500 hover:bg-amber-600 text-white text-xs h-7"
+                          onClick={() => {
+                            setPagaInfo({
+                              importo: getCoursePrice(corsoInfo),
+                              descrizione: `Iscrizione: ${getCourseTitle(corsoInfo)}`,
+                              riferimentoId: i.corso_id,
+                              iscrizioneId: i.id,
+                            });
+                            setPagaOpen(true);
+                          }}
+                        >
+                          <Wallet className="w-3 h-3 mr-1" /> Paga
+                        </Button>
+                      )}
                       {attestatoUrl && (
                         <Button
                           type="button"

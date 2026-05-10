@@ -101,6 +101,9 @@ import {
   ClipboardList,
   Edit2,
   Trash2,
+  Eye,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   Card,
@@ -1760,6 +1763,7 @@ export default function DashboardPA() {
   const [assocCorsoLink, setAssocCorsoLink] = useState("");
   const [assocCorsoSede, setAssocCorsoSede] = useState("");
   const [selectedNotifica, setSelectedNotifica] = useState<any>(null);
+  const [expandedMessaggioId, setExpandedMessaggioId] = useState<string | null>(null);
   const [notificheNonLette, setNotificheNonLette] = useState(0);
   const [filtroMessaggiEnti, setFiltroMessaggiEnti] = useState<
     "tutti" | "inviati" | "ricevuti"
@@ -7735,10 +7739,14 @@ export default function DashboardPA() {
                       {(filtroMessaggiEnti === "tutti" ||
                         filtroMessaggiEnti === "inviati") &&
                         (messaggiInviatiEnti || []).map(
-                          (msg: any, idx: number) => (
+                          (msg: any, idx: number) => {
+                            const msgKey = msg._rowKey || `inv-enti-${msg.id || idx}`;
+                            const isExpanded = expandedMessaggioId === msgKey;
+                            return (
                             <div
-                              key={msg._rowKey || `inv-${msg.id || idx}`}
-                              className="p-3 rounded-lg border bg-blue-500/5 border-blue-500/20"
+                              key={msgKey}
+                              className="p-3 rounded-lg border bg-blue-500/5 border-blue-500/20 cursor-pointer transition-all hover:border-blue-500/40"
+                              onClick={() => setExpandedMessaggioId(isExpanded ? null : msgKey)}
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
@@ -7752,39 +7760,55 @@ export default function DashboardPA() {
                                       : `→ ${msg.destinatari || 0} imprese`}
                                   </Badge>
                                 </div>
-                                <span className="text-xs text-[#e8fbff]/50">
-                                  {new Date(msg.created_at).toLocaleDateString(
-                                    "it-IT",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    }
-                                  )}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-[#e8fbff]/50">
+                                    {new Date(msg.created_at).toLocaleDateString(
+                                      "it-IT",
+                                      {
+                                        day: "2-digit",
+                                        month: "short",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )}
+                                  </span>
+                                  <Eye className="w-4 h-4 text-blue-400/60 hover:text-blue-400" />
+                                </div>
                               </div>
                               <p className="text-sm text-[#e8fbff]/80">
                                 {msg.titolo}
                               </p>
-                              <div className="flex items-center gap-2 mt-2">
+                              {isExpanded && msg.messaggio && (
+                                <div className="mt-2 p-2 bg-blue-500/10 rounded-md border border-blue-500/20">
+                                  <p className="text-sm text-[#e8fbff]/70 whitespace-pre-wrap">{msg.messaggio}</p>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between mt-2">
                                 <span className="text-xs text-[#e8fbff]/50">
                                   {msg.destinatario_impresa_nome
                                     ? `Stato: ${msg.destinatario_stato || "INVIATO"}`
                                     : `Letti: ${msg.lette || 0}/${msg.destinatari || 0}`}
                                 </span>
+                                {isExpanded ? <ChevronUp className="w-3 h-3 text-[#e8fbff]/40" /> : <ChevronDown className="w-3 h-3 text-[#e8fbff]/40" />}
                               </div>
                             </div>
-                          )
-                        )}
+                            );
+                          }
+                        )
                       {/* Messaggi Ricevuti */}
                       {(filtroMessaggiEnti === "tutti" ||
                         filtroMessaggiEnti === "ricevuti") &&
                         (notificheRisposteEnti || []).map(
-                          (risposta: any, idx: number) => (
+                          (risposta: any, idx: number) => {
+                            const ricKey = `ric-enti-${risposta.id || idx}`;
+                            const isExpanded = expandedMessaggioId === ricKey;
+                            return (
                             <div
-                              key={`ric-${idx}`}
-                              onClick={() => segnaRispostaComeLetta(risposta)}
+                              key={ricKey}
+                              onClick={() => {
+                                segnaRispostaComeLetta(risposta);
+                                setExpandedMessaggioId(isExpanded ? null : ricKey);
+                              }}
                               className={`p-3 rounded-lg border cursor-pointer transition-all hover:scale-[1.01] ${!risposta.letta ? "bg-blue-500/10 border-blue-500/30" : "bg-[#0b1220] border-[#3b82f6]/20"}`}
                             >
                               <div className="flex items-center justify-between mb-2">
@@ -7803,26 +7827,39 @@ export default function DashboardPA() {
                                     </Badge>
                                   )}
                                 </div>
-                                <span className="text-xs text-[#e8fbff]/50">
-                                  {new Date(
-                                    risposta.created_at
-                                  ).toLocaleDateString("it-IT", {
-                                    day: "2-digit",
-                                    month: "short",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-[#e8fbff]/50">
+                                    {new Date(
+                                      risposta.created_at
+                                    ).toLocaleDateString("it-IT", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                  <Eye className="w-4 h-4 text-blue-400/60 hover:text-blue-400" />
+                                </div>
                               </div>
                               <p className="text-sm text-[#e8fbff]/80">
                                 {risposta.titolo}
                               </p>
-                              <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">
-                                {risposta.messaggio}
-                              </p>
+                              {isExpanded ? (
+                                <div className="mt-2 p-2 bg-blue-500/10 rounded-md border border-blue-500/20">
+                                  <p className="text-sm text-[#e8fbff]/70 whitespace-pre-wrap">{risposta.messaggio}</p>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">
+                                  {risposta.messaggio}
+                                </p>
+                              )}
+                              <div className="flex justify-end mt-1">
+                                {isExpanded ? <ChevronUp className="w-3 h-3 text-[#e8fbff]/40" /> : <ChevronDown className="w-3 h-3 text-[#e8fbff]/40" />}
+                              </div>
                             </div>
-                          )
-                        )}
+                            );
+                          }
+                        )
                       {/* Empty states */}
                       {filtroMessaggiEnti === "inviati" &&
                         (messaggiInviatiEnti || []).length === 0 && (
@@ -8986,10 +9023,14 @@ export default function DashboardPA() {
                       {(filtroMessaggiAssoc === "tutti" ||
                         filtroMessaggiAssoc === "inviati") &&
                         (messaggiInviatiAssoc || []).map(
-                          (msg: any, idx: number) => (
+                          (msg: any, idx: number) => {
+                            const msgKey = msg._rowKey || `inv-assoc-${msg.id || idx}`;
+                            const isExpanded = expandedMessaggioId === msgKey;
+                            return (
                             <div
-                              key={msg._rowKey || `inv-${msg.id || idx}`}
-                              className="p-3 rounded-lg border bg-emerald-500/5 border-emerald-500/20"
+                              key={msgKey}
+                              className="p-3 rounded-lg border bg-emerald-500/5 border-emerald-500/20 cursor-pointer transition-all hover:border-emerald-500/40"
+                              onClick={() => setExpandedMessaggioId(isExpanded ? null : msgKey)}
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
@@ -9003,39 +9044,55 @@ export default function DashboardPA() {
                                       : `→ ${msg.destinatari || 0} imprese`}
                                   </Badge>
                                 </div>
-                                <span className="text-xs text-[#e8fbff]/50">
-                                  {new Date(msg.created_at).toLocaleDateString(
-                                    "it-IT",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    }
-                                  )}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-[#e8fbff]/50">
+                                    {new Date(msg.created_at).toLocaleDateString(
+                                      "it-IT",
+                                      {
+                                        day: "2-digit",
+                                        month: "short",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )}
+                                  </span>
+                                  <Eye className="w-4 h-4 text-emerald-400/60 hover:text-emerald-400" />
+                                </div>
                               </div>
                               <p className="text-sm text-[#e8fbff]/80">
                                 {msg.titolo}
                               </p>
-                              <div className="flex items-center gap-2 mt-2">
+                              {isExpanded && msg.messaggio && (
+                                <div className="mt-2 p-2 bg-emerald-500/10 rounded-md border border-emerald-500/20">
+                                  <p className="text-sm text-[#e8fbff]/70 whitespace-pre-wrap">{msg.messaggio}</p>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between mt-2">
                                 <span className="text-xs text-[#e8fbff]/50">
                                   {msg.destinatario_impresa_nome
                                     ? `Stato: ${msg.destinatario_stato || "INVIATO"}`
                                     : `Letti: ${msg.lette || 0}/${msg.destinatari || 0}`}
                                 </span>
+                                {isExpanded ? <ChevronUp className="w-3 h-3 text-[#e8fbff]/40" /> : <ChevronDown className="w-3 h-3 text-[#e8fbff]/40" />}
                               </div>
                             </div>
-                          )
-                        )}
+                            );
+                          }
+                        )
                       {/* Messaggi Ricevuti */}
                       {(filtroMessaggiAssoc === "tutti" ||
                         filtroMessaggiAssoc === "ricevuti") &&
                         (notificheRisposteAssoc || []).map(
-                          (risposta: any, idx: number) => (
+                          (risposta: any, idx: number) => {
+                            const ricKey = `ric-assoc-${risposta.id || idx}`;
+                            const isExpanded = expandedMessaggioId === ricKey;
+                            return (
                             <div
-                              key={`ric-${idx}`}
-                              onClick={() => segnaRispostaComeLetta(risposta)}
+                              key={ricKey}
+                              onClick={() => {
+                                segnaRispostaComeLetta(risposta);
+                                setExpandedMessaggioId(isExpanded ? null : ricKey);
+                              }}
                               className={`p-3 rounded-lg border cursor-pointer transition-all hover:scale-[1.01] ${!risposta.letta ? "bg-emerald-500/10 border-emerald-500/30" : "bg-[#0b1220] border-[#10b981]/20"}`}
                             >
                               <div className="flex items-center justify-between mb-2">
@@ -9054,26 +9111,39 @@ export default function DashboardPA() {
                                     </Badge>
                                   )}
                                 </div>
-                                <span className="text-xs text-[#e8fbff]/50">
-                                  {new Date(
-                                    risposta.created_at
-                                  ).toLocaleDateString("it-IT", {
-                                    day: "2-digit",
-                                    month: "short",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-[#e8fbff]/50">
+                                    {new Date(
+                                      risposta.created_at
+                                    ).toLocaleDateString("it-IT", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                  <Eye className="w-4 h-4 text-emerald-400/60 hover:text-emerald-400" />
+                                </div>
                               </div>
                               <p className="text-sm text-[#e8fbff]/80">
                                 {risposta.titolo}
                               </p>
-                              <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">
-                                {risposta.messaggio}
-                              </p>
+                              {isExpanded ? (
+                                <div className="mt-2 p-2 bg-emerald-500/10 rounded-md border border-emerald-500/20">
+                                  <p className="text-sm text-[#e8fbff]/70 whitespace-pre-wrap">{risposta.messaggio}</p>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">
+                                  {risposta.messaggio}
+                                </p>
+                              )}
+                              <div className="flex justify-end mt-1">
+                                {isExpanded ? <ChevronUp className="w-3 h-3 text-[#e8fbff]/40" /> : <ChevronDown className="w-3 h-3 text-[#e8fbff]/40" />}
+                              </div>
                             </div>
-                          )
-                        )}
+                            );
+                          }
+                        )
                       {/* Empty states */}
                       {filtroMessaggiAssoc === "inviati" &&
                         (messaggiInviatiAssoc || []).length === 0 && (
