@@ -7794,7 +7794,7 @@ export default function DashboardPA() {
                             </div>
                             );
                           }
-                        )
+                        )}
                       {/* Messaggi Ricevuti */}
                       {(filtroMessaggiEnti === "tutti" ||
                         filtroMessaggiEnti === "ricevuti") &&
@@ -7859,7 +7859,7 @@ export default function DashboardPA() {
                             </div>
                             );
                           }
-                        )
+                        )}
                       {/* Empty states */}
                       {filtroMessaggiEnti === "inviati" &&
                         (messaggiInviatiEnti || []).length === 0 && (
@@ -9078,7 +9078,7 @@ export default function DashboardPA() {
                             </div>
                             );
                           }
-                        )
+                        )}
                       {/* Messaggi Ricevuti */}
                       {(filtroMessaggiAssoc === "tutti" ||
                         filtroMessaggiAssoc === "ricevuti") &&
@@ -9143,7 +9143,7 @@ export default function DashboardPA() {
                             </div>
                             );
                           }
-                        )
+                        )}
                       {/* Empty states */}
                       {filtroMessaggiAssoc === "inviati" &&
                         (messaggiInviatiAssoc || []).length === 0 && (
