@@ -467,7 +467,7 @@ export default function HubOperatore() {
       if (operatore.id > 0) {
         try {
           const res = await fetch(
-            `${API_BASE}/operator/wallet/${operatore.id}?_t=${Date.now()}`,
+            `${API_BASE}/operator/wallet/${operatore.id}?_t=${Date.now()}${operatore.impresaId ? `&impresa_id=${operatore.impresaId}` : ''}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }
@@ -801,7 +801,7 @@ export default function HubOperatore() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ operator_id: operatore.id }),
+        body: JSON.stringify({ operator_id: operatore.id, impresa_id: operatore.impresaId }),
       });
       const data = await res.json();
 
