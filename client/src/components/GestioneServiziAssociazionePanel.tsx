@@ -34,6 +34,7 @@ import {
   Package,
   ArrowRight,
   Eye,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -609,6 +610,21 @@ const GestioneServiziAssociazionePanel = memo(function GestioneServiziAssociazio
                               className="bg-[#10b981] hover:bg-[#10b981]/80 text-white h-7 text-xs"
                             >
                               <CheckCircle2 className="h-3 w-3 mr-1" /> Completa
+                            </Button>
+                          )}
+                          {r.servizio_nome?.toLowerCase().includes("domanda spunta") && (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                window.dispatchEvent(
+                                  new CustomEvent("navigate-to-domanda-spunta-form", {
+                                    detail: { from: "richiesta", richiestaId: r.id, impresaNome: r.impresa_nome }
+                                  })
+                                );
+                              }}
+                              className="bg-[#14b8a6] hover:bg-[#14b8a6]/80 text-white h-7 text-xs"
+                            >
+                              <Settings className="h-3 w-3 mr-1" /> Gestisci
                             </Button>
                           )}
                         </div>

@@ -61,6 +61,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import NotificationManager from "@/components/suap/NotificationManager";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 
@@ -339,6 +345,9 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
   const [giustificazioniManuali, setGiustificazioniManuali] = useState<
     GiustificazioneManuale[]
   >([]);
+
+  // Giustificazione selezionata per modal dettaglio
+  const [selectedGiustifica, setSelectedGiustifica] = useState<GiustificazioneManuale | null>(null);
 
   // Notifiche SUAP per PM
   const [notificheSuap, setNotificheSuap] = useState<NotificaSUAP[]>([]);
@@ -3367,6 +3376,15 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
                               </p>
                             </div>
                             <div className="flex gap-2 flex-wrap justify-end">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-[#3b82f6]/30 text-[#3b82f6] hover:bg-[#3b82f6]/20"
+                                onClick={() => setSelectedGiustifica(g)}
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                Apri
+                              </Button>
                               {g.justification_file_url && (
                                 <Button
                                   size="sm"
@@ -3696,6 +3714,112 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Modal Dettaglio Giustificazione */}
+      <Dialog open={!!selectedGiustifica} onOpenChange={(open) => !open && setSelectedGiustifica(null)}>
+        <DialogContent className="bg-[#1a2332] border-[#14b8a6]/30 text-[#e8fbff] max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-[#14b8a6] flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Dettaglio Giustificazione
+            </DialogTitle>
+          </DialogHeader>
+          {selectedGiustifica && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-[#e8fbff]/50">Tipo</p>
+                  <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 mt-1">
+                    {selectedGiustifica.tipo_giustifica === "certificato_medico" ? "Certificato Medico" : selectedGiustifica.tipo_giustifica === "uscita_anticipata" ? "Uscita Anticipata" : "Altro"}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-[#e8fbff]/50">Stato</p>
+                  <Badge className={`mt-1 ${selectedGiustifica.status === "INVIATA" ? "bg-yellow-500/20 text-yellow-400" : selectedGiustifica.status === "ACCETTATA" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
+                    {selectedGiustifica.status === "INVIATA" ? "Da Valutare" : selectedGiustifica.status === "ACCETTATA" ? "Accettata" : "Rifiutata"}
+                  </Badge>
+                </div>
+              </div>
+              <div className="bg-[#0b1220] rounded-lg p-3 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-xs text-[#e8fbff]/50">Impresa</span>
+                  <span className="text-sm font-medium">{selectedGiustifica.impresa_nome}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-[#e8fbff]/50">Mercato</span>
+                  <span className="text-sm">{selectedGiustifica.market_name || "N/D"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-[#e8fbff]/50">Giorno</span>
+                  <span className="text-sm">{new Date(selectedGiustifica.giorno_mercato).toLocaleDateString("it-IT")}</span>
+                </div>
+                {selectedGiustifica.reason && (
+                  <div>
+                    <span className="text-xs text-[#e8fbff]/50">Motivazione</span>
+                    <p className="text-sm mt-1 italic text-[#e8fbff]/70">"{selectedGiustifica.reason}"</p>
+                  </div>
+                )}
+                {selectedGiustifica.file_name && (
+                  <div className="flex justify-between">
+                    <span className="text-xs text-[#e8fbff]/50">Allegato</span>
+                    <span className="text-sm">📎 {selectedGiustifica.file_name}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-xs text-[#e8fbff]/50">Inviata il</span>
+                  <span className="text-sm">{new Date(selectedGiustifica.created_at).toLocaleDateString("it-IT")} alle {new Date(selectedGiustifica.created_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+              </div>
+              {selectedGiustifica.justification_file_url && (
+                <Button
+                  className="w-full bg-[#14b8a6]/20 text-[#14b8a6] border border-[#14b8a6]/30 hover:bg-[#14b8a6]/30"
+                  onClick={() => window.open(`${MIHUB_API_BASE_URL}${selectedGiustifica.justification_file_url}`, "_blank")}
+                >
+                  <Eye className="h-4 w-4 mr-2" /> Visualizza Allegato
+                </Button>
+              )}
+              {selectedGiustifica.status === "INVIATA" && (
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    onClick={async () => {
+                      try {
+                        const res = await authenticatedFetch(
+                          `${MIHUB_API}/giustificazioni/${selectedGiustifica.id}/review`,
+                          { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "APPROVE", notes: "Giustificazione accettata" }) }
+                        );
+                        if (res.ok) {
+                          setGiustificazioniManuali(prev => prev.map(gm => gm.id === selectedGiustifica.id ? { ...gm, status: "ACCETTATA" } : gm));
+                          setSelectedGiustifica(prev => prev ? { ...prev, status: "ACCETTATA" } : null);
+                        }
+                      } catch (err) { console.error("Errore approvazione:", err); }
+                    }}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" /> Accetta
+                  </Button>
+                  <Button
+                    className="flex-1" variant="destructive"
+                    onClick={async () => {
+                      try {
+                        const res = await authenticatedFetch(
+                          `${MIHUB_API}/giustificazioni/${selectedGiustifica.id}/review`,
+                          { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "REJECT", notes: "Giustificazione rifiutata" }) }
+                        );
+                        if (res.ok) {
+                          setGiustificazioniManuali(prev => prev.map(gm => gm.id === selectedGiustifica.id ? { ...gm, status: "RIFIUTATA" } : gm));
+                          setSelectedGiustifica(prev => prev ? { ...prev, status: "RIFIUTATA" } : null);
+                        }
+                      } catch (err) { console.error("Errore rifiuto:", err); }
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" /> Rifiuta
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Modal Dettaglio Watchlist con Navigazione GPS */}
       {showWatchlistModal && selectedWatchlistItem && (
