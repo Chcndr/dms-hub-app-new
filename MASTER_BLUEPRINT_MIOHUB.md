@@ -2028,26 +2028,39 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
-### Sessione 10 Maggio 2026 — Fix Notifiche Enti Formatori, Scadenze Attestati e Icona PDF (v9.1.1)
+### Sessione 10 Maggio 2026 — Fix Notifiche, Messaggi, Pagamento Corsi e Icone (v9.1.2)
 
-**Contesto:** Fix di 3 bug critici nel modulo Enti Formatori: notifiche di iscrizione corso che finivano nel tab Associazioni & Bandi invece che in Enti Formatori, attestati di formazione rilasciati che non comparivano nella lista "Scadenze Attestati Imprese e Team", e icona occhio (Eye) mancante per aprire i PDF degli attestati nell'app impresa.
+**Contesto:** Fix di 7 bug nel modulo Enti Formatori e App Impresa: notifiche di iscrizione corso con routing errato, messaggi inviati da Enti Formatori che finivano in Associazioni & Bandi, attestati di formazione che non comparivano nelle scadenze, icona occhio mancante per PDF, messaggi non apribili nella dashboard, e bug pagamento corso dopo ricarica wallet.
 
 **Stato:** ✅ COMPLETATO
 
 **Backend (mihub-backend-rest) — Bug Fix:**
-- ✅ **Fix `routes/pagamenti.js`:** La notifica di iscrizione a un corso ora va SEMPRE a `target_tipo='ENTE_FORMATORE'` con `target_id=corso.ente_id`. Prima usava una condizione `corso.associazione_id ? 'ASSOCIAZIONE' : 'ENTE_FORMATORE'` che causava il routing errato quando il LEFT JOIN con la tabella `associazioni` trovava un match per nome.
-- ✅ **Fix `routes/associazioni-v9.js` (rilascia-attestato):** Aggiunto fallback diretto per inserire/aggiornare la qualificazione nella tabella `qualificazioni` anche se la chiamata HTTP interna a `POST /api/attestati/rilascia` fallisce. Fix notifica: ora usa `target_tipo='IMPRESA'` e `mittente_tipo='ENTE_FORMATORE'` (prima usava minuscolo `'impresa'`).
-- ✅ **Fix `routes/qualificazioni.js`:** L'endpoint `GET /api/qualificazioni/impresa/:id` ora include un `LEFT JOIN LATERAL` con `attestati_pdf` per restituire `attestato_pdf_id` e `attestato_pdf_url`. Questo fa comparire l'icona Eye (occhio) nell'AnagraficaPage dell'app impresa per aprire/scaricare il PDF dell'attestato.
+- ✅ **Fix `routes/pagamenti.js` (notifica iscrizione):** La notifica di iscrizione a un corso ora va SEMPRE a `target_tipo='ENTE_FORMATORE'` con `target_id=corso.ente_id`. Prima usava `corso.associazione_id ? 'ASSOCIAZIONE' : 'ENTE_FORMATORE'` che causava routing errato.
+- ✅ **Fix `routes/pagamenti.js` (pagato/transazione_id):** Dopo pagamento corso riuscito, l'iscrizione viene aggiornata con `pagato=true` e `transazione_id=tx.id`.
+- ✅ **Fix `routes/associazioni-v9.js` (rilascia-attestato):** Aggiunto fallback diretto per inserire/aggiornare la qualificazione nella tabella `qualificazioni` anche se la chiamata HTTP interna fallisce. Fix notifica: `target_tipo='IMPRESA'` e `mittente_tipo='ENTE_FORMATORE'`.
+- ✅ **Fix `routes/associazioni-v9.js` (notifiche-corso):** L'endpoint `POST /api/associazioni/:id/notifiche-corso` ora salva con `mittente_tipo='ENTE_FORMATORE'` invece di `'ASSOCIAZIONE'`. Questo era il bug principale per cui i messaggi inviati dal tab Enti Formatori finivano nel tab Associazioni & Bandi.
+- ✅ **Fix `routes/qualificazioni.js`:** L'endpoint `GET /api/qualificazioni/impresa/:id` ora include un `LEFT JOIN LATERAL` con `attestati_pdf` per restituire `attestato_pdf_id` e `attestato_pdf_url`.
+- ✅ **Fix `routes/formazione.js` (auto-migration):** Aggiunta auto-migration all'avvio per colonne `pagato BOOLEAN DEFAULT false` e `transazione_id INTEGER` su `formazione_iscrizioni`. Backfill automatico: iscrizioni COMPLETATE segnate come pagate.
+- ✅ **Fix `routes/formazione.js` (GET iscrizioni):** La query GET ora restituisce anche `COALESCE(fi.pagato, false) as pagato` e `fi.transazione_id`.
+
+**Frontend (dms-hub-app-new) — Bug Fix:**
+- ✅ **DashboardPA.tsx (messaggi espandibili):** Aggiunta icona Eye e toggle expand/collapse per tutti i messaggi inviati e ricevuti, sia in Enti Formatori che in Associazioni & Bandi. Cliccando l'icona Eye si espande il messaggio completo con titolo, contenuto e data.
+- ✅ **DashboardPA.tsx (stato expandedMsgId):** Nuovo stato `expandedMsgId` per gestire l'espansione dei messaggi.
+- ✅ **AnagraficaPage.tsx (bottone Paga):** Nei "Corsi Disponibili", quando un'iscrizione esiste ma `pagato=false` e il corso ha prezzo > 0, viene mostrato un bottone "Paga" (amber) sotto il badge "Iscritto" per completare il pagamento.
+- ✅ **AnagraficaPage.tsx (Le Mie Iscrizioni):** Aggiunto bottone "Paga" anche nel sub-tab "Le Mie Iscrizioni" per le iscrizioni non pagate.
 
 **Problemi Risolti:**
-1. **Notifiche invertite:** Le notifiche di iscrizione ai corsi (inviate dall'app impresa) finivano nel tab "Associazioni & Bandi" invece che in "Enti Formatori" nella Dashboard PA. Causa: il backend assegnava `target_tipo='ASSOCIAZIONE'` per errore.
-2. **Scadenze attestati mancanti:** Gli attestati di formazione rilasciati dal bottone "Rilascia Attestato" non comparivano nella lista "Scadenze Attestati Imprese e Team" perché la qualificazione non veniva inserita nella tabella `qualificazioni` (la chiamata HTTP interna falliva silenziosamente).
-3. **Icona occhio mancante:** Nell'app impresa (AnagraficaPage), i tab Qualifiche e Formazione non mostravano l'icona Eye per aprire il PDF perché l'endpoint `/api/qualificazioni/impresa/:id` non restituiva `attestato_pdf_id`.
+1. **Notifiche iscrizione invertite:** Le notifiche automatiche di iscrizione ai corsi finivano nel tab "Associazioni & Bandi" — fix in `pagamenti.js`.
+2. **Messaggi manuali invertiti:** I messaggi inviati dal form "Invia Notifica alle Imprese" nel tab Enti Formatori finivano in Associazioni & Bandi — fix in `associazioni-v9.js` (endpoint `notifiche-corso`).
+3. **Scadenze attestati mancanti:** Gli attestati rilasciati non comparivano nella lista scadenze — fix fallback in `associazioni-v9.js`.
+4. **Icona occhio mancante:** I PDF degli attestati non erano apribili dall'app impresa — fix LEFT JOIN in `qualificazioni.js`.
+5. **Messaggi non apribili:** I messaggi nella dashboard non erano cliccabili — aggiunta icona Eye + espansione.
+6. **Bug pagamento corso:** Dopo iscrizione con wallet a zero, tornando in "Corsi Disponibili" il corso risultava "Iscritto" senza possibilità di pagare — aggiunto campo `pagato` e bottone "Paga".
 
 **Note Tecniche:**
-- Il frontend (DashboardPA.tsx) filtra correttamente le risposte notifiche per `target_tipo === 'ENTE_FORMATORE'` vs `target_tipo === 'ASSOCIAZIONE'` — il bug era solo nel backend.
-- L'endpoint alias `/api/imprese/:id/qualificazioni` (in `imprese.js`) aveva già il LEFT JOIN con `attestati_pdf` — il fix era necessario solo per l'endpoint primario `/api/qualificazioni/impresa/:id` usato dall'AnagraficaPage.
-- Lo script `backfill_qualificazioni.js` è disponibile per recuperare qualificazioni mancanti e correggere notifiche vecchie con `target_tipo` sbagliato.
+- La tabella `formazione_iscrizioni` ha ora 2 nuove colonne: `pagato` (BOOLEAN DEFAULT false) e `transazione_id` (INTEGER).
+- L'auto-migration in `formazione.js` esegue il backfill all'avvio: tutte le iscrizioni COMPLETATE vengono segnate come `pagato=true`.
+- Lo script `migrations/041_iscrizioni_pagato.js` è disponibile per un backfill più completo che collega anche le transazioni wallet.
 
 ---
 
