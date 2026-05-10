@@ -8388,7 +8388,7 @@ export default function DashboardPA() {
                               </div>
                             )}
                           </div>
-                          <div className="text-right">
+                          <div className="text-right flex flex-col items-end gap-1">
                             <div className="text-xs text-[#e8fbff]/50">
                               {item.data_richiesta
                                 ? new Date(
@@ -8396,6 +8396,42 @@ export default function DashboardPA() {
                                   ).toLocaleDateString("it-IT")
                                 : "-"}
                             </div>
+                            {(item.stato === 'RICHIESTA' || item.stato === 'PAGATO') && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
+                                    await fetch(`${MIHUB_API}/bandi/richieste/${item.id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ stato: 'IN_LAVORAZIONE' })
+                                    });
+                                    window.location.reload();
+                                  } catch(e) { console.error(e); }
+                                }}
+                                className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded hover:bg-blue-500/30 transition-colors"
+                              >
+                                Prendi in carico
+                              </button>
+                            )}
+                            {item.stato === 'IN_LAVORAZIONE' && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
+                                    await fetch(`${MIHUB_API}/bandi/richieste/${item.id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ stato: 'COMPLETATA' })
+                                    });
+                                    window.location.reload();
+                                  } catch(e) { console.error(e); }
+                                }}
+                                className="text-xs px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded hover:bg-green-500/30 transition-colors"
+                              >
+                                Completa
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
