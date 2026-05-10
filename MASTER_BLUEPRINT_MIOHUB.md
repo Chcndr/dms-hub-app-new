@@ -1,6 +1,6 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.8.0 — STABILE (Wallet TCC basato su impresa_id — soluzione definitiva)
+> **Versione:** 10.9.0 — STABILE (Anti-Scanner Security + Wallet TCC per impresa)
 > **Data:** 10 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,11 +9,19 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `c335d65` (master) — mihub-backend-rest |
+> | **GitHub Backend** | Allineato | `1d300ef` (master) — mihub-backend-rest |
 > | **GitHub Frontend** | Allineato | `a7be7d0` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online v10.8.0 | `https://api.mio-hub.me/health` — autodeploy da `c335d65` |
+> | **Hetzner (API)** | Online v10.9.0 | `https://api.mio-hub.me/health` — autodeploy da `1d300ef` |
 > | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `a7be7d0` |
 > | **Neon (DB)** | Integro | Wallet TCC per impresa (1 wallet open per impresa), tutti orfani eliminati |
+>
+> **Sicurezza — Anti-Scanner Middleware v1.0.0:**
+> - Middleware `antiScanner.js` montato PRIMA dell'apiLogger
+> - Blocco richieste senza User-Agent + honeypot (22 endpoint trappola)
+> - Rate limiting 404: 5 errori/min = ban 15min, honeypot = ban 1h
+> - Logging eventi sicurezza in `mio_agent_logs` (agent='security')
+> - Endpoint stats: `GET /api/security/scanner-stats`
+> - Rilevati 484 tentativi di scanning a maggio da 20+ IP (Bulgaria, Russia, Corea, USA)
 >
 > **Integrità DB verificata:**
 > - operator_daily_wallet: regola = 1 solo wallet open PER IMPRESA (non per operatore)
