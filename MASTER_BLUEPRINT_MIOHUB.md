@@ -14359,6 +14359,14 @@ Per operare come Front Office, MIO HUB dovrà implementare un nuovo modulo `ssu-
 * **Autenticazione PDND:** Gestione dei voucher JWT e firma `Agid-JWT-Signature` (ModI `integrity_rest_01`).
 * **Generatore XML:** Per produrre l'XML della pratica validato con gli XSD ufficiali.
 
+### 15.3 Integrazione UI e Monitoraggio (Guardian)
+
+Come da standard architetturale di MIO HUB, tutti i nuovi endpoint di integrazione (SSU, PDND, App IO, ANPR) **devono** essere registrati nel catalogo centralizzato del frontend (`client/src/config/realEndpoints.ts`) per essere visibili, testabili e monitorati dal sistema Guardian nella sezione **Integrazioni e API**.
+
+* La card "PDND" è già presente in `ConnessioniV2.tsx` con stato "In Preparazione".
+* I nuovi endpoint (es. `/api/pdnd/voucher`, `/api/ssu/request_cui`) andranno aggiunti agli array `pdndEndpoints` e `ssuEndpoints` in `realEndpoints.ts`.
+* Questo garantirà che l'API Dashboard e l'API Playground mostrino i nuovi endpoint, permettendo test manuali e monitoraggio del success rate.
+
 ### 15.3 Vincoli e Regole di Sviluppo (NON FARE)
 
 * **NON** usare CieSign per la firma digitale delle pratiche SUAP: genera solo FEA (Firma Elettronica Avanzata), mentre il SUAP richiede obbligatoriamente FEQ (Firma Elettronica Qualificata) in formato PAdES o CAdES.
