@@ -1765,12 +1765,186 @@ export const firebaseAuthEndpoints: EndpointConfig[] = [
   },
 ];
 
+/**
+ * CATEGORIA: SSU FRONT OFFICE
+ * Connettore SUAP Sportello Unico (SSU) - Front Office AgID
+ */
+export const ssuEndpoints: EndpointConfig[] = [
+  {
+    id: "ssu-request-cui",
+    method: "POST",
+    path: "/api/ssu/request-cui",
+    name: "Richiesta CUI",
+    description: "Richiede un Codice Univoco Istanza (CUI) al Catalogo SSU per una nuova pratica",
+    category: "SSU Front Office",
+    exampleBody: { pratica_id: "uuid-pratica", tipo_pratica: "SCIA" },
+    requiresAuth: true,
+    notes: "⏳ IN SVILUPPO - Richiede voucher PDND attivo. Chiama il Catalogo SSU AgID.",
+  },
+  {
+    id: "ssu-send-instance",
+    method: "POST",
+    path: "/api/ssu/send-instance",
+    name: "Invio Istanza al Back Office",
+    description: "Invia la pratica completa (XML + allegati) al Back Office del Comune tramite protocollo SSU",
+    category: "SSU Front Office",
+    exampleBody: { pratica_id: "uuid-pratica" },
+    requiresAuth: true,
+    notes: "⏳ IN SVILUPPO - Genera XML secondo XSD AgID, firma con Agid-JWT-Signature, invia al BO.",
+  },
+  {
+    id: "ssu-get-status",
+    method: "GET",
+    path: "/api/ssu/instances/:praticaId",
+    name: "Stato Istanza SSU",
+    description: "Ottieni lo stato corrente dell'invio SSU per una pratica specifica",
+    category: "SSU Front Office",
+    exampleParams: { praticaId: "uuid-pratica" },
+    requiresAuth: true,
+    notes: "⏳ IN SVILUPPO - Mostra stato_ssu, CUI, data invio, ultima notifica.",
+  },
+  {
+    id: "ssu-webhook-notify",
+    method: "POST",
+    path: "/api/ssu/webhook/notify",
+    name: "Webhook Notifica BO",
+    description: "Endpoint passivo che riceve notifiche dal Back Office (esito pratica, richiesta integrazione)",
+    category: "SSU Front Office",
+    requiresAuth: false,
+    notes: "⏳ IN SVILUPPO - Valida firma Agid-JWT-Signature in ingresso. Aggiorna stato pratica.",
+  },
+  {
+    id: "ssu-webhook-correction",
+    method: "POST",
+    path: "/api/ssu/webhook/request-correction",
+    name: "Webhook Richiesta Correzione",
+    description: "Endpoint passivo che riceve richieste di correzione dal Back Office",
+    category: "SSU Front Office",
+    requiresAuth: false,
+    notes: "⏳ IN SVILUPPO - Il BO chiede al FO di correggere l'istanza. Valida firma JWT.",
+  },
+  {
+    id: "ssu-send-correction",
+    method: "POST",
+    path: "/api/ssu/send-correction",
+    name: "Invio Correzione",
+    description: "Invia la correzione richiesta dal Back Office con i documenti aggiornati",
+    category: "SSU Front Office",
+    exampleBody: { ssu_instance_id: "uuid", correction_data: {} },
+    requiresAuth: true,
+    notes: "⏳ IN SVILUPPO - Risponde a una request_correction del BO.",
+  },
+  {
+    id: "ssu-audit-trail",
+    method: "GET",
+    path: "/api/ssu/audit/:instanceId",
+    name: "Audit Trail SSU",
+    description: "Ottieni il log completo delle comunicazioni SSU per un'istanza",
+    category: "SSU Front Office",
+    exampleParams: { instanceId: "uuid" },
+    requiresAuth: true,
+    notes: "⏳ IN SVILUPPO - Mostra tutte le chiamate IN/OUT con timestamp, status, durata.",
+  },
+];
+
+/**
+ * CATEGORIA: PDND
+ * Piattaforma Digitale Nazionale Dati - Voucher e E-Service
+ */
+export const pdndEndpoints: EndpointConfig[] = [
+  {
+    id: "pdnd-voucher",
+    method: "POST",
+    path: "/api/pdnd/voucher",
+    name: "Richiesta Voucher JWT",
+    description: "Ottiene un access token (voucher) dalla PDND per accedere agli e-service",
+    category: "PDND",
+    exampleBody: { purpose_id: "uuid-purpose" },
+    requiresAuth: true,
+    notes: "⏳ IN SVILUPPO - Genera client_assertion JWT, chiama token endpoint PDND.",
+  },
+  {
+    id: "pdnd-anpr-residenza",
+    method: "GET",
+    path: "/api/pdnd/anpr/residenza/:cf",
+    name: "Verifica Residenza (ANPR)",
+    description: "Interroga ANPR via PDND per verificare la residenza di un cittadino",
+    category: "PDND",
+    exampleParams: { cf: "RSSMRA80A01H501U" },
+    requiresAuth: true,
+    notes: "⏳ IN SVILUPPO - Richiede voucher PDND + accreditamento e-service ANPR.",
+  },
+  {
+    id: "pdnd-imprese-visura",
+    method: "GET",
+    path: "/api/pdnd/imprese/visura/:cf",
+    name: "Visura Camerale (Registro Imprese)",
+    description: "Interroga il Registro Imprese via PDND per ottenere la visura camerale",
+    category: "PDND",
+    exampleParams: { cf: "IT12345678901" },
+    requiresAuth: true,
+    notes: "⏳ IN SVILUPPO - Richiede voucher PDND + accreditamento e-service InfoCamere.",
+  },
+  {
+    id: "pdnd-inps-regolarita",
+    method: "GET",
+    path: "/api/pdnd/inps/regolarita/:cf",
+    name: "Verifica DURC (INPS)",
+    description: "Verifica la regolarità contributiva (DURC) di un'impresa via PDND/INPS",
+    category: "PDND",
+    exampleParams: { cf: "IT12345678901" },
+    requiresAuth: true,
+    notes: "⏳ IN SVILUPPO - Richiede voucher PDND + accreditamento e-service INPS.",
+  },
+  {
+    id: "pdnd-agenzia-entrate",
+    method: "GET",
+    path: "/api/pdnd/agenzia-entrate/regolarita-fiscale/:cf",
+    name: "Regolarità Fiscale (Agenzia Entrate)",
+    description: "Verifica la regolarità fiscale di un'impresa via PDND/Agenzia Entrate",
+    category: "PDND",
+    exampleParams: { cf: "IT12345678901" },
+    requiresAuth: true,
+    notes: "⏳ IN SVILUPPO - Richiede voucher PDND + accreditamento e-service AdE.",
+  },
+];
+
+/**
+ * CATEGORIA: SSU ADMIN
+ * Endpoint di amministrazione per il modulo SSU
+ */
+export const ssuAdminEndpoints: EndpointConfig[] = [
+  {
+    id: "ssu-admin-migrate",
+    method: "POST",
+    path: "/api/admin/migrate-ssu",
+    name: "Migration SSU",
+    description: "Esegue la migration per creare le tabelle SSU Front Office nel database",
+    category: "SSU Admin",
+    requiresAuth: true,
+    notes: "✅ FUNZIONANTE - Crea ssu_instances, ssu_documents, ssu_audit_trail, pdnd_vouchers.",
+  },
+  {
+    id: "ssu-admin-status",
+    method: "GET",
+    path: "/api/admin/ssu-status",
+    name: "Stato Modulo SSU",
+    description: "Verifica lo stato delle tabelle SSU e il conteggio dei record",
+    category: "SSU Admin",
+    requiresAuth: true,
+    notes: "✅ FUNZIONANTE - Mostra tabelle create, conteggio record, stato modulo.",
+  },
+];
+
 export const allRealEndpoints: EndpointConfig[] = [
   ...marketsEndpoints,
   ...stallsEndpoints,
   ...vendorsEndpoints,
   ...concessionsEndpoints,
   ...suapEndpoints,
+  ...ssuEndpoints,
+  ...pdndEndpoints,
+  ...ssuAdminEndpoints,
   ...walletsEndpoints,
   ...tariffsEndpoints,
   ...tccWalletImpresaEndpoints,
@@ -1904,6 +2078,26 @@ export const integrations: IntegrationConfig[] = [
       "/api/pdnd/imprese/visura — Visura camerale (Registro Imprese)",
       "/api/pdnd/inps/regolarita — Verifica regolarità contributiva (DURC)",
       "/api/pdnd/agenzia-entrate/regolarita-fiscale — Regolarità fiscale",
+    ],
+  },
+  {
+    id: "ssu-front-office",
+    name: "SSU — Sportello Unico SUAP (Front Office)",
+    description:
+      "Connettore Front Office per il sistema SSU AgID. Gestisce l'invio delle pratiche SUAP al Back Office del Comune tramite protocollo standardizzato DPR 160/2010.",
+    baseUrl: "https://api.mio-hub.me",
+    status: "in_preparation",
+    dataOwner: "AgID / Comune",
+    notes:
+      "In sviluppo. MIO HUB opera come Front Office SSU: riceve pratiche dal cittadino, le invia al Back Office del Comune via PDND. Richiede accreditamento PDND e configurazione Back Office. Protetto da ruoli admin/comune + impersonalizzazione.",
+    endpoints: [
+      "/api/ssu/request-cui — Richiesta CUI al Catalogo SSU",
+      "/api/ssu/send-instance — Invio istanza al Back Office",
+      "/api/ssu/instances/:id — Stato istanza SSU",
+      "/api/ssu/webhook/notify — Ricezione notifiche dal BO",
+      "/api/ssu/webhook/request-correction — Ricezione richieste correzione",
+      "/api/ssu/send-correction — Invio correzione al BO",
+      "/api/ssu/audit/:id — Audit trail comunicazioni",
     ],
   },
 ];
