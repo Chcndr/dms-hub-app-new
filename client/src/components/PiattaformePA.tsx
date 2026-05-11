@@ -1,11 +1,16 @@
 /**
- * PiattaformePA — Pannello unificato PDND, App IO, ANPR, SSO
+ * PiattaformePA — Pannello unificato PDND, App IO, ANPR, SSO, SSU
  *
  * Sostituisce il vecchio tab "Impostazioni" nella Dashboard PA.
  * Gestisce la configurazione e il monitoraggio delle piattaforme nazionali.
  *
- * NOTA: I router tRPC pdnd/appIo/piattaforme sono stati rimossi.
- * I dati sono mock/simulati fino alla futura integrazione con le piattaforme reali.
+ * STATO INTEGRAZIONE:
+ * - PDND: Collegato al backend reale (routes/pdnd.js) — mostra stato live
+ * - SSU: Collegato al backend reale (routes/ssu-connector.js) — mostra istanze live
+ * - Audit Trail: Collegato al backend reale (SSU audit trail)
+ * - App IO: Mock (backend non ancora implementato)
+ * - ANPR: Mock (backend non ancora implementato, usa PDND quando configurato)
+ * - SSO: Semi-live (SPID/CIE via ARPA funzionante, UI mostra stato reale)
  */
 
 import React, { useState } from "react";
@@ -33,6 +38,7 @@ import {
   WifiOff,
   Play,
   Settings,
+  Upload,
 } from "lucide-react";
 import {
   Card,
@@ -45,18 +51,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import {
+  getPdndStatus,
+  getPdndVouchers,
+  testPdndConnection,
+  getSsuStatus,
+  getSsuInstances,
+  getSsuAuditTrail,
+  sendSsuInstance,
+  getCombinedAuditTrail,
+} from "@/api/piattaformePA";
 
 // ============================================
-// Mock Data — Le piattaforme nazionali non sono ancora integrate.
-// Questi dati simulano le risposte che arriveranno da PDND, App IO, ANPR, SSO.
+// Mock Data — Solo per App IO, ANPR e SSO (non ancora integrati)
 // ============================================
-
-const MOCK_PDND_STATUS = {
-  connected: true,
-  mode: "mock" as const,
-  hasPurposeId: true,
-  hasPrivateKey: false,
-};
 
 const MOCK_ESERVICES = [
   {
@@ -114,7 +122,7 @@ const MOCK_TEMPLATES = [
 ];
 
 const MOCK_SSO_STATUS = {
-  mockMode: true,
+  mockMode: false, // SPID/CIE via ARPA è reale!
   providers: [
     { provider: "spid", isActive: true, isConfigured: true },
     { provider: "cie", isActive: true, isConfigured: true },
@@ -130,8 +138,8 @@ const MOCK_SSO_PROVIDERS = [
     spidLevel: 2,
     isActive: true,
     isConfigured: true,
-    environment: "test",
-    ssoUrl: "https://idp.spid.gov.it",
+    environment: "production",
+    ssoUrl: "https://accessosicuro.regione.toscana.it",
   },
   {
     provider: "cie",
@@ -139,8 +147,8 @@ const MOCK_SSO_PROVIDERS = [
     spidLevel: 3,
     isActive: true,
     isConfigured: true,
-    environment: "test",
-    ssoUrl: "https://idserver.servizicie.interno.gov.it",
+    environment: "production",
+    ssoUrl: "https://accessosicuro.regione.toscana.it",
   },
   {
     provider: "cns",
@@ -211,71 +219,26 @@ const MOCK_CF_DB: Record<
   },
 };
 
-const MOCK_AUDIT_ITEMS = [
-  {
-    id: 1,
-    platform: "pdnd",
-    action: "getStatus",
-    status: "success",
-    user_email: "admin@dmshub.it",
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    duration_ms: 120,
-  },
-  {
-    id: 2,
-    platform: "appio",
-    action: "checkProfile",
-    status: "success",
-    user_email: "admin@dmshub.it",
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-    duration_ms: 230,
-  },
-  {
-    id: 3,
-    platform: "anpr",
-    action: "verificaCF",
-    status: "success",
-    user_email: "operatore@comune.grosseto.it",
-    created_at: new Date(Date.now() - 10800000).toISOString(),
-    duration_ms: 450,
-  },
-  {
-    id: 4,
-    platform: "sso",
-    action: "testProvider (SPID)",
-    status: "success",
-    user_email: "admin@dmshub.it",
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    duration_ms: 180,
-  },
-  {
-    id: 5,
-    platform: "pdnd",
-    action: "listEServices",
-    status: "error",
-    user_email: "admin@dmshub.it",
-    created_at: new Date(Date.now() - 172800000).toISOString(),
-    duration_ms: 5000,
-  },
-];
-
 // ============================================
-// Sub-componente: PDND Panel
+// Sub-componente: PDND Panel (DATI REALI)
 // ============================================
 function PdndPanel() {
   const statusQuery = useQuery({
     queryKey: ["pdnd-status"],
-    queryFn: async () => MOCK_PDND_STATUS,
+    queryFn: getPdndStatus,
+    refetchInterval: 30000,
+  });
+  const vouchersQuery = useQuery({
+    queryKey: ["pdnd-vouchers"],
+    queryFn: getPdndVouchers,
+    refetchInterval: 60000,
   });
   const eservicesQuery = useQuery({
     queryKey: ["pdnd-eservices"],
-    queryFn: async () => MOCK_ESERVICES,
+    queryFn: async () => MOCK_ESERVICES, // e-services restano mock (catalogo locale)
   });
   const testMutation = useMutation({
-    mutationFn: async () => {
-      await new Promise(r => setTimeout(r, 800));
-      return { success: true, responseTimeMs: 120 };
-    },
+    mutationFn: testPdndConnection,
   });
   const publishMutation = useMutation({
     mutationFn: async (_params: {
@@ -292,64 +255,68 @@ function PdndPanel() {
     },
   });
 
-  const status = statusQuery.data;
+  const pdnd = statusQuery.data?.pdnd;
   const eservices = eservicesQuery.data;
 
   return (
     <div className="space-y-4">
-      {/* Status Card */}
+      {/* Status Card - DATI REALI */}
       <Card className="bg-[#1a2332] border-[#3b82f6]/30">
         <CardHeader className="pb-3">
           <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
             <Server className="h-5 w-5 text-[#3b82f6]" />
             Stato Connessione PDND
+            {pdnd?.configured ? (
+              <Badge className="ml-2 bg-emerald-500/20 text-emerald-400 border-emerald-400/30 text-xs">
+                Live
+              </Badge>
+            ) : (
+              <Badge className="ml-2 bg-amber-500/20 text-amber-400 border-amber-400/30 text-xs">
+                In Preparazione
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#3b82f6]/20">
               <div className="flex items-center gap-2 mb-1">
-                {status?.connected ? (
+                {pdnd?.configured ? (
                   <Wifi className="h-4 w-4 text-emerald-400" />
                 ) : (
-                  <WifiOff className="h-4 w-4 text-red-400" />
+                  <WifiOff className="h-4 w-4 text-amber-400" />
                 )}
                 <span className="text-xs text-[#e8fbff]/60">Connessione</span>
               </div>
               <p className="text-sm font-semibold text-[#e8fbff]">
-                {status?.connected ? "Attiva" : "Non connesso"}
+                {pdnd?.configured ? "Attiva" : "Non configurato"}
               </p>
             </div>
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#3b82f6]/20">
               <div className="flex items-center gap-2 mb-1">
                 <Activity className="h-4 w-4 text-[#3b82f6]" />
-                <span className="text-xs text-[#e8fbff]/60">Modalita'</span>
+                <span className="text-xs text-[#e8fbff]/60">Ambiente</span>
               </div>
               <p className="text-sm font-semibold text-[#e8fbff]">
-                {status?.mode === "mock" ? (
-                  <Badge
-                    variant="outline"
-                    className="text-amber-400 border-amber-400/30"
-                  >
-                    Mock
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-emerald-400 border-emerald-400/30"
-                  >
-                    Live
-                  </Badge>
-                )}
+                <Badge
+                  variant="outline"
+                  className={
+                    pdnd?.environment === "production"
+                      ? "text-emerald-400 border-emerald-400/30"
+                      : "text-amber-400 border-amber-400/30"
+                  }
+                >
+                  {pdnd?.environment || "N/A"}
+                </Badge>
               </p>
             </div>
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#3b82f6]/20">
               <div className="flex items-center gap-2 mb-1">
                 <Key className="h-4 w-4 text-[#3b82f6]" />
-                <span className="text-xs text-[#e8fbff]/60">Purpose ID</span>
+                <span className="text-xs text-[#e8fbff]/60">Client ID</span>
               </div>
               <p className="text-sm font-semibold text-[#e8fbff]">
-                {status?.hasPurposeId ? (
+                {pdnd?.client_id ? (
                   <CheckCircle className="h-4 w-4 text-emerald-400 inline" />
                 ) : (
                   <XCircle className="h-4 w-4 text-red-400 inline" />
@@ -359,10 +326,10 @@ function PdndPanel() {
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#3b82f6]/20">
               <div className="flex items-center gap-2 mb-1">
                 <Lock className="h-4 w-4 text-[#3b82f6]" />
-                <span className="text-xs text-[#e8fbff]/60">Chiave RSA</span>
+                <span className="text-xs text-[#e8fbff]/60">Key ID (RSA)</span>
               </div>
               <p className="text-sm font-semibold text-[#e8fbff]">
-                {status?.hasPrivateKey ? (
+                {pdnd?.key_id ? (
                   <CheckCircle className="h-4 w-4 text-emerald-400 inline" />
                 ) : (
                   <XCircle className="h-4 w-4 text-red-400 inline" />
@@ -370,6 +337,27 @@ function PdndPanel() {
               </p>
             </div>
           </div>
+
+          {/* Voucher Stats */}
+          {pdnd?.vouchers && (
+            <div className="mt-4 p-3 bg-[#0f1729] rounded-lg border border-[#3b82f6]/10">
+              <div className="flex items-center gap-4">
+                <div>
+                  <span className="text-xs text-[#e8fbff]/60">Voucher Totali</span>
+                  <p className="text-lg font-bold text-[#3b82f6]">{pdnd.vouchers.total}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-[#e8fbff]/60">Attivi</span>
+                  <p className="text-lg font-bold text-emerald-400">{pdnd.vouchers.active}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-[#e8fbff]/60">Scaduti</span>
+                  <p className="text-lg font-bold text-[#e8fbff]/40">{pdnd.vouchers.expired}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="mt-3 flex gap-2">
             <Button
               size="sm"
@@ -383,6 +371,11 @@ function PdndPanel() {
               />
               Test Connessione
             </Button>
+            {testMutation.data && (
+              <span className={`text-xs self-center ${testMutation.data.success ? "text-emerald-400" : "text-red-400"}`}>
+                {testMutation.data.success ? `OK (${testMutation.data.responseTimeMs}ms)` : "Errore"}
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -449,7 +442,7 @@ function PdndPanel() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/10"
+                        className="border-[#3b82f6]/30 text-[#3b82f6] hover:bg-[#3b82f6]/10 h-7 text-xs"
                         onClick={() =>
                           publishMutation.mutate({
                             serviceId: service.id,
@@ -471,11 +464,6 @@ function PdndPanel() {
                 </div>
               </div>
             ))}
-            {!eservices?.length && !eservicesQuery.isLoading && (
-              <p className="text-[#e8fbff]/40 text-sm text-center py-4">
-                Nessun e-Service configurato
-              </p>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -484,7 +472,7 @@ function PdndPanel() {
 }
 
 // ============================================
-// Sub-componente: App IO Panel
+// Sub-componente: App IO Panel (MOCK)
 // ============================================
 function AppIoPanel() {
   const statusQuery = useQuery({
@@ -495,17 +483,16 @@ function AppIoPanel() {
     queryKey: ["appio-templates"],
     queryFn: async () => MOCK_TEMPLATES,
   });
-  const [cfInput, setCfInput] = useState("");
-  const checkProfileQuery = useQuery({
-    queryKey: ["appio-check-profile", cfInput],
-    queryFn: async () => {
-      await new Promise(r => setTimeout(r, 300));
-      return { senderAllowed: !!MOCK_CF_DB[cfInput] };
+  const sendMutation = useMutation({
+    mutationFn: async (_params: {
+      templateId: string;
+      fiscalCode: string;
+      params: Record<string, string>;
+    }) => {
+      await new Promise(r => setTimeout(r, 1000));
+      return { success: true, messageId: "mock-msg-001" };
     },
-    enabled: cfInput.length === 16,
   });
-
-  const status = statusQuery.data;
 
   return (
     <div className="space-y-4">
@@ -514,49 +501,37 @@ function AppIoPanel() {
         <CardHeader className="pb-3">
           <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
             <Smartphone className="h-5 w-5 text-[#10b981]" />
-            Stato Connessione App IO
+            App IO — Notifiche Cittadini
+            <Badge className="ml-2 bg-amber-500/20 text-amber-400 border-amber-400/30 text-xs">
+              Mock
+            </Badge>
           </CardTitle>
+          <CardDescription className="text-[#e8fbff]/50">
+            Invio messaggi e notifiche ai cittadini tramite l'app IO
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#10b981]/20">
-              <span className="text-xs text-[#e8fbff]/60">Connessione</span>
-              <p className="text-sm font-semibold text-[#e8fbff] mt-1">
-                {status?.connected ? (
-                  <span className="flex items-center gap-1">
-                    <Wifi className="h-4 w-4 text-emerald-400" /> Attiva
-                  </span>
+              <div className="flex items-center gap-2 mb-1">
+                {statusQuery.data?.connected ? (
+                  <Wifi className="h-4 w-4 text-emerald-400" />
                 ) : (
-                  <span className="flex items-center gap-1">
-                    <WifiOff className="h-4 w-4 text-red-400" /> Non connesso
-                  </span>
+                  <WifiOff className="h-4 w-4 text-red-400" />
                 )}
+                <span className="text-xs text-[#e8fbff]/60">Connessione</span>
+              </div>
+              <p className="text-sm font-semibold text-[#e8fbff]">
+                {statusQuery.data?.connected ? "Simulata" : "Non connesso"}
               </p>
             </div>
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#10b981]/20">
-              <span className="text-xs text-[#e8fbff]/60">Modalita'</span>
-              <p className="text-sm font-semibold text-[#e8fbff] mt-1">
-                {status?.mode === "mock" ? (
-                  <Badge
-                    variant="outline"
-                    className="text-amber-400 border-amber-400/30"
-                  >
-                    Mock
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-emerald-400 border-emerald-400/30"
-                  >
-                    Live
-                  </Badge>
-                )}
-              </p>
-            </div>
-            <div className="p-3 bg-[#0f1729] rounded-lg border border-[#10b981]/20">
-              <span className="text-xs text-[#e8fbff]/60">API Key</span>
-              <p className="text-sm font-semibold text-[#e8fbff] mt-1">
-                {status?.hasApiKey ? (
+              <div className="flex items-center gap-2 mb-1">
+                <Key className="h-4 w-4 text-[#10b981]" />
+                <span className="text-xs text-[#e8fbff]/60">API Key</span>
+              </div>
+              <p className="text-sm font-semibold text-[#e8fbff]">
+                {statusQuery.data?.hasApiKey ? (
                   <CheckCircle className="h-4 w-4 text-emerald-400 inline" />
                 ) : (
                   <XCircle className="h-4 w-4 text-red-400 inline" />
@@ -564,32 +539,46 @@ function AppIoPanel() {
               </p>
             </div>
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#10b981]/20">
-              <span className="text-xs text-[#e8fbff]/60">Template</span>
-              <p className="text-sm font-semibold text-[#e8fbff] mt-1">
-                {status?.templatesCount ?? 0} disponibili
+              <div className="flex items-center gap-2 mb-1">
+                <Send className="h-4 w-4 text-[#10b981]" />
+                <span className="text-xs text-[#e8fbff]/60">Template</span>
+              </div>
+              <p className="text-lg font-bold text-[#e8fbff]">
+                {statusQuery.data?.templatesCount ?? 0}
+              </p>
+            </div>
+            <div className="p-3 bg-[#0f1729] rounded-lg border border-[#10b981]/20">
+              <div className="flex items-center gap-2 mb-1">
+                <Activity className="h-4 w-4 text-[#10b981]" />
+                <span className="text-xs text-[#e8fbff]/60">Modalita'</span>
+              </div>
+              <p className="text-sm font-semibold text-[#e8fbff]">
+                <Badge
+                  variant="outline"
+                  className="text-amber-400 border-amber-400/30"
+                >
+                  Mock
+                </Badge>
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Template */}
+      {/* Templates */}
       <Card className="bg-[#1a2332] border-[#10b981]/30">
         <CardHeader className="pb-3">
           <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
             <Send className="h-5 w-5 text-[#10b981]" />
-            Template Notifiche
+            Template Messaggi
           </CardTitle>
-          <CardDescription className="text-[#e8fbff]/50">
-            Template predefiniti per notifiche ai cittadini tramite App IO
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {templatesQuery.data?.map(template => (
               <div
                 key={template.id}
-                className="p-3 bg-[#0f1729] border border-[#10b981]/20 rounded-lg"
+                className="p-4 bg-[#0f1729] border border-[#10b981]/20 rounded-lg"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -597,70 +586,40 @@ function AppIoPanel() {
                       {template.name}
                     </h4>
                     <p className="text-[#e8fbff]/50 text-xs mt-1">
-                      Oggetto: {template.subject}
+                      {template.subject}
                     </p>
-                    <div className="flex gap-1 mt-2">
-                      {template.requiredParams.map(param => (
+                    <div className="flex items-center gap-1 mt-2">
+                      {template.requiredParams.map(p => (
                         <Badge
-                          key={param}
+                          key={p}
                           variant="outline"
                           className="text-xs text-[#e8fbff]/40 border-[#e8fbff]/10"
                         >
-                          {"{" + param + "}"}
+                          {p}
                         </Badge>
                       ))}
                     </div>
                   </div>
-                  <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30">
-                    {template.id}
-                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-[#10b981]/30 text-[#10b981] hover:bg-[#10b981]/10 h-7 text-xs"
+                    onClick={() =>
+                      sendMutation.mutate({
+                        templateId: template.id,
+                        fiscalCode: "RSSMRA85M01H501Z",
+                        params: {},
+                      })
+                    }
+                    disabled={sendMutation.isPending}
+                  >
+                    <Send className="h-3 w-3 mr-1" />
+                    Test Invio
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Verifica Profilo */}
-      <Card className="bg-[#1a2332] border-[#10b981]/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
-            <Search className="h-5 w-5 text-[#10b981]" />
-            Verifica Profilo Cittadino
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Codice Fiscale (16 caratteri)"
-              value={cfInput}
-              onChange={e => setCfInput(e.target.value.toUpperCase())}
-              maxLength={16}
-              className="flex-1 px-3 py-2 bg-[#0f1729] border border-[#10b981]/30 rounded-lg text-[#e8fbff] text-sm placeholder:text-[#e8fbff]/30 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
-            />
-          </div>
-          {cfInput.length === 16 && checkProfileQuery.data && (
-            <div className="mt-3 p-3 bg-[#0f1729] border border-[#10b981]/20 rounded-lg">
-              <div className="flex items-center gap-2">
-                {checkProfileQuery.data.senderAllowed ? (
-                  <>
-                    <CheckCircle className="h-5 w-5 text-emerald-400" />
-                    <span className="text-emerald-400 text-sm font-medium">
-                      App IO attiva per {cfInput}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="h-5 w-5 text-red-400" />
-                    <span className="text-red-400 text-sm font-medium">
-                      App IO non attiva per {cfInput}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
@@ -668,238 +627,128 @@ function AppIoPanel() {
 }
 
 // ============================================
-// Sub-componente: ANPR Panel
+// Sub-componente: ANPR Panel (MOCK)
 // ============================================
 function AnprPanel() {
-  const [cfInput, setCfInput] = useState("");
-  const [searchType, setSearchType] = useState<"cf" | "residenza">("cf");
-
-  const cfQuery = useQuery({
-    queryKey: ["anpr-verifica-cf", cfInput],
-    queryFn: async () => {
-      await new Promise(r => setTimeout(r, 400));
-      const person = MOCK_CF_DB[cfInput];
-      if (!person) return { found: false };
-      return {
-        found: true,
-        nome: person.nome,
-        cognome: person.cognome,
-        dataNascita: person.dataNascita,
-        comuneNascita: person.comuneNascita,
-      };
+  const [searchCF, setSearchCF] = useState("");
+  const searchMutation = useMutation({
+    mutationFn: async (cf: string) => {
+      await new Promise(r => setTimeout(r, 500));
+      const result = MOCK_CF_DB[cf.toUpperCase()];
+      if (!result) throw new Error("Codice fiscale non trovato");
+      return result;
     },
-    enabled: cfInput.length === 16 && searchType === "cf",
-  });
-
-  const residenzaQuery = useQuery({
-    queryKey: ["anpr-verifica-residenza", cfInput],
-    queryFn: async () => {
-      await new Promise(r => setTimeout(r, 400));
-      const person = MOCK_CF_DB[cfInput];
-      if (!person) return { found: false };
-      return {
-        found: true,
-        indirizzo: person.indirizzo,
-        civico: person.civico,
-        cap: person.cap,
-        comune: person.comune,
-        provincia: person.provincia,
-      };
-    },
-    enabled: cfInput.length === 16 && searchType === "residenza",
   });
 
   return (
     <div className="space-y-4">
+      {/* Status */}
       <Card className="bg-[#1a2332] border-[#f59e0b]/30">
         <CardHeader className="pb-3">
           <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
             <FileSearch className="h-5 w-5 text-[#f59e0b]" />
-            ANPR — Anagrafe Nazionale Popolazione Residente
+            ANPR — Anagrafe Nazionale
+            <Badge className="ml-2 bg-amber-500/20 text-amber-400 border-amber-400/30 text-xs">
+              Mock
+            </Badge>
           </CardTitle>
           <CardDescription className="text-[#e8fbff]/50">
-            Interrogazioni ANPR via PDND per verifica codice fiscale e residenza
+            Verifica residenza e dati anagrafici tramite ANPR (via PDND)
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              placeholder="Codice Fiscale (16 caratteri)"
-              value={cfInput}
-              onChange={e => setCfInput(e.target.value.toUpperCase())}
-              maxLength={16}
-              className="flex-1 px-3 py-2 bg-[#0f1729] border border-[#f59e0b]/30 rounded-lg text-[#e8fbff] text-sm placeholder:text-[#e8fbff]/30 focus:outline-none focus:ring-1 focus:ring-[#f59e0b]"
-            />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+            <div className="p-3 bg-[#0f1729] rounded-lg border border-[#f59e0b]/20">
+              <span className="text-xs text-[#e8fbff]/60">Stato</span>
+              <p className="text-sm font-semibold text-amber-400 mt-1">
+                In attesa PDND
+              </p>
+            </div>
+            <div className="p-3 bg-[#0f1729] rounded-lg border border-[#f59e0b]/20">
+              <span className="text-xs text-[#e8fbff]/60">Accesso via</span>
+              <p className="text-sm font-semibold text-[#e8fbff] mt-1">
+                PDND e-Service
+              </p>
+            </div>
+            <div className="p-3 bg-[#0f1729] rounded-lg border border-[#f59e0b]/20">
+              <span className="text-xs text-[#e8fbff]/60">CF di test</span>
+              <p className="text-xs font-mono text-[#e8fbff]/60 mt-1">
+                RSSMRA85M01H501Z
+              </p>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#e8fbff]/30" />
+              <input
+                type="text"
+                placeholder="Inserisci codice fiscale..."
+                value={searchCF}
+                onChange={e => setSearchCF(e.target.value.toUpperCase())}
+                className="w-full pl-9 pr-3 py-2 bg-[#0f1729] border border-[#f59e0b]/20 rounded-lg text-[#e8fbff] text-sm placeholder:text-[#e8fbff]/30 focus:outline-none focus:border-[#f59e0b]/50"
+                maxLength={16}
+              />
+            </div>
             <Button
               size="sm"
-              variant="outline"
-              className={`border-[#f59e0b]/30 ${searchType === "cf" ? "bg-[#f59e0b]/20 text-[#f59e0b]" : "text-[#e8fbff]/60"} hover:bg-[#f59e0b]/10`}
-              onClick={() => setSearchType("cf")}
+              className="bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-black"
+              onClick={() => searchMutation.mutate(searchCF)}
+              disabled={searchMutation.isPending || searchCF.length < 16}
             >
-              <UserCheck className="h-4 w-4 mr-1" />
-              Verifica CF
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className={`border-[#f59e0b]/30 ${searchType === "residenza" ? "bg-[#f59e0b]/20 text-[#f59e0b]" : "text-[#e8fbff]/60"} hover:bg-[#f59e0b]/10`}
-              onClick={() => setSearchType("residenza")}
-            >
-              <Globe className="h-4 w-4 mr-1" />
-              Residenza
+              <Search className="h-4 w-4 mr-1" />
+              Verifica
             </Button>
           </div>
 
-          {/* Risultato CF */}
-          {cfInput.length === 16 && searchType === "cf" && cfQuery.data && (
-            <div className="p-4 bg-[#0f1729] border border-[#f59e0b]/20 rounded-lg">
-              {cfQuery.data.found ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-400" />
-                    <span className="text-emerald-400 font-medium text-sm">
-                      Soggetto trovato su ANPR
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <span className="text-xs text-[#e8fbff]/40">Nome</span>
-                      <p className="text-sm text-[#e8fbff]">
-                        {cfQuery.data.nome}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-[#e8fbff]/40">Cognome</span>
-                      <p className="text-sm text-[#e8fbff]">
-                        {cfQuery.data.cognome}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-[#e8fbff]/40">
-                        Data Nascita
-                      </span>
-                      <p className="text-sm text-[#e8fbff]">
-                        {cfQuery.data.dataNascita}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-[#e8fbff]/40">
-                        Comune Nascita
-                      </span>
-                      <p className="text-sm text-[#e8fbff]">
-                        {cfQuery.data.comuneNascita}
-                      </p>
-                    </div>
-                  </div>
+          {/* Results */}
+          {searchMutation.data && (
+            <div className="mt-4 p-4 bg-[#0f1729] border border-[#f59e0b]/20 rounded-lg">
+              <h4 className="text-[#e8fbff] font-medium text-sm mb-3 flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                Risultato Verifica (Mock)
+              </h4>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-[#e8fbff]/40 text-xs">Nome</span>
+                  <p className="text-[#e8fbff]">
+                    {searchMutation.data.nome} {searchMutation.data.cognome}
+                  </p>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <XCircle className="h-5 w-5 text-red-400" />
-                  <span className="text-red-400 text-sm">
-                    Codice Fiscale non trovato su ANPR
+                <div>
+                  <span className="text-[#e8fbff]/40 text-xs">
+                    Data Nascita
                   </span>
+                  <p className="text-[#e8fbff]">
+                    {searchMutation.data.dataNascita}
+                  </p>
                 </div>
-              )}
+                <div>
+                  <span className="text-[#e8fbff]/40 text-xs">Indirizzo</span>
+                  <p className="text-[#e8fbff]">
+                    {searchMutation.data.indirizzo},{" "}
+                    {searchMutation.data.civico}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[#e8fbff]/40 text-xs">Comune</span>
+                  <p className="text-[#e8fbff]">
+                    {searchMutation.data.comune} ({searchMutation.data.provincia}
+                    )
+                  </p>
+                </div>
+              </div>
             </div>
           )}
-
-          {/* Risultato Residenza */}
-          {cfInput.length === 16 &&
-            searchType === "residenza" &&
-            residenzaQuery.data && (
-              <div className="p-4 bg-[#0f1729] border border-[#f59e0b]/20 rounded-lg">
-                {residenzaQuery.data.found ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 mb-3">
-                      <CheckCircle className="h-5 w-5 text-emerald-400" />
-                      <span className="text-emerald-400 font-medium text-sm">
-                        Residenza trovata
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <span className="text-xs text-[#e8fbff]/40">
-                          Indirizzo
-                        </span>
-                        <p className="text-sm text-[#e8fbff]">
-                          {residenzaQuery.data.indirizzo}{" "}
-                          {residenzaQuery.data.civico}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-[#e8fbff]/40">CAP</span>
-                        <p className="text-sm text-[#e8fbff]">
-                          {residenzaQuery.data.cap}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-[#e8fbff]/40">
-                          Comune
-                        </span>
-                        <p className="text-sm text-[#e8fbff]">
-                          {residenzaQuery.data.comune}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-[#e8fbff]/40">
-                          Provincia
-                        </span>
-                        <p className="text-sm text-[#e8fbff]">
-                          {residenzaQuery.data.provincia}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <XCircle className="h-5 w-5 text-red-400" />
-                    <span className="text-red-400 text-sm">
-                      Residenza non trovata per {cfInput}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-
-          {cfInput.length < 16 && (
-            <p className="text-[#e8fbff]/30 text-xs text-center py-2">
-              Inserisci un codice fiscale di 16 caratteri per avviare la ricerca
-            </p>
+          {searchMutation.error && (
+            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-red-400 text-sm flex items-center gap-2">
+                <XCircle className="h-4 w-4" />
+                {(searchMutation.error as Error).message}
+              </p>
+            </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Codici Fiscali di Test */}
-      <Card className="bg-[#1a2332] border-[#f59e0b]/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
-            <AlertCircle className="h-5 w-5 text-[#f59e0b]" />
-            Codici Fiscali di Test (Mock Mode)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[
-              { cf: "RSSMRA85M01H501Z", name: "Mario Rossi — Roma" },
-              { cf: "VRDLGI90A41F205X", name: "Luigia Verdi — Milano" },
-              { cf: "BNCGPP75D15L219Y", name: "Giuseppe Bianchi — Torino" },
-            ].map(item => (
-              <div
-                key={item.cf}
-                className="flex items-center justify-between p-2 bg-[#0f1729] border border-[#f59e0b]/10 rounded-lg cursor-pointer hover:border-[#f59e0b]/30 transition-colors"
-                onClick={() => setCfInput(item.cf)}
-              >
-                <div>
-                  <code className="text-[#f59e0b] text-xs font-mono">
-                    {item.cf}
-                  </code>
-                  <p className="text-[#e8fbff]/50 text-xs">{item.name}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-[#e8fbff]/20" />
-              </div>
-            ))}
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -907,7 +756,7 @@ function AnprPanel() {
 }
 
 // ============================================
-// Sub-componente: SSO Panel
+// Sub-componente: SSO Panel (SEMI-LIVE via ARPA Toscana)
 // ============================================
 function SsoPanel() {
   const statusQuery = useQuery({
@@ -920,14 +769,31 @@ function SsoPanel() {
   });
   const testMutation = useMutation({
     mutationFn: async (params: { provider: string }) => {
+      // Test reale per SPID/CIE (verifica che ARPA risponda)
+      if (params.provider === "spid" || params.provider === "cie") {
+        const start = Date.now();
+        try {
+          const res = await fetch("https://api.mio-hub.me/api/auth/config");
+          const responseTimeMs = Date.now() - start;
+          return {
+            success: res.ok,
+            responseTimeMs,
+            errorMessage: res.ok ? undefined : `HTTP ${res.status}`,
+          };
+        } catch (e) {
+          return {
+            success: false,
+            responseTimeMs: Date.now() - start,
+            errorMessage: "Connessione fallita",
+          };
+        }
+      }
+      // Mock per CNS/eIDAS
       await new Promise(r => setTimeout(r, 600));
       return {
-        success: params.provider === "spid" || params.provider === "cie",
-        responseTimeMs: 180,
-        errorMessage:
-          params.provider === "cns" || params.provider === "eidas"
-            ? "Provider non configurato"
-            : undefined,
+        success: false,
+        responseTimeMs: 0,
+        errorMessage: "Provider non configurato",
       };
     },
   });
@@ -954,9 +820,12 @@ function SsoPanel() {
           <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
             <Shield className="h-5 w-5 text-[#8b5cf6]" />
             SSO — Single Sign-On Federato
+            <Badge className="ml-2 bg-emerald-500/20 text-emerald-400 border-emerald-400/30 text-xs">
+              Live (ARPA)
+            </Badge>
           </CardTitle>
           <CardDescription className="text-[#e8fbff]/50">
-            Autenticazione SPID, CIE, CNS ed eIDAS per cittadini e operatori
+            Autenticazione SPID, CIE via ARPA Toscana — CNS ed eIDAS in preparazione
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -964,21 +833,12 @@ function SsoPanel() {
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#8b5cf6]/20">
               <span className="text-xs text-[#e8fbff]/60">Modalita'</span>
               <p className="text-sm font-semibold text-[#e8fbff] mt-1">
-                {statusQuery.data?.mockMode ? (
-                  <Badge
-                    variant="outline"
-                    className="text-amber-400 border-amber-400/30"
-                  >
-                    Mock
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-emerald-400 border-emerald-400/30"
-                  >
-                    Live
-                  </Badge>
-                )}
+                <Badge
+                  variant="outline"
+                  className="text-emerald-400 border-emerald-400/30"
+                >
+                  Produzione
+                </Badge>
               </p>
             </div>
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#8b5cf6]/20">
@@ -1126,7 +986,186 @@ function SsoPanel() {
 }
 
 // ============================================
-// Sub-componente: Audit Trail Panel
+// Sub-componente: SSU Panel (DATI REALI)
+// ============================================
+function SsuPanel() {
+  const statusQuery = useQuery({
+    queryKey: ["ssu-status"],
+    queryFn: getSsuStatus,
+    refetchInterval: 30000,
+  });
+  const instancesQuery = useQuery({
+    queryKey: ["ssu-instances"],
+    queryFn: () => getSsuInstances({ limit: 10 }),
+    refetchInterval: 30000,
+  });
+
+  const ssu = statusQuery.data?.ssu;
+
+  const statoColors: Record<string, string> = {
+    pending: "#f59e0b",
+    sent: "#3b82f6",
+    receipted: "#10b981",
+    completed: "#10b981",
+    correction_requested: "#ef4444",
+    integration_requested: "#f97316",
+    cancelled: "#6b7280",
+    failed: "#ef4444",
+  };
+
+  const statoLabels: Record<string, string> = {
+    pending: "In attesa",
+    sent: "Inviata",
+    receipted: "Ricevuta",
+    completed: "Completata",
+    correction_requested: "Regolarizzazione",
+    integration_requested: "Integrazione",
+    cancelled: "Annullata",
+    failed: "Fallita",
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Status Card */}
+      <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
+            <Upload className="h-5 w-5 text-[#14b8a6]" />
+            SSU — Sportello Unico (Front Office)
+            {ssu?.enabled ? (
+              <Badge className="ml-2 bg-emerald-500/20 text-emerald-400 border-emerald-400/30 text-xs">
+                Attivo
+              </Badge>
+            ) : (
+              <Badge className="ml-2 bg-amber-500/20 text-amber-400 border-amber-400/30 text-xs">
+                In Configurazione
+              </Badge>
+            )}
+          </CardTitle>
+          <CardDescription className="text-[#e8fbff]/50">
+            Connettore Front Office per invio pratiche SUAP al Back Office del Comune
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 bg-[#0f1729] rounded-lg border border-[#14b8a6]/20">
+              <span className="text-xs text-[#e8fbff]/60">Stato</span>
+              <p className="text-sm font-semibold text-[#e8fbff] mt-1">
+                {ssu?.enabled ? "Connesso" : "Non connesso"}
+              </p>
+            </div>
+            <div className="p-3 bg-[#0f1729] rounded-lg border border-[#14b8a6]/20">
+              <span className="text-xs text-[#e8fbff]/60">Istanze Totali</span>
+              <p className="text-lg font-bold text-[#14b8a6] mt-1">
+                {ssu?.instances.total ?? 0}
+              </p>
+            </div>
+            <div className="p-3 bg-[#0f1729] rounded-lg border border-[#14b8a6]/20">
+              <span className="text-xs text-[#e8fbff]/60">In Corso</span>
+              <p className="text-lg font-bold text-amber-400 mt-1">
+                {ssu?.instances.pending ?? 0}
+              </p>
+            </div>
+            <div className="p-3 bg-[#0f1729] rounded-lg border border-[#14b8a6]/20">
+              <span className="text-xs text-[#e8fbff]/60">Completate</span>
+              <p className="text-lg font-bold text-emerald-400 mt-1">
+                {ssu?.instances.completed ?? 0}
+              </p>
+            </div>
+          </div>
+
+          {/* Config info */}
+          <div className="mt-4 p-3 bg-[#0f1729] rounded-lg border border-[#14b8a6]/10">
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <span className="text-[#e8fbff]/40">Front Office URL</span>
+                <p className="text-[#e8fbff] font-mono mt-1 truncate">
+                  {ssu?.frontOfficeUrl || "N/A"}
+                </p>
+              </div>
+              <div>
+                <span className="text-[#e8fbff]/40">Back Office URL</span>
+                <p className="text-[#e8fbff] font-mono mt-1 truncate">
+                  {ssu?.backOfficeUrl || "Non configurato"}
+                </p>
+              </div>
+              <div>
+                <span className="text-[#e8fbff]/40">CUI Context</span>
+                <p className="text-[#e8fbff] font-mono mt-1">
+                  {ssu?.cuiContext || "N/A"}
+                </p>
+              </div>
+              <div>
+                <span className="text-[#e8fbff]/40">Max Retry</span>
+                <p className="text-[#e8fbff] font-mono mt-1">
+                  {ssu?.maxRetries ?? 3}
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Instances List */}
+      <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
+            <Database className="h-5 w-5 text-[#14b8a6]" />
+            Istanze SSU Recenti
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {instancesQuery.data?.instances && instancesQuery.data.instances.length > 0 ? (
+            <div className="space-y-2">
+              {instancesQuery.data.instances.map((inst) => (
+                <div
+                  key={inst.id}
+                  className="flex items-center gap-3 p-3 bg-[#0f1729] border border-[#e8fbff]/5 rounded-lg"
+                >
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: statoColors[inst.stato_ssu] || "#6b7280" }}
+                  />
+                  <Badge
+                    variant="outline"
+                    className="text-xs"
+                    style={{
+                      color: statoColors[inst.stato_ssu] || "#6b7280",
+                      borderColor: `${statoColors[inst.stato_ssu] || "#6b7280"}40`,
+                    }}
+                  >
+                    {statoLabels[inst.stato_ssu] || inst.stato_ssu}
+                  </Badge>
+                  <span className="text-[#e8fbff] text-sm flex-1 font-mono truncate">
+                    {inst.cui_uuid.substring(0, 8)}...
+                  </span>
+                  <span className="text-[#e8fbff]/40 text-xs">
+                    {inst.ente_destinatario}
+                  </span>
+                  <span className="text-[#e8fbff]/20 text-xs">
+                    {new Date(inst.created_at).toLocaleString("it-IT", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[#e8fbff]/30 text-sm text-center py-8">
+              Nessuna istanza SSU inviata. Le pratiche SUAP completate appariranno qui dopo l'invio al Back Office.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================
+// Sub-componente: Audit Trail Panel (DATI REALI)
 // ============================================
 function AuditTrailPanel() {
   const [platformFilter, setPlatformFilter] = useState<string | undefined>(
@@ -1136,39 +1175,39 @@ function AuditTrailPanel() {
   const auditQuery = useQuery({
     queryKey: ["piattaforme-audit", platformFilter],
     queryFn: async () => {
-      const items = platformFilter
-        ? MOCK_AUDIT_ITEMS.filter(i => i.platform === platformFilter)
-        : MOCK_AUDIT_ITEMS;
-      return { items };
+      const combined = await getCombinedAuditTrail();
+      if (platformFilter) {
+        return {
+          items: combined.items.filter(i => i.platform === platformFilter),
+        };
+      }
+      return combined;
     },
+    refetchInterval: 30000,
   });
 
   const statsQuery = useQuery({
     queryKey: ["piattaforme-audit-stats"],
-    queryFn: async () => ({
-      last24h: MOCK_AUDIT_ITEMS.filter(
-        i => Date.now() - new Date(i.created_at).getTime() < 86400000
-      ).length,
-      last7d: MOCK_AUDIT_ITEMS.length,
-      byPlatform: [
-        {
-          platform: "pdnd",
-          count: MOCK_AUDIT_ITEMS.filter(i => i.platform === "pdnd").length,
-        },
-        {
-          platform: "appio",
-          count: MOCK_AUDIT_ITEMS.filter(i => i.platform === "appio").length,
-        },
-        {
-          platform: "anpr",
-          count: MOCK_AUDIT_ITEMS.filter(i => i.platform === "anpr").length,
-        },
-        {
-          platform: "sso",
-          count: MOCK_AUDIT_ITEMS.filter(i => i.platform === "sso").length,
-        },
-      ],
-    }),
+    queryFn: async () => {
+      const combined = await getCombinedAuditTrail();
+      const items = combined.items;
+      const now = Date.now();
+      return {
+        last24h: items.filter(
+          i => now - new Date(i.created_at).getTime() < 86400000
+        ).length,
+        last7d: items.filter(
+          i => now - new Date(i.created_at).getTime() < 604800000
+        ).length,
+        byPlatform: [
+          { platform: "ssu", count: items.filter(i => i.platform === "ssu").length },
+          { platform: "pdnd", count: items.filter(i => i.platform === "pdnd").length },
+          { platform: "appio", count: items.filter(i => i.platform === "appio").length },
+          { platform: "sso", count: items.filter(i => i.platform === "sso").length },
+        ],
+      };
+    },
+    refetchInterval: 30000,
   });
 
   const platformColors: Record<string, string> = {
@@ -1176,6 +1215,7 @@ function AuditTrailPanel() {
     appio: "#10b981",
     anpr: "#f59e0b",
     sso: "#8b5cf6",
+    ssu: "#14b8a6",
   };
 
   return (
@@ -1204,6 +1244,7 @@ function AuditTrailPanel() {
             count: number;
           }>
         )
+          ?.filter(item => item.count > 0)
           ?.slice(0, 2)
           .map(item => (
             <Card
@@ -1244,7 +1285,7 @@ function AuditTrailPanel() {
             >
               Tutte
             </Button>
-            {["pdnd", "appio", "anpr", "sso"].map(p => (
+            {["ssu", "pdnd", "appio", "anpr", "sso"].map(p => (
               <Button
                 key={p}
                 size="sm"
@@ -1276,7 +1317,7 @@ function AuditTrailPanel() {
                 status: string;
                 user_email: string;
                 created_at: string;
-                duration_ms: number;
+                duration_ms?: number;
               }>
             )?.map(item => (
               <div
@@ -1328,7 +1369,7 @@ function AuditTrailPanel() {
             {(!auditQuery.data?.items ||
               (auditQuery.data.items as unknown[]).length === 0) && (
               <p className="text-[#e8fbff]/30 text-sm text-center py-8">
-                Nessuna operazione registrata
+                Nessuna operazione registrata. Le operazioni SSU e PDND appariranno qui automaticamente.
               </p>
             )}
           </div>
@@ -1352,7 +1393,7 @@ export default function PiattaformePA() {
             Piattaforme PA
           </h2>
           <p className="text-[#e8fbff]/50 text-sm mt-1">
-            PDND, App IO, ANPR e SSO — Interoperabilita' e identita' digitale
+            PDND, App IO, ANPR, SSO e SSU — Interoperabilita' e identita' digitale
           </p>
         </div>
       </div>
@@ -1366,6 +1407,13 @@ export default function PiattaformePA() {
           >
             <Server className="h-4 w-4 mr-2" />
             PDND
+          </TabsTrigger>
+          <TabsTrigger
+            value="ssu"
+            className="data-[state=active]:bg-[#14b8a6]/20 data-[state=active]:text-[#14b8a6]"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            SSU
           </TabsTrigger>
           <TabsTrigger
             value="appio"
@@ -1399,6 +1447,10 @@ export default function PiattaformePA() {
 
         <TabsContent value="pdnd" className="mt-4">
           <PdndPanel />
+        </TabsContent>
+
+        <TabsContent value="ssu" className="mt-4">
+          <SsuPanel />
         </TabsContent>
 
         <TabsContent value="appio" className="mt-4">
