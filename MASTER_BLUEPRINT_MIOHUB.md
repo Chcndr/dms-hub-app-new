@@ -1,19 +1,19 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.10.0 — STABILE (Fix Notifiche Enti Formatori + Pagamento Corsi)
-> **Data:** 10 Maggio 2026
+> **Versione:** 10.12.0 — STABILE (Fix Attestati Qualifiche + SCIA Atto Notarile + Cleanup Adempimenti)
+> **Data:** 11 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (10 Mag 2026 — Snapshot stabile)
+> ### STATO SISTEMA (11 Mag 2026 — Snapshot stabile)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `1d300ef` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `a7be7d0` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online v10.9.0 | `https://api.mio-hub.me/health` — autodeploy da `1d300ef` |
-> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `a7be7d0` |
-> | **Neon (DB)** | Integro | Wallet TCC per impresa (1 wallet open per impresa), tutti orfani eliminati |
+> | **GitHub Backend** | Allineato | `f6ec9e2` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `703a31b` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online | `https://api.mio-hub.me/health` — da aggiornare con PM2 restart da `f6ec9e2` |
+> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `703a31b` (autodeploy) |
+> | **Neon (DB)** | Integro | Wallet TCC per impresa, totale_associati=14, documents con atto notarile SCIA |
 >
 > **Sicurezza — Anti-Scanner Middleware v1.0.0:**
 > - Middleware `antiScanner.js` montato PRIMA dell'apiLogger
@@ -36,6 +36,97 @@
 > - Un operatore può gestire più imprese con wallet separati
 > - Il settlement chiude il wallet e ne crea uno nuovo per la stessa impresa
 > - Backward compatibility: se impresa_id non è passato, fallback a operator_id
+>
+> ---
+> ### CHANGELOG v10.12.0 (11 Mag 2026)
+> **Fix Attestati Qualifiche + SCIA Atto Notarile + Cleanup Adempimenti App Impresa**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `f6ec9e2` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `f6ec9e2` | Da riavviare PM2 |
+> | GitHub `dms-hub-app-new` master | `703a31b` | Allineato |
+> | Vercel frontend | `703a31b` | Autodeploy completato |
+>
+> **BUG FIX #1: Icona Eye attestato SICUREZZA_LAVORO mancante (App Impresa + Dashboard PA)**
+>
+> - **Root cause:** La query in `qualificazioni.js` aveva un filtro `AND ap.collaboratore_id IS NULL` che escludeva gli attestati generati per collaboratori (es. Andrea Checchi, Socio). L'attestato SICUREZZA_LAVORO (ATT-SIC-2026-00005) era stato generato per il collaboratore, non direttamente per l'impresa.
+> - **Fix backend:** Rimosso filtro `collaboratore_id IS NULL` in `routes/qualificazioni.js` — ora la query trova attestati sia dell'impresa che dei collaboratori.
+> - **Fix backend:** Aggiunto campo `attestato_pdf_url` nella query `GET /api/imprese/:id/qualificazioni` in `routes/imprese.js` per la Dashboard PA.
+> - **Fix frontend:** Aggiunta icona Eye (cyan) + Download PDF nella tabella qualificazioni e nella matrice formazione team in `ImpreseQualificazioniPanel.tsx`.
+>
+> **BUG FIX #2: Rimozione card VISURA_CAMERALE e PARTITA_IVA (App Impresa)**
+>
+> - Le card gialle "VISURA_CAMERALE" e "PARTITA_IVA" nella sezione Qualifiche dell'app impresa non avevano senso come adempimenti.
+> - **Fix frontend:** Filtrate in `AnagraficaPage.tsx` — escluse sia dalla lista adempimenti che dai mancanti.
+>
+> **BUG FIX #3: Bottone Apri PDF Atto Notarile nelle richieste SCIA**
+>
+> - Le richieste SCIA con atto notarile allegato (salvato in tabella `documents`, link in `richieste_servizi.documenti_allegati`) non mostravano un bottone per visualizzare il PDF.
+> - **Fix backend:** Aggiunto campo `documenti_allegati` nella query `GET /api/associazioni/:id/richieste-servizi` in `routes/associazioni-v9.js`.
+> - **Fix frontend:** Aggiunto bottone "Apri PDF" (giallo, icona FileText) in `GestioneServiziAssociazionePanel.tsx` per le richieste SCIA con documenti allegati.
+> - **Fix frontend:** Aggiunto bottone "Apri Atto Notarile" (giallo, icona FileText) in `NotificheAssociazionePanel.tsx` per le notifiche SCIA ricevute.
+>
+> **BUG FIX #4: Gestisci SCIA apre direttamente il form di compilazione**
+>
+> - Il bottone "Gestisci" per le richieste SCIA navigava al tab SCIA & Bandi ma non apriva il form.
+> - **Fix frontend:** Aggiunto `openForm: true` nel detail dell'evento `navigate-to-scia-form` in `GestioneServiziAssociazionePanel.tsx` e `NotificheAssociazionePanel.tsx`.
+>
+> **Vincoli negativi (NON FARE):**
+> - NON aggiungere filtro `collaboratore_id IS NULL` nelle query attestati — gli attestati dei collaboratori valgono per l'impresa
+> - NON usare card VISURA_CAMERALE e PARTITA_IVA come adempimenti obbligatori — sono dati anagrafici, non qualifiche
+> - Il campo `documenti_allegati` in `richieste_servizi` è un array JSON di URL (es. `['/api/documents/1/download']`) — NON cambiare formato
+>
+> **File modificati:**
+> - Frontend: `AnagraficaPage.tsx`, `ImpreseQualificazioniPanel.tsx`, `GestioneServiziAssociazionePanel.tsx`, `NotificheAssociazionePanel.tsx`
+> - Backend: `routes/qualificazioni.js`, `routes/imprese.js`, `routes/associazioni-v9.js`
+>
+> ---
+> ### CHANGELOG v10.11.0 (10 Mag 2026)
+> **PDF Attestato Corsi + Popup SCIA con Upload Atto Notarile + Tab Gestisci SCIA + KPI Totale Associati**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `c49bd92` | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `c49bd92` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `ddf4bab` | Allineato |
+> | Vercel frontend | `ddf4bab` | Autodeploy |
+>
+> **FEATURE #1: Fix PDF Attestato Corsi (PresenzeAssociatiPanel.tsx)**
+>
+> - Fix icona Eye per PDF attestato: ora usa `attestato_pdf_url` dal backend invece di costruire URL manualmente.
+>
+> **FEATURE #2: Popup SCIA Subingresso con Upload Atto Notarile (AnagraficaPage.tsx)**
+>
+> - Nuovi stati: `showSciaPopup`, `sciaFile`, `sciaUploading`.
+> - Funzione `handleConfirmScia` → POST a `/api/bandi/richieste-con-allegato` con FormData (file + metadati).
+> - Popup upload atto notarile per SCIA Subingresso (appare dopo popup mercato).
+> - In `handleRichiestaServizio`: intercetta servizi con nome contenente "scia" → apre popup SCIA.
+>
+> **FEATURE #3: Endpoint Upload Atto Notarile SCIA (Backend routes/bandi.js)**
+>
+> - Aggiunto `const crypto = require('crypto')` e multer config `uploadRichiesta`.
+> - Nuovo endpoint `POST /richieste-con-allegato` con upload file → salva in `documents`, crea richiesta con `documenti_allegati`, invia notifica all'associazione.
+>
+> **FEATURE #4: Tab Gestisci SCIA**
+>
+> - `GestioneServiziAssociazionePanel.tsx`: bottone "Gestisci" viola per richieste SCIA → dispatch `navigate-to-scia-form`.
+> - `NotificheAssociazionePanel.tsx`: bottone "Gestisci - Nuova SCIA" per notifiche SCIA ricevute.
+> - `SuapPanel.tsx`: listener `navigate-to-scia-form` → `setActiveTab("pratiche"); setShowSciaForm(true)`.
+> - `DashboardPA.tsx`: listener `navigate-to-scia-form` → `setActiveTab("docs"); setDocsSubTab("scia-pratiche")`.
+>
+> **FEATURE #5: KPI Totale Associati (DashboardPA.tsx + Backend routes/stats.js)**
+>
+> - KPI card "Totale Associati" con icona UserCheck nella griglia overview (griglia ora `lg:grid-cols-5`).
+> - `totale_associati` aggiunto in `combinedOverview`.
+> - Backend: aggiunta query `tesseramenti_associazione WHERE stato = 'ATTIVO'` nel `Promise.all` di stats/overview.
+> - Campo `totale_associati` nel response JSON.
+>
+> **File modificati:**
+> - Frontend: `PresenzeAssociatiPanel.tsx`, `AnagraficaPage.tsx`, `GestioneServiziAssociazionePanel.tsx`, `NotificheAssociazionePanel.tsx`, `SuapPanel.tsx`, `DashboardPA.tsx`
+> - Backend: `routes/bandi.js` (+154 righe), `routes/stats.js` (+7 righe)
 >
 > ---
 > ### CHANGELOG v10.8.0 (10 Mag 2026)
