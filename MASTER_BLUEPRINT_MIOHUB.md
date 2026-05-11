@@ -14333,3 +14333,35 @@ Per evitare regressioni (fixare da una parte e rompere dall'altra), ogni nuova i
 4. **Flusso Eventi SSE (Server-Sent Events)**
    - Ogni azione sulla coda (assegnazione, rinuncia, skip per saldo) DEVE chiamare `attivaProssimoTurno(sessionId)`.
    - Il frontend deve reagire agli eventi SSE aggiornando lo stato senza ricaricare l'intera pagina.
+
+---
+
+## 15. PROGETTO SSO SUAP (FRONT OFFICE)
+
+MIO HUB è in fase di evoluzione per diventare un **Front Office SUAP accreditato** nel nuovo Sistema Informatico degli Sportelli Unici (SSU) gestito da AgID/MIMIT, ai sensi dell'art. 5 dell'Allegato al DPR 160/2010.
+
+### 15.1 Stato Attuale dell'Infrastruttura (Gap Analysis)
+
+L'analisi dell'infrastruttura attuale (11 Maggio 2026) evidenzia:
+
+1. **Flusso SUAP Base (🟢 Reale):** Il backend gestisce già le pratiche, la firma PDF, l'upload firmato e il motore di validazione `runEvaluation` (15 check). Il frontend è completamente collegato tramite `api/suap.ts`.
+2. **SSO Utenti (🟢 Reale):** Il backend implementa OAuth2/OIDC con ARPA Toscana per SPID/CIE/CNS. Il frontend gestisce il login federato e il redirect.
+3. **Dashboard Piattaforme PA (🟡 Mock):** Il componente `PiattaformePA.tsx` mostra tab per PDND, App IO, ANPR e SSO, ma i dati sono 100% mock.
+4. **Connettori PDND/App IO/ANPR (🔴 Assenti):** Il backend espone solo un catalogo statico degli endpoint in `routes/integrations.js`. Mancano i client reali.
+5. **Connettori SSU AgID (🔴 Assenti):** Mancano le implementazioni delle API `bo_to_fo.yaml` e `catalogo-ssu_to_fo.yaml`.
+
+### 15.2 Architettura Target (SSU Connector)
+
+Per operare come Front Office, MIO HUB dovrà implementare un nuovo modulo `ssu-connector` nel backend:
+
+* **Client API SSU:** Per chiamare `POST /request_cui` (Catalogo SSU) e `POST /send_instance` (Back Office).
+* **Server API SSU:** Per esporre `POST /request_correction`, `POST /request_integration`, `POST /notify` e `GET /instance/{cui_uuid}/document/{resource_id}` al Back Office.
+* **Autenticazione PDND:** Gestione dei voucher JWT e firma `Agid-JWT-Signature` (ModI `integrity_rest_01`).
+* **Generatore XML:** Per produrre l'XML della pratica validato con gli XSD ufficiali.
+
+### 15.3 Vincoli e Regole di Sviluppo (NON FARE)
+
+* **NON** usare CieSign per la firma digitale delle pratiche SUAP: genera solo FEA (Firma Elettronica Avanzata), mentre il SUAP richiede obbligatoriamente FEQ (Firma Elettronica Qualificata) in formato PAdES o CAdES.
+* **NON** modificare il formato del campo `documenti_allegati` nella tabella `richieste_servizi`: deve rimanere un array JSON di URL.
+* **NON** confondere il login SSO degli utenti (già funzionante via ARPA) con l'interoperabilità SSO/PDND tra piattaforme (da sviluppare).
+* **NON** considerare `routes/migratePDND.js` come un connettore PDND: è solo una migration SQL per il database.
