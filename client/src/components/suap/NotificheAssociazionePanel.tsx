@@ -745,12 +745,38 @@ export default function NotificheAssociazionePanel({
               {(selectedNotifica.tipo === "RICHIESTA_SERVIZIO" || selectedNotifica.tipo === "CONFERMA_PAGAMENTO") &&
                 getDirezione(selectedNotifica) === "RICEVUTO" &&
                 (selectedNotifica.titolo?.toLowerCase().includes("scia") || selectedNotifica.messaggio?.toLowerCase().includes("scia")) && (
-                <div className="mt-4 pt-4 border-t border-[#3b82f6]/20">
+                <div className="mt-4 pt-4 border-t border-[#3b82f6]/20 space-y-2">
+                  {selectedNotifica.messaggio?.toLowerCase().includes("atto notarile") && (
+                    <button
+                      onClick={() => {
+                        // Cerca la richiesta SCIA corrispondente per ottenere il documento allegato
+                        const impresaId = selectedNotifica.mittente_id;
+                        fetch(`${API_BASE_URL}/api/bandi/richieste?impresa_id=${impresaId}&servizio_nome=scia`)
+                          .then(r => r.json())
+                          .then(data => {
+                            const richieste = data.data || [];
+                            const conDoc = richieste.find((r: any) => r.documenti_allegati && r.documenti_allegati.length > 0);
+                            if (conDoc) {
+                              const docUrl = Array.isArray(conDoc.documenti_allegati) ? conDoc.documenti_allegati[0] : conDoc.documenti_allegati;
+                              const fullUrl = docUrl.startsWith('http') ? docUrl : `${API_BASE_URL}${docUrl}`;
+                              window.open(fullUrl, '_blank', 'noopener,noreferrer');
+                            } else {
+                              alert('Documento atto notarile non trovato');
+                            }
+                          })
+                          .catch(() => alert('Errore nel recupero del documento'));
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white rounded-lg font-medium transition-all"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Apri Atto Notarile
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setSelectedNotifica(null);
                       window.dispatchEvent(new CustomEvent("navigate-to-scia-form", {
-                        detail: { notifica: selectedNotifica }
+                        detail: { notifica: selectedNotifica, openForm: true }
                       }));
                     }}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white rounded-lg font-medium transition-all"

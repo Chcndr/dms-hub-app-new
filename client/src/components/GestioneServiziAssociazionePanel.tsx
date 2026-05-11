@@ -35,6 +35,7 @@ import {
   ArrowRight,
   Eye,
   Settings,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -65,6 +66,7 @@ interface RichiestaServizio {
   stato: "in_attesa" | "in_lavorazione" | "completata" | "rifiutata";
   data_richiesta: string;
   note?: string;
+  documenti_allegati?: string;
 }
 
 const EMPTY_SERVIZIO: Omit<Servizio, "id"> = {
@@ -628,19 +630,36 @@ const GestioneServiziAssociazionePanel = memo(function GestioneServiziAssociazio
                             </Button>
                           )}
                           {r.servizio_nome?.toLowerCase().includes("scia") && (
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                window.dispatchEvent(
-                                  new CustomEvent("navigate-to-scia-form", {
-                                    detail: { from: "richiesta", richiestaId: r.id, impresaNome: r.impresa_nome, documentiAllegati: r.documenti_allegati }
-                                  })
-                                );
-                              }}
-                              className="bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white h-7 text-xs"
-                            >
-                              <Settings className="h-3 w-3 mr-1" /> Gestisci
-                            </Button>
+                            <>
+                              {r.documenti_allegati && r.documenti_allegati.length > 0 && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    const docUrl = Array.isArray(r.documenti_allegati)
+                                      ? r.documenti_allegati[0]
+                                      : r.documenti_allegati;
+                                    const fullUrl = docUrl.startsWith('http') ? docUrl : `${API_BASE}${docUrl}`;
+                                    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+                                  }}
+                                  className="bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white h-7 text-xs"
+                                >
+                                  <FileText className="h-3 w-3 mr-1" /> Apri PDF
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  window.dispatchEvent(
+                                    new CustomEvent("navigate-to-scia-form", {
+                                      detail: { from: "richiesta", richiestaId: r.id, impresaNome: r.impresa_nome, documentiAllegati: r.documenti_allegati, openForm: true }
+                                    })
+                                  );
+                                }}
+                                className="bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white h-7 text-xs"
+                              >
+                                <Settings className="h-3 w-3 mr-1" /> Gestisci
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>

@@ -32,6 +32,7 @@ import {
   AlertTriangle,
   XCircle,
   User,
+  Eye,
 } from "lucide-react";
 import {
   addComuneIdToUrl,
@@ -616,13 +617,27 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
                             <TableCell>{getStatoBadge(qual.stato)}</TableCell>
                             <TableCell>
                               {(qual as any).attestato_pdf_id ? (
-                                <button
-                                  onClick={() => downloadPdf((qual as any).attestato_pdf_id)}
-                                  className="text-blue-500 hover:text-blue-400 flex items-center gap-1"
-                                  title="Visualizza/Scarica PDF"
-                                >
-                                  <Download className="w-4 h-4" />
-                                </button>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      const url = (qual as any).attestato_pdf_url
+                                        ? `${API_BASE_URL}${(qual as any).attestato_pdf_url}`
+                                        : `${API_BASE_URL}/api/attestati/${(qual as any).attestato_pdf_id}/pdf`;
+                                      window.open(url, '_blank', 'noopener,noreferrer');
+                                    }}
+                                    className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                                    title="Visualizza PDF"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => downloadPdf((qual as any).attestato_pdf_id)}
+                                    className="text-blue-500 hover:text-blue-400 flex items-center gap-1"
+                                    title="Scarica PDF"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </button>
+                                </div>
                               ) : (
                                 <span className="text-gray-400 text-xs">—</span>
                               )}
@@ -791,13 +806,24 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
                                     <div className="flex flex-col items-center gap-0.5">
                                       {getFormazioneBadge(stato)}
                                       {att && att.attestato_id && (
-                                        <button
-                                          onClick={() => downloadPdf(att.attestato_id!)}
-                                          className="text-[8px] text-blue-400 hover:text-blue-300 flex items-center gap-0.5 mt-0.5"
-                                          title="Scarica PDF"
-                                        >
-                                          <Download className="w-2.5 h-2.5" />
-                                        </button>
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                          <button
+                                            onClick={() => {
+                                              window.open(`${API_BASE_URL}/api/attestati/${att.attestato_id}/pdf`, '_blank', 'noopener,noreferrer');
+                                            }}
+                                            className="text-[8px] text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5"
+                                            title="Visualizza PDF"
+                                          >
+                                            <Eye className="w-2.5 h-2.5" />
+                                          </button>
+                                          <button
+                                            onClick={() => downloadPdf(att.attestato_id!)}
+                                            className="text-[8px] text-blue-400 hover:text-blue-300 flex items-center gap-0.5"
+                                            title="Scarica PDF"
+                                          >
+                                            <Download className="w-2.5 h-2.5" />
+                                          </button>
+                                        </div>
                                       )}
                                     </div>
                                   </TableCell>

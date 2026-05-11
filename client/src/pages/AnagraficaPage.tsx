@@ -775,7 +775,9 @@ function QualificazioniSection({
       .then(r => r.json())
       .then(data => {
         if (data.success && Array.isArray(data.adempimenti)) {
-          setAdempimenti(data.adempimenti);
+          // Filtra adempimenti non pertinenti alla formazione/sicurezza
+          const TIPI_ESCLUSI = ['VISURA_CAMERALE', 'PARTITA_IVA'];
+          setAdempimenti(data.adempimenti.filter((a: any) => !TIPI_ESCLUSI.includes(a.tipo_adempimento)));
         }
       })
       .catch(() => {});
