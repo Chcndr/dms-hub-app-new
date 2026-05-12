@@ -2225,4 +2225,74 @@ export const integrations: IntegrationConfig[] = [
       "/api/pagopa/riconcilia — Riconciliazione flussi XML",
     ],
   },
+  {
+    id: "anpr",
+    name: "ANPR — Anagrafe Nazionale Popolazione Residente",
+    description:
+      "Verifica residenza e dati anagrafici dei cittadini tramite ANPR (via PDND). Modalità sandbox attiva con 5 CF di test. In produzione richiede PDND configurato.",
+    baseUrl: "https://api.mio-hub.me",
+    status: "active",
+    dataOwner: "Ministero dell'Interno / PDND",
+    notes:
+      "Endpoint attivi in modalità SANDBOX. Dati mock realistici per 5 CF di test. Per produzione serve PDND configurato (Client ID + Key ID + RSA). Verifica residenza, stato famiglia, batch fino a 10 CF.",
+    endpoints: [
+      "/api/anpr/status — Stato connessione e modalità",
+      "/api/anpr/residenza/:cf — Verifica residenza completa",
+      "/api/anpr/famiglia/:cf — Stato famiglia e componenti",
+      "POST /api/anpr/verifica-batch — Verifica multipla (max 10 CF)",
+      "/api/anpr/audit — Storico chiamate ANPR",
+    ],
+  },
+  {
+    id: "appio",
+    name: "App IO — Notifiche Cittadini",
+    description:
+      "Invio messaggi e notifiche ai cittadini tramite l'app IO (PagoPA). 5 template configurati per scadenze, pagamenti, comunicazioni, SCIA e sanzioni.",
+    baseUrl: "https://api.mio-hub.me",
+    status: "active",
+    dataOwner: "PagoPA / Team Digitale",
+    notes:
+      "Endpoint attivi in modalità SANDBOX. Simula invio messaggi con response realistiche. Per produzione serve APPIO_API_KEY dal portale developer.io.italia.it. 5 template pronti.",
+    endpoints: [
+      "/api/appio/status — Stato connessione e statistiche",
+      "/api/appio/templates — Lista template messaggi",
+      "/api/appio/templates/:id — Dettaglio template",
+      "POST /api/appio/send-message — Invio messaggio con template",
+      "/api/appio/messages — Storico messaggi inviati",
+      "POST /api/appio/test-connection — Test connessione API",
+    ],
+  },
+  {
+    id: "sso-arpa",
+    name: "SSO — ARPA Toscana (SPID/CIE)",
+    description:
+      "Single Sign-On federato tramite ARPA Regione Toscana. Supporta autenticazione SPID (Livello 2) e CIE (Livello 3). CNS ed eIDAS in preparazione.",
+    baseUrl: "https://trial.auth.toscana.it",
+    status: "active",
+    dataOwner: "Regione Toscana / AgID",
+    notes:
+      "Connessione attiva su ambiente trial ARPA. SPID e CIE configurati e funzionanti. Per produzione serve ARPA_CLIENT_SECRET dal portale oscat.regione.toscana.it. OAuth2 + PKCE S256.",
+    endpoints: [
+      "/api/auth/login — Genera URL login ARPA",
+      "/api/auth/callback — Callback OAuth2 ARPA",
+      "/api/auth/refresh — Refresh token",
+      "/api/auth/logout — Logout e revoca token",
+      "/api/auth/verify — Verifica token JWT",
+      "/api/auth/me — Profilo utente autenticato",
+    ],
+  },
+  {
+    id: "firma-digitale",
+    name: "Firma Digitale — Verifica CAdES/PAdES",
+    description:
+      "Modulo di verifica crittografica della firma digitale qualificata (FEQ). Supporta CAdES (.p7m) e PAdES (.pdf firmato). Estrae CF e CN dal certificato X.509.",
+    baseUrl: "https://api.mio-hub.me",
+    status: "active",
+    dataOwner: "AgID / QTSP Italiani",
+    notes:
+      "Modulo attivo e integrato nell'endpoint upload-firmato SUAP. Verifica firma con node-forge + OpenSSL. Bundle CA AgID per validazione catena. Rileva certificati qualificati (InfoCert, Aruba, Namirial, Poste, Actalis).",
+    endpoints: [
+      "POST /api/suap/pratiche/:id/upload-firmato — Upload e verifica firma",
+    ],
+  },
 ];

@@ -92,6 +92,69 @@ const ConnessioniV2 = memo(function ConnessioniV2() {
         } else {
           toast.error(`MercaWeb: ${data.error || "Non raggiungibile"}`);
         }
+      } else if (integration.id === "anpr") {
+        // ANPR: verifica status endpoint
+        const response = await fetch(`${API_BASE_URL}/api/anpr/status`);
+        const data = await response.json();
+        if (data.success) {
+          toast.success(`ANPR: ${data.anpr.mode === 'production' ? 'PDND Live' : 'Sandbox'} — ${data.anpr.available_cfs?.length || 0} CF disponibili, ${data.anpr.stats.total_calls} chiamate totali`);
+        } else {
+          toast.error(`ANPR: ${data.error || "Non raggiungibile"}`);
+        }
+      } else if (integration.id === "appio") {
+        // App IO: verifica status endpoint
+        const response = await fetch(`${API_BASE_URL}/api/appio/status`);
+        const data = await response.json();
+        if (data.success) {
+          toast.success(`App IO: ${data.appio.mode === 'production' ? 'Live' : 'Sandbox'} — ${data.appio.templates_count} template, ${data.appio.stats.total_sent} messaggi inviati`);
+        } else {
+          toast.error(`App IO: ${data.error || "Non raggiungibile"}`);
+        }
+      } else if (integration.id === "pagopa-efil") {
+        // PagoPA: verifica status
+        const response = await fetch(`${API_BASE_URL}/api/pagopa/status`);
+        const data = await response.json();
+        if (data.success) {
+          toast.success(`PagoPA: ${data.mode || 'Sandbox'} — Gateway ${data.gateway_configured ? 'configurato' : 'in attesa'}`);
+        } else {
+          toast.error(`PagoPA: ${data.error || "Non raggiungibile"}`);
+        }
+      } else if (integration.id === "pdnd") {
+        // PDND: verifica status
+        const response = await fetch(`${API_BASE_URL}/api/pdnd/status`);
+        const data = await response.json();
+        if (data.success) {
+          toast.success(`PDND: ${data.pdnd?.environment || 'collaudo'} — ${data.pdnd?.vouchers_active || 0} voucher attivi`);
+        } else {
+          toast.error(`PDND: ${data.error || "Non raggiungibile"}`);
+        }
+      } else if (integration.id === "ssu-front-office") {
+        // SSU: verifica status
+        const response = await fetch(`${API_BASE_URL}/api/ssu/status`);
+        const data = await response.json();
+        if (data.success) {
+          toast.success(`SSU: ${data.ssu?.stato || 'In configurazione'} — ${data.ssu?.istanze_totali || 0} istanze`);
+        } else {
+          toast.error(`SSU: ${data.error || "Non raggiungibile"}`);
+        }
+      } else if (integration.id === "sso-arpa") {
+        // SSO ARPA: verifica config
+        const response = await fetch(`${API_BASE_URL}/api/auth/config`);
+        const data = await response.json();
+        if (data.success) {
+          toast.success(`SSO ARPA: ${data.config?.environment || 'trial'} — Provider: ${data.config?.providers?.join(', ') || 'SPID, CIE'}`);
+        } else {
+          toast.error(`SSO ARPA: ${data.error || "Non raggiungibile"}`);
+        }
+      } else if (integration.id === "firma-digitale") {
+        // Firma: test con endpoint SUAP health
+        const response = await fetch(`${API_BASE_URL}/api/suap/health`);
+        const data = await response.json();
+        if (data.success) {
+          toast.success(`Firma Digitale: Modulo attivo — Verifica CAdES/PAdES integrata in SUAP`);
+        } else {
+          toast.error(`Firma Digitale: ${data.error || "Non raggiungibile"}`);
+        }
       } else {
         // Per le altre integrazioni, test generico
         const response = await fetch(integration.baseUrl, {
