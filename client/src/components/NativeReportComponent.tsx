@@ -1360,67 +1360,67 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                       {[
                         {
                           id: 1, name: "Canone Posteggio Giornaliero",
-                          desc: "1 EUR/posteggio/giorno di mercato — 400.000 posteggi x 52+ giornate/anno",
-                          calc: "400K x 52 x 1 EUR = 20.8M EUR/anno (100%)",
+                          desc: "1 EUR/posteggio/giorno di mercato — la meta' dei 2 EUR/giorno che le PA pagano oggi agli esattori esterni (il 10% del canone medio di ~20 EUR/giorno di suolo pubblico). Il 40% delle PA esternalizza la riscossione per complessita'. Con MIO HUB il pagamento e' diretto via PagoPA: se il wallet va a zero, l'operatore non puo' fare la presenza e salta il mercato — zero morosita', zero costi di riscossione. Un servizio senza precedenti a meta' prezzo.",
+                          calc: "400K posteggi x 52 gg x 1 EUR = 20.8M EUR/anno (100%)",
                           color: "#14b8a6", pct: 100,
                         },
                         {
-                          id: 2, name: "10% Riscossione Canone Unico",
-                          desc: "Trattenuta del 10% sui contagiorni/esattori che riscuotono il canone unico annuo di occupazione suolo pubblico",
-                          calc: "Stima 2-5M EUR/anno su canoni riscossi",
+                          id: 2, name: "Fiere & Mercati Straordinari",
+                          desc: "Oltre ai mercati settimanali, altrettanti posteggi per fiere, sagre e mercati straordinari — molti mercati fanno piu' giorni a settimana",
+                          calc: "400K posteggi fiere x 20+ gg/anno x 1 EUR = 8M EUR/anno",
                           color: "#06b6d4", pct: 70,
                         },
                         {
                           id: 3, name: "SCIA Subingresso Automatizzate",
-                          desc: "Pratiche SUAP 100% digitali — le associazioni chiedono 100 EUR/pratica, MIO HUB chiede 10% (10 EUR) all'associazione",
-                          calc: "10.000-30.000 pratiche/anno x 10 EUR = 100-300K EUR",
-                          color: "#a855f7", pct: 25,
+                          desc: "Pratiche SUAP 100% digitali — le associazioni chiedono 100 EUR/pratica, MIO HUB chiede 10 EUR all'associazione o direttamente all'impresa tramite App Impresa. Automazione completa con firma CAdES/PAdES.",
+                          calc: "40.000 pratiche/anno x 10 EUR = 400K EUR",
+                          color: "#a855f7", pct: 30,
                         },
                         {
-                          id: 4, name: "Pagamenti Diretti App Impresa",
-                          desc: "Quota tessera associativa, pagamenti servizi, contabilita' — commissione su ogni transazione da 160.000 imprese",
+                          id: 4, name: "Corsi Formazione & Qualificazioni",
+                          desc: "Ogni impresa ha minimo 4 corsi obbligatori (HACCP, sicurezza, ecc.) per titolare e dipendenti — prenotabili e organizzabili online. 10 EUR per corso trattenuti dall'associazione o ente formatore su un costo di 100 EUR.",
+                          calc: "160K imprese x 4 corsi x 10 EUR = 6.4M EUR/anno",
+                          color: "#f97316", pct: 65,
+                        },
+                        {
+                          id: 5, name: "Pagamenti Diretti App Impresa",
+                          desc: "Quota tessera associativa, pagamenti servizi, contabilita' — ogni transazione da impresa ad associazione passa per il sistema con commissione",
                           calc: "160K imprese x 50-200 EUR/anno x 5% = 400K-1.6M EUR",
                           color: "#f59e0b", pct: 45,
                         },
                         {
-                          id: 5, name: "AVA Assistente AI Premium",
-                          desc: "Agente AI multi-ruolo in Dashboard PA, App Impresa e App Cittadino — servizio premium con knowledge base 42 PDF",
+                          id: 6, name: "AVA Assistente AI Premium",
+                          desc: "Agente AI multi-ruolo in Dashboard PA, App Impresa e App Cittadino — servizio premium con knowledge base 42 PDF, ancora da perfezionare ma gia' funzionante",
                           calc: "5.000-20.000 utenti x 100-200 EUR/anno = 500K-4M EUR",
                           color: "#8b5cf6", pct: 55,
                         },
                         {
-                          id: 6, name: "Gaming & Carbon Credits",
-                          desc: "Sistema premiante Salva-Italia: acquisti sostenibili, mobilita' green, cultura, segnalazioni civiche — sponsorship PA e brand",
-                          calc: "Sponsorship + PA budget = 500K-2M EUR/anno",
+                          id: 7, name: "Gaming & Carbon Credits — Salva Italia",
+                          desc: "Sistema premiante che contrasta l'e-commerce: premia acquisti sostenibili in mercati e negozi sede fissa negli hub, visite ai musei, mobilita' sostenibile (bus, bici), segnalazioni civiche. Le PA ottengono mappe di calore della citta'.",
+                          calc: "Sponsorship PA + brand locali = 500K-2M EUR/anno",
                           color: "#10b981", pct: 35,
                         },
                         {
-                          id: 7, name: "Hub Urbani & Vetrina Online",
-                          desc: "Gestione hub urbani con vetrina digitale per negozi sede fissa — canone presenza online e servizi digitali",
+                          id: 8, name: "Hub Urbani & Vetrina Online",
+                          desc: "Gestione hub urbani con vetrina digitale per tutti i negozi e posteggi mercati — il gemello digitale del commercio italiano che compete con l'e-commerce",
                           calc: "100.000 negozi x 100 EUR/anno = 10M EUR",
                           color: "#ec4899", pct: 60,
                         },
                         {
-                          id: 8, name: "Banca Dati Corsi & Qualificazioni",
-                          desc: "Sistema corsi obbligatori, segnalazioni mancanti e in scadenza — servizio compliance per imprese",
-                          calc: "160K imprese x 20 EUR/anno = 3.2M EUR",
-                          color: "#f97316", pct: 30,
-                        },
-                        {
                           id: 9, name: "Servizi Paghe & Contabilita'",
-                          desc: "Rete connessa con 160.000 imprese — sviluppo servizi completi paghe e contabilita' online, sostituzione associazioni",
+                          desc: "Con 160.000 imprese connesse in rete, si possono sviluppare servizi completi paghe e contabilita' online — si puo' arrivare a sostituire le associazioni con un canone servizi online diretto",
                           calc: "50.000 imprese x 500 EUR/anno = 25M EUR",
                           color: "#ef4444", pct: 85,
                         },
                         {
                           id: 10, name: "Business Dati & Analytics PA",
-                          desc: "Mappe di calore citta': affluenza commerciale, mobilita', cultura, sicurezza — dati in tempo reale per PA",
+                          desc: "Ecosistema connesso in tempo reale = business dati. Mappe di calore citta': zone affluenza commerciale, mobilita', cultura, sicurezza — dati per pianificazione urbana",
                           calc: "8.000 comuni x 500 EUR/anno = 4M EUR",
                           color: "#06b6d4", pct: 40,
                         },
                         {
                           id: 11, name: "Segnalatore Civico + Route Etico",
-                          desc: "App cittadino con segnalazioni premiate e navigatore etico verso punti vendita locali — engagement e dati",
+                          desc: "App cittadino: segnalatore civico per degrado, criminalita', spazzatura e illuminazione (premiato con crediti gaming) + navigatore etico che indica il tragitto ad ogni punto vendita locale",
                           calc: "Incluso nel gaming + sponsorship locali",
                           color: "#22c55e", pct: 20,
                         },
@@ -1454,14 +1454,16 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                   <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#f59e0b]/30">
                     <CardContent className="p-5">
                       <h4 className="text-sm font-semibold text-[#f59e0b] mb-4">Scenario Conservativo (30% penetrazione)</h4>
+                      <p className="text-[10px] text-[#e8fbff]/40 mb-3">2.400 mercati su 8.000 — 120K posteggi attivi</p>
                       <div className="space-y-2">
                         {[
-                          { label: "Canone posteggi", value: "6.2M" },
-                          { label: "10% riscossione canone unico", value: "2.0M" },
-                          { label: "SCIA automatizzate", value: "0.1M" },
-                          { label: "Pagamenti/transazioni", value: "0.4M" },
+                          { label: "Canone posteggi (120K x 52 gg)", value: "6.2M" },
+                          { label: "Fiere & straordinari (30%)", value: "2.4M" },
+                          { label: "SCIA automatizzate (12K x 10 EUR)", value: "0.12M" },
+                          { label: "Corsi formazione (48K imp x 4 x 10)", value: "1.9M" },
+                          { label: "Pagamenti diretti (5%)", value: "0.4M" },
                           { label: "AVA Premium", value: "0.5M" },
-                          { label: "Gaming/Carbon", value: "0.5M" },
+                          { label: "Gaming/Carbon", value: "0.3M" },
                         ].map((r, i) => (
                           <div key={i} className="flex justify-between text-xs">
                             <span className="text-[#e8fbff]/50">{r.label}</span>
@@ -1471,7 +1473,7 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                         <div className="border-t border-[#1e293b] pt-2 mt-3">
                           <div className="flex justify-between">
                             <span className="text-sm font-bold text-[#e8fbff]">ARR Totale</span>
-                            <span className="text-xl font-bold font-mono text-[#f59e0b]">~9.7M EUR</span>
+                            <span className="text-xl font-bold font-mono text-[#f59e0b]">~11.8M EUR</span>
                           </div>
                         </div>
                       </div>
@@ -1481,15 +1483,18 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                   <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#10b981]/30">
                     <CardContent className="p-5">
                       <h4 className="text-sm font-semibold text-[#10b981] mb-4">Scenario Ottimistico (70% + servizi avanzati)</h4>
+                      <p className="text-[10px] text-[#e8fbff]/40 mb-3">5.600 mercati su 8.000 — 280K posteggi + fiere + servizi completi</p>
                       <div className="space-y-2">
                         {[
-                          { label: "Canone posteggi + fiere", value: "29.1M" },
-                          { label: "10% riscossione canone unico", value: "5.0M" },
-                          { label: "SCIA + pagamenti + corsi", value: "5.1M" },
+                          { label: "Canone posteggi (280K x 52 gg)", value: "14.6M" },
+                          { label: "Fiere & straordinari (280K x 20 gg)", value: "5.6M" },
+                          { label: "SCIA automatizzate (28K x 10 EUR)", value: "0.28M" },
+                          { label: "Corsi formazione (112K x 4 x 10)", value: "4.5M" },
+                          { label: "Pagamenti diretti + tessere", value: "1.2M" },
                           { label: "AVA Premium (3 app)", value: "4.0M" },
-                          { label: "Hub urbani + vetrine", value: "10.0M" },
+                          { label: "Hub urbani + vetrine online", value: "10.0M" },
                           { label: "Paghe & contabilita'", value: "25.0M" },
-                          { label: "Gaming + dati + analytics", value: "6.0M" },
+                          { label: "Gaming + Carbon + dati PA", value: "6.0M" },
                         ].map((r, i) => (
                           <div key={i} className="flex justify-between text-xs">
                             <span className="text-[#e8fbff]/50">{r.label}</span>
@@ -1499,7 +1504,7 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                         <div className="border-t border-[#1e293b] pt-2 mt-3">
                           <div className="flex justify-between">
                             <span className="text-sm font-bold text-[#e8fbff]">ARR Totale</span>
-                            <span className="text-xl font-bold font-mono text-[#10b981]">~84M EUR</span>
+                            <span className="text-xl font-bold font-mono text-[#10b981]">~71M EUR</span>
                           </div>
                         </div>
                       </div>
