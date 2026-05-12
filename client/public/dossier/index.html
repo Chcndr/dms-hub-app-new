@@ -550,7 +550,7 @@
       <aside class="sidebar">
         <div class="sidebar-header">
           <h1><span class="dot"></span> Dossier Tecnico</h1>
-          <p>DMS Hub v9.2 &middot; 26 Febbraio 2026</p>
+          <p>MIO HUB v10.15 &middot; 12 Maggio 2026</p>
         </div>
         <nav class="sidebar-nav">
           <div class="nav-section">
@@ -582,7 +582,7 @@
                   d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
                 />
               </svg>
-              Dimensione Sistema <span class="badge-count">215K</span>
+              Dimensione Sistema <span class="badge-count">270K</span>
             </div>
             <div class="nav-item" onclick="showSection('architettura')">
               <svg
@@ -614,7 +614,7 @@
                   d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
                 />
               </svg>
-              Moduli Funzionali <span class="badge-count">33</span>
+              Moduli Funzionali <span class="badge-count">38</span>
             </div>
             <div class="nav-item" onclick="showSection('endpoint')">
               <svg
@@ -629,7 +629,7 @@
                   d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15"
                 />
               </svg>
-              733 API Endpoint <span class="badge-count">733</span>
+              1.051 API Endpoint <span class="badge-count">1.051</span>
             </div>
             <div class="nav-item" onclick="showSection('integrazioni')">
               <svg
@@ -661,7 +661,7 @@
               >
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
-              Sicurezza <span class="badge-count">12</span>
+              Sicurezza <span class="badge-count">14</span>
             </div>
             <div class="nav-item" onclick="showSection('conformita')">
               <svg
@@ -752,15 +752,15 @@
 
             <div class="stat-grid">
               <div class="stat highlight">
-                <span class="value">215.000+</span>
+                <span class="value">270.391</span>
                 <span class="label">Righe di codice</span>
               </div>
               <div class="stat highlight">
-                <span class="value">733</span>
+                <span class="value">1.051</span>
                 <span class="label">API Endpoint</span>
               </div>
               <div class="stat highlight">
-                <span class="value">168</span>
+                <span class="value">184</span>
                 <span class="label">Tabelle Database</span>
               </div>
               <div class="stat highlight">
@@ -771,19 +771,19 @@
 
             <div class="stat-grid">
               <div class="stat">
-                <span class="value">591</span>
+                <span class="value">551</span>
                 <span class="label">File sorgente</span>
               </div>
               <div class="stat">
-                <span class="value">2.284</span>
+                <span class="value">2.621</span>
                 <span class="label">Colonne DB</span>
               </div>
               <div class="stat">
-                <span class="value">516</span>
-                <span class="label">Indici DB</span>
+                <span class="value">598</span>
+                <span class="label">Indici</span>
               </div>
               <div class="stat">
-                <span class="value">72.256</span>
+                <span class="value">354.603</span>
                 <span class="label">Record dati</span>
               </div>
             </div>
@@ -802,13 +802,13 @@
               >
                 Il sistema e' attivo e funzionante con deployment continuo su
                 Vercel (frontend) e Hetzner VPS (backend). Database PostgreSQL
-                serverless su Neon con 168 tabelle e 72.256 record operativi.
+                su Neon con 184 tabelle, 2.621 colonne e 354.603 record operativi.
               </p>
               <div class="pills">
                 <span class="pill teal">React 19</span>
-                <span class="pill teal">Node.js 18+</span>
-                <span class="pill teal">PostgreSQL</span>
-                <span class="pill purple">Firebase Auth</span>
+                <span class="pill teal">Node.js 22+</span>
+                <span class="pill teal">PostgreSQL (Neon)</span>
+                <span class="pill purple">ARPA SSO</span>
                 <span class="pill purple">SPID/CIE/CNS</span>
                 <span class="pill amber">PagoPA</span>
                 <span class="pill cyan">AI Multi-Agent</span>
@@ -880,7 +880,7 @@
             </div>
 
             <div class="hero-number">
-              215.275 <span class="unit">righe di codice</span>
+              270.391 <span class="unit">righe di codice</span>
             </div>
             <div class="hero-label">
               Frontend 143.000 + Backend 72.000 = Un sistema enterprise completo
@@ -1012,22 +1012,22 @@
             </div>
 
             <div class="card">
-              <h3>Database PostgreSQL (Neon Serverless)</h3>
+              <h3>Database PostgreSQL su Neon (Serverless)</h3>
               <div class="stat-grid">
                 <div class="stat">
-                  <span class="value">168</span
+                  <span class="value">184</span
                   ><span class="label">Tabelle</span>
                 </div>
                 <div class="stat">
-                  <span class="value">2.284</span
+                  <span class="value">2.621</span
                   ><span class="label">Colonne</span>
                 </div>
                 <div class="stat">
-                  <span class="value">72.256</span
+                  <span class="value">354.603</span
                   ><span class="label">Record</span>
                 </div>
                 <div class="stat">
-                  <span class="value">516</span
+                  <span class="value">598</span
                   ><span class="label">Indici</span>
                 </div>
               </div>
@@ -1142,14 +1142,14 @@
                       color: var(--text-dim);
                     "
                   >
-                    <li style="padding: 4px 0">Node.js 18+ / Express 4</li>
+                    <li style="padding: 4px 0">Node.js 22+ / Express 4</li>
                     <li style="padding: 4px 0">
-                      733 endpoint REST documentati
+                      1.051 endpoint REST documentati
                     </li>
                     <li style="padding: 4px 0">
                       PostgreSQL su Neon (serverless)
                     </li>
-                    <li style="padding: 4px 0">Firebase Auth + JWT sessions</li>
+                    <li style="padding: 4px 0">ARPA SSO + JWT sessions</li>
                     <li style="padding: 4px 0">SPID/CIE/CNS OAuth</li>
                     <li style="padding: 4px 0">Rate limiting per endpoint</li>
                     <li style="padding: 4px 0">Helmet security headers</li>
@@ -1182,16 +1182,16 @@
                   <tr>
                     <td><strong>Backend API</strong></td>
                     <td>Hetzner VPS (EU)</td>
-                    <td>733 endpoint REST, PM2, rate limiting, HTTPS</td>
+                    <td>1.051 endpoint REST, PM2, rate limiting, HTTPS</td>
                   </tr>
                   <tr>
                     <td><strong>Database</strong></td>
-                    <td>Neon (PostgreSQL serverless)</td>
-                    <td>168 tabelle, auto-scaling, region EU, branching</td>
+                    <td>PostgreSQL su Neon</td>
+                    <td>184 tabelle PostgreSQL, Neon Serverless, backup automatici</td>
                   </tr>
                   <tr>
                     <td><strong>Autenticazione</strong></td>
-                    <td>Firebase Auth</td>
+                    <td>ARPA SSO</td>
                     <td>Multi-provider: email, Google, Apple, SPID/CIE/CNS</td>
                   </tr>
                   <tr>
@@ -1526,7 +1526,7 @@
               </p>
             </div>
 
-            <div class="hero-number">733</div>
+            <div class="hero-number">1.051</div>
             <div class="hero-label">
               Endpoint REST attivi e testabili in produzione
             </div>
@@ -1663,7 +1663,7 @@
             </div>
 
             <div class="callout">
-              <strong>Testabilita:</strong> Tutti i 733 endpoint sono visibili e
+              <strong>Testabilita:</strong> Tutti i 1.051 endpoint sono visibili e
               testabili direttamente dalla sezione <strong>Integrazioni</strong>
               della DashboardPA, con test in-app che mostrano richiesta,
               risposta e tempo di esecuzione.
@@ -1850,7 +1850,7 @@
                 <tbody>
                   <tr>
                     <td>1</td>
-                    <td><strong>Firebase Auth</strong></td>
+                    <td><strong>ARPA SSO</strong></td>
                     <td>
                       Autenticazione multi-provider (email, Google, Apple,
                       SPID/CIE/CNS)
@@ -2082,7 +2082,7 @@
                   &#10003; Sessioni utente tracciate con device, IP, scadenza
                 </li>
                 <li style="padding: 6px 0">
-                  &#10003; Database in region EU (Neon PostgreSQL)
+                  &#10003; Database in region EU (Neon PostgreSQL serverless)
                 </li>
                 <li style="padding: 6px 0">
                   &#10003; HTTPS obbligatorio su tutti gli endpoint
@@ -2129,7 +2129,7 @@
                   </tr>
                   <tr>
                     <td><strong>DB Serverless</strong></td>
-                    <td>Neon PostgreSQL con auto-scaling</td>
+                    <td>PostgreSQL su Neon con backup</td>
                     <td>Scala da 0 a migliaia di connessioni</td>
                   </tr>
                   <tr>
@@ -2143,7 +2143,7 @@
                     <td>Costo marginale ~0 per nuovo comune</td>
                   </tr>
                   <tr>
-                    <td><strong>516 indici DB</strong></td>
+                    <td><strong>Indici DB ottimizzati</strong></td>
                     <td>Indici ottimizzati su tutte le query critiche</td>
                     <td>Performance O(log n) anche con milioni di record</td>
                   </tr>
@@ -2197,7 +2197,7 @@
             <div class="value-card">
               <h3>Valore Stimato del Sistema</h3>
               <div class="range">
-                1.800.000 &ndash; 2.800.000 &euro;
+                2.500.000 &ndash; 4.000.000 &euro;
                 <span class="small">valore di ricostruzione</span>
               </div>
               <p
@@ -2227,16 +2227,16 @@
                 <tbody>
                   <tr>
                     <td><strong>Codice Sorgente</strong></td>
-                    <td>215.000 righe TS/JS, 591 file, architettura moderna</td>
+                    <td>270.391 righe TS/JS, 551 file, architettura moderna</td>
                     <td>450.000 - 650.000 &euro;</td>
                   </tr>
                   <tr>
                     <td><strong>Database & Schema</strong></td>
-                    <td>168 tabelle, 2.284 colonne, 516 indici ottimizzati</td>
+                    <td>184 tabelle PostgreSQL, Drizzle ORM, 598 indici ottimizzati</td>
                     <td>120.000 - 180.000 &euro;</td>
                   </tr>
                   <tr>
-                    <td><strong>733 API Endpoint</strong></td>
+                    <td><strong>1.051 API Endpoint</strong></td>
                     <td>Backend REST completo, documentato e testato</td>
                     <td>350.000 - 500.000 &euro;</td>
                   </tr>
@@ -2261,7 +2261,7 @@
                   <tr>
                     <td><strong>UI/UX Design</strong></td>
                     <td>
-                      53 componenti shadcn, dark mode, responsive, 33 moduli
+                      173 componenti React, dark mode, responsive, 38 moduli
                     </td>
                     <td>100.000 - 150.000 &euro;</td>
                   </tr>
@@ -2287,12 +2287,12 @@
             <div class="card">
               <h3>Costo Equivalente di Ricostruzione</h3>
               <div class="callout">
-                <strong>Metodo COCOMO-like:</strong> 215.000 righe di codice con
+                <strong>Metodo COCOMO-like:</strong> 270.391 righe di codice con
                 complessita alta (PA, fintech, multi-tenant) richiederebbero un
                 team di <strong>6-8 sviluppatori senior</strong> per
                 <strong>18-24 mesi</strong>, piu UX designer, DBA e project
                 manager. Al costo medio italiano di 600-800 &euro;/giorno per
-                sviluppatore senior, il solo costo di sviluppo supererebbe 1.5M
+                sviluppatore senior, il solo costo di sviluppo supererebbe 2.5M
                 &euro;.
               </div>
               <p
@@ -2310,45 +2310,96 @@
             </div>
 
             <div class="card">
-              <h3>Potenziale di Mercato (SaaS)</h3>
+              <h3>Revenue Model &mdash; Ecosistema MIO HUB</h3>
               <table>
                 <thead>
                   <tr>
-                    <th>Scenario</th>
-                    <th>Comuni</th>
-                    <th>Canone Annuo/Comune</th>
-                    <th>Ricavo Annuo</th>
+                    <th>Flusso di Revenue</th>
+                    <th>Base di Calcolo</th>
+                    <th>Potenziale Annuo</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>MVP (Toscana)</td>
-                    <td>50</td>
-                    <td>3.000 - 6.000 &euro;</td>
-                    <td>150.000 - 300.000 &euro;</td>
+                    <td><strong>1 &euro;/posteggio/giorno</strong></td>
+                    <td>400.000 posteggi &times; 52 gg/anno</td>
+                    <td><strong>20.800.000 &euro;</strong></td>
                   </tr>
                   <tr>
-                    <td>Espansione regionale</td>
-                    <td>200</td>
-                    <td>3.000 - 6.000 &euro;</td>
-                    <td>600.000 - 1.200.000 &euro;</td>
+                    <td><strong>Fiere &amp; Mercati Straordinari</strong></td>
+                    <td>400.000 posteggi &times; 20 gg fiere/anno</td>
+                    <td><strong>8.000.000 &euro;</strong></td>
                   </tr>
                   <tr>
-                    <td>Scala nazionale</td>
-                    <td>1.000+</td>
-                    <td>2.000 - 5.000 &euro;</td>
-                    <td>2.000.000 - 5.000.000 &euro;</td>
+                    <td><strong>SCIA Automatizzate</strong></td>
+                    <td>40.000 pratiche/anno &times; 10 &euro;</td>
+                    <td><strong>400.000 &euro;</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Corsi Formazione</strong></td>
+                    <td>160.000 imprese &times; 4 corsi &times; 10 &euro;</td>
+                    <td><strong>6.400.000 &euro;</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Pagamenti Diretti (quote, tessere)</strong></td>
+                    <td>160.000 imprese &times; 50 &euro;/anno</td>
+                    <td><strong>8.000.000 &euro;</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>AVA Premium (AI)</strong></td>
+                    <td>10.000 utenti &times; 5 &euro;/mese</td>
+                    <td><strong>600.000 &euro;</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Hub Urbani &amp; Vetrine Online</strong></td>
+                    <td>50.000 negozi &times; 10 &euro;/mese</td>
+                    <td><strong>6.000.000 &euro;</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Gaming &amp; Carbon Credits</strong></td>
+                    <td>Sponsor + PA + crediti sostenibilita'</td>
+                    <td><strong>2.000.000 &euro;</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Paghe &amp; Contabilita' Online</strong></td>
+                    <td>50.000 imprese &times; 30 &euro;/mese</td>
+                    <td><strong>18.000.000 &euro;</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Business Dati &amp; Analytics</strong></td>
+                    <td>Mappe calore, flussi, report PA</td>
+                    <td><strong>1.000.000 &euro;</strong></td>
                   </tr>
                 </tbody>
               </table>
               <div class="callout" style="margin-top: 16px">
-                <strong
-                  >In Italia ci sono circa 8.000 mercati ambulanti.</strong
-                >
-                Se anche solo il 10% adottasse DMS Hub, il ricavo annuo
-                ricorrente supererebbe 1.6M &euro;, con margini elevati data la
-                natura SaaS multi-tenant.
+                <strong>Potenziale totale a piena penetrazione: ~71M &euro;/anno.</strong>
+                Il canone di 1 &euro;/posteggio/giorno e' la <strong>meta'</strong> dei 2 &euro; che le PA pagano oggi
+                agli esattori esterni (il 10% del canone medio di ~20 &euro;/giorno di suolo pubblico).
+                Il 40% delle PA esternalizza la riscossione. MIO HUB azzera la morosita' con il wallet PagoPA:
+                se il saldo e' zero, la presenza non viene registrata e il mercato salta.
               </div>
+              <table style="margin-top: 16px">
+                <thead>
+                  <tr>
+                    <th>Scenario</th>
+                    <th>Penetrazione</th>
+                    <th>Ricavo Annuo Stimato</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Conservativo</td>
+                    <td>30% mercati + servizi base</td>
+                    <td><strong>~11.800.000 &euro;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Ottimistico</td>
+                    <td>70% mercati + servizi avanzati</td>
+                    <td><strong>~71.000.000 &euro;</strong></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -2360,72 +2411,53 @@
             </div>
 
             <div class="card">
-              <h3>Q1 2026 - Consolidamento Grosseto</h3>
-              <ul
-                style="
-                  list-style: none;
-                  font-size: 13px;
-                  color: var(--text-dim);
-                "
-              >
-                <li style="padding: 6px 0">
-                  &#10003; Demo completa a tutti i settori del Comune di
-                  Grosseto
-                </li>
-                <li style="padding: 6px 0">
-                  &#9634; Onboarding operatori mercato di Grosseto
-                </li>
-                <li style="padding: 6px 0">
-                  &#9634; Attivazione pagamenti PagoPA in produzione
-                </li>
-                <li style="padding: 6px 0">&#9634; Training personale PA</li>
+              <h3>Q1 2026 - Consolidamento &amp; Piattaforma Core &#10003;</h3>
+              <ul style="list-style:none;font-size:13px;color:var(--text-dim)">
+                <li style="padding:6px 0">&#10003; 270.391 righe di codice, 1.051 endpoint API</li>
+                <li style="padding:6px 0">&#10003; Dashboard PA con 28 sezioni operative</li>
+                <li style="padding:6px 0">&#10003; Sistema SUAP completo con firma digitale CAdES/PAdES</li>
+                <li style="padding:6px 0">&#10003; Wallet PagoPA con riconciliazione incassi</li>
+                <li style="padding:6px 0">&#10003; AVA Assistente AI multi-ruolo (Gemini 2.5 Flash)</li>
+                <li style="padding:6px 0">&#10003; Sistema Gaming &amp; Carbon Credits</li>
+                <li style="padding:6px 0">&#10003; Anti-scanner/honeypot con 285K+ log (94.3% success)</li>
+                <li style="padding:6px 0">&#10003; Hub Urbani &amp; Vetrine Online</li>
               </ul>
             </div>
 
             <div class="card">
-              <h3>Q2 2026 - Espansione Toscana</h3>
-              <ul
-                style="
-                  list-style: none;
-                  font-size: 13px;
-                  color: var(--text-dim);
-                "
-              >
-                <li style="padding: 6px 0">
-                  &#9634; Onboarding 5-10 comuni toscani
-                </li>
-                <li style="padding: 6px 0">
-                  &#9634; Integrazione SUAP regionale
-                </li>
-                <li style="padding: 6px 0">
-                  &#9634; App mobile nativa (React Native)
-                </li>
-                <li style="padding: 6px 0">&#9634; Certificazione AGID</li>
+              <h3>Q2 2026 - Registrazioni PA &amp; Go-Live</h3>
+              <ul style="list-style:none;font-size:13px;color:var(--text-dim)">
+                <li style="padding:6px 0">&#9634; Registrazione PDND (selfcare.pagopa.it)</li>
+                <li style="padding:6px 0">&#9634; Attivazione PagoPA E-FIL in produzione</li>
+                <li style="padding:6px 0">&#9634; Registrazione App IO (developer.io.italia.it)</li>
+                <li style="padding:6px 0">&#9634; Accreditamento SSU Front Office (InfoCamere)</li>
+                <li style="padding:6px 0">&#9634; Attivazione SSO ARPA Toscana (SPID/CIE)</li>
+                <li style="padding:6px 0">&#9634; Onboarding Comune di Grosseto in produzione</li>
+                <li style="padding:6px 0">&#9634; Training personale PA e operatori mercato</li>
               </ul>
             </div>
 
             <div class="card">
-              <h3>Q3-Q4 2026 - Scala Nazionale</h3>
-              <ul
-                style="
-                  list-style: none;
-                  font-size: 13px;
-                  color: var(--text-dim);
-                "
-              >
-                <li style="padding: 6px 0">
-                  &#9634; Espansione multi-regione (Emilia-Romagna, Lazio)
-                </li>
-                <li style="padding: 6px 0">
-                  &#9634; Marketplace operatori (matching domanda-offerta
-                  posteggi)
-                </li>
-                <li style="padding: 6px 0">
-                  &#9634; Analytics avanzate con AI predittiva
-                </li>
-                <li style="padding: 6px 0">
-                  &#9634; Target: 100+ comuni attivi
-                </li>
+              <h3>Q3 2026 - Espansione Toscana &amp; App Mobile</h3>
+              <ul style="list-style:none;font-size:13px;color:var(--text-dim)">
+                <li style="padding:6px 0">&#9634; Onboarding 10-20 comuni toscani</li>
+                <li style="padding:6px 0">&#9634; App Impresa nativa (React Native)</li>
+                <li style="padding:6px 0">&#9634; App Cittadino con Route Etico e Segnalatore Civico</li>
+                <li style="padding:6px 0">&#9634; Attivazione SCIA automatizzate su App Impresa</li>
+                <li style="padding:6px 0">&#9634; Banca Dati Corsi con prenotazione online</li>
+                <li style="padding:6px 0">&#9634; Certificazione AGID</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h3>Q4 2026 - Q2 2027 - Scala Nazionale</h3>
+              <ul style="list-style:none;font-size:13px;color:var(--text-dim)">
+                <li style="padding:6px 0">&#9634; Espansione multi-regione (Emilia-Romagna, Lazio, Lombardia)</li>
+                <li style="padding:6px 0">&#9634; Servizi Paghe &amp; Contabilita' online per imprese</li>
+                <li style="padding:6px 0">&#9634; Mappe di Calore PA (affluenza, mobilita', sicurezza)</li>
+                <li style="padding:6px 0">&#9634; Marketplace posteggi (domanda-offerta)</li>
+                <li style="padding:6px 0">&#9634; Business Dati &amp; Analytics per PA e associazioni</li>
+                <li style="padding:6px 0">&#9634; Target: 500+ comuni, 50.000+ imprese attive</li>
               </ul>
             </div>
           </div>

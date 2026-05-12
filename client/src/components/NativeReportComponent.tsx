@@ -141,7 +141,7 @@ const MODULE_DETAILS: Record<
   markets: {
     stats: [
       { label: "Endpoint REST", value: "86", color: "#14b8a6" },
-      { label: "Tabelle DB", value: "21", color: "#06b6d4" },
+      { label: "Tabelle DB", value: "184", color: "#06b6d4" },
       { label: "Componenti", value: "28+", color: "#a855f7" },
     ],
     highlights: [
@@ -152,7 +152,7 @@ const MODULE_DETAILS: Record<
       "SSU Front Office per invio pratiche al Back Office del Comune",
       "Canone Unico Patrimoniale con calcolo automatico e PagoPA",
     ],
-    tech: "Express.js + MySQL/TiDB + REST API + node-forge",
+    tech: "Express.js + PostgreSQL (Neon) + REST API + node-forge",
   },
   gis: {
     stats: [
@@ -184,7 +184,7 @@ const MODULE_DETAILS: Record<
       "Storico transazioni, export e reportistica",
       "Callback asincrono per conferma pagamenti",
     ],
-    tech: "E-FIL SOAP + Express.js + MySQL + REST",
+    tech: "E-FIL SOAP + Express.js + PostgreSQL + REST",
   },
   agents: {
     stats: [
@@ -236,75 +236,151 @@ const MODULE_DETAILS: Record<
   },
 };
 
-// ─── Schema DB raggruppato (21 tabelle MySQL reali) ─────────────────
+// ─── Schema DB raggruppato (184 tabelle PostgreSQL su Neon) ─────────────
 const DB_GROUPS = [
   {
-    name: "Core Business & Mercati",
+    name: "Mercati & Posteggi",
     color: "#14b8a6",
     icon: Store,
-    count: 4,
+    count: 22,
     tables: [
-      "documents",
-      "contratti_associazione",
-      "fatture_associazione",
-      "workspace_snapshots",
+      "markets", "stalls", "concessions", "vendors", "vendor_presences",
+      "market_sessions", "market_session_details", "market_geometry",
+      "market_settings", "market_transgressions", "spuntisti", "spunta_coda",
+      "domande_spunta", "graduatoria_presenze", "bookings", "shops",
+      "storico_titolarita_posteggio", "imprese", "collaboratori_impresa",
+      "impresa_giustificazioni", "impresa_hub_markets", "operator_daily_wallet",
     ],
   },
   {
     name: "SUAP & Pratiche",
     color: "#ec4899",
     icon: FileText,
-    count: 3,
+    count: 18,
     tables: [
-      "dms_suap_instances",
-      "suap_pratica_messaggi",
-      "dms_durc_snapshots",
+      "suap_pratiche", "suap_documenti", "suap_eventi", "suap_decisioni",
+      "suap_checks", "suap_bandi", "suap_pratica_messaggi", "suap_dati_bolkestein",
+      "dms_suap_instances", "dms_durc_snapshots", "dms_companies",
+      "autorizzazioni", "qualification_types", "qualificazioni",
+      "qualificazioni_collaboratori", "regolarita_imprese",
+      "documents", "workspace_snapshots",
+    ],
+  },
+  {
+    name: "Wallet & PagoPA",
+    color: "#f59e0b",
+    icon: CreditCard,
+    count: 16,
+    tables: [
+      "wallets", "wallet_transactions", "wallet_history", "wallet_scadenze",
+      "wallet_notifications", "operator_transactions", "transactions",
+      "pagopa_posizioni", "avvisi_pagopa", "concession_payments",
+      "tariffePosteggio", "impostazioni_mora", "fund_transactions",
+      "billing_tariffe", "billing_dettaglio_fattura", "comune_fatture",
     ],
   },
   {
     name: "Piattaforme PA",
     color: "#06b6d4",
     icon: Globe,
-    count: 4,
+    count: 12,
     tables: [
-      "ssu_instances",
-      "ssu_documents",
-      "ssu_audit_trail",
-      "pdnd_vouchers",
+      "ssu_instances", "ssu_documents", "ssu_audit_trail",
+      "pdnd_vouchers", "pdnd_eservices",
+      "sync_config", "sync_jobs", "sync_logs",
+      "notifiche", "notifiche_destinatari",
+      "sanctions", "infraction_types",
     ],
-  },
-  {
-    name: "PagoPA & Pagamenti",
-    color: "#f59e0b",
-    icon: CreditCard,
-    count: 1,
-    tables: ["pagopa_posizioni"],
   },
   {
     name: "AI & Agenti",
     color: "#8b5cf6",
     icon: Bot,
-    count: 4,
+    count: 14,
     tables: [
-      "chat_messages",
-      "ai_feedback",
-      "mio_agent_logs",
-      "mihub_tasks",
+      "agents", "agent_conversations", "agent_messages", "agent_screenshots",
+      "agent_logs_backup_20251204_174125", "agent_messages_backup_20251204_174125",
+      "ai_conversations", "ai_messages", "ai_quota_usage", "ai_feedback",
+      "mio_agent_logs", "mihub_tasks", "chat_messages", "secrets",
+    ],
+  },
+  {
+    name: "Utenti & Sicurezza",
+    color: "#ef4444",
+    icon: Shield,
+    count: 18,
+    tables: [
+      "users", "extended_users", "user_roles", "user_role_assignments",
+      "user_sessions", "permissions", "role_permissions",
+      "access_logs", "audit_logs", "security_events", "login_attempts",
+      "ip_blacklist", "compliance_certificates", "security_delegations",
+      "api_keys", "api_metrics", "secrets_meta", "secure_credentials",
     ],
   },
   {
     name: "Associazioni & Enti",
     color: "#f97316",
     icon: Users,
-    count: 2,
-    tables: ["associazioni", "utenti_associazione"],
+    count: 14,
+    tables: [
+      "associazioni", "utenti_associazione", "contratti_associazione",
+      "fatture_associazione", "wallet_associazione", "transazioni_wallet_associazione",
+      "pagine_associazione", "servizi_associazioni", "tesseramenti_associazione",
+      "bandi_associazioni", "bandi_catalogo", "richieste_servizi",
+      "settori_comune", "comune_utenti",
+    ],
   },
   {
-    name: "Territorio & Comuni",
+    name: "Formazione & Corsi",
+    color: "#a855f7",
+    icon: FileText,
+    count: 8,
+    tables: [
+      "formazione_corsi", "formazione_enti", "formazione_iscrizioni",
+      "attestati_pdf", "adempimenti_tipo_impresa",
+      "formazione_corsi_backup_test_cleanup",
+      "backup_formazione_test_20260509135657_attestati_pdf",
+      "backup_formazione_test_20260509135657_formazione_corsi",
+    ],
+  },
+  {
+    name: "Gaming & Sostenibilita'",
     color: "#22c55e",
+    icon: Leaf,
+    count: 18,
+    tables: [
+      "carbon_credits_config", "carbon_credits_rules", "carbon_footprint",
+      "ecocredits", "gaming_challenges", "gaming_rewards_config",
+      "civic_reports", "civic_config", "cultural_pois", "cultural_visits",
+      "mobility_data", "mobility_checkins", "route_completions",
+      "spend_qr_tokens", "qr_tokens", "referrals",
+      "carbon_credits_config_backup_20260203", "civic_config_backup_20260203",
+    ],
+  },
+  {
+    name: "Hub Urbani & Territorio",
+    color: "#06b6d4",
     icon: Building2,
-    count: 2,
-    tables: ["province", "regioni"],
+    count: 14,
+    tables: [
+      "hub_locations", "hub_shops", "hub_services",
+      "comuni", "province", "regioni",
+      "custom_markers", "custom_areas",
+      "gtfs_routes", "gtfs_stops",
+      "pm_watchlist", "user_analytics",
+      "sustainability_metrics", "business_analytics",
+    ],
+  },
+  {
+    name: "TCC & Rate Limiting",
+    color: "#64748b",
+    icon: Zap,
+    count: 10,
+    tables: [
+      "tcc_rate_limits", "tcc_fraud_events", "tcc_idempotency_keys",
+      "tcc_daily_limits", "tcc_qr_tokens", "tcc_rewards_config",
+      "webhooks", "webhook_logs", "external_connections", "data_bag",
+    ],
   },
 ];
 
@@ -505,6 +581,7 @@ function ScoreBar({
 export const NativeReportComponent = memo(function NativeReportComponent() {
   const [activeTab, setActiveTab] = useState("architecture");
   const [activeModule, setActiveModule] = useState(BLUEPRINT_SLIDES.modules[0]);
+  const [dossierSub, setDossierSub] = useState("ecosystem");
 
   const renderContent = () => {
     switch (activeTab) {
@@ -909,11 +986,11 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
             {/* Header stats */}
             <div className="grid grid-cols-3 gap-4">
               {[
-                { label: "Tabelle MySQL", value: "21", color: "#14b8a6" },
-                { label: "ORM", value: "Raw SQL", color: "#06b6d4" },
+                { label: "Tabelle", value: "184", color: "#14b8a6" },
+                { label: "Colonne", value: "2.621", color: "#06b6d4" },
                 {
                   label: "Database",
-                  value: "MySQL / TiDB",
+                  value: "PostgreSQL",
                   color: "#a855f7",
                 },
               ].map((s, i) => (
@@ -987,7 +1064,7 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                   {[
                     {
                       name: "Hetzner VPS",
-                      role: "Backend API + MySQL",
+                      role: "Backend API + PostgreSQL",
                       detail: "Ubuntu 22.04, Node.js 22, PM2, Nginx, Let's Encrypt",
                       color: "#14b8a6",
                     },
@@ -1157,7 +1234,7 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                     "Recharts",
                     "Node.js 22",
                     "Express.js",
-                    "MySQL / TiDB",
+                    "PostgreSQL (Neon)",
                     "PM2",
                     "Nginx",
                     "node-forge",
@@ -1185,7 +1262,6 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
 
       // ─── TAB: DOSSIER INVESTITORI ─────────────────────────────────
       case "dossier": {
-        const [dossierSub, setDossierSub] = useState("ecosystem");
         const DOSSIER_SUBS = [
           { id: "ecosystem", label: "Ecosistema", icon: Globe },
           { id: "revenue", label: "Revenue Model", icon: TrendingUp },
@@ -1880,7 +1956,7 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
     database: {
       title: "Database & Infrastruttura",
       subtitle:
-        "MySQL/TiDB su Hetzner — 21 tabelle — hosting Vercel + Hetzner VPS.",
+        "PostgreSQL su Neon Serverless — 184 tabelle, 2.621 colonne, 354.603 record — hosting Vercel + Hetzner VPS.",
     },
     components: {
       title: "Componenti Frontend — 173 React",
