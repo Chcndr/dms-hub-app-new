@@ -1913,6 +1913,110 @@ export const pdndEndpoints: EndpointConfig[] = [
  * CATEGORIA: SSU ADMIN
  * Endpoint di amministrazione per il modulo SSU
  */
+/**
+ * CATEGORIA: PAGOPA / E-FIL
+ * Gateway PagoPA tramite E-FIL (Prestatore di Servizi di Pagamento)
+ */
+export const pagopaEfilEndpoints: EndpointConfig[] = [
+  {
+    id: "pagopa-health",
+    method: "GET",
+    path: "/api/pagopa/health",
+    name: "Health Check Gateway E-FIL",
+    description: "Verifica lo stato del gateway PagoPA E-FIL",
+    category: "PagoPA",
+    testType: "auto" as const,
+    requiresAuth: false,
+    notes: "Verifica connettività con il gateway E-FIL. Funziona anche in modalità sandbox.",
+  },
+  {
+    id: "pagopa-status",
+    method: "GET",
+    path: "/api/pagopa/status",
+    name: "Stato Configurazione PagoPA",
+    description: "Mostra lo stato completo della configurazione PagoPA/E-FIL e statistiche posizioni",
+    category: "PagoPA",
+    testType: "auto" as const,
+    requiresAuth: false,
+    notes: "Mostra modalità (sandbox/live), provider, statistiche posizioni debitorie.",
+  },
+  {
+    id: "pagopa-crea-posizione",
+    method: "POST",
+    path: "/api/pagopa/crea-posizione",
+    name: "Crea Posizione Debitoria (IUV)",
+    description: "Genera una posizione debitoria PagoPA con IUV e la registra su E-FIL",
+    category: "PagoPA",
+    testType: "manual" as const,
+    requiresAuth: true,
+    notes: "Genera IUV, invia a E-FIL, restituisce payment_url per il pagamento.",
+  },
+  {
+    id: "pagopa-return",
+    method: "GET",
+    path: "/api/pagopa/return",
+    name: "Return Utente dopo Pagamento",
+    description: "Endpoint di ritorno dove l'utente viene reindirizzato dopo il pagamento PagoPA",
+    category: "PagoPA",
+    requiresAuth: false,
+    notes: "Chiamato dal browser dell'utente dopo il pagamento. Mostra esito.",
+  },
+  {
+    id: "pagopa-callback",
+    method: "POST",
+    path: "/api/pagopa/callback",
+    name: "Callback E-FIL (Ricevuta Telematica)",
+    description: "Webhook server-to-server da E-FIL per conferma pagamento e riconciliazione automatica",
+    category: "PagoPA",
+    testType: "manual" as const,
+    requiresAuth: false,
+    notes: "Cuore della riconciliazione. Aggiorna posizione, wallet, sanzione o canone in automatico.",
+  },
+  {
+    id: "pagopa-posizioni",
+    method: "GET",
+    path: "/api/pagopa/posizioni",
+    name: "Lista Posizioni Debitorie",
+    description: "Lista di tutte le posizioni debitorie PagoPA con filtri per stato, tipo, impresa",
+    category: "PagoPA",
+    testType: "auto" as const,
+    requiresAuth: true,
+    notes: "Filtri: stato, tipo, impresa_id, comune_id. Paginazione con limit/offset.",
+  },
+  {
+    id: "pagopa-posizione-dettaglio",
+    method: "GET",
+    path: "/api/pagopa/posizioni/:iuv",
+    name: "Dettaglio Posizione per IUV",
+    description: "Dettaglio di una singola posizione debitoria cercata per IUV",
+    category: "PagoPA",
+    requiresAuth: true,
+    notes: "Restituisce tutti i dati della posizione inclusa la RT (Ricevuta Telematica).",
+  },
+  {
+    id: "pagopa-riconcilia",
+    method: "POST",
+    path: "/api/pagopa/riconcilia",
+    name: "Riconciliazione Flussi XML",
+    description: "Upload flusso XML di rendicontazione per riconciliazione massiva (WSFeed/Giornale di Cassa)",
+    category: "PagoPA",
+    testType: "manual" as const,
+    requiresAuth: true,
+    notes: "Predisposto per riconciliazione massiva da flussi XML E-FIL.",
+  },
+  {
+    id: "pagopa-simula-callback",
+    method: "POST",
+    path: "/api/pagopa/simula-callback",
+    name: "Simula Callback E-FIL (TEST)",
+    description: "Simula un callback E-FIL per testare la riconciliazione senza pagamento reale",
+    category: "PagoPA",
+    testType: "manual" as const,
+    requiresAuth: true,
+    notes: "SOLO PER TEST. Simula la conferma pagamento per una posizione esistente.",
+  },
+];
+
 export const ssuAdminEndpoints: EndpointConfig[] = [
   {
     id: "ssu-admin-migrate",
@@ -1945,6 +2049,7 @@ export const allRealEndpoints: EndpointConfig[] = [
   ...ssuEndpoints,
   ...pdndEndpoints,
   ...ssuAdminEndpoints,
+  ...pagopaEfilEndpoints,
   ...walletsEndpoints,
   ...tariffsEndpoints,
   ...tccWalletImpresaEndpoints,
@@ -2098,6 +2203,26 @@ export const integrations: IntegrationConfig[] = [
       "/api/ssu/webhook/request-correction — Ricezione richieste correzione",
       "/api/ssu/send-correction — Invio correzione al BO",
       "/api/ssu/audit/:id — Audit trail comunicazioni",
+    ],
+  },
+  {
+    id: "pagopa-efil",
+    name: "PagoPA — E-FIL Gateway",
+    description:
+      "Gateway di pagamento PagoPA tramite E-FIL S.p.A. (Prestatore di Servizi di Pagamento del Comune di Grosseto). Gestisce posizioni debitorie, riconciliazione incassi e Ricevute Telematiche.",
+    baseUrl: "https://api.mio-hub.me",
+    status: "in_preparation" as const,
+    dataOwner: "E-FIL S.p.A. / PagoPA",
+    notes:
+      "In preparazione. Modalità SANDBOX attiva per test. Il sistema wallet simulato resta operativo in parallelo. Richiede configurazione env var EFIL_* per il collaudo reale.",
+    endpoints: [
+      "/api/pagopa/health — Health check gateway E-FIL",
+      "/api/pagopa/status — Stato configurazione",
+      "/api/pagopa/crea-posizione — Genera IUV e posizione debitoria",
+      "/api/pagopa/return — Return utente dopo pagamento",
+      "/api/pagopa/callback — Webhook conferma pagamento (RT)",
+      "/api/pagopa/posizioni — Lista posizioni debitorie",
+      "/api/pagopa/riconcilia — Riconciliazione flussi XML",
     ],
   },
 ];
