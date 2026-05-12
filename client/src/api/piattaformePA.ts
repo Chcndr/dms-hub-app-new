@@ -209,6 +209,161 @@ export async function retrySsuInstance(instanceId: number): Promise<{ success: b
 }
 
 // ============================================
+// ANPR API (DATI REALI)
+// ============================================
+
+export interface AnprStatus {
+  success: boolean;
+  anpr: {
+    mode: "sandbox" | "production";
+    pdnd_configured: boolean;
+    pdnd_required: boolean;
+    description: string;
+    available_cfs: string[];
+    stats: {
+      total_calls: number;
+      last_10_success: number;
+      last_10_errors: number;
+      last_call: string | null;
+    };
+  };
+}
+
+export interface AnprResidenzaResponse {
+  success: boolean;
+  source: string;
+  mode: string;
+  codice_fiscale: string;
+  data: {
+    soggetto: {
+      nome: string;
+      cognome: string;
+      sesso: string;
+      data_nascita: string;
+      comune_nascita: { codice: string; descrizione: string };
+      provincia_nascita: string;
+      codice_fiscale: string;
+    };
+    residenza: {
+      indirizzo: string;
+      civico: string;
+      cap: string;
+      comune: { codice: string; descrizione: string };
+      provincia: string;
+      data_decorrenza: string;
+    };
+    stato_civile: string;
+    cittadinanza: string;
+    aire: boolean;
+    decesso: string | null;
+  };
+  response_time_ms: number;
+  timestamp: string;
+}
+
+export async function getAnprStatus(): Promise<AnprStatus> {
+  const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/anpr/status`);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`ANPR status error: ${res.status}`);
+  return res.json();
+}
+
+export async function verificaResidenza(cf: string): Promise<AnprResidenzaResponse> {
+  const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/anpr/residenza/${cf}`);
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `ANPR error: ${res.status}`);
+  }
+  return res.json();
+}
+
+// ============================================
+// APP IO API (DATI REALI)
+// ============================================
+
+export interface AppIoStatus {
+  success: boolean;
+  appio: {
+    mode: "sandbox" | "production";
+    connected: boolean;
+    has_api_key: boolean;
+    api_url: string;
+    templates_count: number;
+    stats: {
+      total_sent: number;
+      last_24h: number;
+      success_rate: number;
+      last_message: string | null;
+    };
+  };
+}
+
+export interface AppIoTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  required_params: string[];
+  category: string;
+  active: boolean;
+  markdown_preview: string;
+}
+
+export interface AppIoTemplatesResponse {
+  success: boolean;
+  templates: AppIoTemplate[];
+  total: number;
+  categories: string[];
+}
+
+export interface AppIoSendResponse {
+  success: boolean;
+  mode: string;
+  message: {
+    id: string;
+    template_id: string;
+    template_name: string;
+    fiscal_code: string;
+    subject: string;
+    content_preview: string;
+    status: string;
+    sent_at: string;
+    response_time_ms: number;
+  };
+  note?: string;
+}
+
+export async function getAppIoStatus(): Promise<AppIoStatus> {
+  const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/appio/status`);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`App IO status error: ${res.status}`);
+  return res.json();
+}
+
+export async function getAppIoTemplates(): Promise<AppIoTemplatesResponse> {
+  const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/appio/templates`);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`App IO templates error: ${res.status}`);
+  return res.json();
+}
+
+export async function sendAppIoMessage(templateId: string, fiscalCode: string, params: Record<string, string>): Promise<AppIoSendResponse> {
+  const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/appio/send-message`);
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ template_id: templateId, fiscal_code: fiscalCode, params }),
+  });
+  return res.json();
+}
+
+export async function testAppIoConnection(): Promise<{ success: boolean; mode: string; api_reachable: boolean; response_time_ms: number }> {
+  const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/appio/test-connection`);
+  const res = await fetch(url, { method: "POST" });
+  return res.json();
+}
+
+// ============================================
 // Combined Audit Trail (PDND + SSU)
 // ============================================
 

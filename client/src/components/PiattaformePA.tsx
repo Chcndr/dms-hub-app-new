@@ -8,8 +8,8 @@
  * - PDND: Collegato al backend reale (routes/pdnd.js) — mostra stato live
  * - SSU: Collegato al backend reale (routes/ssu-connector.js) — mostra istanze live
  * - Audit Trail: Collegato al backend reale (SSU audit trail)
- * - App IO: Mock (backend non ancora implementato)
- * - ANPR: Mock (backend non ancora implementato, usa PDND quando configurato)
+ * - App IO: Collegato al backend reale (routes/appio.js) — sandbox/production
+ * - ANPR: Collegato al backend reale (routes/anpr.js) — sandbox/production via PDND
  * - SSO: Semi-live (SPID/CIE via ARPA funzionante, UI mostra stato reale)
  */
 
@@ -60,10 +60,16 @@ import {
   getSsuAuditTrail,
   sendSsuInstance,
   getCombinedAuditTrail,
+  getAnprStatus,
+  verificaResidenza,
+  getAppIoStatus,
+  getAppIoTemplates,
+  sendAppIoMessage,
+  testAppIoConnection,
 } from "@/api/piattaformePA";
 
 // ============================================
-// Mock Data — Solo per App IO, ANPR e SSO (non ancora integrati)
+// Mock Data — Solo per SSO e catalogo e-Service (non ancora integrati)
 // ============================================
 
 const MOCK_ESERVICES = [
@@ -93,33 +99,7 @@ const MOCK_ESERVICES = [
   },
 ];
 
-const MOCK_APPIO_STATUS = {
-  connected: true,
-  mode: "mock" as const,
-  hasApiKey: true,
-  templatesCount: 3,
-};
-
-const MOCK_TEMPLATES = [
-  {
-    id: "scadenza_concessione",
-    name: "Scadenza Concessione",
-    subject: "La tua concessione sta per scadere",
-    requiredParams: ["nome", "data_scadenza", "mercato"],
-  },
-  {
-    id: "pagamento_canone",
-    name: "Avviso Pagamento",
-    subject: "Nuovo avviso di pagamento",
-    requiredParams: ["importo", "scadenza"],
-  },
-  {
-    id: "comunicazione_mercato",
-    name: "Comunicazione Mercato",
-    subject: "Comunicazione importante",
-    requiredParams: ["messaggio", "mercato"],
-  },
-];
+// MOCK_APPIO_STATUS e MOCK_TEMPLATES rimossi — ora i dati vengono dal backend reale (routes/appio.js)
 
 const MOCK_SSO_STATUS = {
   mockMode: false, // SPID/CIE via ARPA è reale!
@@ -170,54 +150,7 @@ const MOCK_SSO_PROVIDERS = [
   },
 ];
 
-const MOCK_CF_DB: Record<
-  string,
-  {
-    nome: string;
-    cognome: string;
-    dataNascita: string;
-    comuneNascita: string;
-    indirizzo: string;
-    civico: string;
-    cap: string;
-    comune: string;
-    provincia: string;
-  }
-> = {
-  RSSMRA85M01H501Z: {
-    nome: "Mario",
-    cognome: "Rossi",
-    dataNascita: "01/08/1985",
-    comuneNascita: "Roma",
-    indirizzo: "Via Roma",
-    civico: "10",
-    cap: "00100",
-    comune: "Roma",
-    provincia: "RM",
-  },
-  VRDLGI90A41F205X: {
-    nome: "Luigia",
-    cognome: "Verdi",
-    dataNascita: "01/01/1990",
-    comuneNascita: "Milano",
-    indirizzo: "Via Milano",
-    civico: "5",
-    cap: "20100",
-    comune: "Milano",
-    provincia: "MI",
-  },
-  BNCGPP75D15L219Y: {
-    nome: "Giuseppe",
-    cognome: "Bianchi",
-    dataNascita: "15/04/1975",
-    comuneNascita: "Torino",
-    indirizzo: "Corso Torino",
-    civico: "22",
-    cap: "10100",
-    comune: "Torino",
-    provincia: "TO",
-  },
-};
+// MOCK_CF_DB rimosso — ora i dati vengono dal backend reale (routes/anpr.js)
 
 // ============================================
 // Sub-componente: PDND Panel (DATI REALI)
@@ -472,25 +405,28 @@ function PdndPanel() {
 }
 
 // ============================================
-// Sub-componente: App IO Panel (MOCK)
+// Sub-componente: App IO Panel (DATI REALI)
 // ============================================
 function AppIoPanel() {
   const statusQuery = useQuery({
     queryKey: ["appio-status"],
-    queryFn: async () => MOCK_APPIO_STATUS,
+    queryFn: getAppIoStatus,
+    refetchInterval: 30000,
   });
   const templatesQuery = useQuery({
     queryKey: ["appio-templates"],
-    queryFn: async () => MOCK_TEMPLATES,
+    queryFn: async () => {
+      const res = await getAppIoTemplates();
+      return res.templates;
+    },
   });
   const sendMutation = useMutation({
-    mutationFn: async (_params: {
+    mutationFn: async (params: {
       templateId: string;
       fiscalCode: string;
       params: Record<string, string>;
     }) => {
-      await new Promise(r => setTimeout(r, 1000));
-      return { success: true, messageId: "mock-msg-001" };
+      return sendAppIoMessage(params.templateId, params.fiscalCode, params.params);
     },
   });
 
@@ -502,8 +438,8 @@ function AppIoPanel() {
           <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
             <Smartphone className="h-5 w-5 text-[#10b981]" />
             App IO — Notifiche Cittadini
-            <Badge className="ml-2 bg-amber-500/20 text-amber-400 border-amber-400/30 text-xs">
-              Mock
+            <Badge className={`ml-2 text-xs ${statusQuery.data?.appio?.mode === 'production' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-400/30' : 'bg-cyan-500/20 text-cyan-400 border-cyan-400/30'}`}>
+              {statusQuery.data?.appio?.mode === 'production' ? 'Live' : 'Sandbox'}
             </Badge>
           </CardTitle>
           <CardDescription className="text-[#e8fbff]/50">
@@ -522,7 +458,7 @@ function AppIoPanel() {
                 <span className="text-xs text-[#e8fbff]/60">Connessione</span>
               </div>
               <p className="text-sm font-semibold text-[#e8fbff]">
-                {statusQuery.data?.connected ? "Simulata" : "Non connesso"}
+                {statusQuery.data?.appio?.connected ? (statusQuery.data?.appio?.mode === 'production' ? "Attiva" : "Sandbox") : "Non connesso"}
               </p>
             </div>
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#10b981]/20">
@@ -531,7 +467,7 @@ function AppIoPanel() {
                 <span className="text-xs text-[#e8fbff]/60">API Key</span>
               </div>
               <p className="text-sm font-semibold text-[#e8fbff]">
-                {statusQuery.data?.hasApiKey ? (
+                {statusQuery.data?.appio?.has_api_key ? (
                   <CheckCircle className="h-4 w-4 text-emerald-400 inline" />
                 ) : (
                   <XCircle className="h-4 w-4 text-red-400 inline" />
@@ -544,7 +480,7 @@ function AppIoPanel() {
                 <span className="text-xs text-[#e8fbff]/60">Template</span>
               </div>
               <p className="text-lg font-bold text-[#e8fbff]">
-                {statusQuery.data?.templatesCount ?? 0}
+                {statusQuery.data?.appio?.templates_count ?? 0}
               </p>
             </div>
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#10b981]/20">
@@ -555,9 +491,9 @@ function AppIoPanel() {
               <p className="text-sm font-semibold text-[#e8fbff]">
                 <Badge
                   variant="outline"
-                  className="text-amber-400 border-amber-400/30"
+                  className={statusQuery.data?.appio?.mode === 'production' ? 'text-emerald-400 border-emerald-400/30' : 'text-cyan-400 border-cyan-400/30'}
                 >
-                  Mock
+                  {statusQuery.data?.appio?.mode === 'production' ? 'Produzione' : 'Sandbox'}
                 </Badge>
               </p>
             </div>
@@ -589,7 +525,7 @@ function AppIoPanel() {
                       {template.subject}
                     </p>
                     <div className="flex items-center gap-1 mt-2">
-                      {template.requiredParams.map(p => (
+                      {(template.required_params || template.requiredParams || []).map((p: string) => (
                         <Badge
                           key={p}
                           variant="outline"
@@ -627,16 +563,31 @@ function AppIoPanel() {
 }
 
 // ============================================
-// Sub-componente: ANPR Panel (MOCK)
+// Sub-componente: ANPR Panel (DATI REALI)
 // ============================================
 function AnprPanel() {
   const [searchCF, setSearchCF] = useState("");
+  const statusQuery = useQuery({
+    queryKey: ["anpr-status"],
+    queryFn: getAnprStatus,
+    refetchInterval: 30000,
+  });
   const searchMutation = useMutation({
     mutationFn: async (cf: string) => {
-      await new Promise(r => setTimeout(r, 500));
-      const result = MOCK_CF_DB[cf.toUpperCase()];
-      if (!result) throw new Error("Codice fiscale non trovato");
-      return result;
+      const res = await verificaResidenza(cf);
+      // Mappa i dati dal backend al formato UI
+      return {
+        nome: res.data.soggetto.nome,
+        cognome: res.data.soggetto.cognome,
+        dataNascita: res.data.soggetto.data_nascita,
+        indirizzo: res.data.residenza.indirizzo,
+        civico: res.data.residenza.civico,
+        comune: res.data.residenza.comune.descrizione,
+        provincia: res.data.residenza.provincia,
+        source: res.source,
+        mode: res.mode,
+        response_time_ms: res.response_time_ms,
+      };
     },
   });
 
@@ -648,8 +599,8 @@ function AnprPanel() {
           <CardTitle className="text-[#e8fbff] flex items-center gap-2 text-base">
             <FileSearch className="h-5 w-5 text-[#f59e0b]" />
             ANPR — Anagrafe Nazionale
-            <Badge className="ml-2 bg-amber-500/20 text-amber-400 border-amber-400/30 text-xs">
-              Mock
+            <Badge className={`ml-2 text-xs ${statusQuery.data?.anpr?.mode === 'production' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-400/30' : 'bg-cyan-500/20 text-cyan-400 border-cyan-400/30'}`}>
+              {statusQuery.data?.anpr?.mode === 'production' ? 'Live (PDND)' : 'Sandbox'}
             </Badge>
           </CardTitle>
           <CardDescription className="text-[#e8fbff]/50">
@@ -660,8 +611,8 @@ function AnprPanel() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#f59e0b]/20">
               <span className="text-xs text-[#e8fbff]/60">Stato</span>
-              <p className="text-sm font-semibold text-amber-400 mt-1">
-                In attesa PDND
+              <p className={`text-sm font-semibold mt-1 ${statusQuery.data?.anpr?.pdnd_configured ? 'text-emerald-400' : 'text-cyan-400'}`}>
+                {statusQuery.data?.anpr?.pdnd_configured ? 'Connesso PDND' : 'Sandbox attivo'}
               </p>
             </div>
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#f59e0b]/20">
@@ -673,7 +624,7 @@ function AnprPanel() {
             <div className="p-3 bg-[#0f1729] rounded-lg border border-[#f59e0b]/20">
               <span className="text-xs text-[#e8fbff]/60">CF di test</span>
               <p className="text-xs font-mono text-[#e8fbff]/60 mt-1">
-                RSSMRA85M01H501Z
+                {statusQuery.data?.anpr?.available_cfs?.[0] || 'RSSMRA85M01H501Z'}
               </p>
             </div>
           </div>
@@ -707,7 +658,7 @@ function AnprPanel() {
             <div className="mt-4 p-4 bg-[#0f1729] border border-[#f59e0b]/20 rounded-lg">
               <h4 className="text-[#e8fbff] font-medium text-sm mb-3 flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-emerald-400" />
-                Risultato Verifica (Mock)
+                Risultato Verifica ({searchMutation.data?.mode === 'production' ? 'PDND' : 'Sandbox'})
               </h4>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
