@@ -1847,16 +1847,7 @@ const WalletPanel = memo(function WalletPanel() {
       )}
 
       {subTab === "riconciliazione" && (
-        <div className="text-center py-12 text-slate-400 bg-[#1e293b] rounded-lg border border-slate-700">
-          <RefreshCw className="h-12 w-12 mx-auto mb-4 text-slate-600" />
-          <h3 className="text-lg font-medium text-white">
-            Riconciliazione Incassi
-          </h3>
-          <p className="max-w-md mx-auto mt-2">
-            Area riservata per il caricamento dei flussi XML di rendicontazione
-            e l'allineamento automatico dei wallet.
-          </p>
-        </div>
+        <RiconciliazioneIncassiTab />
       )}
 
       {subTab === "storico" && (
@@ -4057,5 +4048,474 @@ const WalletPanel = memo(function WalletPanel() {
     </div>
   );
 });
+
+// ============================================
+// COMPONENTE: RiconciliazioneIncassiTab
+// Tab per la gestione della riconciliazione incassi PagoPA
+// ============================================
+
+function RiconciliazioneIncassiTab() {
+  const [posizioni, setPosizioni] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filtroStato, setFiltroStato] = useState<string>("all");
+  const [riconciliazioneStatus, setRiconciliazioneStatus] = useState<any>(null);
+  const [isRiconciliando, setIsRiconciliando] = useState(false);
+  const [searchIuv, setSearchIuv] = useState("");
+  const [stats, setStats] = useState({ totali: 0, create: 0, pagate: 0, scadute: 0, annullate: 0, fallite: 0 });
+  const [showSimulaDialog, setShowSimulaDialog] = useState(false);
+  const [simulaIuv, setSimulaIuv] = useState("");
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulaResult, setSimulaResult] = useState<any>(null);
+
+  // Carica posizioni e status
+  useEffect(() => {
+    loadData();
+  }, [filtroStato]);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      // Carica status PagoPA
+      const statusUrl = addComuneIdToUrl(`${WALLET_API_BASE}/api/pagopa/status`);
+      const statusRes = await authenticatedFetch(statusUrl);
+      const statusData = await statusRes.json();
+      if (statusData.success) {
+        setRiconciliazioneStatus(statusData.data);
+        if (statusData.data.posizioni) {
+          setStats({
+            totali: statusData.data.posizioni.totali || 0,
+            create: statusData.data.posizioni.create || 0,
+            pagate: statusData.data.posizioni.pagate || 0,
+            scadute: statusData.data.posizioni.scadute || 0,
+            annullate: statusData.data.posizioni.annullate || 0,
+            fallite: statusData.data.posizioni.fallite || 0,
+          });
+        }
+      }
+
+      // Carica posizioni con filtro
+      let posizioniUrl = `${WALLET_API_BASE}/api/pagopa/posizioni?limit=50`;
+      if (filtroStato && filtroStato !== "all") {
+        posizioniUrl += `&stato=${filtroStato}`;
+      }
+      posizioniUrl = addComuneIdToUrl(posizioniUrl);
+      const posRes = await authenticatedFetch(posizioniUrl);
+      const posData = await posRes.json();
+      if (posData.success) {
+        setPosizioni(posData.data || []);
+      }
+    } catch (err) {
+      console.error("Errore caricamento riconciliazione:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Ricerca per IUV
+  const handleSearchIuv = async () => {
+    if (!searchIuv.trim()) return;
+    setIsLoading(true);
+    try {
+      const url = addComuneIdToUrl(`${WALLET_API_BASE}/api/pagopa/posizioni/${searchIuv.trim()}`);
+      const res = await authenticatedFetch(url);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setPosizioni([data.data]);
+      } else {
+        setPosizioni([]);
+      }
+    } catch (err) {
+      console.error("Errore ricerca IUV:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Richiedi riconciliazione massiva
+  const handleRiconciliaMassiva = async () => {
+    setIsRiconciliando(true);
+    try {
+      const url = addComuneIdToUrl(`${WALLET_API_BASE}/api/pagopa/riconcilia`);
+      const res = await authenticatedFetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.data?.message || data.message || "Riconciliazione avviata");
+        loadData();
+      } else {
+        alert("Errore: " + (data.error || "Errore sconosciuto"));
+      }
+    } catch (err) {
+      alert("Errore di rete nella riconciliazione");
+    } finally {
+      setIsRiconciliando(false);
+    }
+  };
+
+  // Simula callback (solo test)
+  const handleSimulaCallback = async () => {
+    if (!simulaIuv.trim()) return;
+    setIsSimulating(true);
+    setSimulaResult(null);
+    try {
+      const url = addComuneIdToUrl(`${WALLET_API_BASE}/api/pagopa/simula-callback`);
+      const res = await authenticatedFetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ iuv: simulaIuv.trim() }),
+      });
+      const data = await res.json();
+      setSimulaResult(data);
+      if (data.success) {
+        loadData();
+      }
+    } catch (err) {
+      setSimulaResult({ success: false, error: "Errore di rete" });
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  const getStatoBadge = (stato: string) => {
+    switch (stato) {
+      case "PAGATA":
+        return "bg-green-500/10 text-green-400 border-green-500/20";
+      case "CREATA":
+        return "bg-blue-500/10 text-blue-400 border-blue-500/20";
+      case "SCADUTA":
+        return "bg-orange-500/10 text-orange-400 border-orange-500/20";
+      case "ANNULLATA":
+        return "bg-slate-500/10 text-slate-400 border-slate-500/20";
+      case "FALLITA":
+        return "bg-red-500/10 text-red-400 border-red-500/20";
+      default:
+        return "bg-slate-500/10 text-slate-300 border-slate-500/20";
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header con statistiche */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <Card className="bg-[#1e293b] border-slate-700">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-white">{stats.totali}</p>
+            <p className="text-xs text-slate-400">Totali</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#1e293b] border-slate-700">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-blue-400">{stats.create}</p>
+            <p className="text-xs text-slate-400">In Attesa</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#1e293b] border-slate-700">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-green-400">{stats.pagate}</p>
+            <p className="text-xs text-slate-400">Pagate</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#1e293b] border-slate-700">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-orange-400">{stats.scadute}</p>
+            <p className="text-xs text-slate-400">Scadute</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#1e293b] border-slate-700">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-red-400">{stats.fallite}</p>
+            <p className="text-xs text-slate-400">Fallite</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pannello stato connessione PagoPA */}
+      <Card className="bg-[#1e293b] border-slate-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-white flex items-center gap-2 text-base">
+            <CreditCard className="h-5 w-5 text-blue-500" />
+            Stato Gateway PagoPA
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {riconciliazioneStatus ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center gap-2">
+                <div className={`h-3 w-3 rounded-full ${riconciliazioneStatus.configured ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`} />
+                <span className="text-sm text-slate-300">
+                  {riconciliazioneStatus.configured ? 'Connesso' : 'Modalit\u00e0 Sandbox'}
+                </span>
+              </div>
+              <div className="text-sm text-slate-400">
+                <span className="text-slate-500">Provider:</span>{" "}
+                <span className="text-white">{riconciliazioneStatus.gateway?.provider || 'N/A'}</span>
+              </div>
+              <div className="text-sm text-slate-400">
+                <span className="text-slate-500">Ente:</span>{" "}
+                <span className="text-white">{riconciliazioneStatus.gateway?.ente || 'Non configurato'}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500">Caricamento stato...</div>
+          )}
+          {riconciliazioneStatus?.note && (
+            <p className="mt-3 text-xs text-yellow-400/80 bg-yellow-500/5 border border-yellow-500/20 rounded px-3 py-2">
+              {riconciliazioneStatus.note}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Toolbar: ricerca, filtro, azioni */}
+      <Card className="bg-[#1e293b] border-slate-700">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Ricerca IUV */}
+            <div className="flex gap-2 flex-1 min-w-[200px]">
+              <Input
+                placeholder="Cerca per IUV..."
+                value={searchIuv}
+                onChange={(e) => setSearchIuv(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearchIuv()}
+                className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
+              />
+              <Button
+                size="sm"
+                onClick={handleSearchIuv}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Filtro stato */}
+            <Select value={filtroStato} onValueChange={setFiltroStato}>
+              <SelectTrigger className="w-[150px] bg-slate-800 border-slate-600 text-white">
+                <SelectValue placeholder="Stato" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-600">
+                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="CREATA">In Attesa</SelectItem>
+                <SelectItem value="PAGATA">Pagata</SelectItem>
+                <SelectItem value="SCADUTA">Scaduta</SelectItem>
+                <SelectItem value="FALLITA">Fallita</SelectItem>
+                <SelectItem value="ANNULLATA">Annullata</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Azioni */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={loadData}
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} /> Aggiorna
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleRiconciliaMassiva}
+              disabled={isRiconciliando}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              {isRiconciliando ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-1" />
+              )}
+              Riconcilia
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowSimulaDialog(true)}
+              className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+            >
+              <AlertCircle className="h-4 w-4 mr-1" /> Test Callback
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabella posizioni */}
+      <Card className="bg-[#1e293b] border-slate-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-white flex items-center gap-2 text-base">
+            <FileText className="h-5 w-5 text-blue-500" />
+            Posizioni Debitorie
+            {posizioni.length > 0 && (
+              <Badge variant="outline" className="ml-2 bg-blue-500/10 text-blue-400 border-blue-500/20">
+                {posizioni.length}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8 text-slate-400">
+              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-2" />
+              Caricamento posizioni...
+            </div>
+          ) : posizioni.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-20" />
+              <p className="text-white font-medium">Nessuna posizione debitoria</p>
+              <p className="text-sm mt-2">
+                Le posizioni verranno create automaticamente quando si generano pagamenti PagoPA
+                (sanzioni, ricariche wallet, canoni).
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border border-slate-700 overflow-x-auto">
+              <table className="w-full text-sm text-left text-slate-300">
+                <thead className="bg-slate-800 text-slate-100 uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3">IUV</th>
+                    <th className="px-4 py-3">Causale</th>
+                    <th className="px-4 py-3">Tipo</th>
+                    <th className="px-4 py-3 text-right">Importo</th>
+                    <th className="px-4 py-3">Stato</th>
+                    <th className="px-4 py-3">Debitore</th>
+                    <th className="px-4 py-3">Data</th>
+                    <th className="px-4 py-3">Pagato il</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-700">
+                  {posizioni.map((pos, idx) => (
+                    <tr key={pos.id || idx} className="hover:bg-slate-800/50">
+                      <td className="px-4 py-3 font-mono text-xs text-blue-300">
+                        {pos.iuv}
+                      </td>
+                      <td className="px-4 py-3 max-w-[200px] truncate" title={pos.causale}>
+                        {pos.causale}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="outline" className="bg-slate-500/10 text-slate-300 border-slate-500/20 text-xs">
+                          {pos.source_type || pos.tipo || 'N/A'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium text-white">
+                        \u20ac {parseFloat(pos.importo || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="outline" className={getStatoBadge(pos.stato)}>
+                          {pos.stato}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        {pos.debitore_nome || '-'}
+                        {pos.debitore_cf && (
+                          <span className="block text-slate-500">{pos.debitore_cf}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-400">
+                        {pos.created_at ? new Date(pos.created_at).toLocaleDateString('it-IT') : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        {pos.pagato_il ? (
+                          <span className="text-green-400">
+                            {new Date(pos.pagato_il).toLocaleDateString('it-IT')}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Info riconciliazione automatica */}
+      <Card className="bg-[#1e293b] border-slate-700">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-white">Riconciliazione Automatica Attiva</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Il sistema riconcilia automaticamente i pagamenti tramite il callback PagoPA/E-FIL.
+                Quando un pagamento viene confermato, il wallet viene ricaricato, la sanzione viene saldata,
+                o il canone viene registrato come pagato — tutto in tempo reale.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dialog Simula Callback (Test) */}
+      <Dialog open={showSimulaDialog} onOpenChange={setShowSimulaDialog}>
+        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-400" />
+              Simula Callback PagoPA (Test)
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Simula la ricezione di un callback di pagamento confermato da E-FIL.
+              Utile per testare la riconciliazione automatica in ambiente sandbox.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className="text-slate-300">IUV della posizione da simulare</Label>
+              <Input
+                placeholder="Es: 01234567890123456"
+                value={simulaIuv}
+                onChange={(e) => setSimulaIuv(e.target.value)}
+                className="mt-1 bg-slate-900 border-slate-600 text-white"
+              />
+            </div>
+            {simulaResult && (
+              <div className={`p-3 rounded text-sm ${simulaResult.success ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+                {simulaResult.success ? (
+                  <div>
+                    <p className="font-medium">Callback simulato con successo</p>
+                    <p className="text-xs mt-1">{simulaResult.message}</p>
+                    {simulaResult.riconciliato && (
+                      <p className="text-xs mt-1">
+                        Riconciliato: {simulaResult.riconciliato.source_type} #{simulaResult.riconciliato.source_id}
+                        {simulaResult.riconciliato.wallet_id && ` (Wallet #${simulaResult.riconciliato.wallet_id})`}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p>{simulaResult.error || 'Errore sconosciuto'}</p>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setShowSimulaDialog(false); setSimulaResult(null); setSimulaIuv(""); }}
+              className="border-slate-600 text-slate-300"
+            >
+              Chiudi
+            </Button>
+            <Button
+              onClick={handleSimulaCallback}
+              disabled={isSimulating || !simulaIuv.trim()}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {isSimulating ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-1" />
+              )}
+              Simula Pagamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
 
 export default WalletPanel;
