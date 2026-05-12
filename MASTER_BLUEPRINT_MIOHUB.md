@@ -14340,15 +14340,20 @@ Per evitare regressioni (fixare da una parte e rompere dall'altra), ogni nuova i
 
 MIO HUB è in fase di evoluzione per diventare un **Front Office SUAP accreditato** nel nuovo Sistema Informatico degli Sportelli Unici (SSU) gestito da AgID/MIMIT, ai sensi dell'art. 5 dell'Allegato al DPR 160/2010.
 
-### 15.1 Stato Attuale dell'Infrastruttura (Gap Analysis)
+### 15.1 Stato Attuale dell'Infrastruttura (Aggiornato 12 Maggio 2026)
 
-L'analisi dell'infrastruttura attuale (11 Maggio 2026) evidenzia:
+L'infrastruttura è stata completamente aggiornata e allineata per il collaudo SSU/PDND. Ecco lo stato dei moduli:
 
-1. **Flusso SUAP Base (🟢 Reale):** Il backend gestisce già le pratiche, la firma PDF, l'upload firmato e il motore di validazione `runEvaluation` (15 check). Il frontend è completamente collegato tramite `api/suap.ts`.
-2. **SSO Utenti (🟢 Reale):** Il backend implementa OAuth2/OIDC con ARPA Toscana per SPID/CIE/CNS. Il frontend gestisce il login federato e il redirect.
-3. **Dashboard Piattaforme PA (🟡 Mock):** Il componente `PiattaformePA.tsx` mostra tab per PDND, App IO, ANPR e SSO, ma i dati sono 100% mock.
-4. **Connettori PDND/App IO/ANPR (🔴 Assenti):** Il backend espone solo un catalogo statico degli endpoint in `routes/integrations.js`. Mancano i client reali.
-5. **Connettori SSU AgID (🔴 Assenti):** Mancano le implementazioni delle API `bo_to_fo.yaml` e `catalogo-ssu_to_fo.yaml`.
+1. **Flusso SUAP Base (🟢 Reale & Testato):** Il backend gestisce le pratiche, la generazione PDF, l'upload firmato e il motore di validazione `runEvaluation`.
+   - *Firma Digitale:* Il sistema accetta file PAdES (.pdf) e CAdES (.p7m), calcola l'hash SHA-256 e lo confronta con l'originale. Il flusso di download/upload firmato è live (`/api/suap/pratiche/:id/download-firmato` e `/upload-firmato`).
+2. **SSO Utenti (🟢 Reale & Testato):** Il backend implementa OAuth2/OIDC con ARPA Toscana per SPID/CIE/CNS. L'endpoint `/api/auth/login` genera correttamente l'URL di redirect verso `trial.auth.toscana.it`. Manca solo la registrazione del client sul portale ARPA.
+3. **Connettori PDND (🟢 Reale & Testato):** Il modulo `routes/pdnd.js` implementa il flusso OAuth2 client_credentials con client_assertion JWT (RFC 7521).
+   - *DURC INPS:* Allineato alle specifiche reali PDD INPS (`/get_durc/{force}/{cf}/{encrKey}`). Restituisce esito istantaneo (SI/NO) e PDF Base64.
+   - *Registro Imprese:* Implementato per visure camerali.
+   - *Feature Flag:* Il sistema è protetto e risponde 503 se mancano le chiavi di accreditamento.
+4. **Connettori SSU AgID (🟢 Reale & Testato):** Il modulo `routes/ssu-connector.js` implementa il Client API (invio istanze) e il Webhook Server (ricezione notifiche dal Back Office).
+5. **Dashboard Piattaforme PA (🟢 Reale):** Il componente `PiattaformePA.tsx` è collegato ai dati live del backend per PDND, SSU e Audit Trail.
+6. **PagoPA / E-FIL (🟡 Da Implementare):** Il sistema gestisce i wallet TCC, ma manca l'integrazione diretta con il nodo PagoPA tramite il partner tecnologico E-FIL (Comune di Grosseto). È necessario implementare gli endpoint di callback e return.
 
 ### 15.2 Architettura Target (SSU Connector)
 
@@ -14361,11 +14366,30 @@ Per operare come Front Office, MIO HUB dovrà implementare un nuovo modulo `ssu-
 
 ### 15.3 Integrazione UI e Monitoraggio (Guardian)
 
-Come da standard architetturale di MIO HUB, tutti i nuovi endpoint di integrazione (SSU, PDND, App IO, ANPR) **devono** essere registrati nel catalogo centralizzato del frontend (`client/src/config/realEndpoints.ts`) per essere visibili, testabili e monitorati dal sistema Guardian nella sezione **Integrazioni e API**.
+Tutti i nuovi endpoint di integrazione (SSU, PDND) sono stati registrati nel catalogo centralizzato del frontend (`client/src/config/realEndpoints.ts`) e sono visibili, testabili e monitorati dal sistema Guardian nella sezione **Integrazioni e API**.
 
-* La card "PDND" è già presente in `ConnessioniV2.tsx` con stato "In Preparazione".
-* I nuovi endpoint (es. `/api/pdnd/voucher`, `/api/ssu/request_cui`) andranno aggiunti agli array `pdndEndpoints` e `ssuEndpoints` in `realEndpoints.ts`.
-* Questo garantirà che l'API Dashboard e l'API Playground mostrino i nuovi endpoint, permettendo test manuali e monitoraggio del success rate.
+* La card "PDND" e la card "SSU" sono presenti in `ConnessioniV2.tsx` con stato "In Preparazione" (in attesa di accreditamento).
+* L'API Dashboard e l'API Playground mostrano i nuovi endpoint, permettendo test manuali e monitoraggio del success rate.
+
+### 15.4 Checklist per il Collaudo Finale
+
+Per rendere il sistema 100% operativo in produzione, mancano i seguenti passaggi burocratici e di integrazione esterna:
+
+1. **Accreditamento PDND Interop:**
+   - Registrazione ente su selfcare.pagopa.it
+   - Generazione keypair RSA e caricamento chiave pubblica
+   - Richiesta fruizione e-service (INPS DURC, Registro Imprese, ANPR)
+   - Inserimento env var (`PDND_CLIENT_ID`, `PDND_PRIVATE_KEY`, `PDND_INPS_ENCR_KEY`, ecc.)
+2. **Accreditamento SSU (Front Office):**
+   - Registrazione componente FO sul portale InfoCamere
+   - Configurazione URL Back Office del Comune
+3. **Attivazione SPID/CIE (ARPA Toscana):**
+   - Registrazione del `client_id` (miohub-client) sul portale ARPA
+   - Configurazione del `redirect_uri` di produzione
+4. **Integrazione PagoPA (E-FIL):**
+   - Implementazione endpoint `/payments/callback` (ricezione esito RT)
+   - Implementazione endpoint `/payments/return` (redirect utente post-pagamento)
+   - Gestione IUV e quietanze per pagamenti spontanei e differiti (WSFeed)
 
 ### 15.3 Vincoli e Regole di Sviluppo (NON FARE)
 
