@@ -1183,406 +1183,670 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
           </div>
         );
 
-      // ─── TAB: DOSSIER TECNICO ────────────────────────────────────
-      case "dossier":
+      // ─── TAB: DOSSIER INVESTITORI ─────────────────────────────────
+      case "dossier": {
+        const [dossierSub, setDossierSub] = useState("ecosystem");
+        const DOSSIER_SUBS = [
+          { id: "ecosystem", label: "Ecosistema", icon: Globe },
+          { id: "revenue", label: "Revenue Model", icon: TrendingUp },
+          { id: "premium", label: "Servizi Premium", icon: Zap },
+          { id: "compliance", label: "Conformita'", icon: Shield },
+          { id: "integrations", label: "Integrazioni PA", icon: Network },
+        ];
+
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Compliance scores */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-[#1a2332] border-[#1e293b]">
-                <CardContent className="p-5 space-y-4">
-                  <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-[#a855f7]" />
-                    Analisi Conformita'
-                  </h4>
-                  <ScoreBar
-                    label="HTTPS & Certificati SSL"
-                    score={10}
-                    max={10}
-                    color="#10b981"
-                  />
-                  <ScoreBar
-                    label="Autenticazione SSO (SPID/CIE)"
-                    score={10}
-                    max={10}
-                    color="#10b981"
-                  />
-                  <ScoreBar
-                    label="Firma Digitale CAdES/PAdES"
-                    score={10}
-                    max={10}
-                    color="#10b981"
-                  />
-                  <ScoreBar
-                    label="RBAC & Autorizzazione (64 EP)"
-                    score={10}
-                    max={10}
-                    color="#10b981"
-                  />
-                  <ScoreBar
-                    label="Anti-Scanner & Honeypot"
-                    score={10}
-                    max={10}
-                    color="#10b981"
-                  />
-                  <ScoreBar
-                    label="Cifratura PII (AES-256-GCM)"
-                    score={10}
-                    max={10}
-                    color="#10b981"
-                  />
-                  <ScoreBar
-                    label="Audit Trail & Logging"
-                    score={10}
-                    max={10}
-                    color="#10b981"
-                  />
-                  <ScoreBar
-                    label="GDPR Compliance (Art. 13-20)"
-                    score={10}
-                    max={10}
-                    color="#10b981"
-                  />
-                  <ScoreBar
-                    label="WCAG 2.1 AA Accessibilita'"
-                    score={10}
-                    max={10}
-                    color="#10b981"
-                  />
-                  <ScoreBar
-                    label="Accreditamento PA (PDND/ACN)"
-                    score={4}
-                    max={10}
-                    color="#f59e0b"
-                  />
-                </CardContent>
-              </Card>
+            {/* Sub-navigation */}
+            <div className="flex flex-wrap gap-2 p-1 bg-[#1a2332] rounded-lg border border-[#1e293b]">
+              {DOSSIER_SUBS.map((sub) => (
+                <button
+                  key={sub.id}
+                  onClick={() => setDossierSub(sub.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-medium transition-all ${
+                    dossierSub === sub.id
+                      ? "bg-[#a855f7]/20 text-[#a855f7] ring-1 ring-[#a855f7]/30"
+                      : "text-[#e8fbff]/60 hover:text-[#e8fbff] hover:bg-[#e8fbff]/5"
+                  }`}
+                >
+                  <sub.icon className="h-3.5 w-3.5" />
+                  {sub.label}
+                </button>
+              ))}
+            </div>
 
-              <div className="space-y-4">
-                {/* Economic valuation */}
-                <Card className="bg-[#1a2332] border-[#1e293b]">
-                  <CardContent className="p-5">
-                    <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
-                      <TrendingUp className="h-4 w-4 text-[#10b981]" />
-                      Valutazione Economica
-                    </h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 rounded-lg bg-[#0b1220] text-center">
-                        <p className="text-xl font-bold text-[#14b8a6] font-mono">
-                          540K-810K
-                        </p>
-                        <p className="text-[10px] text-[#e8fbff]/40 mt-1">
-                          Valore Asset (EUR)
-                        </p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-[#0b1220] text-center">
-                        <p className="text-xl font-bold text-[#a855f7] font-mono">
-                          2-8M
-                        </p>
-                        <p className="text-[10px] text-[#e8fbff]/40 mt-1">
-                          Potenziale Commerciale
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-4 p-3 rounded-lg bg-[#0b1220] border border-[#1e293b]">
-                      <p className="text-xs text-[#e8fbff]/60 mb-2">
-                        <strong className="text-[#e8fbff]">
-                          Metodologia di calcolo:
-                        </strong>
-                      </p>
-                      <div className="space-y-1">
-                        <p className="text-[10px] text-[#e8fbff]/40">
-                          270.391 LOC x 2-3 EUR/LOC (COCOMO II) = 540K-810K
-                          EUR valore asset
-                        </p>
-                        <p className="text-[10px] text-[#e8fbff]/40">
-                          Target: 8.000 mercati italiani — SaaS per PA
-                        </p>
-                        <p className="text-[10px] text-[#e8fbff]/40">
-                          ARR potenziale: 250-1.000 EUR/mercato/anno = 2-8M
-                          EUR
-                        </p>
-                        <p className="text-[10px] text-[#e8fbff]/40">
-                          Costo equivalente team: 4-6 sviluppatori x 18 mesi =
-                          450-700K EUR
-                        </p>
-                      </div>
+            {/* ── ECOSISTEMA ── */}
+            {dossierSub === "ecosystem" && (
+              <div className="space-y-6">
+                {/* Vision */}
+                <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#a855f7]/30">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-bold text-[#e8fbff] mb-3 flex items-center gap-2">
+                      <Globe className="h-6 w-6 text-[#a855f7]" />
+                      Il Gemello Digitale del Commercio Italiano
+                    </h3>
+                    <p className="text-sm text-[#e8fbff]/70 leading-relaxed mb-4">
+                      MIO HUB e' un ecosistema connesso in tempo reale che unisce Pubbliche Amministrazioni,
+                      imprese del commercio ambulante e sede fissa, e cittadini in un'unica piattaforma.
+                      Non e' un semplice gestionale: e' l'infrastruttura digitale che puo' sostituire
+                      le associazioni di categoria con servizi online diretti, gestire 400.000+ posteggi
+                      su 8.000 mercati, e creare un ecosistema premiante che contrasta l'e-commerce
+                      valorizzando il commercio locale italiano.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {[
+                        {
+                          title: "Dashboard PA",
+                          desc: "28 sezioni protette per la gestione completa di mercati, SUAP, concessioni, canone unico, controlli e sanzioni, report e GIS",
+                          color: "#14b8a6",
+                          icon: LayoutDashboard,
+                          users: "8.000 Comuni",
+                        },
+                        {
+                          title: "App Impresa",
+                          desc: "Gestione posteggio, pagamenti diretti, SCIA automatizzate, corsi e qualificazioni, quota tessera, contabilita' e AVA assistente AI",
+                          color: "#06b6d4",
+                          icon: Store,
+                          users: "160.000 Imprese",
+                        },
+                        {
+                          title: "App Cittadino",
+                          desc: "Route Etico con navigatore, Gaming premiante, segnalatore civico, visite culturali, mobilita' sostenibile e carbon credits",
+                          color: "#a855f7",
+                          icon: Users,
+                          users: "60M Cittadini",
+                        },
+                      ].map((app, i) => (
+                        <div key={i} className="p-4 rounded-xl bg-[#0b1220] border border-[#1e293b]">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${app.color}20` }}>
+                              <app.icon className="h-5 w-5" style={{ color: app.color }} />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-[#e8fbff]">{app.title}</h4>
+                              <span className="text-[10px] font-mono" style={{ color: app.color }}>{app.users}</span>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-[#e8fbff]/50 leading-relaxed">{app.desc}</p>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Quick metrics */}
+                {/* Key numbers */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { label: "Mercati Italia", value: "8.000", sub: "+ fiere stagionali", color: "#14b8a6" },
+                    { label: "Posteggi Totali", value: "400K+", sub: "+ altrettanti fiere", color: "#06b6d4" },
+                    { label: "Imprese Connesse", value: "160.000", sub: "ambulanti + sede fissa", color: "#a855f7" },
+                    { label: "Giornate/Anno", value: "52+", sub: "media settimanale", color: "#f59e0b" },
+                  ].map((n, i) => (
+                    <Card key={i} className="bg-[#1a2332] border-[#1e293b]">
+                      <CardContent className="p-4 text-center">
+                        <p className="text-2xl font-bold font-mono" style={{ color: n.color }}>{n.value}</p>
+                        <p className="text-xs text-[#e8fbff]/70 mt-1">{n.label}</p>
+                        <p className="text-[10px] text-[#e8fbff]/30">{n.sub}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Unique value propositions */}
                 <Card className="bg-[#1a2332] border-[#1e293b]">
                   <CardContent className="p-5">
-                    <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-3">
+                    <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
                       <Zap className="h-4 w-4 text-[#f59e0b]" />
-                      Metriche di Maturita'
+                      Proposte di Valore Uniche
                     </h4>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="text-center">
-                        <span className="text-2xl font-bold text-[#14b8a6] font-mono">
-                          28
-                        </span>
-                        <p className="text-[10px] text-[#e8fbff]/40">
-                          Sezioni Dashboard
-                        </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {[
+                        { title: "Hub Urbani & Vetrina Online", desc: "Gestione completa hub urbani con vetrina digitale per ogni negozio e posteggio mercato — il marketplace locale che compete con l'e-commerce", color: "#14b8a6" },
+                        { title: "Route Etico con Navigatore", desc: "App cittadino con navigatore che guida verso ogni punto vendita locale, premiando gli acquisti sostenibili con carbon credits", color: "#10b981" },
+                        { title: "Gaming Premiante Salva-Italia", desc: "Sistema di gamification che premia acquisti in mercati e negozi, visite culturali ai musei, mobilita' sostenibile e segnalazioni civiche", color: "#a855f7" },
+                        { title: "Mappa di Calore Citta'", desc: "Le PA ottengono in tempo reale mappe di affluenza commerciale, mobilita', cultura e sicurezza per la pianificazione urbana", color: "#06b6d4" },
+                        { title: "SCIA 100% Automatizzate", desc: "Subingressi e pratiche SUAP completamente digitali con firma CAdES/PAdES — da 100 EUR/pratica associazione a 10 EUR automatico", color: "#f59e0b" },
+                        { title: "Segnalatore Civico Premiante", desc: "I cittadini segnalano degrado, criminalita', spazzatura e illuminazione guadagnando crediti nel sistema gaming", color: "#ef4444" },
+                      ].map((v, i) => (
+                        <div key={i} className="p-4 rounded-lg bg-[#0b1220] border border-[#1e293b]">
+                          <h5 className="text-sm font-semibold mb-1" style={{ color: v.color }}>{v.title}</h5>
+                          <p className="text-[11px] text-[#e8fbff]/50 leading-relaxed">{v.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Asset valuation */}
+                <Card className="bg-gradient-to-r from-[#1a2332] to-[#0b1220] border-[#10b981]/30">
+                  <CardContent className="p-5">
+                    <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
+                      <TrendingUp className="h-4 w-4 text-[#10b981]" />
+                      Valutazione Asset Tecnologico (COCOMO II)
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="p-4 rounded-xl bg-[#0b1220] text-center border border-[#14b8a6]/20">
+                        <p className="text-2xl font-bold text-[#14b8a6] font-mono">270K</p>
+                        <p className="text-[10px] text-[#e8fbff]/40 mt-1">Righe di Codice</p>
                       </div>
-                      <div className="text-center">
-                        <span className="text-2xl font-bold text-[#06b6d4] font-mono">
-                          36
-                        </span>
-                        <p className="text-[10px] text-[#e8fbff]/40">
-                          Pagine Pubbliche
-                        </p>
+                      <div className="p-4 rounded-xl bg-[#0b1220] text-center border border-[#06b6d4]/20">
+                        <p className="text-2xl font-bold text-[#06b6d4] font-mono">540-810K</p>
+                        <p className="text-[10px] text-[#e8fbff]/40 mt-1">Valore Asset (EUR)</p>
                       </div>
-                      <div className="text-center">
-                        <span className="text-2xl font-bold text-[#f59e0b] font-mono">
-                          42
-                        </span>
-                        <p className="text-[10px] text-[#e8fbff]/40">
-                          PDF Knowledge Base
-                        </p>
+                      <div className="p-4 rounded-xl bg-[#0b1220] text-center border border-[#a855f7]/20">
+                        <p className="text-2xl font-bold text-[#a855f7] font-mono">4-6 dev</p>
+                        <p className="text-[10px] text-[#e8fbff]/40 mt-1">x 18 mesi equivalenti</p>
+                      </div>
+                      <div className="p-4 rounded-xl bg-[#0b1220] text-center border border-[#f59e0b]/20">
+                        <p className="text-2xl font-bold text-[#f59e0b] font-mono">1.051</p>
+                        <p className="text-[10px] text-[#e8fbff]/40 mt-1">Endpoint API attivi</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
-            </div>
+            )}
 
-            {/* Conformità Normativa */}
-            <Card className="bg-[#1a2332] border-[#1e293b]">
-              <CardContent className="p-5">
-                <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
-                  <Lock className="h-4 w-4 text-[#10b981]" />
-                  Conformita' Normativa v10.14 (aggiornata 12 Maggio 2026)
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {[
-                    {
-                      name: "GDPR — Privacy Policy",
-                      status: "ok" as const,
-                      detail: "Pagina /privacy conforme Art. 13/14",
-                    },
-                    {
-                      name: "GDPR — Cookie Consent",
-                      status: "ok" as const,
-                      detail: "Banner consenso esplicito attivo",
-                    },
-                    {
-                      name: "GDPR — Export Dati (Art. 20)",
-                      status: "ok" as const,
-                      detail: "Endpoint gdpr.exportMyData con 12 tabelle",
-                    },
-                    {
-                      name: "GDPR — Diritto Oblio (Art. 17)",
-                      status: "ok" as const,
-                      detail:
-                        "Anonimizzazione account gdpr.deleteMyAccount",
-                    },
-                    {
-                      name: "GDPR — Consenso Registrazione",
-                      status: "ok" as const,
-                      detail: "Checkbox obbligatorio in registrazione",
-                    },
-                    {
-                      name: "WCAG 2.1 AA",
-                      status: "ok" as const,
-                      detail:
-                        'Skip-to-content, focus-visible, lang="it", ARIA landmarks',
-                    },
-                    {
-                      name: "Dichiarazione Accessibilita'",
-                      status: "ok" as const,
-                      detail: "Pagina /accessibilita conforme AgID",
-                    },
-                    {
-                      name: "Security Headers (Helmet)",
-                      status: "ok" as const,
-                      detail: "CSP, HSTS, X-Frame-Options attivi",
-                    },
-                    {
-                      name: "Rate Limiting",
-                      status: "ok" as const,
-                      detail: "Globale 100/15min + 4 finanziari dedicati",
-                    },
-                    {
-                      name: "Anti-Scanner & Honeypot",
-                      status: "ok" as const,
-                      detail:
-                        "Ban automatico .env probe + rate-limit 404 (16K+ bloccati)",
-                    },
-                    {
-                      name: "Firma Digitale CAdES/PAdES",
-                      status: "ok" as const,
-                      detail:
-                        "Verifica crittografica reale con node-forge + OpenSSL",
-                    },
-                    {
-                      name: "Cifratura PII (AES-256-GCM)",
-                      status: "ok" as const,
-                      detail: "CF, PIVA, IBAN cifrati con IV random + auth tag",
-                    },
-                    {
-                      name: "Anti-Frode TCC",
-                      status: "ok" as const,
-                      detail: "QR HMAC-SHA256, GPS validation, audit",
-                    },
-                    {
-                      name: "RBAC Granulare (64 endpoint)",
-                      status: "ok" as const,
-                      detail:
-                        "requirePermission() middleware per permessi singoli",
-                    },
-                    {
-                      name: "API Key Middleware",
-                      status: "ok" as const,
-                      detail: "Validazione X-API-Key + lastUsedAt tracking",
-                    },
-                    {
-                      name: "Data Retention Policy",
-                      status: "ok" as const,
-                      detail:
-                        "90gg metrics, 365gg logs, 5y audit (obbligo legale)",
-                    },
-                    {
-                      name: "CI/CD Pipeline",
-                      status: "ok" as const,
-                      detail:
-                        "GitHub Actions: check + test + build + auto-deploy",
-                    },
-                    {
-                      name: "SBOM",
-                      status: "ok" as const,
-                      detail: "CycloneDX JSON generato automaticamente",
-                    },
-                    {
-                      name: "PWA + Service Worker",
-                      status: "ok" as const,
-                      detail: "Installabile, offline page, manifest",
-                    },
-                    {
-                      name: "Error Monitoring",
-                      status: "ok" as const,
-                      detail: "ErrorBoundary + window.error → backend",
-                    },
-                    {
-                      name: "Code Splitting",
-                      status: "ok" as const,
-                      detail: "React.lazy() su 37 pagine, bundle ottimizzato",
-                    },
-                    {
-                      name: "Guardian Monitoring",
-                      status: "ok" as const,
-                      detail:
-                        "285K+ log, 14 service ID, health check automatici",
-                    },
-                    {
-                      name: "SSO ARPA (SPID/CIE)",
-                      status: "ok" as const,
-                      detail:
-                        "OAuth 2.0 + PKCE S256 — SPID L2 + CIE L3 attivi",
-                    },
-                    {
-                      name: "PDND Interoperabilita'",
-                      status: "partial" as const,
-                      detail:
-                        "Backend pronto, 3 e-Service — in attesa accreditamento",
-                    },
-                    {
-                      name: "DPIA",
-                      status: "partial" as const,
-                      detail: "Da redigere formalmente",
-                    },
-                    {
-                      name: "Qualificazione ACN SaaS",
-                      status: "missing" as const,
-                      detail: "Da avviare per vendita a PA",
-                    },
-                    {
-                      name: "Penetration Test",
-                      status: "missing" as const,
-                      detail: "Da commissionare a ente terzo certificato",
-                    },
-                  ].map((int, i) => {
-                    const st = STATUS_COLORS[int.status];
-                    return (
-                      <div
-                        key={i}
-                        className="p-3 rounded-lg bg-[#0b1220] border border-[#1e293b]"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-semibold text-[#e8fbff]">
-                            {int.name}
-                          </span>
-                          <span
-                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}
-                          >
-                            {st.label}
-                          </span>
+            {/* ── REVENUE MODEL ── */}
+            {dossierSub === "revenue" && (
+              <div className="space-y-6">
+                {/* Revenue streams */}
+                <Card className="bg-[#1a2332] border-[#1e293b]">
+                  <CardContent className="p-5">
+                    <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
+                      <TrendingUp className="h-4 w-4 text-[#10b981]" />
+                      11 Flussi di Revenue — Modello Multi-Stream
+                    </h4>
+                    <div className="space-y-3">
+                      {[
+                        {
+                          id: 1, name: "Canone Posteggio Giornaliero",
+                          desc: "1 EUR/posteggio/giorno di mercato — 400.000 posteggi x 52+ giornate/anno",
+                          calc: "400K x 52 x 1 EUR = 20.8M EUR/anno (100%)",
+                          color: "#14b8a6", pct: 100,
+                        },
+                        {
+                          id: 2, name: "10% Riscossione Canone Unico",
+                          desc: "Trattenuta del 10% sui contagiorni/esattori che riscuotono il canone unico annuo di occupazione suolo pubblico",
+                          calc: "Stima 2-5M EUR/anno su canoni riscossi",
+                          color: "#06b6d4", pct: 70,
+                        },
+                        {
+                          id: 3, name: "SCIA Subingresso Automatizzate",
+                          desc: "Pratiche SUAP 100% digitali — le associazioni chiedono 100 EUR/pratica, MIO HUB chiede 10% (10 EUR) all'associazione",
+                          calc: "10.000-30.000 pratiche/anno x 10 EUR = 100-300K EUR",
+                          color: "#a855f7", pct: 25,
+                        },
+                        {
+                          id: 4, name: "Pagamenti Diretti App Impresa",
+                          desc: "Quota tessera associativa, pagamenti servizi, contabilita' — commissione su ogni transazione da 160.000 imprese",
+                          calc: "160K imprese x 50-200 EUR/anno x 5% = 400K-1.6M EUR",
+                          color: "#f59e0b", pct: 45,
+                        },
+                        {
+                          id: 5, name: "AVA Assistente AI Premium",
+                          desc: "Agente AI multi-ruolo in Dashboard PA, App Impresa e App Cittadino — servizio premium con knowledge base 42 PDF",
+                          calc: "5.000-20.000 utenti x 100-200 EUR/anno = 500K-4M EUR",
+                          color: "#8b5cf6", pct: 55,
+                        },
+                        {
+                          id: 6, name: "Gaming & Carbon Credits",
+                          desc: "Sistema premiante Salva-Italia: acquisti sostenibili, mobilita' green, cultura, segnalazioni civiche — sponsorship PA e brand",
+                          calc: "Sponsorship + PA budget = 500K-2M EUR/anno",
+                          color: "#10b981", pct: 35,
+                        },
+                        {
+                          id: 7, name: "Hub Urbani & Vetrina Online",
+                          desc: "Gestione hub urbani con vetrina digitale per negozi sede fissa — canone presenza online e servizi digitali",
+                          calc: "100.000 negozi x 100 EUR/anno = 10M EUR",
+                          color: "#ec4899", pct: 60,
+                        },
+                        {
+                          id: 8, name: "Banca Dati Corsi & Qualificazioni",
+                          desc: "Sistema corsi obbligatori, segnalazioni mancanti e in scadenza — servizio compliance per imprese",
+                          calc: "160K imprese x 20 EUR/anno = 3.2M EUR",
+                          color: "#f97316", pct: 30,
+                        },
+                        {
+                          id: 9, name: "Servizi Paghe & Contabilita'",
+                          desc: "Rete connessa con 160.000 imprese — sviluppo servizi completi paghe e contabilita' online, sostituzione associazioni",
+                          calc: "50.000 imprese x 500 EUR/anno = 25M EUR",
+                          color: "#ef4444", pct: 85,
+                        },
+                        {
+                          id: 10, name: "Business Dati & Analytics PA",
+                          desc: "Mappe di calore citta': affluenza commerciale, mobilita', cultura, sicurezza — dati in tempo reale per PA",
+                          calc: "8.000 comuni x 500 EUR/anno = 4M EUR",
+                          color: "#06b6d4", pct: 40,
+                        },
+                        {
+                          id: 11, name: "Segnalatore Civico + Route Etico",
+                          desc: "App cittadino con segnalazioni premiate e navigatore etico verso punti vendita locali — engagement e dati",
+                          calc: "Incluso nel gaming + sponsorship locali",
+                          color: "#22c55e", pct: 20,
+                        },
+                      ].map((stream) => (
+                        <div key={stream.id} className="p-4 rounded-lg bg-[#0b1220] border border-[#1e293b]">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg font-bold font-mono" style={{ color: stream.color }}>#{stream.id}</span>
+                              <div>
+                                <h5 className="text-sm font-semibold text-[#e8fbff]">{stream.name}</h5>
+                                <p className="text-[11px] text-[#e8fbff]/40">{stream.desc}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-2">
+                            <div className="flex justify-between text-[10px] mb-1">
+                              <span className="text-[#e8fbff]/50 font-mono">{stream.calc}</span>
+                            </div>
+                            <div className="h-1.5 bg-[#1a2332] rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${stream.pct}%`, backgroundColor: stream.color }} />
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-[11px] text-[#e8fbff]/40">
-                          {int.detail}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {/* PA Integrations status */}
-            <Card className="bg-[#1a2332] border-[#1e293b]">
-              <CardContent className="p-5">
-                <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
-                  <Globe className="h-4 w-4 text-[#f59e0b]" />
-                  Stato Integrazioni Piattaforme PA
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {PA_INTEGRATIONS.map((int, i) => {
-                    const st = STATUS_COLORS[int.status];
-                    return (
-                      <div
-                        key={i}
-                        className="p-3 rounded-lg bg-[#0b1220] border border-[#1e293b]"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-semibold text-[#e8fbff]">
-                            {int.name}
-                          </span>
-                          <span
-                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}
-                          >
-                            {st.label}
-                          </span>
+                {/* Revenue scenarios */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#f59e0b]/30">
+                    <CardContent className="p-5">
+                      <h4 className="text-sm font-semibold text-[#f59e0b] mb-4">Scenario Conservativo (30% penetrazione)</h4>
+                      <div className="space-y-2">
+                        {[
+                          { label: "Canone posteggi", value: "6.2M" },
+                          { label: "10% riscossione canone unico", value: "2.0M" },
+                          { label: "SCIA automatizzate", value: "0.1M" },
+                          { label: "Pagamenti/transazioni", value: "0.4M" },
+                          { label: "AVA Premium", value: "0.5M" },
+                          { label: "Gaming/Carbon", value: "0.5M" },
+                        ].map((r, i) => (
+                          <div key={i} className="flex justify-between text-xs">
+                            <span className="text-[#e8fbff]/50">{r.label}</span>
+                            <span className="font-mono font-bold text-[#f59e0b]">{r.value} EUR</span>
+                          </div>
+                        ))}
+                        <div className="border-t border-[#1e293b] pt-2 mt-3">
+                          <div className="flex justify-between">
+                            <span className="text-sm font-bold text-[#e8fbff]">ARR Totale</span>
+                            <span className="text-xl font-bold font-mono text-[#f59e0b]">~9.7M EUR</span>
+                          </div>
                         </div>
-                        <p className="text-[11px] text-[#e8fbff]/40">
-                          {int.detail}
-                        </p>
                       </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
 
-            {/* Open full dossier */}
-            <div className="text-center pt-2">
-              <Button
-                className="bg-[#a855f7] hover:bg-[#a855f7]/80 text-white px-8 py-3 text-base"
-                onClick={() =>
-                  window.open("/dossier/index.html", "_blank")
-                }
-              >
-                <ExternalLink className="h-5 w-5 mr-2" />
-                Apri Dossier Tecnico Completo
-              </Button>
-              <p className="text-xs text-[#e8fbff]/30 mt-2">
-                12 sezioni — architettura, sicurezza, conformita' AGID/EU,
-                valutazione economica, integrazioni PA
-              </p>
-            </div>
+                  <Card className="bg-gradient-to-br from-[#1a2332] to-[#0b1220] border-[#10b981]/30">
+                    <CardContent className="p-5">
+                      <h4 className="text-sm font-semibold text-[#10b981] mb-4">Scenario Ottimistico (70% + servizi avanzati)</h4>
+                      <div className="space-y-2">
+                        {[
+                          { label: "Canone posteggi + fiere", value: "29.1M" },
+                          { label: "10% riscossione canone unico", value: "5.0M" },
+                          { label: "SCIA + pagamenti + corsi", value: "5.1M" },
+                          { label: "AVA Premium (3 app)", value: "4.0M" },
+                          { label: "Hub urbani + vetrine", value: "10.0M" },
+                          { label: "Paghe & contabilita'", value: "25.0M" },
+                          { label: "Gaming + dati + analytics", value: "6.0M" },
+                        ].map((r, i) => (
+                          <div key={i} className="flex justify-between text-xs">
+                            <span className="text-[#e8fbff]/50">{r.label}</span>
+                            <span className="font-mono font-bold text-[#10b981]">{r.value} EUR</span>
+                          </div>
+                        ))}
+                        <div className="border-t border-[#1e293b] pt-2 mt-3">
+                          <div className="flex justify-between">
+                            <span className="text-sm font-bold text-[#e8fbff]">ARR Totale</span>
+                            <span className="text-xl font-bold font-mono text-[#10b981]">~84M EUR</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Billing system proof */}
+                <Card className="bg-[#0b1220] border-[#1e293b]">
+                  <CardContent className="p-4">
+                    <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wider mb-3">
+                      Sistema Fatturazione Automatica (billing.js) — Gia' Implementato
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        "mercati", "hub", "hub_negozio", "ava", "verbali", "suap",
+                        "giornate", "wallet", "civic", "notifiche", "qualificazioni",
+                        "mio_agent", "mobilita", "gaming", "carbon",
+                      ].map((t, i) => (
+                        <span key={i} className="text-xs px-3 py-1.5 rounded-full bg-[#1a2332] text-[#14b8a6] border border-[#14b8a6]/20 font-mono">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-[#e8fbff]/30 mt-3">
+                      15 linee di fatturazione attive — calcolo automatico basato su volumi operativi reali dal database
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* ── SERVIZI PREMIUM ── */}
+            {dossierSub === "premium" && (
+              <div className="space-y-6">
+                {[
+                  {
+                    title: "AVA — Assistente Virtuale Avanzato",
+                    icon: Bot,
+                    color: "#8b5cf6",
+                    badge: "AI Premium",
+                    desc: "Agente AI multi-ruolo presente in tutte e 3 le app (Dashboard PA, App Impresa, App Cittadino). Utilizza Gemini 2.5 Flash con knowledge base di 42 PDF, accesso dati in tempo reale filtrato per ruolo, e streaming SSE.",
+                    features: [
+                      "Chat streaming con contesto PA/impresa/cittadino",
+                      "Knowledge base: normativa SUAP, Bolkestein, Direttiva Servizi",
+                      "Accesso dati reali: mercati, concessioni, pagamenti, presenze",
+                      "Assistente SCIA: guida compilazione pratiche passo-passo",
+                      "Analytics predittive: scadenze, anomalie, trend",
+                    ],
+                    revenue: "5.000-20.000 utenti x 100-200 EUR/anno = 500K-4M EUR/anno",
+                    backend: "ai-chat.js — 7 endpoint REST + SSE streaming",
+                  },
+                  {
+                    title: "Gaming & Carbon Credits — Salva Italia",
+                    icon: Leaf,
+                    color: "#10b981",
+                    badge: "Ecosistema Premiante",
+                    desc: "Sistema di gamification completo che premia comportamenti sostenibili: acquisti in mercati e negozi locali, mobilita' sostenibile (bus, bici, a piedi), visite culturali (musei, monumenti), e segnalazioni civiche. Contrasta l'e-commerce valorizzando il commercio di prossimita'.",
+                    features: [
+                      "TCC (Token Carbon Credits) per acquisti sostenibili in mercati e hub",
+                      "Mobilita' sostenibile: tracking bus, bici, a piedi con CO2 risparmiata",
+                      "Cultura: check-in musei, monumenti, percorsi culturali premiati",
+                      "Sfide settimanali e referral con classifica e premi",
+                      "Heatmap citta' per PA: affluenza, mobilita', cultura, sicurezza",
+                    ],
+                    revenue: "Sponsorship PA + brand locali = 500K-2M EUR/anno",
+                    backend: "gaming-rewards.js — 40+ endpoint (mobilita', cultura, shopping, sfide, heatmap)",
+                  },
+                  {
+                    title: "Hub Urbani & Vetrina Online",
+                    icon: Building2,
+                    color: "#14b8a6",
+                    badge: "Marketplace Locale",
+                    desc: "Gestione completa degli hub urbani con vetrina digitale per ogni negozio e posteggio mercato. Il marketplace locale che compete con l'e-commerce offrendo visibilita' online ai commercianti di prossimita' con catalogo prodotti, certificazioni BIO/KM0, e navigazione diretta.",
+                    features: [
+                      "CRUD hub locations con geolocalizzazione e servizi",
+                      "Vetrina online per ogni negozio: prodotti, foto, contatti",
+                      "Certificazioni sostenibilita': BIO, KM0, artigianale",
+                      "Deep-link a Route Etico per navigazione al punto vendita",
+                      "Gestione multi-hub per catene e reti commerciali",
+                    ],
+                    revenue: "100.000 negozi x 100 EUR/anno = 10M EUR/anno",
+                    backend: "hub.js — CRUD locations, shops, services con vetrina_url",
+                  },
+                  {
+                    title: "Route Etico — Navigatore Sostenibile",
+                    icon: MapPin,
+                    color: "#06b6d4",
+                    badge: "App Cittadino",
+                    desc: "Navigatore integrato nell'app cittadino che guida verso ogni punto vendita locale. Calcola percorsi walking/bike/transit/car, mostra CO2 risparmiata e crediti guadagnati. Promuove il commercio locale premiando la mobilita' sostenibile.",
+                    features: [
+                      "Calcolo percorsi multi-modale (piedi, bici, bus, auto)",
+                      "CO2 risparmiata e crediti gaming per ogni tragitto",
+                      "Integrazione con hub urbani e vetrine online",
+                      "Navigazione turn-by-turn verso mercati e negozi",
+                      "Confronto impatto ambientale tra modalita' di trasporto",
+                    ],
+                    revenue: "Incluso nell'ecosistema gaming + sponsorship",
+                    backend: "routing/calculate — multi-modal con CO2 tracking",
+                  },
+                  {
+                    title: "Segnalatore Civico Premiante",
+                    icon: Eye,
+                    color: "#ef4444",
+                    badge: "App Cittadino",
+                    desc: "I cittadini segnalano degrado, criminalita', spazzatura e illuminazione guadagnando crediti nel sistema gaming. Le PA ricevono segnalazioni geolocalizzate in tempo reale con foto e priorita' automatica.",
+                    features: [
+                      "Segnalazioni con foto, GPS e categorizzazione automatica",
+                      "Crediti TCC per ogni segnalazione verificata",
+                      "Dashboard PA con heatmap segnalazioni in tempo reale",
+                      "Tracking stato: pendente, in corso, risolto",
+                      "Bonus urgenza e bonus foto per segnalazioni dettagliate",
+                    ],
+                    revenue: "Incluso nel canone PA + gaming ecosystem",
+                    backend: "civic-reports — stats, config TCC, CRUD segnalazioni",
+                  },
+                  {
+                    title: "Paghe & Contabilita' per Imprese",
+                    icon: CreditCard,
+                    color: "#f59e0b",
+                    badge: "Sviluppo Futuro",
+                    desc: "Con 160.000 imprese connesse, la rete puo' offrire servizi completi di paghe e contabilita' online, sostituendo progressivamente le associazioni di categoria con un canone servizi diretto o trattenendo una percentuale per ogni transazione.",
+                    features: [
+                      "Sostituzione associazioni con canone servizi online diretto",
+                      "Oppure: percentuale su ogni transazione via associazione",
+                      "Gestione quote tessera, pagamenti, fatturazione",
+                      "Banca dati corsi obbligatori e qualificazioni",
+                      "Segnalazioni scadenze e compliance automatiche",
+                    ],
+                    revenue: "50.000 imprese x 500 EUR/anno = 25M EUR/anno",
+                    backend: "billing.js — 15 linee fatturazione + calcolo volumi reali",
+                  },
+                ].map((service, i) => (
+                  <Card key={i} className="bg-[#1a2332] border-[#1e293b] overflow-hidden">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl" style={{ backgroundColor: `${service.color}15` }}>
+                            <service.icon className="h-6 w-6" style={{ color: service.color }} />
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold text-[#e8fbff]">{service.title}</h4>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ backgroundColor: `${service.color}20`, color: service.color }}>{service.badge}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-[#e8fbff]/60 leading-relaxed mb-4">{service.desc}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <h5 className="text-[10px] font-semibold text-[#e8fbff]/40 uppercase">Funzionalita'</h5>
+                          {service.features.map((f, j) => (
+                            <div key={j} className="flex items-start gap-2">
+                              <CheckCircle className="h-3 w-3 mt-0.5 shrink-0" style={{ color: service.color }} />
+                              <span className="text-[11px] text-[#e8fbff]/50">{f}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="space-y-3">
+                          <div className="p-3 rounded-lg bg-[#0b1220] border border-[#1e293b]">
+                            <h5 className="text-[10px] font-semibold text-[#e8fbff]/40 uppercase mb-1">Revenue Potenziale</h5>
+                            <p className="text-xs font-mono" style={{ color: service.color }}>{service.revenue}</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-[#0b1220] border border-[#1e293b]">
+                            <h5 className="text-[10px] font-semibold text-[#e8fbff]/40 uppercase mb-1">Backend Implementato</h5>
+                            <p className="text-[11px] text-[#e8fbff]/50 font-mono">{service.backend}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* ── CONFORMITA' ── */}
+            {dossierSub === "compliance" && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="bg-[#1a2332] border-[#1e293b]">
+                    <CardContent className="p-5 space-y-4">
+                      <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-[#a855f7]" />
+                        Analisi Conformita' (25/27)
+                      </h4>
+                      <ScoreBar label="HTTPS & Certificati SSL" score={10} max={10} color="#10b981" />
+                      <ScoreBar label="Autenticazione SSO (SPID/CIE)" score={10} max={10} color="#10b981" />
+                      <ScoreBar label="Firma Digitale CAdES/PAdES" score={10} max={10} color="#10b981" />
+                      <ScoreBar label="RBAC & Autorizzazione (64 EP)" score={10} max={10} color="#10b981" />
+                      <ScoreBar label="Anti-Scanner & Honeypot" score={10} max={10} color="#10b981" />
+                      <ScoreBar label="Cifratura PII (AES-256-GCM)" score={10} max={10} color="#10b981" />
+                      <ScoreBar label="Audit Trail & Logging" score={10} max={10} color="#10b981" />
+                      <ScoreBar label="GDPR Compliance (Art. 13-20)" score={10} max={10} color="#10b981" />
+                      <ScoreBar label="WCAG 2.1 AA Accessibilita'" score={10} max={10} color="#10b981" />
+                      <ScoreBar label="Accreditamento PA (PDND/ACN)" score={4} max={10} color="#f59e0b" />
+                    </CardContent>
+                  </Card>
+
+                  <div className="space-y-4">
+                    <Card className="bg-[#1a2332] border-[#1e293b]">
+                      <CardContent className="p-5">
+                        <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-3">
+                          <Zap className="h-4 w-4 text-[#f59e0b]" />
+                          Metriche di Maturita'
+                        </h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="text-center">
+                            <span className="text-2xl font-bold text-[#14b8a6] font-mono">28</span>
+                            <p className="text-[10px] text-[#e8fbff]/40">Sezioni Dashboard</p>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-2xl font-bold text-[#06b6d4] font-mono">36</span>
+                            <p className="text-[10px] text-[#e8fbff]/40">Pagine Pubbliche</p>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-2xl font-bold text-[#f59e0b] font-mono">42</span>
+                            <p className="text-[10px] text-[#e8fbff]/40">PDF Knowledge Base</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-[#1a2332] border-[#1e293b]">
+                      <CardContent className="p-5">
+                        <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-3">
+                          <Activity className="h-4 w-4 text-[#14b8a6]" />
+                          Guardian Monitoring
+                        </h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 rounded-lg bg-[#0b1220] text-center">
+                            <p className="text-xl font-bold text-[#14b8a6] font-mono">285K+</p>
+                            <p className="text-[10px] text-[#e8fbff]/40">Log totali</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-[#0b1220] text-center">
+                            <p className="text-xl font-bold text-[#10b981] font-mono">94.3%</p>
+                            <p className="text-[10px] text-[#e8fbff]/40">Success rate</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-[#0b1220] text-center">
+                            <p className="text-xl font-bold text-[#ef4444] font-mono">16K+</p>
+                            <p className="text-[10px] text-[#e8fbff]/40">Attacchi bloccati</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-[#0b1220] text-center">
+                            <p className="text-xl font-bold text-[#06b6d4] font-mono">14</p>
+                            <p className="text-[10px] text-[#e8fbff]/40">Service ID attivi</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Full compliance list */}
+                <Card className="bg-[#1a2332] border-[#1e293b]">
+                  <CardContent className="p-5">
+                    <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
+                      <Lock className="h-4 w-4 text-[#10b981]" />
+                      Conformita' Normativa v10.15 (aggiornata 12 Maggio 2026)
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {[
+                        { name: "GDPR — Privacy Policy", status: "ok" as const, detail: "Pagina /privacy conforme Art. 13/14" },
+                        { name: "GDPR — Cookie Consent", status: "ok" as const, detail: "Banner consenso esplicito attivo" },
+                        { name: "GDPR — Export Dati (Art. 20)", status: "ok" as const, detail: "Endpoint gdpr.exportMyData con 12 tabelle" },
+                        { name: "GDPR — Diritto Oblio (Art. 17)", status: "ok" as const, detail: "Anonimizzazione account gdpr.deleteMyAccount" },
+                        { name: "GDPR — Consenso Registrazione", status: "ok" as const, detail: "Checkbox obbligatorio in registrazione" },
+                        { name: "WCAG 2.1 AA", status: "ok" as const, detail: "Skip-to-content, focus-visible, ARIA landmarks" },
+                        { name: "Dichiarazione Accessibilita'", status: "ok" as const, detail: "Pagina /accessibilita conforme AgID" },
+                        { name: "Security Headers (Helmet)", status: "ok" as const, detail: "CSP, HSTS, X-Frame-Options attivi" },
+                        { name: "Rate Limiting", status: "ok" as const, detail: "Globale 100/15min + 4 finanziari dedicati" },
+                        { name: "Anti-Scanner & Honeypot", status: "ok" as const, detail: "Ban automatico .env probe + rate-limit 404 (16K+ bloccati)" },
+                        { name: "Firma Digitale CAdES/PAdES", status: "ok" as const, detail: "Verifica crittografica reale con node-forge + OpenSSL" },
+                        { name: "Cifratura PII (AES-256-GCM)", status: "ok" as const, detail: "CF, PIVA, IBAN cifrati con IV random + auth tag" },
+                        { name: "Anti-Frode TCC", status: "ok" as const, detail: "QR HMAC-SHA256, GPS validation, audit" },
+                        { name: "RBAC Granulare (64 endpoint)", status: "ok" as const, detail: "requirePermission() middleware per permessi singoli" },
+                        { name: "API Key Middleware", status: "ok" as const, detail: "Validazione X-API-Key + lastUsedAt tracking" },
+                        { name: "Data Retention Policy", status: "ok" as const, detail: "90gg metrics, 365gg logs, 5y audit (obbligo legale)" },
+                        { name: "CI/CD Pipeline", status: "ok" as const, detail: "GitHub Actions: check + test + build + auto-deploy" },
+                        { name: "SBOM", status: "ok" as const, detail: "CycloneDX JSON generato automaticamente" },
+                        { name: "PWA + Service Worker", status: "ok" as const, detail: "Installabile, offline page, manifest" },
+                        { name: "Error Monitoring", status: "ok" as const, detail: "ErrorBoundary + window.error → backend" },
+                        { name: "Code Splitting", status: "ok" as const, detail: "React.lazy() su 37 pagine, bundle ottimizzato" },
+                        { name: "Guardian Monitoring", status: "ok" as const, detail: "285K+ log, 14 service ID, health check automatici" },
+                        { name: "SSO ARPA (SPID/CIE)", status: "ok" as const, detail: "OAuth 2.0 + PKCE S256 — SPID L2 + CIE L3 attivi" },
+                        { name: "PDND Interoperabilita'", status: "partial" as const, detail: "Backend pronto, 3 e-Service — in attesa accreditamento" },
+                        { name: "DPIA", status: "partial" as const, detail: "Da redigere formalmente" },
+                        { name: "Qualificazione ACN SaaS", status: "missing" as const, detail: "Da avviare per vendita a PA" },
+                        { name: "Penetration Test", status: "missing" as const, detail: "Da commissionare a ente terzo certificato" },
+                      ].map((c, i) => {
+                        const st = STATUS_COLORS[c.status];
+                        return (
+                          <div key={i} className="p-3 rounded-lg bg-[#0b1220] border border-[#1e293b]">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-semibold text-[#e8fbff]">{c.name}</span>
+                              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}>{st.label}</span>
+                            </div>
+                            <p className="text-[11px] text-[#e8fbff]/40">{c.detail}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* ── INTEGRAZIONI PA ── */}
+            {dossierSub === "integrations" && (
+              <div className="space-y-6">
+                <Card className="bg-[#1a2332] border-[#1e293b]">
+                  <CardContent className="p-5">
+                    <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
+                      <Globe className="h-4 w-4 text-[#f59e0b]" />
+                      Stato Integrazioni Piattaforme PA
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {PA_INTEGRATIONS.map((int, i) => {
+                        const st = STATUS_COLORS[int.status];
+                        return (
+                          <div key={i} className="p-3 rounded-lg bg-[#0b1220] border border-[#1e293b]">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-semibold text-[#e8fbff]">{int.name}</span>
+                              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}>{st.label}</span>
+                            </div>
+                            <p className="text-[11px] text-[#e8fbff]/40">{int.detail}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Open full dossier */}
+                <div className="text-center pt-2">
+                  <Button
+                    className="bg-[#a855f7] hover:bg-[#a855f7]/80 text-white px-8 py-3 text-base"
+                    onClick={() => window.open("/dossier/index.html", "_blank")}
+                  >
+                    <ExternalLink className="h-5 w-5 mr-2" />
+                    Apri Dossier Tecnico Completo
+                  </Button>
+                  <p className="text-xs text-[#e8fbff]/30 mt-2">
+                    12 sezioni — architettura, sicurezza, conformita' AGID/EU, valutazione economica, integrazioni PA
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         );
+      }
 
       default:
         return null;
