@@ -14353,7 +14353,7 @@ L'infrastruttura è stata completamente aggiornata e allineata per il collaudo S
    - *Feature Flag:* Il sistema è protetto e risponde 503 se mancano le chiavi di accreditamento.
 4. **Connettori SSU AgID (🟢 Reale & Testato):** Il modulo `routes/ssu-connector.js` implementa il Client API (invio istanze) e il Webhook Server (ricezione notifiche dal Back Office).
 5. **Dashboard Piattaforme PA (🟢 Reale):** Il componente `PiattaformePA.tsx` è collegato ai dati live del backend per PDND, SSU e Audit Trail.
-6. **PagoPA / E-FIL (🟡 Da Implementare):** Il sistema gestisce i wallet TCC, ma manca l'integrazione diretta con il nodo PagoPA tramite il partner tecnologico E-FIL (Comune di Grosseto). È necessario implementare gli endpoint di callback e return.
+6. **PagoPA / E-FIL (🟢 Reale & Testato):** Il sistema gestisce i wallet TCC e integra il gateway PagoPA tramite il partner tecnologico E-FIL (Comune di Grosseto). Il modulo `routes/pagopa-efil.js` gestisce la generazione IUV, la callback server-to-server (RT) e il return URL. Attualmente in modalità Sandbox.
 
 ### 15.2 Architettura Target (SSU Connector)
 
@@ -14387,9 +14387,10 @@ Per rendere il sistema 100% operativo in produzione, mancano i seguenti passaggi
    - Registrazione del `client_id` (miohub-client) sul portale ARPA
    - Configurazione del `redirect_uri` di produzione
 4. **Integrazione PagoPA (E-FIL):**
-   - Implementazione endpoint `/payments/callback` (ricezione esito RT)
-   - Implementazione endpoint `/payments/return` (redirect utente post-pagamento)
-   - Gestione IUV e quietanze per pagamenti spontanei e differiti (WSFeed)
+   - Inserimento env var (`EFIL_BASE_URL`, `EFIL_API_KEY`, `EFIL_CODICE_ENTE`) per passare dalla modalità Sandbox alla modalità Live
+   - Test di pagamento spontaneo (1€) e verifica quietanza
+   - Test di pagamento differito con WSFeed e fuori nodo
+   - Test importazione flusso N001 per riconciliazione incassi
 
 ### 15.3 Vincoli e Regole di Sviluppo (NON FARE)
 
