@@ -1,4 +1,4 @@
-import React, { useState, memo} from "react";
+import { useState, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,16 @@ import {
   Lock,
   Globe,
   Zap,
+  Users,
+  Building2,
+  Fingerprint,
+  CreditCard,
+  Bell,
+  Leaf,
+  BarChart3,
+  Eye,
+  GitBranch,
+  HardDrive,
 } from "lucide-react";
 
 // ─── Immagini blueprint (webp generate) ─────────────────────────────
@@ -32,7 +42,7 @@ const BLUEPRINT_SLIDES = {
   overview: [
     {
       id: "ecosystem",
-      title: "Ecosistema DMS Hub",
+      title: "Ecosistema MIO HUB",
       image: "/ecosystem_overview_generated.webp",
       desc: "Panoramica architetturale completa del sistema",
     },
@@ -40,51 +50,51 @@ const BLUEPRINT_SLIDES = {
       id: "core",
       title: "Core Business",
       image: "/core_business_generated.webp",
-      desc: "Gestione mercati e flussi operativi principali",
+      desc: "Gestione mercati, SUAP e flussi operativi PA",
     },
     {
       id: "integrations",
-      title: "Integrazioni",
+      title: "Integrazioni PA",
       image: "/integrations_generated.webp",
-      desc: "Connettori TPER, Guardian e sistema AI",
+      desc: "PDND, App IO, ANPR, PagoPA, SSO ARPA",
     },
     {
       id: "updates",
       title: "Stato Sistema",
       image: "/blueprint_updates_generated.webp",
-      desc: "Architettura corrente e aggiornamenti",
+      desc: "Architettura corrente e aggiornamenti v10.14",
     },
   ],
   modules: [
     {
       id: "markets",
-      title: "Gestione Mercati",
+      title: "Gestione Mercati & SUAP",
       icon: Store,
       image: "/tech_markets_generated.webp",
       color: "text-[#14b8a6]",
       borderColor: "border-[#14b8a6]",
       bgColor: "bg-[#14b8a6]",
-      desc: "Modulo core per anagrafiche e assegnazioni",
+      desc: "Core business: anagrafiche, concessioni, SUAP digitale",
     },
     {
       id: "gis",
-      title: "GIS & Mappe",
+      title: "GIS & Mappe Interattive",
       icon: MapPin,
       image: "/tech_gis_generated.webp",
       color: "text-[#10b981]",
       borderColor: "border-[#10b981]",
       bgColor: "bg-[#10b981]",
-      desc: "Visualizzazione geospaziale avanzata",
+      desc: "Visualizzazione geospaziale nazionale con 7.904 comuni",
     },
     {
       id: "wallet",
-      title: "Wallet & Finanza",
+      title: "Wallet, PagoPA & Finanza",
       icon: Wallet,
       image: "/tech_wallet_generated.webp",
       color: "text-[#f59e0b]",
       borderColor: "border-[#f59e0b]",
       bgColor: "bg-[#f59e0b]",
-      desc: "Gestione finanziaria e PagoPA",
+      desc: "Borsellino elettronico, PagoPA E-FIL, riconciliazione",
     },
     {
       id: "agents",
@@ -94,22 +104,32 @@ const BLUEPRINT_SLIDES = {
       color: "text-[#8b5cf6]",
       borderColor: "border-[#8b5cf6]",
       bgColor: "bg-[#8b5cf6]",
-      desc: "Orchestrazione agenti autonomi",
+      desc: "Orchestrazione multi-agente con Gemini 2.5",
     },
     {
       id: "integrations",
-      title: "Connettività",
+      title: "Piattaforme PA & Connettivita'",
       icon: Network,
       image: "/tech_integrations_generated.webp",
       color: "text-[#06b6d4]",
       borderColor: "border-[#06b6d4]",
       bgColor: "bg-[#06b6d4]",
-      desc: "Ponte verso sistemi esterni",
+      desc: "PDND, ANPR, App IO, SSU, SSO ARPA, firma digitale",
+    },
+    {
+      id: "security",
+      title: "Sicurezza & Compliance",
+      icon: Shield,
+      image: "/blueprint_updates_generated.webp",
+      color: "text-[#ef4444]",
+      borderColor: "border-[#ef4444]",
+      bgColor: "bg-[#ef4444]",
+      desc: "RBAC, anti-scanner, firma CAdES/PAdES, GDPR",
     },
   ],
 };
 
-// ─── Dati reali per ogni modulo ──────────────────────────────────────
+// ─── Dati reali per ogni modulo (aggiornati 12 maggio 2026) ─────────
 const MODULE_DETAILS: Record<
   string,
   {
@@ -120,371 +140,333 @@ const MODULE_DETAILS: Record<
 > = {
   markets: {
     stats: [
-      { label: "Procedure tRPC", value: "38", color: "#14b8a6" },
-      { label: "Tabelle DB", value: "12", color: "#06b6d4" },
-      { label: "Componenti", value: "15+", color: "#a855f7" },
+      { label: "Endpoint REST", value: "86", color: "#14b8a6" },
+      { label: "Tabelle DB", value: "21", color: "#06b6d4" },
+      { label: "Componenti", value: "28+", color: "#a855f7" },
     ],
     highlights: [
-      "CRUD completo mercati, posteggi e operatori",
-      "Gestione concessioni con scadenze e rinnovi",
-      "Registro presenze giornaliere digitale",
-      "Mobilità operatori e gestione spuntisti",
+      "CRUD completo mercati, posteggi e operatori con 14 endpoint markets.js",
+      "Modulo SUAP digitale completo (36 endpoint) con firma CAdES/PAdES",
+      "Gestione concessioni con scadenze, rinnovi e graduatorie",
+      "Registro presenze giornaliere digitale con spuntisti e mobilita'",
+      "SSU Front Office per invio pratiche al Back Office del Comune",
+      "Canone Unico Patrimoniale con calcolo automatico e PagoPA",
     ],
-    tech: "Drizzle ORM + tRPC v11 + React Query",
+    tech: "Express.js + MySQL/TiDB + REST API + node-forge",
   },
   gis: {
     stats: [
-      { label: "Layer mappa", value: "6", color: "#10b981" },
-      { label: "Formato", value: "GeoJSON", color: "#06b6d4" },
+      { label: "Layer mappa", value: "8+", color: "#10b981" },
+      { label: "Comuni Italia", value: "7.904", color: "#06b6d4" },
       { label: "Engine", value: "Leaflet", color: "#a855f7" },
     ],
     highlights: [
-      "Mappa interattiva mercati su scala nazionale",
-      "Layer trasporti TPER Bologna integrato",
+      "Mappa interattiva mercati su scala nazionale con 7.904 comuni",
+      "Mappa GIS mercato singolo con posteggi geolocalizzati",
+      "Mappa Italia pubblica con regioni, province e comuni",
+      "Hub Market Map per gestione multi-mercato",
       "Heatmap segnalazioni civiche in tempo reale",
-      "Route optimizer multi-destinazione",
+      "Route optimizer multi-destinazione con centro mobilita'",
     ],
-    tech: "Leaflet + OpenStreetMap + PostGIS",
+    tech: "Leaflet + OpenStreetMap + GeoJSON + React",
   },
   wallet: {
     stats: [
-      { label: "Procedure tRPC", value: "20", color: "#f59e0b" },
-      { label: "Gateway", value: "PagoPA", color: "#ef4444" },
-      { label: "Protocollo", value: "E-FIL SOAP", color: "#06b6d4" },
+      { label: "Endpoint PagoPA", value: "9", color: "#f59e0b" },
+      { label: "Gateway", value: "E-FIL", color: "#ef4444" },
+      { label: "Riconciliazione", value: "Attiva", color: "#10b981" },
     ],
     highlights: [
-      "Borsellino elettronico per operatori",
-      "Integrazione pagamenti PagoPA via E-FIL",
-      "Generazione avvisi di pagamento (IUV)",
-      "Storico transazioni e riconciliazione",
+      "Borsellino elettronico per operatori con ricariche e transazioni",
+      "Integrazione PagoPA via protocollo E-FIL SOAP",
+      "Generazione avvisi di pagamento con IUV univoco",
+      "Tab Riconciliazione Incassi con matching automatico",
+      "Storico transazioni, export e reportistica",
+      "Callback asincrono per conferma pagamenti",
     ],
-    tech: "E-FIL SOAP + tRPC + PostgreSQL",
+    tech: "E-FIL SOAP + Express.js + MySQL + REST",
   },
   agents: {
     stats: [
-      { label: "Agenti AI", value: "5", color: "#8b5cf6" },
+      { label: "Agenti AI", value: "5+", color: "#8b5cf6" },
       { label: "LLM", value: "Gemini 2.5", color: "#14b8a6" },
-      { label: "Knowledge", value: "30 PDF", color: "#f59e0b" },
+      { label: "Knowledge", value: "42 PDF", color: "#f59e0b" },
     ],
     highlights: [
       "MIO: orchestratore e coordinamento multi-agente",
-      "GPT-Dev: sviluppo e refactoring codice",
-      "Manus: sysadmin, deploy, infrastruttura",
-      "Abacus: analisi dati e report statistici",
+      "GPT-Dev: sviluppo e refactoring codice automatico",
+      "Manus: sysadmin, deploy, infrastruttura e monitoring",
+      "Abacus: analisi dati, report statistici e previsioni",
+      "Concilio AI: assistente delibere e atti amministrativi",
+      "Workspace collaborativo con brain e knowledge base",
     ],
-    tech: "Gemini 2.5 Flash + WebSocket + REST",
+    tech: "Gemini 2.5 Flash + WebSocket + REST + OpenAI API",
   },
   integrations: {
     stats: [
-      { label: "Router tRPC", value: "15", color: "#06b6d4" },
-      { label: "Endpoints", value: "428+", color: "#14b8a6" },
-      { label: "Auth", value: "Firebase", color: "#f59e0b" },
+      { label: "Piattaforme PA", value: "6", color: "#06b6d4" },
+      { label: "Endpoint totali", value: "1.051", color: "#14b8a6" },
+      { label: "Connessioni", value: "11", color: "#f59e0b" },
     ],
     highlights: [
-      "Firebase Auth + OAuth SPID/CIE/CNS",
-      "TPER trasporto pubblico Bologna",
-      "API keys + webhook management",
-      "Guardian monitoring e alerting",
+      "PDND — Piattaforma Digitale Nazionale Dati (catalogo e-Service)",
+      "ANPR — Anagrafe Nazionale con verifica residenza e famiglia",
+      "App IO — Notifiche cittadini con 5 template messaggi",
+      "SSU — Sportello Unico Front Office per pratiche SUAP",
+      "SSO ARPA Toscana — SPID Livello 2 + CIE Livello 3",
+      "PagoPA E-FIL — Pagamenti con riconciliazione automatica",
     ],
-    tech: "Firebase + OAuth 2.0 + tRPC v11",
+    tech: "OAuth 2.0 + PKCE + REST + SOAP + OpenSSL",
+  },
+  security: {
+    stats: [
+      { label: "Endpoint RBAC", value: "64", color: "#ef4444" },
+      { label: "Conformita'", value: "25/27", color: "#10b981" },
+      { label: "Anti-Scanner", value: "Attivo", color: "#f59e0b" },
+    ],
+    highlights: [
+      "RBAC granulare con 64 endpoint e permessi per singola azione",
+      "Anti-Scanner con honeypot (.env), rate-limit 404 e ban automatico",
+      "Firma digitale CAdES (.p7m) e PAdES (.pdf) con verifica crittografica",
+      "Cifratura PII AES-256-GCM con IV random e auth tag",
+      "GDPR completo: export dati Art.20, oblio Art.17, consenso",
+      "Audit Trail completo con retention policy (90gg/365gg/5y)",
+    ],
+    tech: "Helmet + CORS + JWT + node-forge + OpenSSL + AES-256-GCM",
   },
 };
 
-// ─── Schema DB raggruppato (68 tabelle) ──────────────────────────────
+// ─── Schema DB raggruppato (21 tabelle MySQL reali) ─────────────────
 const DB_GROUPS = [
   {
-    name: "Core Business",
+    name: "Core Business & Mercati",
     color: "#14b8a6",
     icon: Store,
-    count: 12,
+    count: 4,
     tables: [
-      "markets",
-      "stalls",
-      "vendors",
-      "concessions",
-      "presences",
-      "daily_presences",
-      "market_sectors",
-      "stall_types",
-      "vendor_categories",
-      "market_schedules",
-      "market_operators",
-      "market_fees",
+      "documents",
+      "contratti_associazione",
+      "fatture_associazione",
+      "workspace_snapshots",
     ],
   },
   {
-    name: "Wallet & Pagamenti",
+    name: "SUAP & Pratiche",
+    color: "#ec4899",
+    icon: FileText,
+    count: 3,
+    tables: [
+      "dms_suap_instances",
+      "suap_pratica_messaggi",
+      "dms_durc_snapshots",
+    ],
+  },
+  {
+    name: "Piattaforme PA",
+    color: "#06b6d4",
+    icon: Globe,
+    count: 4,
+    tables: [
+      "ssu_instances",
+      "ssu_documents",
+      "ssu_audit_trail",
+      "pdnd_vouchers",
+    ],
+  },
+  {
+    name: "PagoPA & Pagamenti",
     color: "#f59e0b",
-    icon: Wallet,
-    count: 8,
-    tables: [
-      "wallet_accounts",
-      "wallet_transactions",
-      "payment_notices",
-      "wallet_recharges",
-      "payment_receipts",
-      "payment_methods",
-      "invoices",
-      "fee_schedules",
-    ],
-  },
-  {
-    name: "Auth & RBAC",
-    color: "#ef4444",
-    icon: Lock,
-    count: 5,
-    tables: [
-      "users",
-      "user_roles",
-      "role_permissions",
-      "permissions",
-      "user_role_assignments",
-    ],
+    icon: CreditCard,
+    count: 1,
+    tables: ["pagopa_posizioni"],
   },
   {
     name: "AI & Agenti",
     color: "#8b5cf6",
     icon: Bot,
-    count: 10,
-    tables: [
-      "agent_logs",
-      "tasks",
-      "projects",
-      "brain_entries",
-      "messages",
-      "workspaces",
-      "workspace_drawings",
-      "agent_configs",
-      "orchestrator_runs",
-      "ai_conversations",
-    ],
-  },
-  {
-    name: "Segnalazioni Civiche",
-    color: "#06b6d4",
-    icon: AlertCircle,
     count: 4,
     tables: [
-      "civic_reports",
-      "civic_categories",
-      "civic_responses",
-      "civic_attachments",
+      "chat_messages",
+      "ai_feedback",
+      "mio_agent_logs",
+      "mihub_tasks",
     ],
   },
   {
-    name: "Integrazioni & API",
-    color: "#10b981",
-    icon: Network,
-    count: 8,
-    tables: [
-      "api_keys",
-      "webhooks",
-      "api_metrics",
-      "integrations",
-      "tper_routes",
-      "tper_stops",
-      "external_connections",
-      "webhook_logs",
-    ],
-  },
-  {
-    name: "Comuni & Territorio",
+    name: "Associazioni & Enti",
     color: "#f97316",
-    icon: Globe,
-    count: 6,
-    tables: [
-      "comuni",
-      "territories",
-      "provinces",
-      "regions",
-      "addresses",
-      "geo_boundaries",
-    ],
+    icon: Users,
+    count: 2,
+    tables: ["associazioni", "utenti_associazione"],
   },
   {
-    name: "Sostenibilità",
+    name: "Territorio & Comuni",
     color: "#22c55e",
-    icon: TrendingUp,
-    count: 5,
-    tables: [
-      "carbon_credits",
-      "carbon_transactions",
-      "sustainability_metrics",
-      "green_certificates",
-      "emission_reports",
-    ],
-  },
-  {
-    name: "Notifiche & Sistema",
-    color: "#64748b",
-    icon: Activity,
-    count: 7,
-    tables: [
-      "notifications",
-      "system_logs",
-      "audit_trail",
-      "sessions",
-      "app_settings",
-      "feature_flags",
-      "maintenance_windows",
-    ],
-  },
-  {
-    name: "Commercio & SUAP",
-    color: "#ec4899",
-    icon: FileText,
-    count: 5,
-    tables: [
-      "businesses",
-      "licenses",
-      "suap_requests",
-      "inspections",
-      "business_categories",
-    ],
-  },
-  {
-    name: "TCC Security & Anti-Frode",
-    color: "#f43f5e",
-    icon: Shield,
-    count: 5,
-    tables: [
-      "tcc_rate_limits",
-      "tcc_fraud_events",
-      "tcc_idempotency_keys",
-      "tcc_daily_limits",
-      "tcc_qr_tokens",
-    ],
+    icon: Building2,
+    count: 2,
+    tables: ["province", "regioni"],
   },
 ];
 
-// ─── Gruppi componenti (149 totali) ──────────────────────────────────
+// ─── Gruppi componenti (173 totali) ─────────────────────────────────
 const COMPONENT_GROUPS = [
   {
     name: "Dashboard PA",
-    count: 14,
-    desc: "32 tab protetti con sistema RBAC + ProtectedTab",
+    count: 28,
+    desc: "28 sezioni protette con sistema RBAC + ProtectedTab",
     color: "#14b8a6",
     icon: LayoutDashboard,
   },
   {
-    name: "Gestione Mercati",
-    count: 12,
-    desc: "Mercati, posteggi, concessioni, presenze, operatori",
+    name: "Gestione Mercati & SUAP",
+    count: 18,
+    desc: "Mercati, posteggi, concessioni, presenze, SUAP, canone unico",
     color: "#06b6d4",
     icon: Store,
   },
   {
     name: "Mappe & GIS",
-    count: 10,
-    desc: "Leaflet maps, layer manager, route optimizer",
+    count: 12,
+    desc: "Leaflet maps, mappa Italia, GIS mercato, hub map, route optimizer",
     color: "#10b981",
     icon: MapPin,
   },
   {
-    name: "Wallet & Pagamenti",
-    count: 8,
-    desc: "Borsellino, PagoPA E-FIL, transazioni",
+    name: "Wallet & PagoPA",
+    count: 10,
+    desc: "Borsellino, PagoPA E-FIL, riconciliazione incassi, transazioni",
     color: "#f59e0b",
     icon: Wallet,
   },
   {
     name: "AI & Chat",
     count: 8,
-    desc: "MIO Agent, workspace collaborativo, brain",
+    desc: "MIO Agent, workspace collaborativo, brain, Concilio AI",
     color: "#8b5cf6",
     icon: Bot,
   },
   {
     name: "Auth & Security",
-    count: 6,
-    desc: "Login, RBAC manager, impersonation, guard",
+    count: 8,
+    desc: "Login SSO, RBAC manager, impersonation, guard, anti-scanner",
     color: "#ef4444",
     icon: Lock,
   },
   {
-    name: "UI Base (shadcn)",
-    count: 53,
-    desc: "Button, Card, Dialog, Table, Select, etc.",
-    color: "#64748b",
-    icon: Layers,
+    name: "Piattaforme PA",
+    count: 10,
+    desc: "PDND, SSU, App IO, ANPR, SSO ARPA, Audit Trail",
+    color: "#06b6d4",
+    icon: Globe,
   },
   {
-    name: "Report & Docs",
-    count: 5,
-    desc: "Blueprint navigator, dossier, report cards",
+    name: "Impresa & Operatori",
+    count: 14,
+    desc: "Dashboard impresa, anagrafica, notifiche, hub operatore, presenze",
+    color: "#f97316",
+    icon: Users,
+  },
+  {
+    name: "Comuni & Territorio",
+    count: 8,
+    desc: "Pannello comuni, controlli/sanzioni, segnalazioni civiche",
+    color: "#22c55e",
+    icon: Building2,
+  },
+  {
+    name: "Report & Documenti",
+    count: 6,
+    desc: "Report interattivo, dossier tecnico, blueprint navigator",
     color: "#a855f7",
     icon: FileText,
   },
   {
-    name: "Segnalazioni",
-    count: 6,
-    desc: "Civic reports panel, heatmap, categorie",
-    color: "#06b6d4",
-    icon: AlertCircle,
+    name: "Gaming & Sostenibilita'",
+    count: 8,
+    desc: "Gaming rewards, carbon credits, TCC v2, sostenibilita'",
+    color: "#ec4899",
+    icon: Leaf,
   },
   {
-    name: "Impresa & Operatori",
-    count: 12,
-    desc: "Dashboard impresa, anagrafica, notifiche, hub, presenze associati",
-    color: "#f97316",
-    icon: Globe,
-  },
-  {
-    name: "Pagine Pubbliche",
-    count: 15,
-    desc: "Home, mappa, vetrine, SUAP, presentazione",
-    color: "#22c55e",
-    icon: Globe,
+    name: "UI Base (shadcn)",
+    count: 53,
+    desc: "Button, Card, Dialog, Table, Select, Tabs, etc.",
+    color: "#64748b",
+    icon: Layers,
   },
 ];
 
-// ─── Metriche dossier ────────────────────────────────────────────────
+// ─── Metriche integrazioni PA ───────────────────────────────────────
 const PA_INTEGRATIONS = [
   {
-    name: "PagoPA",
+    name: "PagoPA E-FIL",
     status: "ok" as const,
-    detail: "E-FIL SOAP integrato — gateway attivo",
+    detail: "9 endpoint REST — gateway pagamenti con riconciliazione",
   },
   {
-    name: "SPID/CIE/CNS",
+    name: "SPID (Livello 2)",
     status: "ok" as const,
-    detail: "OAuth + Firebase Auth multi-provider",
+    detail: "SSO via ARPA Toscana — OAuth 2.0 + PKCE attivo",
   },
   {
-    name: "Firebase Auth",
+    name: "CIE (Livello 3)",
     status: "ok" as const,
-    detail: "Pienamente operativo con JWT + RBAC",
+    detail: "SSO via ARPA Toscana — endpoint configurato e attivo",
   },
   {
-    name: "TPER Bologna",
+    name: "Firma Digitale",
     status: "ok" as const,
-    detail: "API real-time integrata",
+    detail: "CAdES (.p7m) e PAdES (.pdf) — verifica crittografica reale",
+  },
+  {
+    name: "SUAP Digitale",
+    status: "ok" as const,
+    detail: "36 endpoint — pratiche, documenti, firma, workflow completo",
+  },
+  {
+    name: "Anti-Scanner/Bot",
+    status: "ok" as const,
+    detail: "Honeypot + rate-limit 404 + ban automatico — 16K+ attacchi bloccati",
   },
   {
     name: "PDND",
     status: "partial" as const,
-    detail: "Predisposto — in attesa accreditamento",
+    detail: "Backend pronto — catalogo 3 e-Service — in attesa accreditamento",
   },
   {
     name: "ANPR",
     status: "partial" as const,
-    detail: "Predisposto — in attesa accreditamento",
+    detail: "5 endpoint backend — sandbox attivo — in attesa PDND",
   },
   {
-    name: "AppIO",
+    name: "App IO",
     status: "partial" as const,
-    detail: "Predisposto — in attesa accreditamento",
+    detail: "6 endpoint backend — 5 template — in attesa API key produzione",
   },
   {
-    name: "SUAP Impresa.gov",
-    status: "ok" as const,
-    detail: "Modulo SUAP completo con dashboard",
+    name: "SSU Front Office",
+    status: "partial" as const,
+    detail: "13 endpoint — connettore pronto — in attesa accreditamento",
+  },
+  {
+    name: "Qualificazione ACN",
+    status: "missing" as const,
+    detail: "Da avviare per vendita SaaS a Pubbliche Amministrazioni",
+  },
+  {
+    name: "DPIA",
+    status: "missing" as const,
+    detail: "Valutazione impatto privacy — da redigere formalmente",
   },
 ];
 
 const STATUS_COLORS = {
   ok: { bg: "bg-[#10b981]/20", text: "text-[#10b981]", label: "Operativo" },
-  partial: { bg: "bg-[#f59e0b]/20", text: "text-[#f59e0b]", label: "Parziale" },
+  partial: {
+    bg: "bg-[#f59e0b]/20",
+    text: "text-[#f59e0b]",
+    label: "Sandbox",
+  },
   missing: { bg: "bg-[#ef4444]/20", text: "text-[#ef4444]", label: "Da fare" },
 };
 
@@ -540,11 +522,11 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                       Moduli di Sistema
                     </CardTitle>
                     <p className="text-xs text-[#e8fbff]/40">
-                      5 moduli core — 82.000 righe di codice (client+server)
+                      6 moduli core — 270.391 righe di codice
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {BLUEPRINT_SLIDES.modules.map(module => (
+                    {BLUEPRINT_SLIDES.modules.map((module) => (
                       <div
                         key={module.id}
                         onClick={() => setActiveModule(module)}
@@ -598,71 +580,62 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                       loading="lazy"
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0b1220] via-[#0b1220]/90 to-transparent p-6 pt-12">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-2 mb-2">
                         <activeModule.icon
-                          className={`h-6 w-6 ${activeModule.color}`}
+                          className={`h-5 w-5 ${activeModule.color}`}
                         />
-                        <h3 className="text-2xl font-bold text-[#e8fbff]">
+                        <h2 className="text-xl font-bold text-[#e8fbff]">
                           {activeModule.title}
-                        </h3>
+                        </h2>
                       </div>
-                      <p className="text-sm text-[#e8fbff]/60">
-                        {details?.tech}
-                      </p>
+                      {details && (
+                        <p className="text-xs text-[#e8fbff]/40 font-mono">
+                          Stack: {details.tech}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </Card>
 
-                {/* Stats + Highlights Panel */}
+                {/* Stats + Highlights */}
                 {details && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Stats */}
                     <Card className="bg-[#1a2332] border-[#1e293b]">
-                      <CardContent className="p-4">
-                        <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wider mb-3">
+                      <CardContent className="p-4 space-y-3">
+                        <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wider">
                           Metriche
                         </h4>
-                        <div className="space-y-3">
-                          {details.stats.map((stat, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center justify-between"
+                        {details.stats.map((s, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between"
+                          >
+                            <span className="text-sm text-[#e8fbff]/60">
+                              {s.label}
+                            </span>
+                            <span
+                              className="text-lg font-bold font-mono"
+                              style={{ color: s.color }}
                             >
-                              <span className="text-sm text-[#e8fbff]/70">
-                                {stat.label}
-                              </span>
-                              <span
-                                className="text-sm font-bold font-mono px-2 py-0.5 rounded"
-                                style={{
-                                  color: stat.color,
-                                  backgroundColor: stat.color + "15",
-                                }}
-                              >
-                                {stat.value}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                              {s.value}
+                            </span>
+                          </div>
+                        ))}
                       </CardContent>
                     </Card>
-
-                    {/* Highlights */}
                     <Card className="bg-[#1a2332] border-[#1e293b]">
-                      <CardContent className="p-4">
-                        <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wider mb-3">
-                          Funzionalità
+                      <CardContent className="p-4 space-y-2">
+                        <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wider mb-2">
+                          Funzionalita' chiave
                         </h4>
-                        <ul className="space-y-2">
-                          {details.highlights.map((h, i) => (
-                            <li
-                              key={i}
-                              className="flex items-start gap-2 text-sm text-[#e8fbff]/70"
-                            >
-                              <CheckCircle className="h-3.5 w-3.5 mt-0.5 text-[#10b981] shrink-0" />
+                        {details.highlights.map((h, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <CheckCircle className="h-3.5 w-3.5 text-[#10b981] mt-0.5 shrink-0" />
+                            <span className="text-xs text-[#e8fbff]/60">
                               {h}
-                            </li>
-                          ))}
-                        </ul>
+                            </span>
+                          </div>
+                        ))}
                       </CardContent>
                     </Card>
                   </div>
@@ -673,28 +646,44 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
         );
       }
 
-      // ─── TAB: FLUSSO DATI ────────────────────────────────────────
+      // ─── TAB: FLUSSO DATI ───────────────────────────────────────
       case "dataflow":
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* System summary bar */}
+            {/* Hero metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 {
-                  label: "Codice attivo",
-                  value: "106K righe",
+                  label: "Righe di Codice",
+                  value: "270.391",
                   color: "#14b8a6",
+                  icon: Code,
                 },
                 {
-                  label: "Totale progetto",
-                  value: "106K righe",
+                  label: "Endpoint API",
+                  value: "1.051",
                   color: "#06b6d4",
+                  icon: Network,
                 },
-                { label: "Router tRPC", value: "21", color: "#a855f7" },
-                { label: "Endpoints API", value: "428+", color: "#f59e0b" },
+                {
+                  label: "File Sorgente",
+                  value: "551",
+                  color: "#a855f7",
+                  icon: FileText,
+                },
+                {
+                  label: "Commit Totali",
+                  value: "3.868",
+                  color: "#f59e0b",
+                  icon: GitBranch,
+                },
               ].map((s, i) => (
                 <Card key={i} className="bg-[#1a2332] border-[#1e293b]">
                   <CardContent className="p-4 text-center">
+                    <s.icon
+                      className="h-5 w-5 mx-auto mb-2"
+                      style={{ color: s.color }}
+                    />
                     <p
                       className="text-2xl font-bold font-mono"
                       style={{ color: s.color }}
@@ -707,9 +696,186 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
               ))}
             </div>
 
+            {/* Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="bg-[#1a2332] border-[#1e293b]">
+                <CardContent className="p-5 space-y-4">
+                  <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2">
+                    <Server className="h-4 w-4 text-[#14b8a6]" />
+                    Backend (mihub-backend-rest)
+                  </h4>
+                  <div className="space-y-3">
+                    {[
+                      { label: "File route", value: "100", color: "#14b8a6" },
+                      {
+                        label: "Righe codice route",
+                        value: "70.103",
+                        color: "#06b6d4",
+                      },
+                      {
+                        label: "Righe totali JS",
+                        value: "91.566",
+                        color: "#a855f7",
+                      },
+                      {
+                        label: "Endpoint definiti",
+                        value: "864",
+                        color: "#f59e0b",
+                      },
+                      {
+                        label: "Middleware",
+                        value: "3 (942 LOC)",
+                        color: "#10b981",
+                      },
+                      { label: "Commit", value: "1.321", color: "#ef4444" },
+                    ].map((item, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-xs text-[#e8fbff]/60">
+                          {item.label}
+                        </span>
+                        <span
+                          className="text-sm font-bold font-mono"
+                          style={{ color: item.color }}
+                        >
+                          {item.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-[#1a2332] border-[#1e293b]">
+                <CardContent className="p-5 space-y-4">
+                  <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2">
+                    <Layers className="h-4 w-4 text-[#06b6d4]" />
+                    Frontend (dms-hub-app-new)
+                  </h4>
+                  <div className="space-y-3">
+                    {[
+                      {
+                        label: "Componenti React",
+                        value: "173",
+                        color: "#14b8a6",
+                      },
+                      { label: "Pagine", value: "37", color: "#06b6d4" },
+                      {
+                        label: "Righe TSX",
+                        value: "148.698",
+                        color: "#a855f7",
+                      },
+                      {
+                        label: "Righe TS/CSS",
+                        value: "9.141",
+                        color: "#f59e0b",
+                      },
+                      {
+                        label: "Sezioni Dashboard",
+                        value: "28",
+                        color: "#10b981",
+                      },
+                      { label: "Commit", value: "2.547", color: "#ef4444" },
+                    ].map((item, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-xs text-[#e8fbff]/60">
+                          {item.label}
+                        </span>
+                        <span
+                          className="text-sm font-bold font-mono"
+                          style={{ color: item.color }}
+                        >
+                          {item.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Top route files */}
+            <Card className="bg-[#1a2332] border-[#1e293b]">
+              <CardContent className="p-5">
+                <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
+                  <BarChart3 className="h-4 w-4 text-[#a855f7]" />
+                  Top 15 Moduli Backend per Complessita'
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  {[
+                    { name: "security.js", lines: "3.735", endpoints: "64" },
+                    { name: "tcc-v2.js", lines: "3.126", endpoints: "33" },
+                    { name: "suap.js", lines: "2.962", endpoints: "36" },
+                    {
+                      name: "gaming-rewards.js",
+                      lines: "2.541",
+                      endpoints: "32",
+                    },
+                    {
+                      name: "presenze-live.js",
+                      lines: "2.522",
+                      endpoints: "22",
+                    },
+                    { name: "ai-chat.js", lines: "2.363", endpoints: "9" },
+                    { name: "concessions.js", lines: "2.087", endpoints: "10" },
+                    {
+                      name: "integrations.js",
+                      lines: "1.932",
+                      endpoints: "8",
+                    },
+                    {
+                      name: "canone-unico.js",
+                      lines: "1.793",
+                      endpoints: "20",
+                    },
+                    {
+                      name: "orchestrator.js",
+                      lines: "1.697",
+                      endpoints: "9",
+                    },
+                    { name: "imprese.js", lines: "1.598", endpoints: "19" },
+                    {
+                      name: "associazioni.js",
+                      lines: "1.594",
+                      endpoints: "33",
+                    },
+                    { name: "presenze.js", lines: "1.581", endpoints: "17" },
+                    { name: "formazione.js", lines: "1.195", endpoints: "21" },
+                    {
+                      name: "ssu-connector.js",
+                      lines: "1.102",
+                      endpoints: "13",
+                    },
+                  ].map((mod, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-2 rounded bg-[#0b1220] border border-[#1e293b]"
+                    >
+                      <span className="text-[11px] font-mono text-[#e8fbff]/60">
+                        {mod.name}
+                      </span>
+                      <div className="flex gap-3">
+                        <span className="text-[10px] font-mono text-[#14b8a6]">
+                          {mod.lines} LOC
+                        </span>
+                        <span className="text-[10px] font-mono text-[#f59e0b]">
+                          {mod.endpoints} EP
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Overview slides */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {BLUEPRINT_SLIDES.overview.map(slide => (
+              {BLUEPRINT_SLIDES.overview.map((slide) => (
                 <Card
                   key={slide.id}
                   className="bg-[#1a2332] border-[#06b6d4]/20 hover:border-[#06b6d4]/50 transition-colors cursor-pointer group overflow-hidden"
@@ -743,11 +909,11 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
             {/* Header stats */}
             <div className="grid grid-cols-3 gap-4">
               {[
-                { label: "Tabelle totali", value: "75", color: "#14b8a6" },
-                { label: "ORM", value: "Drizzle", color: "#06b6d4" },
+                { label: "Tabelle MySQL", value: "21", color: "#14b8a6" },
+                { label: "ORM", value: "Raw SQL", color: "#06b6d4" },
                 {
                   label: "Database",
-                  value: "Neon PostgreSQL",
+                  value: "MySQL / TiDB",
                   color: "#a855f7",
                 },
               ].map((s, i) => (
@@ -811,21 +977,60 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
               ))}
             </div>
 
-            <div className="text-center pt-2">
-              <Button
-                variant="outline"
-                className="border-[#06b6d4]/30 text-[#06b6d4] hover:bg-[#06b6d4]/10"
-                onClick={() =>
-                  window.open(
-                    "https://github.com/Chcndr/dms-hub-app-new/blob/master/drizzle/schema.ts",
-                    "_blank"
-                  )
-                }
-              >
-                <Code className="h-4 w-4 mr-2" />
-                Vedi Schema Completo su GitHub
-              </Button>
-            </div>
+            {/* Infrastruttura */}
+            <Card className="bg-[#0b1220] border-[#1e293b]">
+              <CardContent className="p-4">
+                <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wider mb-3">
+                  Infrastruttura di Hosting
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    {
+                      name: "Hetzner VPS",
+                      role: "Backend API + MySQL",
+                      detail: "Ubuntu 22.04, Node.js 22, PM2, Nginx, Let's Encrypt",
+                      color: "#14b8a6",
+                    },
+                    {
+                      name: "Vercel",
+                      role: "Frontend React",
+                      detail: "Edge CDN globale, build automatico da GitHub",
+                      color: "#06b6d4",
+                    },
+                    {
+                      name: "GitHub",
+                      role: "Repository & CI/CD",
+                      detail: "2 repo privati, GitHub Actions, auto-deploy",
+                      color: "#a855f7",
+                    },
+                  ].map((infra, i) => (
+                    <div
+                      key={i}
+                      className="p-3 rounded-lg bg-[#1a2332] border border-[#1e293b]"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <HardDrive
+                          className="h-4 w-4"
+                          style={{ color: infra.color }}
+                        />
+                        <span
+                          className="text-sm font-semibold"
+                          style={{ color: infra.color }}
+                        >
+                          {infra.name}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#e8fbff]/70 font-medium">
+                        {infra.role}
+                      </p>
+                      <p className="text-[10px] text-[#e8fbff]/40 mt-1">
+                        {infra.detail}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         );
 
@@ -836,10 +1041,10 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
             {/* Header stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Componenti React", value: "147", color: "#14b8a6" },
-                { label: "Pagine", value: "37", color: "#06b6d4" },
-                { label: "Framework", value: "React 19", color: "#a855f7" },
-                { label: "Build", value: "Vite 7", color: "#f59e0b" },
+                { label: "Componenti React", value: "173", color: "#14b8a6" },
+                { label: "Pagine / Route", value: "37", color: "#06b6d4" },
+                { label: "Sezioni Dashboard", value: "28", color: "#a855f7" },
+                { label: "Client API", value: "6", color: "#f59e0b" },
               ].map((s, i) => (
                 <Card key={i} className="bg-[#1a2332] border-[#1e293b]">
                   <CardContent className="p-4 text-center">
@@ -896,26 +1101,74 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
               ))}
             </div>
 
+            {/* Top frontend files */}
+            <Card className="bg-[#1a2332] border-[#1e293b]">
+              <CardContent className="p-5">
+                <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
+                  <BarChart3 className="h-4 w-4 text-[#a855f7]" />
+                  Top 10 Componenti per Complessita'
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {[
+                    { name: "DashboardPA.tsx", lines: "10.621" },
+                    { name: "GestioneMercati.tsx", lines: "6.776" },
+                    { name: "AnagraficaPage.tsx", lines: "5.768" },
+                    { name: "SuapPanel.tsx", lines: "4.926" },
+                    { name: "ControlliSanzioniPanel.tsx", lines: "4.816" },
+                    { name: "WalletPanel.tsx", lines: "4.521" },
+                    { name: "ComuniPanel.tsx", lines: "4.138" },
+                    { name: "MappaItaliaComponent.tsx", lines: "3.547" },
+                    { name: "GamingRewardsPanel.tsx", lines: "3.447" },
+                    { name: "Integrazioni.tsx", lines: "3.414" },
+                  ].map((comp, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-2 rounded bg-[#0b1220] border border-[#1e293b]"
+                    >
+                      <span className="text-[11px] font-mono text-[#e8fbff]/60">
+                        {comp.name}
+                      </span>
+                      <span className="text-[10px] font-mono text-[#14b8a6]">
+                        {comp.lines} righe
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Tech stack summary */}
             <Card className="bg-[#0b1220] border-[#1e293b]">
               <CardContent className="p-4">
                 <h4 className="text-xs font-semibold text-[#e8fbff]/50 uppercase tracking-wider mb-3">
-                  Stack Frontend
+                  Stack Tecnologico Completo
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {[
                     "React 19",
                     "Vite 7",
-                    "TypeScript strict",
-                    "Tailwind 4",
+                    "TypeScript",
+                    "Tailwind CSS",
                     "shadcn/ui",
                     "Wouter",
                     "React Query",
-                    "tRPC client",
                     "Leaflet",
                     "Lucide Icons",
                     "Recharts",
-                    "Firebase SDK",
+                    "Node.js 22",
+                    "Express.js",
+                    "MySQL / TiDB",
+                    "PM2",
+                    "Nginx",
+                    "node-forge",
+                    "OpenSSL",
+                    "Helmet",
+                    "JWT",
+                    "OAuth 2.0 + PKCE",
+                    "Gemini 2.5 Flash",
+                    "GitHub Actions",
+                    "Vercel CDN",
+                    "Hetzner VPS",
                   ].map((tech, i) => (
                     <span
                       key={i}
@@ -940,55 +1193,67 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                 <CardContent className="p-5 space-y-4">
                   <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2">
                     <Shield className="h-4 w-4 text-[#a855f7]" />
-                    Analisi Conformità
+                    Analisi Conformita'
                   </h4>
                   <ScoreBar
-                    label="HTTPS & Certificati"
+                    label="HTTPS & Certificati SSL"
                     score={10}
                     max={10}
                     color="#10b981"
                   />
                   <ScoreBar
-                    label="Autenticazione"
+                    label="Autenticazione SSO (SPID/CIE)"
                     score={10}
                     max={10}
                     color="#10b981"
                   />
                   <ScoreBar
-                    label="Validazione Input (Zod)"
+                    label="Firma Digitale CAdES/PAdES"
                     score={10}
                     max={10}
                     color="#10b981"
                   />
                   <ScoreBar
-                    label="RBAC & Autorizzazione"
+                    label="RBAC & Autorizzazione (64 EP)"
                     score={10}
                     max={10}
                     color="#10b981"
                   />
                   <ScoreBar
-                    label="Rate Limiting"
+                    label="Anti-Scanner & Honeypot"
                     score={10}
                     max={10}
                     color="#10b981"
                   />
                   <ScoreBar
-                    label="Security Headers"
+                    label="Cifratura PII (AES-256-GCM)"
                     score={10}
                     max={10}
                     color="#10b981"
                   />
                   <ScoreBar
-                    label="Audit Trail"
+                    label="Audit Trail & Logging"
                     score={10}
                     max={10}
                     color="#10b981"
                   />
                   <ScoreBar
-                    label="GDPR Compliance"
+                    label="GDPR Compliance (Art. 13-20)"
                     score={10}
                     max={10}
                     color="#10b981"
+                  />
+                  <ScoreBar
+                    label="WCAG 2.1 AA Accessibilita'"
+                    score={10}
+                    max={10}
+                    color="#10b981"
+                  />
+                  <ScoreBar
+                    label="Accreditamento PA (PDND/ACN)"
+                    score={4}
+                    max={10}
+                    color="#f59e0b"
                   />
                 </CardContent>
               </Card>
@@ -1004,7 +1269,7 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-3 rounded-lg bg-[#0b1220] text-center">
                         <p className="text-xl font-bold text-[#14b8a6] font-mono">
-                          280-440K
+                          540K-810K
                         </p>
                         <p className="text-[10px] text-[#e8fbff]/40 mt-1">
                           Valore Asset (EUR)
@@ -1012,41 +1277,70 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                       </div>
                       <div className="p-3 rounded-lg bg-[#0b1220] text-center">
                         <p className="text-xl font-bold text-[#a855f7] font-mono">
-                          0.75-5M
+                          2-8M
                         </p>
                         <p className="text-[10px] text-[#e8fbff]/40 mt-1">
                           Potenziale Commerciale
                         </p>
                       </div>
                     </div>
-                    <p className="text-xs text-[#e8fbff]/40 mt-3">
-                      Target: 8.000 mercati italiani — SaaS/on-premise per PA
-                    </p>
+                    <div className="mt-4 p-3 rounded-lg bg-[#0b1220] border border-[#1e293b]">
+                      <p className="text-xs text-[#e8fbff]/60 mb-2">
+                        <strong className="text-[#e8fbff]">
+                          Metodologia di calcolo:
+                        </strong>
+                      </p>
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-[#e8fbff]/40">
+                          270.391 LOC x 2-3 EUR/LOC (COCOMO II) = 540K-810K
+                          EUR valore asset
+                        </p>
+                        <p className="text-[10px] text-[#e8fbff]/40">
+                          Target: 8.000 mercati italiani — SaaS per PA
+                        </p>
+                        <p className="text-[10px] text-[#e8fbff]/40">
+                          ARR potenziale: 250-1.000 EUR/mercato/anno = 2-8M
+                          EUR
+                        </p>
+                        <p className="text-[10px] text-[#e8fbff]/40">
+                          Costo equivalente team: 4-6 sviluppatori x 18 mesi =
+                          450-700K EUR
+                        </p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* Quick doc count */}
+                {/* Quick metrics */}
                 <Card className="bg-[#1a2332] border-[#1e293b]">
                   <CardContent className="p-5">
                     <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-3">
-                      <FileText className="h-4 w-4 text-[#06b6d4]" />
-                      Biblioteca Documentale
+                      <Zap className="h-4 w-4 text-[#f59e0b]" />
+                      Metriche di Maturita'
                     </h4>
-                    <div className="flex items-center gap-6">
-                      <div>
-                        <span className="text-3xl font-bold text-[#06b6d4] font-mono">
-                          42
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="text-center">
+                        <span className="text-2xl font-bold text-[#14b8a6] font-mono">
+                          28
                         </span>
-                        <p className="text-xs text-[#e8fbff]/40">
-                          PDF tecnici e normativi
+                        <p className="text-[10px] text-[#e8fbff]/40">
+                          Sezioni Dashboard
                         </p>
                       </div>
-                      <div>
-                        <span className="text-3xl font-bold text-[#f59e0b] font-mono">
-                          14
+                      <div className="text-center">
+                        <span className="text-2xl font-bold text-[#06b6d4] font-mono">
+                          36
                         </span>
-                        <p className="text-xs text-[#e8fbff]/40">
-                          Regolamenti EU
+                        <p className="text-[10px] text-[#e8fbff]/40">
+                          Pagine Pubbliche
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-2xl font-bold text-[#f59e0b] font-mono">
+                          42
+                        </span>
+                        <p className="text-[10px] text-[#e8fbff]/40">
+                          PDF Knowledge Base
                         </p>
                       </div>
                     </div>
@@ -1060,7 +1354,7 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
               <CardContent className="p-5">
                 <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
                   <Lock className="h-4 w-4 text-[#10b981]" />
-                  Conformita' Normativa v6.6 (aggiornata 16 Feb 2026)
+                  Conformita' Normativa v10.14 (aggiornata 12 Maggio 2026)
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
@@ -1075,9 +1369,26 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                       detail: "Banner consenso esplicito attivo",
                     },
                     {
+                      name: "GDPR — Export Dati (Art. 20)",
+                      status: "ok" as const,
+                      detail: "Endpoint gdpr.exportMyData con 12 tabelle",
+                    },
+                    {
+                      name: "GDPR — Diritto Oblio (Art. 17)",
+                      status: "ok" as const,
+                      detail:
+                        "Anonimizzazione account gdpr.deleteMyAccount",
+                    },
+                    {
+                      name: "GDPR — Consenso Registrazione",
+                      status: "ok" as const,
+                      detail: "Checkbox obbligatorio in registrazione",
+                    },
+                    {
                       name: "WCAG 2.1 AA",
                       status: "ok" as const,
-                      detail: 'Skip-to-content, focus-visible, lang="it"',
+                      detail:
+                        'Skip-to-content, focus-visible, lang="it", ARIA landmarks',
                     },
                     {
                       name: "Dichiarazione Accessibilita'",
@@ -1092,17 +1403,19 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                     {
                       name: "Rate Limiting",
                       status: "ok" as const,
-                      detail: "Globale 100/15min + 4 finanziari",
+                      detail: "Globale 100/15min + 4 finanziari dedicati",
                     },
                     {
-                      name: "Anti-Frode TCC",
+                      name: "Anti-Scanner & Honeypot",
                       status: "ok" as const,
-                      detail: "QR HMAC-SHA256, GPS validation, audit",
+                      detail:
+                        "Ban automatico .env probe + rate-limit 404 (16K+ bloccati)",
                     },
                     {
-                      name: "PWA + Service Worker",
+                      name: "Firma Digitale CAdES/PAdES",
                       status: "ok" as const,
-                      detail: "Installabile, offline page, manifest",
+                      detail:
+                        "Verifica crittografica reale con node-forge + OpenSSL",
                     },
                     {
                       name: "Cifratura PII (AES-256-GCM)",
@@ -1110,14 +1423,20 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                       detail: "CF, PIVA, IBAN cifrati con IV random + auth tag",
                     },
                     {
-                      name: "GDPR — Export Dati (Art. 20)",
+                      name: "Anti-Frode TCC",
                       status: "ok" as const,
-                      detail: "Endpoint gdpr.exportMyData con 12 tabelle",
+                      detail: "QR HMAC-SHA256, GPS validation, audit",
                     },
                     {
-                      name: "GDPR — Diritto Oblio (Art. 17)",
+                      name: "RBAC Granulare (64 endpoint)",
                       status: "ok" as const,
-                      detail: "Anonimizzazione account gdpr.deleteMyAccount",
+                      detail:
+                        "requirePermission() middleware per permessi singoli",
+                    },
+                    {
+                      name: "API Key Middleware",
+                      status: "ok" as const,
+                      detail: "Validazione X-API-Key + lastUsedAt tracking",
                     },
                     {
                       name: "Data Retention Policy",
@@ -1128,7 +1447,8 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                     {
                       name: "CI/CD Pipeline",
                       status: "ok" as const,
-                      detail: "GitHub Actions: check + test + build + audit",
+                      detail:
+                        "GitHub Actions: check + test + build + auto-deploy",
                     },
                     {
                       name: "SBOM",
@@ -1136,30 +1456,9 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                       detail: "CycloneDX JSON generato automaticamente",
                     },
                     {
-                      name: "Test Suite (36 test)",
+                      name: "PWA + Service Worker",
                       status: "ok" as const,
-                      detail: "Vitest: crypto, security, RBAC, router, schema",
-                    },
-                    {
-                      name: "ARIA/WCAG Landmarks",
-                      status: "ok" as const,
-                      detail: "role=main, aria-label, aria-live, nav semantica",
-                    },
-                    {
-                      name: "GDPR Consent Checkbox",
-                      status: "ok" as const,
-                      detail: "Consenso obbligatorio in registrazione",
-                    },
-                    {
-                      name: "API Key Middleware",
-                      status: "ok" as const,
-                      detail: "Validazione X-API-Key + lastUsedAt tracking",
-                    },
-                    {
-                      name: "RBAC Granulare",
-                      status: "ok" as const,
-                      detail:
-                        "requirePermission() middleware per permessi singoli",
+                      detail: "Installabile, offline page, manifest",
                     },
                     {
                       name: "Error Monitoring",
@@ -1169,17 +1468,25 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                     {
                       name: "Code Splitting",
                       status: "ok" as const,
-                      detail: "React.lazy() su 30+ pagine, bundle ridotto",
+                      detail: "React.lazy() su 37 pagine, bundle ottimizzato",
                     },
                     {
-                      name: "Console.log Cleanup",
+                      name: "Guardian Monitoring",
                       status: "ok" as const,
-                      detail: "~185 console.log rimossi da 30 file",
+                      detail:
+                        "285K+ log, 14 service ID, health check automatici",
                     },
                     {
-                      name: "PDND",
+                      name: "SSO ARPA (SPID/CIE)",
+                      status: "ok" as const,
+                      detail:
+                        "OAuth 2.0 + PKCE S256 — SPID L2 + CIE L3 attivi",
+                    },
+                    {
+                      name: "PDND Interoperabilita'",
                       status: "partial" as const,
-                      detail: "Predisposto — in attesa accreditamento",
+                      detail:
+                        "Backend pronto, 3 e-Service — in attesa accreditamento",
                     },
                     {
                       name: "DPIA",
@@ -1190,6 +1497,11 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
                       name: "Qualificazione ACN SaaS",
                       status: "missing" as const,
                       detail: "Da avviare per vendita a PA",
+                    },
+                    {
+                      name: "Penetration Test",
+                      status: "missing" as const,
+                      detail: "Da commissionare a ente terzo certificato",
                     },
                   ].map((int, i) => {
                     const st = STATUS_COLORS[int.status];
@@ -1223,9 +1535,9 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
               <CardContent className="p-5">
                 <h4 className="text-sm font-semibold text-[#e8fbff] flex items-center gap-2 mb-4">
                   <Globe className="h-4 w-4 text-[#f59e0b]" />
-                  Stato Integrazioni PA
+                  Stato Integrazioni Piattaforme PA
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {PA_INTEGRATIONS.map((int, i) => {
                     const st = STATUS_COLORS[int.status];
                     return (
@@ -1257,14 +1569,16 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
             <div className="text-center pt-2">
               <Button
                 className="bg-[#a855f7] hover:bg-[#a855f7]/80 text-white px-8 py-3 text-base"
-                onClick={() => window.open("/dossier/index.html", "_blank")}
+                onClick={() =>
+                  window.open("/dossier/index.html", "_blank")
+                }
               >
                 <ExternalLink className="h-5 w-5 mr-2" />
                 Apri Dossier Tecnico Completo
               </Button>
               <p className="text-xs text-[#e8fbff]/30 mt-2">
-                10 sezioni — architettura, sicurezza, conformità AGID/EU,
-                valutazione economica
+                12 sezioni — architettura, sicurezza, conformita' AGID/EU,
+                valutazione economica, integrazioni PA
               </p>
             </div>
           </div>
@@ -1277,36 +1591,37 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
 
   const SIDEBAR_TABS = [
     { id: "architecture", label: "Architettura", icon: Server },
-    { id: "dataflow", label: "Flusso Dati", icon: Activity },
-    { id: "database", label: "Database", icon: Database },
+    { id: "dataflow", label: "Metriche & Codice", icon: Activity },
+    { id: "database", label: "Database & Infra", icon: Database },
     { id: "components", label: "Componenti", icon: Layers },
-    { id: "dossier", label: "Dossier Tecnico", icon: Shield },
+    { id: "dossier", label: "Dossier Investitori", icon: Shield },
   ];
 
   const TAB_HEADERS: Record<string, { title: string; subtitle: string }> = {
     architecture: {
       title: "Panoramica Architetturale",
-      subtitle: "Struttura ad alto livello del sistema DMS Hub e moduli core.",
+      subtitle:
+        "Struttura ad alto livello del sistema MIO HUB — 6 moduli core, 270K+ righe di codice.",
     },
     dataflow: {
-      title: "Flussi Dati & Processi",
+      title: "Metriche di Sistema — 270.391 LOC",
       subtitle:
-        "Architettura e flussi informativi tra frontend, backend e servizi esterni.",
+        "Analisi quantitativa completa: backend, frontend, endpoint, commit e complessita'.",
     },
     database: {
-      title: "Schema Database — 68 Tabelle",
+      title: "Database & Infrastruttura",
       subtitle:
-        "PostgreSQL su Neon Serverless — ORM Drizzle — 10 domini funzionali.",
+        "MySQL/TiDB su Hetzner — 21 tabelle — hosting Vercel + Hetzner VPS.",
     },
     components: {
-      title: "Componenti Frontend — 147 React",
+      title: "Componenti Frontend — 173 React",
       subtitle:
-        "React 19 + Vite 7 + TypeScript strict + Tailwind 4 + shadcn/ui.",
+        "React 19 + Vite 7 + TypeScript + Tailwind CSS + shadcn/ui — 157.839 righe.",
     },
     dossier: {
-      title: "Dossier Tecnico di Sistema",
+      title: "Dossier Tecnico per Investitori",
       subtitle:
-        "Analisi conformità, sicurezza, integrazioni PA e valutazione economica.",
+        "Conformita' normativa, valutazione economica, integrazioni PA e roadmap.",
     },
   };
 
@@ -1322,12 +1637,12 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
             Analisi Sistema
           </h2>
           <p className="text-xs text-[#e8fbff]/50 mt-1">
-            DMS Hub — Report Tecnico v6.6
+            MIO HUB — Report Tecnico v10.14
           </p>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          {SIDEBAR_TABS.map(tab => (
+          {SIDEBAR_TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -1363,11 +1678,14 @@ export const NativeReportComponent = memo(function NativeReportComponent() {
             variant="outline"
             className="w-full border-[#06b6d4]/30 text-[#06b6d4] hover:bg-[#06b6d4]/10"
             onClick={() =>
-              window.open("/STATO_PROGETTO_AGGIORNATO.md", "_blank")
+              window.open(
+                "https://github.com/Chcndr/mihub-backend-rest/blob/master/MASTER_BLUEPRINT_MIOHUB.md",
+                "_blank"
+              )
             }
           >
             <Download className="h-4 w-4 mr-2" />
-            Stato Progetto
+            Master Blueprint
           </Button>
         </div>
       </div>
