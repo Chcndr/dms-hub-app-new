@@ -1786,11 +1786,13 @@ export default function DashboardPA() {
   const [entiTargetTipo, setEntiTargetTipo] = useState("TUTTI");
   const [entiCorsoDettagliAperti, setEntiCorsoDettagliAperti] = useState(false);
   const [entiCorsoModalita, setEntiCorsoModalita] = useState<"ONLINE" | "SEDE">("ONLINE");
+  const [entiCorsoPiattaforma, setEntiCorsoPiattaforma] = useState<"A99X" | "ESTERNO">("A99X");
   const [entiCorsoLink, setEntiCorsoLink] = useState("");
   const [entiCorsoSede, setEntiCorsoSede] = useState("");
   const [assocTargetTipo, setAssocTargetTipo] = useState("TUTTI");
   const [assocCorsoDettagliAperti, setAssocCorsoDettagliAperti] = useState(false);
   const [assocCorsoModalita, setAssocCorsoModalita] = useState<"ONLINE" | "SEDE">("ONLINE");
+  const [assocCorsoPiattaforma, setAssocCorsoPiattaforma] = useState<"A99X" | "ESTERNO">("A99X");
   const [assocCorsoLink, setAssocCorsoLink] = useState("");
   const [assocCorsoSede, setAssocCorsoSede] = useState("");
   const [selectedNotifica, setSelectedNotifica] = useState<any>(null);
@@ -7608,18 +7610,64 @@ export default function DashboardPA() {
                                 </select>
                               </div>
                               {entiCorsoModalita === "ONLINE" ? (
-                                <div>
+                                <div className="space-y-3">
                                   <label className="block text-sm text-[#e8fbff]/70 mb-1">
-                                    Link accesso piattaforma streaming
+                                    Piattaforma corso
                                   </label>
-                                  <input
-                                    type="url"
-                                    name="link_corso"
-                                    placeholder="https://..."
-                                    value={entiCorsoLink}
-                                    onChange={e => setEntiCorsoLink(e.target.value)}
-                                    className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
-                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setEntiCorsoPiattaforma("A99X")}
+                                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                        (entiCorsoPiattaforma || "A99X") === "A99X"
+                                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25"
+                                          : "bg-[#0b1220] border border-[#3b82f6]/30 text-[#e8fbff]/70 hover:border-purple-500/50"
+                                      }`}
+                                    >
+                                      ⚡ A99X
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEntiCorsoPiattaforma("ESTERNO")}
+                                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                        entiCorsoPiattaforma === "ESTERNO"
+                                          ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/25"
+                                          : "bg-[#0b1220] border border-[#3b82f6]/30 text-[#e8fbff]/70 hover:border-blue-500/50"
+                                      }`}
+                                    >
+                                      🔗 Link Esterno
+                                    </button>
+                                  </div>
+                                  {(entiCorsoPiattaforma || "A99X") === "A99X" ? (
+                                    <div>
+                                      <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                        Link A99X (Cal.com)
+                                      </label>
+                                      <input
+                                        type="url"
+                                        name="link_a99x"
+                                        placeholder="https://cal.miohub.it/..."
+                                        value={entiCorsoLink}
+                                        onChange={e => setEntiCorsoLink(e.target.value)}
+                                        className="w-full bg-[#0b1220] border border-purple-500/30 rounded-lg p-2 text-[#e8fbff]"
+                                      />
+                                      <p className="text-xs text-purple-400/70 mt-1">Le imprese iscritte riceveranno il link diretto alla videoconferenza A99X</p>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                        Link accesso piattaforma streaming
+                                      </label>
+                                      <input
+                                        type="url"
+                                        name="link_corso"
+                                        placeholder="https://..."
+                                        value={entiCorsoLink}
+                                        onChange={e => setEntiCorsoLink(e.target.value)}
+                                        className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <div>
@@ -8928,18 +8976,64 @@ export default function DashboardPA() {
                                 </select>
                               </div>
                               {assocCorsoModalita === "ONLINE" ? (
-                                <div>
+                                <div className="space-y-3">
                                   <label className="block text-sm text-[#e8fbff]/70 mb-1">
-                                    Link accesso piattaforma streaming
+                                    Piattaforma corso
                                   </label>
-                                  <input
-                                    type="url"
-                                    name="link_corso"
-                                    placeholder="https://..."
-                                    value={assocCorsoLink}
-                                    onChange={e => setAssocCorsoLink(e.target.value)}
-                                    className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
-                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setAssocCorsoPiattaforma("A99X")}
+                                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                        (assocCorsoPiattaforma || "A99X") === "A99X"
+                                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25"
+                                          : "bg-[#0b1220] border border-[#10b981]/30 text-[#e8fbff]/70 hover:border-purple-500/50"
+                                      }`}
+                                    >
+                                      ⚡ A99X
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setAssocCorsoPiattaforma("ESTERNO")}
+                                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                        assocCorsoPiattaforma === "ESTERNO"
+                                          ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/25"
+                                          : "bg-[#0b1220] border border-[#10b981]/30 text-[#e8fbff]/70 hover:border-blue-500/50"
+                                      }`}
+                                    >
+                                      🔗 Link Esterno
+                                    </button>
+                                  </div>
+                                  {(assocCorsoPiattaforma || "A99X") === "A99X" ? (
+                                    <div>
+                                      <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                        Link A99X (Cal.com)
+                                      </label>
+                                      <input
+                                        type="url"
+                                        name="link_a99x"
+                                        placeholder="https://cal.miohub.it/..."
+                                        value={assocCorsoLink}
+                                        onChange={e => setAssocCorsoLink(e.target.value)}
+                                        className="w-full bg-[#0b1220] border border-purple-500/30 rounded-lg p-2 text-[#e8fbff]"
+                                      />
+                                      <p className="text-xs text-purple-400/70 mt-1">Le imprese iscritte riceveranno il link diretto alla videoconferenza A99X</p>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <label className="block text-sm text-[#e8fbff]/70 mb-1">
+                                        Link accesso piattaforma streaming
+                                      </label>
+                                      <input
+                                        type="url"
+                                        name="link_corso"
+                                        placeholder="https://..."
+                                        value={assocCorsoLink}
+                                        onChange={e => setAssocCorsoLink(e.target.value)}
+                                        className="w-full bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-2 text-[#e8fbff]"
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <div>

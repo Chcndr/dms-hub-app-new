@@ -98,6 +98,7 @@ export default function NotificheAssociazionePanel({
   const [showCorsoModal, setShowCorsoModal] = useState(false);
   const [selectedCorsoId, setSelectedCorsoId] = useState<number | "">("");
   const [modalitaCorso, setModalitaCorso] = useState<"ONLINE" | "SEDE">("ONLINE");
+  const [corsoPiattaforma, setCorsoPiattaforma] = useState<"A99X" | "ESTERNO">("A99X");
   const [linkCorso, setLinkCorso] = useState("");
   const [sedeCorso, setSedeCorso] = useState("");
   const [titoloCorso, setTitoloCorso] = useState("Accesso corso");
@@ -587,14 +588,46 @@ export default function NotificheAssociazionePanel({
               </div>
 
               {modalitaCorso === "ONLINE" ? (
-                <div>
-                  <label className="text-xs text-[#e8fbff]/50">Collegamento alla piattaforma streaming</label>
-                  <input
-                    className="w-full mt-1 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg px-3 py-2 text-sm text-[#e8fbff]"
-                    placeholder="https://..."
-                    value={linkCorso}
-                    onChange={e => setLinkCorso(e.target.value)}
-                  />
+                <div className="space-y-3">
+                  <label className="text-xs text-[#e8fbff]/50">Piattaforma corso</label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={corsoPiattaforma === "A99X" ? "default" : "outline"}
+                      onClick={() => setCorsoPiattaforma("A99X")}
+                      className={corsoPiattaforma === "A99X" ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white" : "border-[#3b82f6]/30 text-[#e8fbff]/70"}
+                    >
+                      ⚡ A99X
+                    </Button>
+                    <Button
+                      variant={corsoPiattaforma === "ESTERNO" ? "default" : "outline"}
+                      onClick={() => setCorsoPiattaforma("ESTERNO")}
+                      className={corsoPiattaforma === "ESTERNO" ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white" : "border-[#3b82f6]/30 text-[#e8fbff]/70"}
+                    >
+                      🔗 Link Esterno
+                    </Button>
+                  </div>
+                  {corsoPiattaforma === "A99X" ? (
+                    <div>
+                      <label className="text-xs text-[#e8fbff]/50">Link A99X (Cal.com)</label>
+                      <input
+                        className="w-full mt-1 bg-[#0b1220] border border-purple-500/20 rounded-lg px-3 py-2 text-sm text-[#e8fbff]"
+                        placeholder="https://cal.miohub.it/..."
+                        value={linkCorso}
+                        onChange={e => setLinkCorso(e.target.value)}
+                      />
+                      <p className="text-xs text-purple-400/70 mt-1">Le imprese iscritte riceveranno il link diretto alla videoconferenza A99X</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="text-xs text-[#e8fbff]/50">Collegamento alla piattaforma streaming</label>
+                      <input
+                        className="w-full mt-1 bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg px-3 py-2 text-sm text-[#e8fbff]"
+                        placeholder="https://..."
+                        value={linkCorso}
+                        onChange={e => setLinkCorso(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div>
