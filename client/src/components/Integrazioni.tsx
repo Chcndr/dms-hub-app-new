@@ -1595,6 +1595,31 @@ function APIDashboard() {
           },
         ],
       },
+
+      // A99X - AGENDA INTELLIGENTE PA
+      "/api/a99x/assessori/:id": { id: 1 },
+      "/api/a99x/assessori/:id/slot": { id: 1 },
+      "/api/a99x/assessori": { nome: "Mario Rossi", delega: "Urbanistica", email: "assessore@comune.it" },
+      "/api/a99x/riunioni": { oggetto: "Riunione test", data_inizio: new Date().toISOString(), durata_minuti: 60, urgenza: 3 },
+      "/api/a99x/riunioni/:id": { id: 1 },
+      "/api/a99x/riunioni/:id/partecipanti": { id: 1 },
+      "/api/a99x/riunioni/:id/task": { id: 1, titolo: "Task di test", assegnato_a: "mario.rossi@comune.it", scadenza: "2026-05-20" },
+      "/api/a99x/partecipanti/:id/stato": { id: 1, stato: "confermato" },
+      "/api/a99x/task/:id": { id: 1, titolo: "Task aggiornato" },
+      "/api/a99x/task/:id/stato": { id: 1, stato: "completato" },
+      "/api/a99x/ricerca-contatti": { q: "comune", tipo: "comune" },
+      "/api/a99x/invita-riunione": { oggetto: "Riunione coordinamento", data_inizio: new Date().toISOString(), durata_minuti: 45, urgenza: 3, invitati: [{nome: "Test", email: "test@test.it", tipo: "impresa"}] },
+      "/api/a99x/invito/:token": { token: "test-token" },
+      "/api/a99x/invito/:token/accetta": { token: "test-token" },
+      "/api/a99x/invito/:token/rifiuta": { token: "test-token" },
+      "/api/a99x/public/uffici/:comuneId": { comuneId: "1" },
+      "/api/a99x/public/disponibilita/:id": { id: "1" },
+      "/api/a99x/public/prenota": { disponibilita_id: 1, data: "2026-05-20", ora: "09:00", nome: "Mario Rossi", email: "mario@test.it", telefono: "3331234567", motivo: "Richiesta informazioni" },
+      "/api/a99x/public/prenotazione/:codice": { codice: "ABC123" },
+      "/api/a99x/public/prenotazione/:codice/annulla": { codice: "ABC123" },
+      "/api/a99x/prenotazioni/:id": { id: 1 },
+      "/api/a99x/prenotazioni/:id/stato": { id: 1, stato: "confermata" },
+      "/api/a99x/disponibilita/:id": { id: 1 },
     };
 
     // Cerca esempio per endpoint selezionato
