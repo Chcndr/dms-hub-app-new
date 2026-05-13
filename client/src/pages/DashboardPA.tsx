@@ -1822,18 +1822,36 @@ export default function DashboardPA() {
   const [a99xFormD, setA99xFormD] = useState('1');
   const [a99xFormS, setA99xFormS] = useState('1');
 
+  // A99X Sotto-tab e nuovi moduli
+  const [a99xSubTab, setA99xSubTab] = useState<'dashboard' | 'calendario' | 'disponibilita' | 'prenotazioni' | 'assessori'>('dashboard');
+  const [a99xPrenotazioni, setA99xPrenotazioni] = useState<any[]>([]);
+  const [a99xDisponibilita, setA99xDisponibilita] = useState<any[]>([]);
+  const [a99xAssessori, setA99xAssessori] = useState<any[]>([]);
+  const [a99xCalendarioVista, setA99xCalendarioVista] = useState<'settimana' | 'mese'>('settimana');
+  const [a99xCalendarioData, setA99xCalendarioData] = useState(new Date());
+  const [a99xNuovaDisp, setA99xNuovaDisp] = useState(false);
+  const [a99xNuovoAssessore, setA99xNuovoAssessore] = useState(false);
+  const [a99xDispForm, setA99xDispForm] = useState({ proprietario_nome: '', giorno_settimana: '1', ora_inizio: '09:00', ora_fine: '13:00', durata_slot_minuti: '30', max_prenotazioni_slot: '1', modalita: 'PRESENZA', sede_indirizzo: '' });
+  const [a99xAssForm, setA99xAssForm] = useState({ nome: '', cognome: '', ruolo: '', email: '', telefono: '', settore: '' });
+
   const fetchA99xData = async () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
       const cId = comuneIdFromUrl || '1';
-      const [riunioniRes, taskRes] = await Promise.all([
+      const [riunioniRes, taskRes, prenRes, dispRes, assRes] = await Promise.all([
         fetch(`${apiUrl}/api/a99x/riunioni?comune_id=${cId}`),
-        fetch(`${apiUrl}/api/a99x/task?comune_id=${cId}`)
+        fetch(`${apiUrl}/api/a99x/task?comune_id=${cId}`),
+        fetch(`${apiUrl}/api/a99x/prenotazioni?comune_id=${cId}`).catch(() => null),
+        fetch(`${apiUrl}/api/a99x/disponibilita?comune_id=${cId}`).catch(() => null),
+        fetch(`${apiUrl}/api/a99x/assessori?comune_id=${cId}`).catch(() => null)
       ]);
       const riunioniData = await riunioniRes.json();
       const taskData = await taskRes.json();
       if (riunioniData.success) setA99xRiunioni(riunioniData.data || []);
       if (taskData.success) setA99xTask(taskData.data || []);
+      if (prenRes) { const d = await prenRes.json(); if (d.success) setA99xPrenotazioni(d.data || []); }
+      if (dispRes) { const d = await dispRes.json(); if (d.success) setA99xDisponibilita(d.data || []); }
+      if (assRes) { const d = await assRes.json(); if (d.success) setA99xAssessori(d.data || []); }
     } catch (err) {
       console.error('Errore fetch A99X:', err);
     }
@@ -9413,17 +9431,63 @@ export default function DashboardPA() {
                 <h2 className="text-xl font-bold text-[#e8fbff]">A99X — Agenda Intelligente</h2>
                 <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30 text-[10px]">Operativo</Badge>
               </div>
-              <button
-                onClick={() => {
-                  setA99xNuovaRiunione(true);
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/25 flex items-center gap-2"
-              >
-                <CalendarDays className="h-4 w-4" />
-                Nuova Riunione
-              </button>
+              <div className="flex items-center gap-2">
+                {a99xSubTab === 'dashboard' && (
+                  <button
+                    onClick={() => setA99xNuovaRiunione(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/25 flex items-center gap-2"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    Nuova Riunione
+                  </button>
+                )}
+                {a99xSubTab === 'disponibilita' && (
+                  <button
+                    onClick={() => setA99xNuovaDisp(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/25 flex items-center gap-2"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    Nuova Disponibilità
+                  </button>
+                )}
+                {a99xSubTab === 'assessori' && (
+                  <button
+                    onClick={() => setA99xNuovoAssessore(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/25 flex items-center gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    Nuovo Assessore
+                  </button>
+                )}
+              </div>
             </div>
 
+            {/* Sotto-tab Navigation */}
+            <div className="flex gap-1 bg-[#0b1220] rounded-xl p-1 border border-[#8b5cf6]/20">
+              {[
+                { id: 'dashboard' as const, label: 'Dashboard', icon: '⚡' },
+                { id: 'calendario' as const, label: 'Calendario', icon: '📅' },
+                { id: 'disponibilita' as const, label: 'Disponibilità', icon: '🕐' },
+                { id: 'prenotazioni' as const, label: 'Prenotazioni', icon: '📋' },
+                { id: 'assessori' as const, label: 'Assessori', icon: '👥' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setA99xSubTab(tab.id)}
+                  className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                    a99xSubTab === tab.id
+                      ? 'bg-gradient-to-r from-purple-600/30 to-blue-600/30 text-[#e8fbff] border border-[#8b5cf6]/40 shadow-lg shadow-purple-500/10'
+                      : 'text-[#e8fbff]/50 hover:text-[#e8fbff]/80 hover:bg-[#1a2332]/50'
+                  }`}
+                >
+                  <span>{tab.icon}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* ===== SUB-TAB: DASHBOARD ===== */}
+            {a99xSubTab === 'dashboard' && (<>
             {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
@@ -9582,6 +9646,353 @@ export default function DashboardPA() {
               </CardContent>
             </Card>
 
+            </>)}
+
+            {/* ===== SUB-TAB: CALENDARIO ===== */}
+            {a99xSubTab === 'calendario' && (
+              <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4 text-[#8b5cf6]" />
+                      Calendario
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => { const d = new Date(a99xCalendarioData); d.setDate(d.getDate() - 7); setA99xCalendarioData(d); }} className="px-2 py-1 bg-[#0b1220] border border-[#8b5cf6]/30 rounded text-[#e8fbff]/70 text-xs hover:border-[#8b5cf6]">&larr;</button>
+                      <span className="text-[#e8fbff] text-sm font-medium min-w-[180px] text-center">
+                        {a99xCalendarioVista === 'settimana'
+                          ? `${(() => { const d = new Date(a99xCalendarioData); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); d.setDate(diff); return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }); })()} - ${(() => { const d = new Date(a99xCalendarioData); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? 0 : 7); d.setDate(diff); return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }); })()}`
+                          : a99xCalendarioData.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
+                        }
+                      </span>
+                      <button onClick={() => { const d = new Date(a99xCalendarioData); d.setDate(d.getDate() + 7); setA99xCalendarioData(d); }} className="px-2 py-1 bg-[#0b1220] border border-[#8b5cf6]/30 rounded text-[#e8fbff]/70 text-xs hover:border-[#8b5cf6]">&rarr;</button>
+                      <button onClick={() => setA99xCalendarioData(new Date())} className="px-3 py-1 bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 rounded text-[#8b5cf6] text-xs font-medium">Oggi</button>
+                      <div className="flex bg-[#0b1220] rounded-lg border border-[#8b5cf6]/20 overflow-hidden">
+                        <button onClick={() => setA99xCalendarioVista('settimana')} className={`px-3 py-1 text-xs font-medium transition-all ${a99xCalendarioVista === 'settimana' ? 'bg-[#8b5cf6]/30 text-[#8b5cf6]' : 'text-[#e8fbff]/50'}`}>Settimana</button>
+                        <button onClick={() => setA99xCalendarioVista('mese')} className={`px-3 py-1 text-xs font-medium transition-all ${a99xCalendarioVista === 'mese' ? 'bg-[#8b5cf6]/30 text-[#8b5cf6]' : 'text-[#e8fbff]/50'}`}>Mese</button>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {a99xCalendarioVista === 'settimana' ? (
+                    <div className="grid grid-cols-7 gap-2">
+                      {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map((g, i) => {
+                        const d = new Date(a99xCalendarioData);
+                        const day = d.getDay();
+                        const diff = d.getDate() - day + (day === 0 ? -6 : 1) + i;
+                        const cellDate = new Date(d);
+                        cellDate.setDate(diff);
+                        const dateStr = cellDate.toISOString().split('T')[0];
+                        const isToday = dateStr === new Date().toISOString().split('T')[0];
+                        const dayRiunioni = a99xRiunioni.filter((r: any) => r.data_inizio && r.data_inizio.startsWith(dateStr));
+                        const dayPren = a99xPrenotazioni.filter((p: any) => p.data_appuntamento === dateStr);
+                        return (
+                          <div key={i} className={`bg-[#0b1220] rounded-lg p-3 min-h-[120px] border ${isToday ? 'border-[#8b5cf6]' : 'border-[#8b5cf6]/10'}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] text-[#e8fbff]/50 font-medium">{g}</span>
+                              <span className={`text-sm font-bold ${isToday ? 'text-[#8b5cf6] bg-[#8b5cf6]/20 w-7 h-7 rounded-full flex items-center justify-center' : 'text-[#e8fbff]/70'}`}>{cellDate.getDate()}</span>
+                            </div>
+                            <div className="space-y-1">
+                              {dayRiunioni.map((r: any) => (
+                                <div key={r.id} className="bg-[#8b5cf6]/15 border border-[#8b5cf6]/30 rounded px-2 py-1">
+                                  <p className="text-[9px] text-[#8b5cf6] font-medium truncate">{r.titolo}</p>
+                                  <p className="text-[8px] text-[#e8fbff]/40">{new Date(r.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</p>
+                                </div>
+                              ))}
+                              {dayPren.map((p: any) => (
+                                <div key={p.id} className="bg-[#14b8a6]/15 border border-[#14b8a6]/30 rounded px-2 py-1">
+                                  <p className="text-[9px] text-[#14b8a6] font-medium truncate">{p.nome} {p.cognome}</p>
+                                  <p className="text-[8px] text-[#e8fbff]/40">{p.ora_inizio} - Prenotazione</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-7 gap-1">
+                      {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map((g) => (
+                        <div key={g} className="text-center text-[10px] text-[#e8fbff]/40 font-medium py-1">{g}</div>
+                      ))}
+                      {(() => {
+                        const year = a99xCalendarioData.getFullYear();
+                        const month = a99xCalendarioData.getMonth();
+                        const firstDay = new Date(year, month, 1);
+                        const startDay = (firstDay.getDay() + 6) % 7;
+                        const daysInMonth = new Date(year, month + 1, 0).getDate();
+                        const cells = [];
+                        for (let i = 0; i < startDay; i++) cells.push(<div key={`e-${i}`} />);
+                        for (let d = 1; d <= daysInMonth; d++) {
+                          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                          const isToday = dateStr === new Date().toISOString().split('T')[0];
+                          const hasRiunioni = a99xRiunioni.some((r: any) => r.data_inizio && r.data_inizio.startsWith(dateStr));
+                          const hasPren = a99xPrenotazioni.some((p: any) => p.data_appuntamento === dateStr);
+                          cells.push(
+                            <div key={d} className={`text-center py-2 rounded-lg cursor-pointer transition-all hover:bg-[#1a2332] ${isToday ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/40' : ''}`}>
+                              <span className={`text-xs ${isToday ? 'text-[#8b5cf6] font-bold' : 'text-[#e8fbff]/70'}`}>{d}</span>
+                              <div className="flex justify-center gap-0.5 mt-1">
+                                {hasRiunioni && <div className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]"></div>}
+                                {hasPren && <div className="w-1.5 h-1.5 rounded-full bg-[#14b8a6]"></div>}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return cells;
+                      })()}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#8b5cf6]/10">
+                    <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]"></div><span className="text-[10px] text-[#e8fbff]/50">Riunioni</span></div>
+                    <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#14b8a6]"></div><span className="text-[10px] text-[#e8fbff]/50">Prenotazioni</span></div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ===== SUB-TAB: DISPONIBILITA ===== */}
+            {a99xSubTab === 'disponibilita' && (
+              <div className="space-y-4">
+                <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-[#8b5cf6]" />
+                      Slot Disponibilit\u00e0 Configurati
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {a99xDisponibilita.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Clock className="h-10 w-10 text-[#8b5cf6]/30 mx-auto mb-3" />
+                        <p className="text-[#e8fbff]/50 text-sm">Nessuno slot configurato</p>
+                        <p className="text-[#e8fbff]/30 text-xs mt-1">Clicca "Nuova Disponibilit\u00e0" per creare slot prenotabili dai cittadini</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {a99xDisponibilita.map((disp: any) => {
+                          const giorni = ['', 'Luned\u00ec', 'Marted\u00ec', 'Mercoled\u00ec', 'Gioved\u00ec', 'Venerd\u00ec', 'Sabato', 'Domenica'];
+                          return (
+                            <div key={disp.id} className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4 flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="text-[#e8fbff] font-medium text-sm">{disp.proprietario_nome || 'Ufficio'}</h4>
+                                  <Badge className={`text-[9px] ${disp.attivo ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>{disp.attivo ? 'Attivo' : 'Disattivato'}</Badge>
+                                  <Badge className="text-[9px] bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">{disp.modalita}</Badge>
+                                </div>
+                                <p className="text-[#e8fbff]/50 text-xs">
+                                  {giorni[disp.giorno_settimana] || 'N/D'} \u2022 {disp.ora_inizio} - {disp.ora_fine} \u2022 Slot {disp.durata_slot_minuti}min \u2022 Max {disp.max_prenotazioni_slot} per slot
+                                  {disp.sede_indirizzo && ` \u2022 \ud83d\udccd ${disp.sede_indirizzo}`}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button onClick={async () => {
+                                  try {
+                                    const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                    await fetch(`${apiUrl}/api/a99x/disponibilita/${disp.id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ attivo: !disp.attivo })
+                                    });
+                                    fetchA99xData();
+                                  } catch (err) { console.error(err); }
+                                }} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${disp.attivo ? 'bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30'}`}>
+                                  {disp.attivo ? 'Disattiva' : 'Attiva'}
+                                </button>
+                                <button onClick={async () => {
+                                  if (!confirm('Eliminare questo slot?')) return;
+                                  try {
+                                    const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                    await fetch(`${apiUrl}/api/a99x/disponibilita/${disp.id}`, { method: 'DELETE' });
+                                    fetchA99xData();
+                                  } catch (err) { console.error(err); }
+                                }} className="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-xs hover:bg-red-500/20">
+                                  Elimina
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Link pubblico prenotazione */}
+                <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-[#14b8a6]/20 flex items-center justify-center">
+                        <ExternalLink className="h-5 w-5 text-[#14b8a6]" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[#e8fbff] font-medium text-sm">Link Pubblico Prenotazione</p>
+                        <p className="text-[#e8fbff]/50 text-xs">Condividi questo link con i cittadini per prenotare appuntamenti</p>
+                      </div>
+                      <button onClick={() => {
+                        const url = `${import.meta.env.VITE_API_URL || 'https://api.miohub.it'}/tools/prenota-appuntamento.html?comune=${comuneIdFromUrl || '1'}`;
+                        navigator.clipboard.writeText(url);
+                        alert('Link copiato negli appunti!');
+                      }} className="px-4 py-2 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded-lg text-xs font-medium hover:bg-[#14b8a6]/30 transition-all">
+                        Copia Link
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* ===== SUB-TAB: PRENOTAZIONI ===== */}
+            {a99xSubTab === 'prenotazioni' && (
+              <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-[#14b8a6]" />
+                      Prenotazioni Ricevute
+                      <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-[10px]">{a99xPrenotazioni.length}</Badge>
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {a99xPrenotazioni.length === 0 ? (
+                    <div className="text-center py-8">
+                      <FileText className="h-10 w-10 text-[#14b8a6]/30 mx-auto mb-3" />
+                      <p className="text-[#e8fbff]/50 text-sm">Nessuna prenotazione ricevuta</p>
+                      <p className="text-[#e8fbff]/30 text-xs mt-1">Le prenotazioni dei cittadini appariranno qui</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {a99xPrenotazioni.map((pren: any) => {
+                        const statoColors: Record<string, string> = {
+                          'CONFERMATA': 'bg-green-500/20 text-green-400 border-green-500/30',
+                          'IN_ATTESA': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+                          'COMPLETATA': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+                          'ANNULLATA': 'bg-red-500/20 text-red-400 border-red-500/30',
+                          'RIFIUTATA': 'bg-red-500/20 text-red-400 border-red-500/30',
+                          'NO_SHOW': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+                        };
+                        return (
+                          <div key={pren.id} className="bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[#14b8a6] font-mono text-sm font-bold">{pren.codice_prenotazione}</span>
+                                <Badge className={`text-[9px] ${statoColors[pren.stato] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>{pren.stato}</Badge>
+                                <Badge className="text-[9px] bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">{pren.modalita || 'PRESENZA'}</Badge>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {(pren.stato === 'CONFERMATA' || pren.stato === 'IN_ATTESA') && (
+                                  <>
+                                    <button onClick={async () => {
+                                      try {
+                                        const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                        await fetch(`${apiUrl}/api/a99x/prenotazioni/${pren.id}/stato`, {
+                                          method: 'PUT',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ stato: 'COMPLETATA' })
+                                        });
+                                        fetchA99xData();
+                                      } catch (err) { console.error(err); }
+                                    }} className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded text-[10px] font-medium hover:bg-blue-500/30">Completata</button>
+                                    <button onClick={async () => {
+                                      try {
+                                        const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                        await fetch(`${apiUrl}/api/a99x/prenotazioni/${pren.id}/stato`, {
+                                          method: 'PUT',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ stato: 'NO_SHOW' })
+                                        });
+                                        fetchA99xData();
+                                      } catch (err) { console.error(err); }
+                                    }} className="px-2 py-1 bg-gray-500/20 border border-gray-500/30 text-gray-400 rounded text-[10px] font-medium hover:bg-gray-500/30">No Show</button>
+                                    <button onClick={async () => {
+                                      try {
+                                        const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                        await fetch(`${apiUrl}/api/a99x/prenotazioni/${pren.id}/stato`, {
+                                          method: 'PUT',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ stato: 'ANNULLATA' })
+                                        });
+                                        fetchA99xData();
+                                      } catch (err) { console.error(err); }
+                                    }} className="px-2 py-1 bg-red-500/20 border border-red-500/30 text-red-400 rounded text-[10px] font-medium hover:bg-red-500/30">Annulla</button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                              <div>
+                                <p className="text-[#e8fbff]/40">Richiedente</p>
+                                <p className="text-[#e8fbff] font-medium">{pren.nome} {pren.cognome}</p>
+                              </div>
+                              <div>
+                                <p className="text-[#e8fbff]/40">Data</p>
+                                <p className="text-[#e8fbff] font-medium">{pren.data_appuntamento ? new Date(pren.data_appuntamento + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }) : 'N/D'}</p>
+                              </div>
+                              <div>
+                                <p className="text-[#e8fbff]/40">Orario</p>
+                                <p className="text-[#e8fbff] font-medium">{pren.ora_inizio} - {pren.ora_fine}</p>
+                              </div>
+                              <div>
+                                <p className="text-[#e8fbff]/40">Oggetto</p>
+                                <p className="text-[#e8fbff] font-medium truncate">{pren.oggetto}</p>
+                              </div>
+                            </div>
+                            {pren.email && <p className="text-[#e8fbff]/30 text-[10px] mt-2">{pren.email} {pren.telefono && `\u2022 ${pren.telefono}`}</p>}
+                            {pren.jitsi_link && <a href={pren.jitsi_link} target="_blank" rel="noopener noreferrer" className="text-[#14b8a6] text-[10px] mt-1 inline-block hover:underline">\ud83c\udf10 Link Videoconferenza</a>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ===== SUB-TAB: ASSESSORI ===== */}
+            {a99xSubTab === 'assessori' && (
+              <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
+                    <Users className="h-4 w-4 text-[#f59e0b]" />
+                    Assessori e Funzionari
+                    <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30 text-[10px]">{a99xAssessori.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {a99xAssessori.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Users className="h-10 w-10 text-[#f59e0b]/30 mx-auto mb-3" />
+                      <p className="text-[#e8fbff]/50 text-sm">Nessun assessore registrato</p>
+                      <p className="text-[#e8fbff]/30 text-xs mt-1">Clicca "Nuovo Assessore" per aggiungere funzionari al sistema</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {a99xAssessori.map((ass: any) => (
+                        <div key={ass.id} className="bg-[#0b1220] border border-[#f59e0b]/20 rounded-lg p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f59e0b]/30 to-[#8b5cf6]/30 flex items-center justify-center">
+                              <span className="text-sm font-bold text-[#f59e0b]">{(ass.nome || '?')[0]}{(ass.cognome || '?')[0]}</span>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-[#e8fbff] font-medium text-sm">{ass.nome} {ass.cognome}</p>
+                              <p className="text-[#f59e0b] text-xs">{ass.ruolo || 'Funzionario'}</p>
+                              {ass.settore && <p className="text-[#e8fbff]/40 text-[10px]">{ass.settore}</p>}
+                            </div>
+                            <Badge className={`text-[9px] ${ass.attivo !== false ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>{ass.attivo !== false ? 'Attivo' : 'Inattivo'}</Badge>
+                          </div>
+                          <div className="mt-3 flex items-center gap-3 text-[10px] text-[#e8fbff]/40">
+                            {ass.email && <span>{ass.email}</span>}
+                            {ass.telefono && <span>{ass.telefono}</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Dialog Nuova Riunione */}
             {a99xNuovaRiunione && (
               <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setA99xNuovaRiunione(false)}>
@@ -9727,6 +10138,184 @@ export default function DashboardPA() {
                       className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Crea Riunione {a99xFormModalita !== 'IN_SEDE' && '+ Genera Link Jitsi'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Dialog Nuova Disponibilità */}
+            {a99xNuovaDisp && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setA99xNuovaDisp(false)}>
+                <div className="bg-[#1a2332] border border-[#8b5cf6]/30 rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-[#e8fbff] font-bold text-lg flex items-center gap-2">
+                      <CalendarDays className="h-5 w-5 text-[#8b5cf6]" />
+                      Nuova Disponibilit\u00e0
+                    </h3>
+                    <button onClick={() => setA99xNuovaDisp(false)} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">&times;</button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Nome Ufficio / Assessore *</label>
+                      <input value={a99xDispForm.proprietario_nome} onChange={(e) => setA99xDispForm({...a99xDispForm, proprietario_nome: e.target.value})} placeholder="Es: Ufficio SUAP, Ass. Rossi" className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Giorno Settimana *</label>
+                        <select value={a99xDispForm.giorno_settimana} onChange={(e) => setA99xDispForm({...a99xDispForm, giorno_settimana: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm">
+                          <option value="1">Luned\u00ec</option>
+                          <option value="2">Marted\u00ec</option>
+                          <option value="3">Mercoled\u00ec</option>
+                          <option value="4">Gioved\u00ec</option>
+                          <option value="5">Venerd\u00ec</option>
+                          <option value="6">Sabato</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Modalit\u00e0</label>
+                        <select value={a99xDispForm.modalita} onChange={(e) => setA99xDispForm({...a99xDispForm, modalita: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm">
+                          <option value="PRESENZA">In Sede</option>
+                          <option value="ONLINE">Online (Jitsi)</option>
+                          <option value="MISTA">Mista</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Ora Inizio *</label>
+                        <input type="time" value={a99xDispForm.ora_inizio} onChange={(e) => setA99xDispForm({...a99xDispForm, ora_inizio: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Ora Fine *</label>
+                        <input type="time" value={a99xDispForm.ora_fine} onChange={(e) => setA99xDispForm({...a99xDispForm, ora_fine: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Durata Slot (min)</label>
+                        <input type="number" value={a99xDispForm.durata_slot_minuti} onChange={(e) => setA99xDispForm({...a99xDispForm, durata_slot_minuti: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Max Prenotazioni/Slot</label>
+                        <input type="number" value={a99xDispForm.max_prenotazioni_slot} onChange={(e) => setA99xDispForm({...a99xDispForm, max_prenotazioni_slot: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                      </div>
+                    </div>
+                    {(a99xDispForm.modalita === 'PRESENZA' || a99xDispForm.modalita === 'MISTA') && (
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Indirizzo Sede</label>
+                        <input value={a99xDispForm.sede_indirizzo} onChange={(e) => setA99xDispForm({...a99xDispForm, sede_indirizzo: e.target.value})} placeholder="Via Roma 1, Bologna" className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                      </div>
+                    )}
+                    <button
+                      onClick={async () => {
+                        try {
+                          const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                          const res = await fetch(`${apiUrl}/api/a99x/disponibilita`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              comune_id: comuneIdFromUrl || '1',
+                              proprietario_nome: a99xDispForm.proprietario_nome,
+                              giorno_settimana: parseInt(a99xDispForm.giorno_settimana),
+                              ora_inizio: a99xDispForm.ora_inizio,
+                              ora_fine: a99xDispForm.ora_fine,
+                              durata_slot_minuti: parseInt(a99xDispForm.durata_slot_minuti) || 30,
+                              max_prenotazioni_slot: parseInt(a99xDispForm.max_prenotazioni_slot) || 1,
+                              modalita: a99xDispForm.modalita,
+                              sede_indirizzo: a99xDispForm.sede_indirizzo || null
+                            })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setA99xNuovaDisp(false);
+                            setA99xDispForm({ proprietario_nome: '', giorno_settimana: '1', ora_inizio: '09:00', ora_fine: '13:00', durata_slot_minuti: '30', max_prenotazioni_slot: '1', modalita: 'PRESENZA', sede_indirizzo: '' });
+                            fetchA99xData();
+                          } else {
+                            alert(data.error || 'Errore nella creazione');
+                          }
+                        } catch (err) {
+                          console.error('Errore creazione disponibilit\u00e0:', err);
+                        }
+                      }}
+                      disabled={!a99xDispForm.proprietario_nome}
+                      className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Crea Disponibilit\u00e0
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Dialog Nuovo Assessore */}
+            {a99xNuovoAssessore && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setA99xNuovoAssessore(false)}>
+                <div className="bg-[#1a2332] border border-[#f59e0b]/30 rounded-xl p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-[#e8fbff] font-bold text-lg flex items-center gap-2">
+                      <Users className="h-5 w-5 text-[#f59e0b]" />
+                      Nuovo Assessore / Funzionario
+                    </h3>
+                    <button onClick={() => setA99xNuovoAssessore(false)} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">&times;</button>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Nome *</label>
+                        <input value={a99xAssForm.nome} onChange={(e) => setA99xAssForm({...a99xAssForm, nome: e.target.value})} placeholder="Mario" className="w-full bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Cognome *</label>
+                        <input value={a99xAssForm.cognome} onChange={(e) => setA99xAssForm({...a99xAssForm, cognome: e.target.value})} placeholder="Rossi" className="w-full bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Ruolo *</label>
+                      <input value={a99xAssForm.ruolo} onChange={(e) => setA99xAssForm({...a99xAssForm, ruolo: e.target.value})} placeholder="Es: Assessore al Commercio, Resp. SUAP" className="w-full bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Email *</label>
+                        <input type="email" value={a99xAssForm.email} onChange={(e) => setA99xAssForm({...a99xAssForm, email: e.target.value})} placeholder="mario.rossi@comune.it" className="w-full bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Telefono</label>
+                        <input type="tel" value={a99xAssForm.telefono} onChange={(e) => setA99xAssForm({...a99xAssForm, telefono: e.target.value})} placeholder="+39 333 1234567" className="w-full bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Settore</label>
+                      <input value={a99xAssForm.settore} onChange={(e) => setA99xAssForm({...a99xAssForm, settore: e.target.value})} placeholder="Es: Commercio, Urbanistica, Ambiente" className="w-full bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                          const res = await fetch(`${apiUrl}/api/a99x/assessori`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              comune_id: comuneIdFromUrl || '1',
+                              ...a99xAssForm
+                            })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setA99xNuovoAssessore(false);
+                            setA99xAssForm({ nome: '', cognome: '', ruolo: '', email: '', telefono: '', settore: '' });
+                            fetchA99xData();
+                          } else {
+                            alert(data.error || 'Errore nella creazione');
+                          }
+                        } catch (err) {
+                          console.error('Errore creazione assessore:', err);
+                        }
+                      }}
+                      disabled={!a99xAssForm.nome || !a99xAssForm.cognome || !a99xAssForm.email}
+                      className="w-full py-3 bg-gradient-to-r from-[#f59e0b] to-[#ef4444] text-white rounded-lg font-medium hover:from-[#d97706] hover:to-[#dc2626] transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Aggiungi Assessore
                     </button>
                   </div>
                 </div>
