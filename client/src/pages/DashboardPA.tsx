@@ -1807,6 +1807,43 @@ export default function DashboardPA() {
   const [messaggiInviatiEnti, setMessaggiInviatiEnti] = useState<any[]>([]);
   const [messaggiInviatiAssoc, setMessaggiInviatiAssoc] = useState<any[]>([]);
 
+  // A99X Agenda Intelligente - State
+  const [a99xRiunioni, setA99xRiunioni] = useState<any[]>([]);
+  const [a99xTask, setA99xTask] = useState<any[]>([]);
+  const [a99xNuovaRiunione, setA99xNuovaRiunione] = useState(false);
+  const [a99xFormTitolo, setA99xFormTitolo] = useState('');
+  const [a99xFormDescrizione, setA99xFormDescrizione] = useState('');
+  const [a99xFormData, setA99xFormData] = useState('');
+  const [a99xFormDurata, setA99xFormDurata] = useState('30');
+  const [a99xFormTipo, setA99xFormTipo] = useState('INTERNA');
+  const [a99xFormModalita, setA99xFormModalita] = useState('ONLINE');
+  const [a99xFormU, setA99xFormU] = useState('3');
+  const [a99xFormI, setA99xFormI] = useState('3');
+  const [a99xFormD, setA99xFormD] = useState('1');
+  const [a99xFormS, setA99xFormS] = useState('1');
+
+  const fetchA99xData = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      const cId = comuneIdFromUrl || '1';
+      const [riunioniRes, taskRes] = await Promise.all([
+        fetch(`${apiUrl}/api/a99x/riunioni?comune_id=${cId}`),
+        fetch(`${apiUrl}/api/a99x/task?comune_id=${cId}`)
+      ]);
+      const riunioniData = await riunioniRes.json();
+      const taskData = await taskRes.json();
+      if (riunioniData.success) setA99xRiunioni(riunioniData.data || []);
+      if (taskData.success) setA99xTask(taskData.data || []);
+    } catch (err) {
+      console.error('Errore fetch A99X:', err);
+    }
+  };
+
+  // Fetch A99X data on mount
+  React.useEffect(() => {
+    fetchA99xData();
+  }, [comuneIdFromUrl]);
+
   const espandiMessaggiInviatiPerImpresa = (messaggi: any[] = []) =>
     messaggi.flatMap((m: any) => {
       const dettagli = Array.isArray(m.destinatari_dettaglio)
@@ -9369,160 +9406,332 @@ export default function DashboardPA() {
 
           {/* TAB 25: A99X — Agenda Intelligente */}
           <TabsContent value="mio" className="space-y-6">
-            {/* Header A99X */}
+            {/* Header A99X Operativo */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Zap className="h-6 w-6 text-[#8b5cf6]" />
+                <h2 className="text-xl font-bold text-[#e8fbff]">A99X — Agenda Intelligente</h2>
+                <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30 text-[10px]">Operativo</Badge>
+              </div>
+              <button
+                onClick={() => {
+                  setA99xNuovaRiunione(true);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/25 flex items-center gap-2"
+              >
+                <CalendarDays className="h-4 w-4" />
+                Nuova Riunione
+              </button>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-[#8b5cf6]">{a99xRiunioni.filter((r: any) => r.stato === 'PROGRAMMATA').length}</p>
+                  <p className="text-xs text-[#e8fbff]/60">Riunioni Programmate</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-[#1a2332] border-[#14b8a6]/30">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-[#14b8a6]">{a99xTask.filter((t: any) => t.stato === 'DA_FARE').length}</p>
+                  <p className="text-xs text-[#e8fbff]/60">Task Da Fare</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-[#f59e0b]">{a99xTask.filter((t: any) => t.stato === 'IN_CORSO').length}</p>
+                  <p className="text-xs text-[#e8fbff]/60">Task In Corso</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-[#1a2332] border-[#ef4444]/30">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-[#ef4444]">{a99xTask.filter((t: any) => t.stato === 'SCADUTO').length}</p>
+                  <p className="text-xs text-[#e8fbff]/60">Task Scaduti</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Prossime Riunioni */}
             <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-[#8b5cf6]" />
-                  A99X — Agenda Intelligente
-                  <Badge variant="outline" className="ml-2 text-[#14b8a6] border-[#14b8a6]/50 text-[10px]">
-                    Fase 2 — In arrivo Estate 2026
-                  </Badge>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-[#8b5cf6]" />
+                  Prossime Riunioni
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <p className="text-[#e8fbff]/70 text-sm">
-                    Assistente che ottimizza i compiti 99 volte più velocemente. Agenda intelligente per assessori, responsabili di settore e riunioni con cittadini e imprese.
-                  </p>
-
-                  {/* A99X Preview Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Card 1: Agenda */}
-                    <div className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <CalendarDays className="h-5 w-5 text-[#8b5cf6]" />
-                        <span className="text-[#e8fbff] font-medium text-sm">Agenda Assessori</span>
-                      </div>
-                      <p className="text-[#e8fbff]/50 text-xs mb-3">
-                        Calendario intelligente con prioritizzazione automatica degli appuntamenti. AVA analizza urgenza, impatto e disponibilità.
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-[10px]">Cal.com</Badge>
-                        <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-[10px]">Self-hosted</Badge>
-                      </div>
-                    </div>
-
-                    {/* Card 2: Riunioni */}
-                    <div className="bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Video className="h-5 w-5 text-[#14b8a6]" />
-                        <span className="text-[#e8fbff] font-medium text-sm">Videoconferenze</span>
-                      </div>
-                      <p className="text-[#e8fbff]/50 text-xs mb-3">
-                        Stanze Jitsi Meet generate automaticamente per ogni riunione. Trascrizione in tempo reale e traduzione multilingue.
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-[10px]">Jitsi Meet</Badge>
-                        <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30 text-[10px]">Whisper STT</Badge>
-                      </div>
-                    </div>
-
-                    {/* Card 3: Task Follow-up */}
-                    <div className="bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <ListTodo className="h-5 w-5 text-[#3b82f6]" />
-                        <span className="text-[#e8fbff] font-medium text-sm">Task Automatici</span>
-                      </div>
-                      <p className="text-[#e8fbff]/50 text-xs mb-3">
-                        AVA analizza le trascrizioni delle riunioni ed estrae automaticamente decisioni, task e scadenze da assegnare.
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-[#3b82f6]/20 text-[#3b82f6] border-[#3b82f6]/30 text-[10px]">NLP</Badge>
-                        <Badge className="bg-[#ec4899]/20 text-[#ec4899] border-[#ec4899]/30 text-[10px]">AVA AI</Badge>
-                      </div>
-                    </div>
+                {a99xRiunioni.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Video className="h-10 w-10 text-[#8b5cf6]/30 mx-auto mb-3" />
+                    <p className="text-[#e8fbff]/50 text-sm">Nessuna riunione programmata</p>
+                    <p className="text-[#e8fbff]/30 text-xs mt-1">Clicca "Nuova Riunione" per crearne una</p>
                   </div>
-
-                  {/* Roadmap A99X */}
-                  <div className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4">
-                    <h4 className="text-[#e8fbff] font-medium text-sm mb-3 flex items-center gap-2">
-                      <Rocket className="h-4 w-4 text-[#8b5cf6]" />
-                      Roadmap A99X
-                    </h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#10b981]"></div>
-                        <span className="text-xs text-[#e8fbff]/70 flex-1">Fase 1 — Consolidamento e SMTP (In corso)</span>
-                        <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30 text-[10px]">Attivo</Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#8b5cf6]"></div>
-                        <span className="text-xs text-[#e8fbff]/70 flex-1">Fase 1E — Cal.com Corsi + Relatori (In corso)</span>
-                        <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-[10px]">In corso</Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#f59e0b]"></div>
-                        <span className="text-xs text-[#e8fbff]/70 flex-1">Fase 2 — Agenda Assessori + Cal.com + Jitsi (Estate 2026)</span>
-                        <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30 text-[10px]">Prossimo</Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#e8fbff]/30"></div>
-                        <span className="text-xs text-[#e8fbff]/70 flex-1">Fase 3 — Trascrizione + Traduzione + Follow-up NLP (Autunno 2026)</span>
-                        <Badge className="bg-[#e8fbff]/10 text-[#e8fbff]/50 border-[#e8fbff]/20 text-[10px]">Pianificato</Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#e8fbff]/20"></div>
-                        <span className="text-xs text-[#e8fbff]/70 flex-1">Fase 4 — Scale-up Nazionale (Inizio 2027)</span>
-                        <Badge className="bg-[#e8fbff]/10 text-[#e8fbff]/50 border-[#e8fbff]/20 text-[10px]">Futuro</Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Funzionalità previste */}
-                  <div className="bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg p-4">
-                    <h4 className="text-[#e8fbff] font-medium text-sm mb-3 flex items-center gap-2">
-                      <Users2 className="h-4 w-4 text-[#14b8a6]" />
-                      Tipi di Riunione Gestiti
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {[
-                        { tipo: 'Interna', desc: 'Briefing settore', color: '#3b82f6' },
-                        { tipo: 'Inter-settore', desc: 'SUAP + Polizia', color: '#8b5cf6' },
-                        { tipo: 'Giunta', desc: 'Sindaco + Assessori', color: '#ec4899' },
-                        { tipo: 'Consiglio', desc: 'Tutti i consiglieri', color: '#f59e0b' },
-                        { tipo: 'Con Cittadino', desc: 'URP / Sportello', color: '#14b8a6' },
-                        { tipo: 'Con Impresa', desc: 'Pratica SUAP', color: '#10b981' },
-                      ].map((r, i) => (
-                        <div key={i} className="px-3 py-2 rounded-lg border" style={{ borderColor: r.color + '30', backgroundColor: r.color + '10' }}>
-                          <p className="text-xs font-medium" style={{ color: r.color }}>{r.tipo}</p>
-                          <p className="text-[10px] text-[#e8fbff]/50">{r.desc}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {a99xRiunioni.slice(0, 5).map((riunione: any) => (
+                      <div key={riunione.id} className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4 flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-[#e8fbff] font-medium text-sm">{riunione.titolo}</h4>
+                            <Badge className={`text-[9px] ${
+                              riunione.priorita_livello === 'CRITICA' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                              riunione.priorita_livello === 'ALTA' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
+                              riunione.priorita_livello === 'MEDIA' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                              'bg-green-500/20 text-green-400 border-green-500/30'
+                            }`}>{riunione.priorita_livello || 'NORMALE'}</Badge>
+                          </div>
+                          <p className="text-[#e8fbff]/50 text-xs">
+                            {new Date(riunione.data_inizio).toLocaleString('it-IT', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            {' • '}{riunione.durata_minuti} min
+                            {riunione.tipo && ` • ${riunione.tipo}`}
+                          </p>
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex items-center gap-2">
+                          {riunione.jitsi_link && (
+                            <a
+                              href={riunione.jitsi_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded-lg text-xs font-medium hover:bg-[#14b8a6]/30 transition-all flex items-center gap-1"
+                            >
+                              <Video className="h-3 w-3" />
+                              Jitsi
+                            </a>
+                          )}
+                          <Badge className={`text-[9px] ${
+                            riunione.stato === 'PROGRAMMATA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                            riunione.stato === 'IN_CORSO' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                            'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                          }`}>{riunione.stato}</Badge>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                )}
+              </CardContent>
+            </Card>
 
-                  {/* Formula Priorità */}
-                  <div className="bg-[#0b1220] border border-[#f59e0b]/20 rounded-lg p-4">
-                    <h4 className="text-[#e8fbff] font-medium text-sm mb-2 flex items-center gap-2">
-                      <Calculator className="h-4 w-4 text-[#f59e0b]" />
-                      Algoritmo Priorità A99X
-                    </h4>
-                    <div className="bg-[#1a2332] rounded-lg p-3 font-mono text-center">
-                      <span className="text-[#f59e0b] text-sm">P = U × I × D × S</span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2 mt-2">
-                      <div className="text-center">
-                        <p className="text-[10px] text-[#f59e0b] font-medium">U</p>
-                        <p className="text-[9px] text-[#e8fbff]/50">Urgenza</p>
+            {/* Task Follow-up */}
+            <Card className="bg-[#1a2332] border-[#3b82f6]/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
+                  <ListTodo className="h-4 w-4 text-[#3b82f6]" />
+                  Task Follow-up
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {a99xTask.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ListTodo className="h-10 w-10 text-[#3b82f6]/30 mx-auto mb-3" />
+                    <p className="text-[#e8fbff]/50 text-sm">Nessun task attivo</p>
+                    <p className="text-[#e8fbff]/30 text-xs mt-1">I task vengono generati automaticamente dopo le riunioni</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {a99xTask.slice(0, 8).map((task: any) => (
+                      <div key={task.id} className="bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-[#e8fbff] text-sm font-medium">{task.titolo}</p>
+                          <p className="text-[#e8fbff]/40 text-xs">
+                            {task.scadenza && `Scadenza: ${new Date(task.scadenza).toLocaleDateString('it-IT')}`}
+                            {task.assegnato_a_nome && ` • ${task.assegnato_a_nome}`}
+                          </p>
+                        </div>
+                        <Badge className={`text-[9px] ${
+                          task.stato === 'DA_FARE' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                          task.stato === 'IN_CORSO' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                          task.stato === 'COMPLETATO' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                          'bg-red-500/20 text-red-400 border-red-500/30'
+                        }`}>{task.stato}</Badge>
                       </div>
-                      <div className="text-center">
-                        <p className="text-[10px] text-[#f59e0b] font-medium">I</p>
-                        <p className="text-[9px] text-[#e8fbff]/50">Impatto</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[10px] text-[#f59e0b] font-medium">D</p>
-                        <p className="text-[9px] text-[#e8fbff]/50">Disponibilità</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[10px] text-[#f59e0b] font-medium">S</p>
-                        <p className="text-[9px] text-[#e8fbff]/50">Scadenza</p>
-                      </div>
-                    </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Formula Priorità + Info */}
+            <Card className="bg-[#1a2332] border-[#f59e0b]/30">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <Calculator className="h-4 w-4 text-[#f59e0b]" />
+                  <span className="text-[#e8fbff] font-medium text-sm">Algoritmo Priorità</span>
+                  <div className="bg-[#0b1220] rounded-lg px-3 py-1 font-mono">
+                    <span className="text-[#f59e0b] text-sm">P = U × I × D × S</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="text-center bg-[#0b1220] rounded-lg p-2">
+                    <p className="text-xs text-[#f59e0b] font-bold">U</p>
+                    <p className="text-[9px] text-[#e8fbff]/50">Urgenza</p>
+                  </div>
+                  <div className="text-center bg-[#0b1220] rounded-lg p-2">
+                    <p className="text-xs text-[#f59e0b] font-bold">I</p>
+                    <p className="text-[9px] text-[#e8fbff]/50">Importanza</p>
+                  </div>
+                  <div className="text-center bg-[#0b1220] rounded-lg p-2">
+                    <p className="text-xs text-[#f59e0b] font-bold">D</p>
+                    <p className="text-[9px] text-[#e8fbff]/50">Dipendenze</p>
+                  </div>
+                  <div className="text-center bg-[#0b1220] rounded-lg p-2">
+                    <p className="text-xs text-[#f59e0b] font-bold">S</p>
+                    <p className="text-[9px] text-[#e8fbff]/50">Stakeholder</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Dialog Nuova Riunione */}
+            {a99xNuovaRiunione && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setA99xNuovaRiunione(false)}>
+                <div className="bg-[#1a2332] border border-[#8b5cf6]/30 rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-[#e8fbff] font-bold text-lg flex items-center gap-2">
+                      <CalendarDays className="h-5 w-5 text-[#8b5cf6]" />
+                      Nuova Riunione
+                    </h3>
+                    <button onClick={() => setA99xNuovaRiunione(false)} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">✕</button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Titolo *</label>
+                      <input
+                        value={a99xFormTitolo}
+                        onChange={(e) => setA99xFormTitolo(e.target.value)}
+                        placeholder="Es: Riunione SUAP con impresa XYZ"
+                        className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Data e Ora *</label>
+                        <input
+                          type="datetime-local"
+                          value={a99xFormData}
+                          onChange={(e) => setA99xFormData(e.target.value)}
+                          className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Durata (min)</label>
+                        <input
+                          type="number"
+                          value={a99xFormDurata}
+                          onChange={(e) => setA99xFormDurata(e.target.value)}
+                          placeholder="30"
+                          className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Tipo</label>
+                        <select
+                          value={a99xFormTipo}
+                          onChange={(e) => setA99xFormTipo(e.target.value)}
+                          className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                        >
+                          <option value="INTERNA">Interna</option>
+                          <option value="INTER_SETTORE">Inter-settore</option>
+                          <option value="GIUNTA">Giunta</option>
+                          <option value="CONSIGLIO">Consiglio</option>
+                          <option value="CON_CITTADINO">Con Cittadino</option>
+                          <option value="CON_IMPRESA">Con Impresa</option>
+                          <option value="CONSULENZA">Consulenza</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Modalità</label>
+                        <select
+                          value={a99xFormModalita}
+                          onChange={(e) => setA99xFormModalita(e.target.value)}
+                          className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                        >
+                          <option value="ONLINE">Online (Jitsi)</option>
+                          <option value="IN_SEDE">In Sede</option>
+                          <option value="MISTA">Mista</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Descrizione</label>
+                      <textarea
+                        value={a99xFormDescrizione}
+                        onChange={(e) => setA99xFormDescrizione(e.target.value)}
+                        placeholder="Ordine del giorno, note..."
+                        rows={3}
+                        className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm resize-none"
+                      />
+                    </div>
+                    {/* Priorità */}
+                    <div className="bg-[#0b1220] border border-[#f59e0b]/20 rounded-lg p-3">
+                      <p className="text-xs text-[#f59e0b] font-medium mb-2">Priorità (P = U × I × D × S)</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        <div>
+                          <label className="text-[9px] text-[#e8fbff]/50">Urgenza</label>
+                          <input type="number" min="1" max="5" value={a99xFormU} onChange={(e) => setA99xFormU(e.target.value)} className="w-full bg-[#1a2332] border border-[#f59e0b]/30 rounded p-1 text-[#e8fbff] text-sm text-center" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-[#e8fbff]/50">Importanza</label>
+                          <input type="number" min="1" max="5" value={a99xFormI} onChange={(e) => setA99xFormI(e.target.value)} className="w-full bg-[#1a2332] border border-[#f59e0b]/30 rounded p-1 text-[#e8fbff] text-sm text-center" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-[#e8fbff]/50">Dipendenze</label>
+                          <input type="number" min="1" max="5" value={a99xFormD} onChange={(e) => setA99xFormD(e.target.value)} className="w-full bg-[#1a2332] border border-[#f59e0b]/30 rounded p-1 text-[#e8fbff] text-sm text-center" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-[#e8fbff]/50">Stakeholder</label>
+                          <input type="number" min="1" max="5" value={a99xFormS} onChange={(e) => setA99xFormS(e.target.value)} className="w-full bg-[#1a2332] border border-[#f59e0b]/30 rounded p-1 text-[#e8fbff] text-sm text-center" />
+                        </div>
+                      </div>
+                      <p className="text-center text-[#f59e0b] text-xs mt-2 font-mono">
+                        Score: {(parseInt(a99xFormU) || 3) * (parseInt(a99xFormI) || 3) * (parseInt(a99xFormD) || 1) * (parseInt(a99xFormS) || 1)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.miohub.it'}/api/a99x/riunioni`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              comune_id: comuneIdFromUrl || '1',
+                              titolo: a99xFormTitolo,
+                              descrizione: a99xFormDescrizione,
+                              tipo: a99xFormTipo,
+                              modalita: a99xFormModalita,
+                              data_inizio: a99xFormData,
+                              durata_minuti: parseInt(a99xFormDurata) || 30,
+                              urgenza: parseInt(a99xFormU) || 3,
+                              importanza: parseInt(a99xFormI) || 3,
+                              dipendenze: parseInt(a99xFormD) || 1,
+                              stakeholder: parseInt(a99xFormS) || 1,
+                              genera_jitsi: a99xFormModalita !== 'IN_SEDE'
+                            })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setA99xNuovaRiunione(false);
+                            setA99xFormTitolo('');
+                            setA99xFormDescrizione('');
+                            setA99xFormData('');
+                            // Refresh riunioni
+                            fetchA99xData();
+                          }
+                        } catch (err) {
+                          console.error('Errore creazione riunione:', err);
+                        }
+                      }}
+                      disabled={!a99xFormTitolo || !a99xFormData}
+                      className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Crea Riunione {a99xFormModalita !== 'IN_SEDE' && '+ Genera Link Jitsi'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           {/* TAB: MAPPA GIS - Ora usa GestioneHubMapWrapper (Vista Italia HUB) */}
