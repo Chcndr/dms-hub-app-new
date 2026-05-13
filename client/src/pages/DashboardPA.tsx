@@ -104,6 +104,10 @@ import {
   Eye,
   ChevronDown,
   ChevronUp,
+  CalendarDays,
+  ListTodo,
+  Video,
+  Users2,
 } from "lucide-react";
 import {
   Card,
@@ -3257,28 +3261,15 @@ export default function DashboardPA() {
             </ProtectedTab>
             <ProtectedTab tabId="mio">
               <button
-                onClick={() => {
-                  setActiveTab("mio");
-                  // Non impostiamo più viewMode qui, lasciamo il default 'quad'
-                  setSelectedAgent("mio");
-                  // Scroll automatico alla chat MIO dopo un breve delay
-                  setTimeout(() => {
-                    if (mioMessagesRef.current) {
-                      mioMessagesRef.current.scrollTo({
-                        top: mioMessagesRef.current.scrollHeight,
-                        behavior: "smooth",
-                      });
-                    }
-                  }, 300);
-                }}
+                onClick={() => setActiveTab("mio")}
                 className={`flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
                   activeTab === "mio"
                     ? "bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg"
                     : "bg-[#8b5cf6]/10 border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/20 text-[#8b5cf6]"
                 }`}
               >
-                <Bot className="h-6 w-6" />
-                <span className="text-xs font-medium">MIO Agent</span>
+                <Zap className="h-6 w-6" />
+                <span className="text-xs font-medium">A99X</span>
               </button>
             </ProtectedTab>
             <ProtectedTab tabId="mappa">
@@ -9282,844 +9273,159 @@ export default function DashboardPA() {
             </Tabs>
           </TabsContent>
 
-          {/* TAB 25: MIO AGENT */}
+          {/* TAB 25: A99X — Agenda Intelligente */}
           <TabsContent value="mio" className="space-y-6">
-            {/* SEZIONE A: Chat Principale MIO (sempre visibile) */}
+            {/* Header A99X */}
             <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
               <CardHeader>
                 <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-[#8b5cf6]" />
-                  MIO Agent - Chat Principale (GPT-5 Coordinatore)
+                  <Zap className="h-5 w-5 text-[#8b5cf6]" />
+                  A99X — Agenda Intelligente
+                  <Badge variant="outline" className="ml-2 text-[#14b8a6] border-[#14b8a6]/50 text-[10px]">
+                    Fase 2 — In arrivo Estate 2026
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <p className="text-[#e8fbff]/70 text-sm">
-                    Chat principale con il "cervello" che coordina tutti gli agenti. QG strategico per ragionare sui progetti.
+                    Assistente che ottimizza i compiti 99 volte più velocemente. Agenda intelligente per assessori, responsabili di settore e riunioni con cittadini e imprese.
                   </p>
 
-                  {/* Area chat principale MIO */}
-                  <div className="bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-4">
-                    <div className="space-y-4">
-                      {/* Header */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Brain className="h-5 w-5 text-purple-400" />
-                          <span className="text-[#e8fbff] font-medium">MIO</span>
-                          <span className="text-xs text-[#e8fbff]/50">GPT-5 Coordinatore</span>
-                          {mioMainConversationId && (
-                            <span className="text-xs text-[#e8fbff]/30">ID: {mioMainConversationId.slice(0, 8)}...</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-[#e8fbff]/50">{mioMessages.length} messaggi</span>
-                          {/* Pulsante STOP sempre visibile */}
-                          <button
-                            onClick={stopGeneration}
-                            disabled={!mioSending}
-                            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                              mioSending
-                                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse cursor-pointer'
-                                : 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-50'
-                            }`}
-                            title={mioSending ? 'Interrompi tutti gli agenti' : 'Nessuna elaborazione in corso'}
-                          >
-                            <StopCircle className="h-4 w-4" />
-                            <span className="text-sm">STOP</span>
-                          </button>
-                        </div>
+                  {/* A99X Preview Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Card 1: Agenda */}
+                    <div className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CalendarDays className="h-5 w-5 text-[#8b5cf6]" />
+                        <span className="text-[#e8fbff] font-medium text-sm">Agenda Assessori</span>
                       </div>
-                      {/* Area messaggi */}
-                      <div className="relative">
-                        <div ref={mioMessagesRef} className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-scroll space-y-3 chat-messages-container">
-                        {mioMessages.length === 0 ? (
-                          <p className="text-[#e8fbff]/50 text-center text-sm">Nessun messaggio</p>
-                        ) : (
-                          mioMessages.map((msg) => (
-                            <div
-                              key={msg.id}
-                              className={`p-3 rounded-lg ${
-                                msg.role === 'user'
-                                  ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 ml-8'
-                                  : msg.role === 'assistant'
-                                  ? 'bg-[#10b981]/20 border border-[#10b981]/30 mr-8'
-                                  : 'bg-[#ef4444]/20 border border-[#ef4444]/30'
-                              }`}
-                            >
-                              <div className="flex items-start gap-2">
-                                {msg.role === 'assistant' && (
-                                  <Brain className="h-4 w-4 text-purple-400 mt-0.5" />
-                                )}
-                                <div className="flex-1">
-                                  <div className="text-xs text-[#e8fbff]/50 mb-1 flex items-center justify-between">
-                                    <span>
-                                      {msg.role === 'user' ? 'Tu' : msg.role === 'assistant' ? (
-                                        msg.agentName ? `${msg.agentName.toUpperCase()}` : 'MIO'
-                                      ) : 'Errore'}
-                                      {msg.source && <span className="ml-2 text-[#e8fbff]/30">({msg.source})</span>}
-                                    </span>
-                                    <span className="text-[#e8fbff]/30">
-                                      {new Date(msg.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                  <MessageContent content={msg.content} />
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                        {mioLoading && (
-                          <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
-                            <div className="flex items-center gap-2">
-                              <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                              <p className="text-[#e8fbff]/70 text-sm">MIO sta pensando...</p>
-                            </div>
-                          </div>
-                        )}
-                        </div>
-                        {/* Bottone Scroll to Bottom */}
-                        {showMioScrollButton && mioMessages.length > 0 && (
-                          <button
-                            onClick={() => scrollMioToBottom()}
-                            className="absolute bottom-2 right-2 z-10 size-10 rounded-full bg-[#8b5cf6] shadow-lg flex items-center justify-center hover:bg-[#8b5cf6]/90 transition-all"
-                            aria-label="Torna all'ultimo messaggio"
-                          >
-                            <ArrowDown className="size-5 text-white" />
-                          </button>
-                        )}
+                      <p className="text-[#e8fbff]/50 text-xs mb-3">
+                        Calendario intelligente con prioritizzazione automatica degli appuntamenti. AVA analizza urgenza, impatto e disponibilità.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-[10px]">Cal.com</Badge>
+                        <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-[10px]">Self-hosted</Badge>
                       </div>
-                      {/* Input */}
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={mioInputValue}
-                          onChange={(e) => setMioInputValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey && !mioSending) {
-                              e.preventDefault();
-                              handleSendMio();
-                            }
-                          }}
-                          placeholder="Messaggio a MIO..."
-                          className="flex-1 bg-[#0a0f1a] border border-[#8b5cf6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#8b5cf6]"
-                          disabled={mioSending}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleSendMio}
-                          disabled={mioSending}
-                          className="bg-[#10b981] hover:bg-[#059669] px-4 py-2 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {mioSending ? 'Invio...' : 'Invia'}
-                        </button>
+                    </div>
+
+                    {/* Card 2: Riunioni */}
+                    <div className="bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Video className="h-5 w-5 text-[#14b8a6]" />
+                        <span className="text-[#e8fbff] font-medium text-sm">Videoconferenze</span>
                       </div>
-                      {mioSendError && (
-                        <p className="text-xs text-[#ef4444] text-center">
-                          Errore MIO: {mioSendError}
-                        </p>
-                      )}
-                      {mioError && (
-                        <p className="text-xs text-[#ef4444] text-center">
-                          {mioError}
-                        </p>
-                      )}
+                      <p className="text-[#e8fbff]/50 text-xs mb-3">
+                        Stanze Jitsi Meet generate automaticamente per ogni riunione. Trascrizione in tempo reale e traduzione multilingue.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-[10px]">Jitsi Meet</Badge>
+                        <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30 text-[10px]">Whisper STT</Badge>
+                      </div>
+                    </div>
+
+                    {/* Card 3: Task Follow-up */}
+                    <div className="bg-[#0b1220] border border-[#3b82f6]/20 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ListTodo className="h-5 w-5 text-[#3b82f6]" />
+                        <span className="text-[#e8fbff] font-medium text-sm">Task Automatici</span>
+                      </div>
+                      <p className="text-[#e8fbff]/50 text-xs mb-3">
+                        AVA analizza le trascrizioni delle riunioni ed estrae automaticamente decisioni, task e scadenze da assegnare.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-[#3b82f6]/20 text-[#3b82f6] border-[#3b82f6]/30 text-[10px]">NLP</Badge>
+                        <Badge className="bg-[#ec4899]/20 text-[#ec4899] border-[#ec4899]/30 text-[10px]">AVA AI</Badge>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* SEZIONE B: Pannello Multi-Agente (sotto la chat principale) */}
-            <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-[#8b5cf6]" />
-                  Chat Multi-Agente (MIO / Manus / Abacus / Zapier)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-[#e8fbff]/70 text-sm">
-                    Sala controllo con 4 agenti specializzati. Visualizza
-                    singolarmente o tutti insieme.
-                  </p>
-
-                  {/* Barra toggle Vista singola / Vista 4 agenti */}
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => setViewMode("single")}
-                      className={
-                        viewMode === "single"
-                          ? "flex-1 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white"
-                          : "flex-1 bg-[#8b5cf6]/20 hover:bg-[#8b5cf6]/30 text-[#8b5cf6]"
-                      }
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Vista singola
-                    </Button>
-                    <Button
-                      onClick={() => setViewMode("quad")}
-                      className={
-                        viewMode === "quad"
-                          ? "flex-1 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white"
-                          : "flex-1 bg-[#8b5cf6]/20 hover:bg-[#8b5cf6]/30 text-[#8b5cf6]"
-                      }
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Vista 4 agenti
-                    </Button>
+                  {/* Roadmap A99X */}
+                  <div className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4">
+                    <h4 className="text-[#e8fbff] font-medium text-sm mb-3 flex items-center gap-2">
+                      <Rocket className="h-4 w-4 text-[#8b5cf6]" />
+                      Roadmap A99X
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-[#10b981]"></div>
+                        <span className="text-xs text-[#e8fbff]/70 flex-1">Fase 1 — Consolidamento e SMTP (In corso)</span>
+                        <Badge className="bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30 text-[10px]">Attivo</Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-[#8b5cf6]"></div>
+                        <span className="text-xs text-[#e8fbff]/70 flex-1">Fase 1E — Cal.com Corsi + Relatori (In corso)</span>
+                        <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-[10px]">In corso</Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-[#f59e0b]"></div>
+                        <span className="text-xs text-[#e8fbff]/70 flex-1">Fase 2 — Agenda Assessori + Cal.com + Jitsi (Estate 2026)</span>
+                        <Badge className="bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30 text-[10px]">Prossimo</Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-[#e8fbff]/30"></div>
+                        <span className="text-xs text-[#e8fbff]/70 flex-1">Fase 3 — Trascrizione + Traduzione + Follow-up NLP (Autunno 2026)</span>
+                        <Badge className="bg-[#e8fbff]/10 text-[#e8fbff]/50 border-[#e8fbff]/20 text-[10px]">Pianificato</Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-[#e8fbff]/20"></div>
+                        <span className="text-xs text-[#e8fbff]/70 flex-1">Fase 4 — Scale-up Nazionale (Inizio 2027)</span>
+                        <Badge className="bg-[#e8fbff]/10 text-[#e8fbff]/50 border-[#e8fbff]/20 text-[10px]">Futuro</Badge>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Bottoni agenti - Disabilitati in vista quadrants */}
-                  <div className="grid grid-cols-4 gap-2">
-                    <button
-                      onClick={() => setSelectedAgent("gptdev")}
-                      disabled={viewMode === "quad"}
-                      className={`text-center p-3 rounded-lg border transition-all ${
-                        viewMode === "quad"
-                          ? "opacity-50 cursor-not-allowed bg-[#6366f1]/5 border-[#6366f1]/20"
-                          : selectedAgent === "gptdev"
-                            ? "bg-[#6366f1]/20 border-[#6366f1] shadow-lg shadow-[#6366f1]/20"
-                            : "bg-[#0a0f1a] border-[#6366f1]/30 hover:bg-[#6366f1]/10 hover:border-[#6366f1]/50"
-                      }`}
-                    >
-                      <Brain className="h-5 w-5 text-indigo-400 mx-auto mb-1" />
-                      <div className="text-xs text-[#e8fbff]/70">GPT Dev</div>
-                      <div className="text-xs text-[#e8fbff]/50">
-                        Sviluppatore
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setSelectedAgent("manus")}
-                      disabled={viewMode === "quad"}
-                      className={`text-center p-3 rounded-lg border transition-all ${
-                        viewMode === "quad"
-                          ? "opacity-50 cursor-not-allowed bg-[#3b82f6]/5 border-[#3b82f6]/20"
-                          : selectedAgent === "manus"
-                            ? "bg-[#3b82f6]/20 border-[#3b82f6]"
-                            : "bg-[#3b82f6]/10 border-[#3b82f6]/30 hover:bg-[#3b82f6]/15"
-                      }`}
-                    >
-                      <Wrench className="h-5 w-5 text-blue-400 mx-auto mb-1" />
-                      <div className="text-xs text-[#e8fbff]/70">Manus</div>
-                      <div className="text-xs text-[#e8fbff]/50">Esecutivo</div>
-                    </button>
-                    <button
-                      onClick={() => setSelectedAgent("abacus")}
-                      disabled={viewMode === "quad"}
-                      className={`text-center p-3 rounded-lg border transition-all ${
-                        viewMode === "quad"
-                          ? "opacity-50 cursor-not-allowed bg-[#10b981]/5 border-[#10b981]/20"
-                          : selectedAgent === "abacus"
-                            ? "bg-[#10b981]/20 border-[#10b981]"
-                            : "bg-[#10b981]/10 border-[#10b981]/30 hover:bg-[#10b981]/15"
-                      }`}
-                    >
-                      <Calculator className="h-5 w-5 text-green-400 mx-auto mb-1" />
-                      <div className="text-xs text-[#e8fbff]/70">Abacus</div>
-                      <div className="text-xs text-[#e8fbff]/50">Analisi</div>
-                    </button>
-                    <button
-                      onClick={() => setSelectedAgent("zapier")}
-                      disabled={viewMode === "quad"}
-                      className={`text-center p-3 rounded-lg border transition-all ${
-                        viewMode === "quad"
-                          ? "opacity-50 cursor-not-allowed bg-[#f59e0b]/5 border-[#f59e0b]/20"
-                          : selectedAgent === "zapier"
-                            ? "bg-[#f59e0b]/20 border-[#f59e0b]"
-                            : "bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/15"
-                      }`}
-                    >
-                      <Zap className="h-5 w-5 text-orange-400 mx-auto mb-1" />
-                      <div className="text-xs text-[#e8fbff]/70">Zapier</div>
-                      <div className="text-xs text-[#e8fbff]/50">
-                        Automazioni
-                      </div>
-                    </button>
+                  {/* Funzionalità previste */}
+                  <div className="bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg p-4">
+                    <h4 className="text-[#e8fbff] font-medium text-sm mb-3 flex items-center gap-2">
+                      <Users2 className="h-4 w-4 text-[#14b8a6]" />
+                      Tipi di Riunione Gestiti
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {[
+                        { tipo: 'Interna', desc: 'Briefing settore', color: '#3b82f6' },
+                        { tipo: 'Inter-settore', desc: 'SUAP + Polizia', color: '#8b5cf6' },
+                        { tipo: 'Giunta', desc: 'Sindaco + Assessori', color: '#ec4899' },
+                        { tipo: 'Consiglio', desc: 'Tutti i consiglieri', color: '#f59e0b' },
+                        { tipo: 'Con Cittadino', desc: 'URP / Sportello', color: '#14b8a6' },
+                        { tipo: 'Con Impresa', desc: 'Pratica SUAP', color: '#10b981' },
+                      ].map((r, i) => (
+                        <div key={i} className="px-3 py-2 rounded-lg border" style={{ borderColor: r.color + '30', backgroundColor: r.color + '10' }}>
+                          <p className="text-xs font-medium" style={{ color: r.color }}>{r.tipo}</p>
+                          <p className="text-[10px] text-[#e8fbff]/50">{r.desc}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* AREA CHAT - UN SOLO WRAPPER CON CONDITIONAL RENDERING */}
-                  <div className="bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-4 min-h-[24rem]">
-                    {viewMode === "single" && (
-                      <div className="space-y-4">
-                        {/* Header chat singola */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {selectedAgent === "gptdev" && (
-                              <Brain className="h-5 w-5 text-indigo-400" />
-                            )}
-                            {selectedAgent === "manus" && (
-                              <Wrench className="h-5 w-5 text-blue-400" />
-                            )}
-                            {selectedAgent === "abacus" && (
-                              <Calculator className="h-5 w-5 text-green-400" />
-                            )}
-                            {selectedAgent === "zapier" && (
-                              <Zap className="h-5 w-5 text-orange-400" />
-                            )}
-                            <span className="text-[#e8fbff] font-medium">
-                              {selectedAgent === "gptdev" && "GPT Developer"}
-                              {selectedAgent === "manus" && "Manus"}
-                              {selectedAgent === "abacus" && "Abacus"}
-                              {selectedAgent === "zapier" && "Zapier"}
-                            </span>
-                            <span className="text-xs text-[#e8fbff]/50">
-                              {selectedAgent === "gptdev" && "Sviluppatore AI"}
-                              {selectedAgent === "manus" &&
-                                "Operatore Esecutivo"}
-                              {selectedAgent === "abacus" && "Analisi Dati"}
-                              {selectedAgent === "zapier" && "Automazioni"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-[#e8fbff]/50">
-                              {selectedAgent === "gptdev" &&
-                                `${gptdevMessages.length} messaggi`}
-                              {selectedAgent === "manus" &&
-                                `${manusMessages.length} messaggi`}
-                              {selectedAgent === "abacus" &&
-                                `${abacusMessages.length} messaggi`}
-                              {selectedAgent === "zapier" &&
-                                `${zapierMessages.length} messaggi`}
-                            </span>
-                            {/* 🛑 Pulsante STOP per Vista Singola Agente */}
-                            <button
-                              onClick={stopGeneration}
-                              disabled={
-                                (selectedAgent === "gptdev" &&
-                                  !gptdevSending) ||
-                                (selectedAgent === "manus" && !manusSending) ||
-                                (selectedAgent === "abacus" &&
-                                  !abacusSending) ||
-                                (selectedAgent === "zapier" && !zapierSending)
-                              }
-                              className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-2 text-xs ${
-                                (selectedAgent === "gptdev" && gptdevSending) ||
-                                (selectedAgent === "manus" && manusSending) ||
-                                (selectedAgent === "abacus" && abacusSending) ||
-                                (selectedAgent === "zapier" && zapierSending)
-                                  ? "bg-red-600 hover:bg-red-700 text-white animate-pulse cursor-pointer"
-                                  : "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
-                              }`}
-                              title={
-                                (selectedAgent === "gptdev" && gptdevSending) ||
-                                (selectedAgent === "manus" && manusSending) ||
-                                (selectedAgent === "abacus" && abacusSending) ||
-                                (selectedAgent === "zapier" && zapierSending)
-                                  ? "Interrompi agente"
-                                  : "Nessuna elaborazione in corso"
-                              }
-                            >
-                              <StopCircle className="h-3.5 w-3.5" />
-                              <span>STOP</span>
-                            </button>
-                          </div>
-                        </div>
-                        {/* Area messaggi */}
-                        <div className="relative">
-                          <div
-                            ref={singleChatMessagesRef}
-                            className="h-96 bg-[#0a0f1a] rounded-lg p-4 overflow-y-scroll chat-messages-container"
-                          >
-                            {selectedAgent === "gptdev" &&
-                              gptdevMessages.length === 0 && (
-                                <p className="text-[#e8fbff]/50 text-center text-sm">
-                                  Nessun messaggio
-                                </p>
-                              )}
-                            {selectedAgent === "manus" &&
-                              manusMessages.length === 0 && (
-                                <p className="text-[#e8fbff]/50 text-center text-sm">
-                                  Nessun messaggio
-                                </p>
-                              )}
-                            {selectedAgent === "abacus" &&
-                              abacusMessages.length === 0 && (
-                                <p className="text-[#e8fbff]/50 text-center text-sm">
-                                  Nessun messaggio
-                                </p>
-                              )}
-                            {selectedAgent === "zapier" &&
-                              zapierMessages.length === 0 && (
-                                <p className="text-[#e8fbff]/50 text-center text-sm">
-                                  Nessun messaggio
-                                </p>
-                              )}
-
-                            {/* Messaggi GPT Developer */}
-                            {selectedAgent === "gptdev" &&
-                              gptdevMessages.map((msg, idx) => (
-                                <div
-                                  key={idx}
-                                  className={`mb-3 ${msg.role === "user" ? "ml-8" : "mr-8"}`}
-                                >
-                                  <div
-                                    className={`p-3 rounded-lg ${
-                                      msg.role === "user"
-                                        ? "bg-indigo-500/20 border border-indigo-500/30 ml-auto"
-                                        : msg.role === "system"
-                                          ? "bg-red-500/10 border border-red-500/30"
-                                          : "bg-[#10b981]/10 border border-[#10b981]/20"
-                                    }`}
-                                  >
-                                    <MessageContent content={msg.content} />
-                                    <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
-                                      <span>
-                                        da{" "}
-                                        {msg.role === "user"
-                                          ? "Tu"
-                                          : msg.agent || "agente"}
-                                      </span>
-                                      <span className="text-[#e8fbff]/30">
-                                        {new Date(
-                                          msg.created_at
-                                        ).toLocaleTimeString("it-IT", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-
-                            {/* Messaggi Manus */}
-                            {selectedAgent === "manus" &&
-                              manusMessages.map((msg, idx) => (
-                                <div
-                                  key={idx}
-                                  className={`mb-3 ${msg.role === "user" ? "ml-8" : "mr-8"}`}
-                                >
-                                  <div
-                                    className={`p-3 rounded-lg ${
-                                      msg.role === "user"
-                                        ? "bg-[#3b82f6]/20 border border-[#3b82f6]/30 ml-auto"
-                                        : msg.role === "system"
-                                          ? "bg-red-500/10 border border-red-500/30"
-                                          : "bg-[#10b981]/10 border border-[#10b981]/20"
-                                    }`}
-                                  >
-                                    <MessageContent content={msg.content} />
-                                    <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
-                                      <span>
-                                        da{" "}
-                                        {msg.role === "user"
-                                          ? "Tu"
-                                          : msg.agent || "agente"}
-                                      </span>
-                                      <span className="text-[#e8fbff]/30">
-                                        {new Date(
-                                          msg.created_at
-                                        ).toLocaleTimeString("it-IT", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-
-                            {/* Messaggi Abacus */}
-                            {selectedAgent === "abacus" &&
-                              abacusMessages.map((msg, idx) => (
-                                <div
-                                  key={idx}
-                                  className={`mb-3 ${msg.role === "user" ? "ml-8" : "mr-8"}`}
-                                >
-                                  <div
-                                    className={`p-3 rounded-lg ${
-                                      msg.role === "user"
-                                        ? "bg-[#10b981]/20 border border-[#10b981]/30 ml-auto"
-                                        : msg.role === "system"
-                                          ? "bg-red-500/10 border border-red-500/30"
-                                          : "bg-[#10b981]/10 border border-[#10b981]/20"
-                                    }`}
-                                  >
-                                    <MessageContent content={msg.content} />
-                                    <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
-                                      <span>
-                                        da{" "}
-                                        {msg.role === "user"
-                                          ? "Tu"
-                                          : msg.agent || "agente"}
-                                      </span>
-                                      <span className="text-[#e8fbff]/30">
-                                        {new Date(
-                                          msg.created_at
-                                        ).toLocaleTimeString("it-IT", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-
-                            {/* Messaggi Zapier */}
-                            {selectedAgent === "zapier" &&
-                              zapierMessages.map((msg, idx) => (
-                                <div
-                                  key={idx}
-                                  className={`mb-3 ${msg.role === "user" ? "ml-8" : "mr-8"}`}
-                                >
-                                  <div
-                                    className={`p-3 rounded-lg ${
-                                      msg.role === "user"
-                                        ? "bg-[#f59e0b]/20 border border-[#f59e0b]/30 ml-auto"
-                                        : msg.role === "system"
-                                          ? "bg-red-500/10 border border-red-500/30"
-                                          : "bg-[#10b981]/10 border border-[#10b981]/20"
-                                    }`}
-                                  >
-                                    <MessageContent content={msg.content} />
-                                    <div className="flex items-center justify-between text-[#e8fbff]/50 text-xs mt-1">
-                                      <span>
-                                        da{" "}
-                                        {msg.role === "user"
-                                          ? "Tu"
-                                          : msg.agent || "agente"}
-                                      </span>
-                                      <span className="text-[#e8fbff]/30">
-                                        {new Date(
-                                          msg.created_at
-                                        ).toLocaleTimeString("it-IT", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-
-                            {/* Loading indicator */}
-                            {selectedAgent === "gptdev" && gptdevSending && (
-                              <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
-                                <div className="flex items-center gap-2">
-                                  <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                                  <p className="text-[#e8fbff]/70 text-sm">
-                                    GPT Developer sta pensando...
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            {selectedAgent === "manus" && manusSending && (
-                              <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
-                                <div className="flex items-center gap-2">
-                                  <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                                  <p className="text-[#e8fbff]/70 text-sm">
-                                    Manus sta lavorando...
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            {selectedAgent === "abacus" && abacusSending && (
-                              <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
-                                <div className="flex items-center gap-2">
-                                  <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                                  <p className="text-[#e8fbff]/70 text-sm">
-                                    Abacus sta analizzando...
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            {selectedAgent === "zapier" && zapierSending && (
-                              <div className="p-3 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20 mr-8">
-                                <div className="flex items-center gap-2">
-                                  <RefreshCw className="h-4 w-4 text-[#10b981] animate-spin" />
-                                  <p className="text-[#e8fbff]/70 text-sm">
-                                    Zapier sta elaborando...
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          {/* Bottone Scroll to Bottom */}
-                          {showSingleChatScrollButton && (
-                            <button
-                              onClick={() => scrollSingleChatToBottom()}
-                              className="absolute bottom-2 right-2 z-10 size-10 rounded-full bg-[#8b5cf6] shadow-lg flex items-center justify-center hover:bg-[#8b5cf6]/90 transition-all"
-                              aria-label="Torna all'ultimo messaggio"
-                            >
-                              <ArrowDown className="size-5 text-white" />
-                            </button>
-                          )}
-                        </div>
-                        {/* Input e bottone Invia per ogni agente */}
-                        <div className="flex gap-2">
-                          {selectedAgent === "gptdev" && (
-                            <>
-                              <input
-                                type="text"
-                                value={gptdevInputValue}
-                                onChange={e =>
-                                  setGptdevInputValue(e.target.value)
-                                }
-                                onKeyDown={e => {
-                                  if (
-                                    e.key === "Enter" &&
-                                    !e.shiftKey &&
-                                    !gptdevSending
-                                  ) {
-                                    e.preventDefault();
-                                    handleSendGptdev();
-                                  }
-                                }}
-                                placeholder="Messaggio a GPT Developer..."
-                                disabled={gptdevSending}
-                                className="flex-1 bg-[#0a0f1a] border border-[#6366f1]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#6366f1]"
-                              />
-                              <button
-                                onClick={handleSendGptdev}
-                                disabled={gptdevSending}
-                                className="bg-[#10b981] hover:bg-[#059669] disabled:bg-[#10b981]/50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                              >
-                                <Send className="h-4 w-4" />
-                                {gptdevSending ? "Invio..." : "Invia"}
-                              </button>
-                            </>
-                          )}
-                          {selectedAgent === "manus" && (
-                            <>
-                              <input
-                                type="text"
-                                value={manusInputValue}
-                                onChange={e =>
-                                  setManusInputValue(e.target.value)
-                                }
-                                onKeyDown={e => {
-                                  if (
-                                    e.key === "Enter" &&
-                                    !e.shiftKey &&
-                                    !manusSending
-                                  ) {
-                                    e.preventDefault();
-                                    handleSendManus();
-                                  }
-                                }}
-                                placeholder="Messaggio a Manus..."
-                                disabled={manusSending}
-                                className="flex-1 bg-[#0a0f1a] border border-[#3b82f6]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#3b82f6]"
-                              />
-                              <button
-                                onClick={handleSendManus}
-                                disabled={manusSending}
-                                className="bg-[#10b981] hover:bg-[#059669] disabled:bg-[#10b981]/50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                              >
-                                <Send className="h-4 w-4" />
-                                {manusLoading ? "Invio..." : "Invia"}
-                              </button>
-                            </>
-                          )}
-                          {selectedAgent === "abacus" && (
-                            <>
-                              <input
-                                type="text"
-                                value={abacusInputValue}
-                                onChange={e =>
-                                  setAbacusInputValue(e.target.value)
-                                }
-                                onKeyDown={e => {
-                                  if (
-                                    e.key === "Enter" &&
-                                    !e.shiftKey &&
-                                    !abacusSending
-                                  ) {
-                                    e.preventDefault();
-                                    handleSendAbacus();
-                                  }
-                                }}
-                                placeholder="Messaggio a Abacus..."
-                                disabled={abacusSending}
-                                className="flex-1 bg-[#0a0f1a] border border-[#10b981]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#10b981]"
-                              />
-                              <button
-                                onClick={handleSendAbacus}
-                                disabled={abacusSending}
-                                className="bg-[#10b981] hover:bg-[#059669] disabled:bg-[#10b981]/50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                              >
-                                <Send className="h-4 w-4" />
-                                {abacusLoading ? "Invio..." : "Invia"}
-                              </button>
-                            </>
-                          )}
-                          {selectedAgent === "zapier" && (
-                            <>
-                              <input
-                                type="text"
-                                value={zapierInputValue}
-                                onChange={e =>
-                                  setZapierInputValue(e.target.value)
-                                }
-                                onKeyDown={e => {
-                                  if (
-                                    e.key === "Enter" &&
-                                    !e.shiftKey &&
-                                    !zapierSending
-                                  ) {
-                                    e.preventDefault();
-                                    handleSendZapier();
-                                  }
-                                }}
-                                placeholder="Messaggio a Zapier..."
-                                disabled={zapierSending}
-                                className="flex-1 bg-[#0a0f1a] border border-[#f59e0b]/30 rounded-lg px-4 py-2 text-[#e8fbff] placeholder-[#e8fbff]/30 focus:outline-none focus:border-[#f59e0b]"
-                              />
-                              <button
-                                onClick={handleSendZapier}
-                                disabled={zapierSending}
-                                className="bg-[#10b981] hover:bg-[#059669] disabled:bg-[#10b981]/50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                              >
-                                <Send className="h-4 w-4" />
-                                {zapierLoading ? "Invio..." : "Invia"}
-                              </button>
-                            </>
-                          )}
-                        </div>
+                  {/* Formula Priorità */}
+                  <div className="bg-[#0b1220] border border-[#f59e0b]/20 rounded-lg p-4">
+                    <h4 className="text-[#e8fbff] font-medium text-sm mb-2 flex items-center gap-2">
+                      <Calculator className="h-4 w-4 text-[#f59e0b]" />
+                      Algoritmo Priorità A99X
+                    </h4>
+                    <div className="bg-[#1a2332] rounded-lg p-3 font-mono text-center">
+                      <span className="text-[#f59e0b] text-sm">P = U × I × D × S</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      <div className="text-center">
+                        <p className="text-[10px] text-[#f59e0b] font-medium">U</p>
+                        <p className="text-[9px] text-[#e8fbff]/50">Urgenza</p>
                       </div>
-                    )}
-
-                    {viewMode === "quad" && (
-                      <MultiAgentChatView
-                        gptdevMessages={gptdevQuadMessages as AgentMessage[]}
-                        manusMessages={manusQuadMessages as AgentMessage[]}
-                        abacusMessages={abacusQuadMessages as AgentMessage[]}
-                        zapierMessages={zapierQuadMessages as AgentMessage[]}
-                        gptdevLoading={gptdevQuadLoading}
-                        manusLoading={manusQuadLoading}
-                        abacusLoading={abacusQuadLoading}
-                        zapierLoading={zapierQuadLoading}
-                      />
-                    )}
+                      <div className="text-center">
+                        <p className="text-[10px] text-[#f59e0b] font-medium">I</p>
+                        <p className="text-[9px] text-[#e8fbff]/50">Impatto</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[10px] text-[#f59e0b] font-medium">D</p>
+                        <p className="text-[9px] text-[#e8fbff]/50">Disponibilità</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[10px] text-[#f59e0b] font-medium">S</p>
+                        <p className="text-[9px] text-[#e8fbff]/50">Scadenza</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 🎨 SHARED WORKSPACE - Area di lavoro condivisa */}
-            <Card className="bg-[#1a2332] border-[#14b8a6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5 text-[#14b8a6]" />
-                  Shared Workspace - Lavagna Collaborativa
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-[#e8fbff]/70 text-sm mb-4">
-                  Area di staging per output complessi, diagrammi e annotazioni.
-                  Gli agenti possono disegnare automaticamente schemi e report.
-                </p>
-                <SharedWorkspace
-                  conversationId={mioMainConversationId ?? undefined}
-                  onSave={_snapshot => {
-                    // Workspace saved
-                  }}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Attività Agenti Recente Card */}
-            <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-              <CardHeader>
-                <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-[#8b5cf6]" />
-                  Attività Agenti Recente (Guardian)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {guardianLogs
-                    .filter(log => {
-                      // Vista 4 agenti: mostra tutti gli agenti (mio, gptdev, manus, abacus, zapier)
-                      if (viewMode === "quad") {
-                        return [
-                          "mio",
-                          "gptdev",
-                          "manus",
-                          "abacus",
-                          "zapier",
-                        ].includes(log.agent);
-                      }
-                      // Vista singola: mostra solo l'agente selezionato
-                      if (viewMode === "single" && selectedAgent) {
-                        return log.agent === selectedAgent;
-                      }
-                      // Default: mostra tutti
-                      return true;
-                    })
-                    .slice(0, 50)
-                    .map((log, idx) => {
-                      const statusColor =
-                        log.status === "allowed"
-                          ? "text-[#10b981]"
-                          : "text-[#ef4444]";
-                      const statusBg =
-                        log.status === "allowed"
-                          ? "bg-[#10b981]/10 border-[#10b981]/30"
-                          : "bg-[#ef4444]/10 border-[#ef4444]/30";
-                      const agentColor =
-                        log.agent === "mio"
-                          ? "text-purple-400"
-                          : log.agent === "manus"
-                            ? "text-blue-400"
-                            : log.agent === "abacus"
-                              ? "text-green-400"
-                              : log.agent === "zapier"
-                                ? "text-orange-400"
-                                : "text-gray-400";
-
-                      return (
-                        <div
-                          key={idx}
-                          className="p-3 bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-medium border ${statusBg} ${statusColor}`}
-                              >
-                                {log.status.toUpperCase()}
-                              </span>
-                              <span
-                                className={`text-sm font-medium ${agentColor}`}
-                              >
-                                {log.agent}
-                              </span>
-                              <span className="text-xs text-[#e8fbff]/50">
-                                •
-                              </span>
-                              <span className="text-xs text-[#e8fbff]/50">
-                                {log.method}
-                              </span>
-                            </div>
-                            <span className="text-xs text-[#e8fbff]/50">
-                              {formatTimestamp(log.timestamp)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-[#e8fbff] font-mono mb-1">
-                            {log.path}
-                          </p>
-                          {log.reason && (
-                            <p className="text-xs text-[#ef4444] mt-2">
-                              ⚠️ {log.reason}
-                            </p>
-                          )}
-                          {log.status === "allowed" &&
-                            log.response_time_ms !== undefined && (
-                              <p className="text-xs text-[#10b981] mt-2">
-                                ✓ Response time: {log.response_time_ms}ms
-                              </p>
-                            )}
-                        </div>
-                      );
-                    })}
-                </div>
-                <div className="mt-4 pt-4 border-t border-[#8b5cf6]/20">
-                  <p className="text-xs text-[#e8fbff]/50 text-center">
-                    Ultimi 50 eventi • Aggiornamento automatico ogni 10s
-                  </p>
                 </div>
               </CardContent>
             </Card>

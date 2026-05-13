@@ -36,6 +36,10 @@ import {
   Award,
   MapPin,
   Download,
+  Bell,
+  Send,
+  Zap,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -123,6 +127,17 @@ const GestioneCorsiAssociazionePanel = memo(
     const [form, setForm] = useState(EMPTY_CORSO);
     const [saving, setSaving] = useState(false);
     const [selectedCorsoId, setSelectedCorsoId] = useState<number | null>(null);
+
+    // A99X: Stato dialog notifica corso
+    const [showNotificaDialog, setShowNotificaDialog] = useState(false);
+    const [notificaCorsoId, setNotificaCorsoId] = useState<number | null>(null);
+    const [notificaCorsoTitolo, setNotificaCorsoTitolo] = useState("");
+    const [notificaMessaggio, setNotificaMessaggio] = useState("");
+    const [notificaPiattaforma, setNotificaPiattaforma] = useState<"A99X" | "ESTERNO">("A99X");
+    const [notificaLinkA99x, setNotificaLinkA99x] = useState("");
+    const [notificaLinkEsterno, setNotificaLinkEsterno] = useState("");
+    const [notificaInviaRelatori, setNotificaInviaRelatori] = useState(true);
+    const [sendingNotifica, setSendingNotifica] = useState(false);
 
     const impState = getImpersonationParams();
     const associazioneId = impState.associazioneId;
@@ -253,6 +268,50 @@ const GestioneCorsiAssociazionePanel = memo(
         }
       } catch (error) {
         toast.error("Errore di rete");
+      }
+    };
+
+    // A99X: Invia notifica corso con scelta piattaforma
+    const inviaNotificaCorso = async () => {
+      if (!associazioneId || !notificaCorsoId || !notificaMessaggio.trim()) {
+        toast.error("Messaggio obbligatorio");
+        return;
+      }
+      setSendingNotifica(true);
+      try {
+        const payload = {
+          corso_id: notificaCorsoId,
+          tipo_messaggio: 'AVVISO_CORSO',
+          titolo: `Avviso: ${notificaCorsoTitolo}`,
+          messaggio: notificaMessaggio,
+          piattaforma_corso: notificaPiattaforma,
+          link_a99x: notificaPiattaforma === 'A99X' ? notificaLinkA99x : undefined,
+          link_corso: notificaPiattaforma === 'ESTERNO' ? notificaLinkEsterno : undefined,
+          modalita: 'ONLINE',
+          invia_a_relatori: notificaInviaRelatori,
+        };
+        const res = await authenticatedFetch(
+          `${API_BASE}/api/associazioni/${associazioneId}/notifiche-corso`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          }
+        );
+        const data = await res.json();
+        if (data.success) {
+          toast.success(data.message || 'Notifica inviata');
+          setShowNotificaDialog(false);
+          setNotificaMessaggio('');
+          setNotificaLinkA99x('');
+          setNotificaLinkEsterno('');
+        } else {
+          toast.error(data.error || 'Errore invio notifica');
+        }
+      } catch (error) {
+        toast.error('Errore di rete');
+      } finally {
+        setSendingNotifica(false);
       }
     };
 
@@ -614,6 +673,19 @@ const GestioneCorsiAssociazionePanel = memo(
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => {
+                              setNotificaCorsoId(c.id);
+                              setNotificaCorsoTitolo(c.titolo);
+                              setShowNotificaDialog(true);
+                            }}
+                            className="text-[#8b5cf6] h-8 w-8"
+                            title="Invia notifica corso"
+                          >
+                            <Bell className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => openEdit(c)}
                             className="text-[#3b82f6] h-8 w-8"
                           >
@@ -758,6 +830,121 @@ const GestioneCorsiAssociazionePanel = memo(
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* A99X: Dialog Invio Notifica Corso */}
+        {showNotificaDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+            <div className="bg-[#1a2332] border border-[#8b5cf6]/30 rounded-xl p-6 w-full max-w-lg mx-4 shadow-2xl">
+              <div className="flex items-center gap-2 mb-4">
+                <Bell className="h-5 w-5 text-[#8b5cf6]" />
+                <h3 className="text-[#e8fbff] font-bold text-lg">Invia Notifica Corso</h3>
+              </div>
+              <p className="text-[#e8fbff]/60 text-sm mb-4">
+                Corso: <span className="text-[#e8fbff] font-medium">{notificaCorsoTitolo}</span>
+              </p>
+
+              {/* Scelta piattaforma */}
+              <div className="mb-4">
+                <Label className="text-[#e8fbff]/70 text-xs mb-2 block">Piattaforma Link Corso</Label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setNotificaPiattaforma('A99X')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                      notificaPiattaforma === 'A99X'
+                        ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white'
+                        : 'bg-[#8b5cf6]/10 border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/20'
+                    }`}
+                  >
+                    <Zap className="h-4 w-4" />
+                    A99X
+                  </button>
+                  <button
+                    onClick={() => setNotificaPiattaforma('ESTERNO')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                      notificaPiattaforma === 'ESTERNO'
+                        ? 'bg-[#14b8a6] border-[#14b8a6] text-white'
+                        : 'bg-[#14b8a6]/10 border-[#14b8a6]/30 text-[#14b8a6] hover:bg-[#14b8a6]/20'
+                    }`}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Altro servizio
+                  </button>
+                </div>
+              </div>
+
+              {/* Link in base alla piattaforma */}
+              {notificaPiattaforma === 'A99X' ? (
+                <div className="mb-4">
+                  <Label className="text-[#e8fbff]/70 text-xs mb-1 block">Link A99X (Cal.com)</Label>
+                  <Input
+                    value={notificaLinkA99x}
+                    onChange={(e) => setNotificaLinkA99x(e.target.value)}
+                    placeholder="https://cal.miohub.it/..."
+                    className="bg-[#0b1220] border-[#8b5cf6]/30 text-[#e8fbff] text-sm"
+                  />
+                </div>
+              ) : (
+                <div className="mb-4">
+                  <Label className="text-[#e8fbff]/70 text-xs mb-1 block">Link Esterno</Label>
+                  <Input
+                    value={notificaLinkEsterno}
+                    onChange={(e) => setNotificaLinkEsterno(e.target.value)}
+                    placeholder="https://zoom.us/... o altro"
+                    className="bg-[#0b1220] border-[#14b8a6]/30 text-[#e8fbff] text-sm"
+                  />
+                </div>
+              )}
+
+              {/* Messaggio */}
+              <div className="mb-4">
+                <Label className="text-[#e8fbff]/70 text-xs mb-1 block">Messaggio per le imprese iscritte</Label>
+                <textarea
+                  value={notificaMessaggio}
+                  onChange={(e) => setNotificaMessaggio(e.target.value)}
+                  placeholder="Gentile impresa, vi informiamo che il corso..."
+                  rows={4}
+                  className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-3 text-[#e8fbff] text-sm resize-none focus:outline-none focus:border-[#8b5cf6]/50"
+                />
+              </div>
+
+              {/* Checkbox relatori */}
+              <div className="mb-5">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={notificaInviaRelatori}
+                    onChange={(e) => setNotificaInviaRelatori(e.target.checked)}
+                    className="w-4 h-4 rounded border-[#8b5cf6]/30 bg-[#0b1220] accent-[#8b5cf6]"
+                  />
+                  <span className="text-[#e8fbff]/70 text-sm">Invia anche ai relatori/istruttori del corso</span>
+                </label>
+              </div>
+
+              {/* Azioni */}
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowNotificaDialog(false)}
+                  className="text-[#e8fbff]/50 hover:text-[#e8fbff]"
+                >
+                  Annulla
+                </Button>
+                <Button
+                  onClick={inviaNotificaCorso}
+                  disabled={sendingNotifica || !notificaMessaggio.trim()}
+                  className="bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white"
+                >
+                  {sendingNotifica ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  Invia Notifica
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
