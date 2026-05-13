@@ -14,6 +14,7 @@ import ChatWidget from "./components/ChatWidget";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import SpuntaNotifier from "./components/SpuntaNotifier";
+import InvitoNotifier from "./components/InvitoNotifier";
 import SkipToContent from "./components/SkipToContent";
 import GlobalFooter from "./components/GlobalFooter";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -168,6 +169,7 @@ function App() {
                     <ChatWidget userRole="cliente" />
                     <CookieConsentBanner />
                     <SpuntaNotifier />
+                    <InvitoNotifier />
                   </TooltipProvider>
                 </TransportProvider>
               </PermissionsProvider>

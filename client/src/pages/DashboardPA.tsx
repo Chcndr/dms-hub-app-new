@@ -9519,34 +9519,7 @@ export default function DashboardPA() {
 
           {/* TAB 25: A99X — Agenda Intelligente */}
           <TabsContent value="mio" className="space-y-6">
-            {/* POPUP NOTIFICA INVITO - angolo alto destra */}
-            {a99xInvitoPopup && (
-              <div className={`fixed top-4 right-4 z-[100] max-w-sm animate-pulse shadow-2xl rounded-xl border-2 p-4 ${
-                (a99xInvitoPopup.urgenza || 3) >= 4 ? 'bg-[#ef4444]/95 border-[#ef4444] shadow-red-500/40' :
-                (a99xInvitoPopup.urgenza || 3) >= 3 ? 'bg-[#f59e0b]/95 border-[#f59e0b] shadow-amber-500/40' :
-                'bg-[#10b981]/95 border-[#10b981] shadow-green-500/40'
-              }`}>
-                <div className="flex items-start gap-3">
-                  <div className="text-2xl">{(a99xInvitoPopup.urgenza || 3) >= 4 ? '\ud83d\udea8' : (a99xInvitoPopup.urgenza || 3) >= 3 ? '\ud83d\udce8' : '\ud83d\udcc5'}</div>
-                  <div className="flex-1">
-                    <p className="text-white font-bold text-sm">Hai un invito da confermare!</p>
-                    <p className="text-white/90 text-xs mt-1">{a99xInvitoPopup.titolo}</p>
-                    <p className="text-white/70 text-[10px] mt-0.5">
-                      {a99xInvitoPopup.data_inizio ? new Date(a99xInvitoPopup.data_inizio).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
-                    </p>
-                    <div className="flex gap-2 mt-2">
-                      {a99xInvitoPopup.token && (
-                        <>
-                          <button onClick={() => { rispondiA99xInvito(a99xInvitoPopup.token, 'accetta'); setA99xInvitoPopup(null); }} className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold rounded border border-white/30">ACCETTA</button>
-                          <button onClick={() => { rispondiA99xInvito(a99xInvitoPopup.token, 'rifiuta'); setA99xInvitoPopup(null); }} className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white/80 text-[10px] rounded border border-white/20">RIFIUTA</button>
-                        </>
-                      )}
-                      <button onClick={() => setA99xInvitoPopup(null)} className="px-2 py-1 text-white/50 hover:text-white text-[10px]">Chiudi</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* NOTA: Il popup invito è ora gestito dal componente globale InvitoNotifier in App.tsx */}
 
             {/* Header A99X Operativo */}
             <div className="flex items-center justify-between">
