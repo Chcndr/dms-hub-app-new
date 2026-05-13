@@ -9,7 +9,6 @@ import {
   Tooltip,
   useMap,
 } from "react-leaflet";
-import { Link } from "wouter";
 import { ZoomFontUpdater } from "./ZoomFontUpdater";
 import { RouteLayer } from "./RouteLayer";
 import {
@@ -1053,28 +1052,31 @@ export function MarketMapComponent({
                               </div>
                             )}
 
-                            {/* Pulsante Visita Vetrina (se presente) */}
+                            {/* Pulsante Visita Vetrina (se presente) — apre in nuova tab per non perdere lo stato della dashboard */}
                             {(dbStall?.vendor_name || props.vendor_name) && (
-                              <Link
-                                href={(() => {
+                              <button
+                                onClick={() => {
                                   const companyId =
                                     dbStall?.impresa_id ||
                                     props.impresa_id ||
                                     props.company_id;
+                                  let url: string;
                                   if (!companyId) {
                                     const name =
                                       dbStall?.vendor_name || props.vendor_name;
                                     if (name)
-                                      return `/vetrine?q=${encodeURIComponent(name)}`;
-                                    return "/vetrine";
+                                      url = `/vetrine?q=${encodeURIComponent(name)}`;
+                                    else url = "/vetrine";
+                                  } else {
+                                    url = `/vetrine/${companyId}`;
                                   }
-                                  return `/vetrine/${companyId}`;
-                                })()}
+                                  window.open(url, '_blank');
+                                }}
                                 className="flex items-center justify-center gap-2 w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white font-medium py-2.5 px-4 rounded transition-all hover:shadow-[0_0_15px_rgba(20,184,166,0.3)] text-sm cursor-pointer"
                               >
                                 <span>🏪</span>
                                 <span>Visita Vetrina</span>
-                              </Link>
+                              </button>
                             )}
 
                             {/* Canone di occupazione - calcolato da superficie x costo/mq */}
@@ -1388,37 +1390,35 @@ export function MarketMapComponent({
                               </div>
                             )}
 
-                            {/* Pulsante Visita Vetrina */}
+                            {/* Pulsante Visita Vetrina — apre in nuova tab per non perdere lo stato della dashboard */}
                             {(dbStall?.vendor_name || props.vendor_name) && (
-                              <Link
-                                href={(() => {
-                                  // Logica robusta per trovare l'ID impresa
-                                  // 1. Cerca in dbStall (dati live)
-                                  // 2. Cerca in props (dati GeoJSON)
+                              <button
+                                onClick={() => {
                                   const companyId =
                                     dbStall?.impresa_id ||
                                     props.impresa_id ||
                                     props.company_id;
-
+                                  let url: string;
                                   if (!companyId) {
                                     console.warn(
                                       `[DEBUG] Impresa ID mancante per posteggio ${props.number}`,
                                       { dbStall, props }
                                     );
-                                    // Fallback alla ricerca per nome se manca l'ID (meglio di niente)
                                     const name =
                                       dbStall?.vendor_name || props.vendor_name;
                                     if (name)
-                                      return `/vetrine?q=${encodeURIComponent(name)}`;
-                                    return "/vetrine";
+                                      url = `/vetrine?q=${encodeURIComponent(name)}`;
+                                    else url = "/vetrine";
+                                  } else {
+                                    url = `/vetrine/${companyId}`;
                                   }
-                                  return `/vetrine/${companyId}`;
-                                })()}
+                                  window.open(url, '_blank');
+                                }}
                                 className="flex items-center justify-center gap-2 w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white font-medium py-2.5 px-4 rounded transition-all hover:shadow-[0_0_15px_rgba(20,184,166,0.3)] text-sm cursor-pointer"
                               >
                                 <span>🏪</span>
                                 <span>Visita Vetrina</span>
-                              </Link>
+                              </button>
                             )}
                           </div>
                         </div>
