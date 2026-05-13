@@ -9691,7 +9691,7 @@ export default function DashboardPA() {
                 { id: 'calendario' as const, label: 'Calendario', icon: '📅' },
                 { id: 'invita' as const, label: 'Invita Riunione', icon: '📨' },
                 { id: 'disponibilita' as const, label: 'Disponibilità', icon: '🕐' },
-                { id: 'prenotazioni' as const, label: 'Prenotazioni', icon: '📋' },
+                { id: 'prenotazioni' as const, label: 'Conferme Inviti', icon: '✅' },
                 { id: 'assessori' as const, label: 'Assessori', icon: '👥' },
               ].map((tab) => (
                 <button
@@ -10084,104 +10084,106 @@ export default function DashboardPA() {
               </div>
             )}
 
-            {/* ===== SUB-TAB: PRENOTAZIONI ===== */}
+            {/* ===== SUB-TAB: CONFERME INVITI ===== */}
             {a99xSubTab === 'prenotazioni' && (
               <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-[#14b8a6]" />
-                      Prenotazioni Ricevute
-                      <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-[10px]">{a99xPrenotazioni.length}</Badge>
+                      <Users className="h-4 w-4 text-[#14b8a6]" />
+                      Conferme Inviti
+                      <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-[10px]">{a99xRiunioni.length} riunioni</Badge>
                     </CardTitle>
+                    <button onClick={() => fetchA99xData()} className="px-3 py-1.5 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded-lg text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3" /> Aggiorna
+                    </button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {a99xPrenotazioni.length === 0 ? (
+                  {a99xRiunioni.length === 0 ? (
                     <div className="text-center py-8">
-                      <FileText className="h-10 w-10 text-[#14b8a6]/30 mx-auto mb-3" />
-                      <p className="text-[#e8fbff]/50 text-sm">Nessuna prenotazione ricevuta</p>
-                      <p className="text-[#e8fbff]/30 text-xs mt-1">Le prenotazioni dei cittadini appariranno qui</p>
+                      <Users className="h-10 w-10 text-[#14b8a6]/30 mx-auto mb-3" />
+                      <p className="text-[#e8fbff]/50 text-sm">Nessuna riunione creata</p>
+                      <p className="text-[#e8fbff]/30 text-xs mt-1">Crea una riunione dal tab "Invita Riunione" per vedere le conferme qui</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {a99xPrenotazioni.map((pren: any) => {
-                        const statoColors: Record<string, string> = {
-                          'CONFERMATA': 'bg-green-500/20 text-green-400 border-green-500/30',
-                          'IN_ATTESA': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-                          'COMPLETATA': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-                          'ANNULLATA': 'bg-red-500/20 text-red-400 border-red-500/30',
-                          'RIFIUTATA': 'bg-red-500/20 text-red-400 border-red-500/30',
-                          'NO_SHOW': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-                        };
+                    <div className="space-y-4">
+                      {a99xRiunioni.map((riunione: any) => {
+                        const partecipanti = riunione.partecipanti || [];
+                        const confermati = partecipanti.filter((p: any) => p.stato === 'CONFERMATO').length;
+                        const rifiutati = partecipanti.filter((p: any) => p.stato === 'RIFIUTATO').length;
+                        const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
+                        const totale = partecipanti.length;
+                        const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
+                        const dataRiunione = riunione.data_inizio ? new Date(riunione.data_inizio).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
                         return (
-                          <div key={pren.id} className="bg-[#0b1220] border border-[#14b8a6]/20 rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-2">
+                          <div key={riunione.id} className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4">
+                            {/* Header riunione */}
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <span className="text-lg">{'\ud83d\udcc5'}</span>
+                                <div className="min-w-0">
+                                  <h4 className="text-[#e8fbff] font-semibold text-sm truncate">{riunione.titolo || 'Riunione senza titolo'}</h4>
+                                  <p className="text-[#e8fbff]/40 text-[10px]">{dataRiunione}</p>
+                                </div>
+                              </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-[#14b8a6] font-mono text-sm font-bold">{pren.codice_prenotazione}</span>
-                                <Badge className={`text-[9px] ${statoColors[pren.stato] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>{pren.stato}</Badge>
-                                <Badge className="text-[9px] bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">{pren.modalita || 'PRESENZA'}</Badge>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                {(pren.stato === 'CONFERMATA' || pren.stato === 'IN_ATTESA') && (
-                                  <>
-                                    <button onClick={async () => {
-                                      try {
-                                        const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                        await fetch(`${apiUrl}/api/a99x/prenotazioni/${pren.id}/stato`, {
-                                          method: 'PUT',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({ stato: 'COMPLETATA' })
-                                        });
-                                        fetchA99xData();
-                                      } catch (err) { console.error(err); }
-                                    }} className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded text-[10px] font-medium hover:bg-blue-500/30">Completata</button>
-                                    <button onClick={async () => {
-                                      try {
-                                        const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                        await fetch(`${apiUrl}/api/a99x/prenotazioni/${pren.id}/stato`, {
-                                          method: 'PUT',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({ stato: 'NO_SHOW' })
-                                        });
-                                        fetchA99xData();
-                                      } catch (err) { console.error(err); }
-                                    }} className="px-2 py-1 bg-gray-500/20 border border-gray-500/30 text-gray-400 rounded text-[10px] font-medium hover:bg-gray-500/30">No Show</button>
-                                    <button onClick={async () => {
-                                      try {
-                                        const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                        await fetch(`${apiUrl}/api/a99x/prenotazioni/${pren.id}/stato`, {
-                                          method: 'PUT',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({ stato: 'ANNULLATA' })
-                                        });
-                                        fetchA99xData();
-                                      } catch (err) { console.error(err); }
-                                    }} className="px-2 py-1 bg-red-500/20 border border-red-500/30 text-red-400 rounded text-[10px] font-medium hover:bg-red-500/30">Annulla</button>
-                                  </>
+                                {riunione.jitsi_link && (
+                                  <a href={riunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">{'\ud83c\udf10'} Jitsi</a>
                                 )}
+                                <Badge className={`text-[9px] ${
+                                  riunione.stato === 'COMPLETATA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                                  riunione.stato === 'ANNULLATA' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                  'bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30'
+                                }`}>{riunione.stato || 'PROGRAMMATA'}</Badge>
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                              <div>
-                                <p className="text-[#e8fbff]/40">Richiedente</p>
-                                <p className="text-[#e8fbff] font-medium">{pren.nome} {pren.cognome}</p>
+                            {/* Barra progresso conferme */}
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[#e8fbff]/50 text-[10px]">Conferme: {confermati}/{totale}</span>
+                                <span className="text-[#e8fbff]/50 text-[10px]">{percentuale}%</span>
                               </div>
-                              <div>
-                                <p className="text-[#e8fbff]/40">Data</p>
-                                <p className="text-[#e8fbff] font-medium">{pren.data_appuntamento ? new Date(pren.data_appuntamento + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }) : 'N/D'}</p>
+                              <div className="w-full bg-[#1a2332] rounded-full h-2 overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${totale > 0 ? ((confermati + rifiutati) / totale) * 100 : 0}%`, background: `linear-gradient(to right, #22c55e ${totale > 0 ? (confermati / (confermati + rifiutati || 1)) * 100 : 0}%, #ef4444 0%)` }}></div>
                               </div>
-                              <div>
-                                <p className="text-[#e8fbff]/40">Orario</p>
-                                <p className="text-[#e8fbff] font-medium">{pren.ora_inizio} - {pren.ora_fine}</p>
-                              </div>
-                              <div>
-                                <p className="text-[#e8fbff]/40">Oggetto</p>
-                                <p className="text-[#e8fbff] font-medium truncate">{pren.oggetto}</p>
+                              <div className="flex items-center gap-3 mt-1.5">
+                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span><span className="text-green-400">{confermati} confermati</span></span>
+                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span><span className="text-red-400">{rifiutati} rifiutati</span></span>
+                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span><span className="text-yellow-400">{inAttesa} in attesa</span></span>
                               </div>
                             </div>
-                            {pren.email && <p className="text-[#e8fbff]/30 text-[10px] mt-2">{pren.email} {pren.telefono && `\u2022 ${pren.telefono}`}</p>}
-                            {pren.jitsi_link && <a href={pren.jitsi_link} target="_blank" rel="noopener noreferrer" className="text-[#14b8a6] text-[10px] mt-1 inline-block hover:underline">\ud83c\udf10 Link Videoconferenza</a>}
+                            {/* Lista partecipanti */}
+                            {totale > 0 ? (
+                              <div className="space-y-1.5">
+                                {partecipanti.map((p: any, idx: number) => {
+                                  const statoConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
+                                    'CONFERMATO': { bg: 'bg-green-500/15 border-green-500/30', text: 'text-green-400', icon: '\u2705', label: 'Confermato' },
+                                    'RIFIUTATO': { bg: 'bg-red-500/15 border-red-500/30', text: 'text-red-400', icon: '\u274c', label: 'Rifiutato' },
+                                    'INVITATO': { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', icon: '\u23f3', label: 'In attesa' },
+                                  };
+                                  const cfg = statoConfig[p.stato] || statoConfig['INVITATO'];
+                                  const tipoConfig: Record<string, { color: string; label: string }> = {
+                                    'IMPRESA': { color: 'text-[#14b8a6]', label: 'Impresa' },
+                                    'ASSOCIAZIONE': { color: 'text-[#f59e0b]', label: 'Associazione' },
+                                    'ASSESSORE': { color: 'text-[#8b5cf6]', label: 'Assessore' },
+                                  };
+                                  const tipoCfg = tipoConfig[p.tipo] || { color: 'text-[#e8fbff]/50', label: p.tipo };
+                                  return (
+                                    <div key={idx} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${cfg.bg} transition-all`}>
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span className="text-sm">{cfg.icon}</span>
+                                        <span className="text-[#e8fbff] text-xs font-medium truncate">{p.nome}</span>
+                                        <Badge className={`text-[8px] ${tipoCfg.color} bg-transparent border-current/30`}>{tipoCfg.label}</Badge>
+                                      </div>
+                                      <span className={`text-[10px] font-semibold ${cfg.text}`}>{cfg.label}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-[#e8fbff]/30 text-xs text-center py-2">Nessun invitato per questa riunione</p>
+                            )}
                           </div>
                         );
                       })}

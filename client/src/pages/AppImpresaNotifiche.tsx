@@ -22,6 +22,7 @@ import {
   MessageSquare,
   ArrowLeft,
   User,
+  Users,
   RefreshCw,
   Filter,
   Search,
@@ -38,6 +39,7 @@ import {
   Upload,
   Loader2,
   CheckCircle2,
+  Video,
 } from "lucide-react";
 import {
   Card,
@@ -404,6 +406,130 @@ export default function AppImpresaNotifiche() {
       return;
     }
     window.open(corsoUrl, "_blank", "noopener,noreferrer");
+  };
+
+  // Componente inline per la sezione "Le Mie Riunioni"
+  const MieRiunioniSection = ({ email, nascosta }: { email: string; nascosta: boolean }) => {
+    const [riunioni, setRiunioni] = useState<any[]>([]);
+    const [loadingR, setLoadingR] = useState(true);
+
+    const fetchRiunioni = async () => {
+      if (!email) { setLoadingR(false); return; }
+      try {
+        const res = await fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (data.success) setRiunioni(data.data || []);
+      } catch (err) { console.error('Errore fetch riunioni:', err); }
+      finally { setLoadingR(false); }
+    };
+
+    useEffect(() => {
+      fetchRiunioni();
+      const interval = setInterval(fetchRiunioni, 20000);
+      return () => clearInterval(interval);
+    }, [email]);
+
+    if (!email || (riunioni.length === 0 && !loadingR)) return null;
+
+    return (
+      <div className={`mt-4 sm:mt-6 ${nascosta ? 'hidden sm:block' : ''}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-[#e8fbff] flex items-center gap-2">
+            <Video className="w-5 h-5 text-[#8b5cf6]" />
+            Le Mie Riunioni PA
+          </h2>
+          <button onClick={fetchRiunioni} className="px-3 py-1.5 bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 text-[#8b5cf6] rounded-lg text-[10px] font-medium hover:bg-[#8b5cf6]/30 transition-all flex items-center gap-1">
+            <RefreshCw className={`h-3 w-3 ${loadingR ? 'animate-spin' : ''}`} /> Aggiorna
+          </button>
+        </div>
+        {loadingR ? (
+          <div className="text-center py-6"><Loader2 className="h-6 w-6 animate-spin text-[#8b5cf6] mx-auto" /></div>
+        ) : (
+          <div className="space-y-4">
+            {riunioni.map((r: any) => {
+              const partecipanti = r.partecipanti || [];
+              const confermati = partecipanti.filter((p: any) => p.stato === 'CONFERMATO').length;
+              const rifiutati = partecipanti.filter((p: any) => p.stato === 'RIFIUTATO').length;
+              const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
+              const totale = partecipanti.length;
+              const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
+              const dataR = r.data_inizio ? new Date(r.data_inizio).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
+              const mioStatoColors: Record<string, string> = {
+                'CONFERMATO': 'bg-green-500/20 text-green-400 border-green-500/30',
+                'RIFIUTATO': 'bg-red-500/20 text-red-400 border-red-500/30',
+                'INVITATO': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+              };
+              return (
+                <Card key={r.id} className="bg-[#1a2332] border-[#8b5cf6]/20">
+                  <CardContent className="p-4">
+                    {/* Header riunione */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-lg">{"\ud83d\udcc5"}</span>
+                        <div className="min-w-0">
+                          <h4 className="text-[#e8fbff] font-semibold text-sm truncate">{r.titolo || 'Riunione'}</h4>
+                          <p className="text-[#e8fbff]/40 text-[10px]">{dataR}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={`text-[9px] ${mioStatoColors[r.mio_stato] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
+                          {r.mio_stato === 'CONFERMATO' ? 'Accettato' : r.mio_stato === 'RIFIUTATO' ? 'Rifiutato' : 'In attesa'}
+                        </Badge>
+                        {r.jitsi_link && (
+                          <a href={r.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">{"\ud83c\udf10"} Jitsi</a>
+                        )}
+                      </div>
+                    </div>
+                    {/* Barra progresso conferme */}
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[#e8fbff]/50 text-[10px]">Conferme: {confermati}/{totale}</span>
+                        <span className="text-[#e8fbff]/50 text-[10px]">{percentuale}%</span>
+                      </div>
+                      <div className="w-full bg-[#0b1220] rounded-full h-2 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${totale > 0 ? ((confermati + rifiutati) / totale) * 100 : 0}%`, background: `linear-gradient(to right, #22c55e ${totale > 0 ? (confermati / (confermati + rifiutati || 1)) * 100 : 0}%, #ef4444 0%)` }}></div>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span><span className="text-green-400">{confermati} confermati</span></span>
+                        <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span><span className="text-red-400">{rifiutati} rifiutati</span></span>
+                        <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span><span className="text-yellow-400">{inAttesa} in attesa</span></span>
+                      </div>
+                    </div>
+                    {/* Lista partecipanti */}
+                    <div className="space-y-1.5">
+                      {partecipanti.map((p: any, idx: number) => {
+                        const statoConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
+                          'CONFERMATO': { bg: 'bg-green-500/15 border-green-500/30', text: 'text-green-400', icon: '\u2705', label: 'Confermato' },
+                          'RIFIUTATO': { bg: 'bg-red-500/15 border-red-500/30', text: 'text-red-400', icon: '\u274c', label: 'Rifiutato' },
+                          'INVITATO': { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', icon: '\u23f3', label: 'In attesa' },
+                        };
+                        const cfg = statoConfig[p.stato] || statoConfig['INVITATO'];
+                        const tipoConfig: Record<string, { color: string; label: string }> = {
+                          'IMPRESA': { color: 'text-[#14b8a6]', label: 'Impresa' },
+                          'ASSOCIAZIONE': { color: 'text-[#f59e0b]', label: 'Associazione' },
+                          'ASSESSORE': { color: 'text-[#8b5cf6]', label: 'Assessore' },
+                        };
+                        const tipoCfg = tipoConfig[p.tipo] || { color: 'text-[#e8fbff]/50', label: p.tipo };
+                        return (
+                          <div key={idx} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${cfg.bg} transition-all`}>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm">{cfg.icon}</span>
+                              <span className="text-[#e8fbff] text-xs font-medium truncate">{p.nome}</span>
+                              <Badge className={`text-[8px] ${tipoCfg.color} bg-transparent border-current/30`}>{tipoCfg.label}</Badge>
+                            </div>
+                            <span className={`text-[10px] font-semibold ${cfg.text}`}>{cfg.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -977,6 +1103,9 @@ export default function AppImpresaNotifiche() {
             )}
           </div>
         </div>
+
+        {/* Sezione Le Mie Riunioni PA */}
+        <MieRiunioniSection email={IMPRESA_EMAIL} nascosta={!!notificaSelezionata} />
 
         {/* Sezione Azioni Rapide */}
         <div
