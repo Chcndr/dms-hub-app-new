@@ -1857,6 +1857,7 @@ export default function DashboardPA() {
   const [a99xNuovoAssessore, setA99xNuovoAssessore] = useState(false);
   const [a99xDispForm, setA99xDispForm] = useState({ proprietario_nome: '', giorno_settimana: '1', ora_inizio: '09:00', ora_fine: '13:00', durata_slot_minuti: '30', max_prenotazioni_slot: '1', modalita: 'PRESENZA', sede_indirizzo: '' });
   const [a99xAssForm, setA99xAssForm] = useState({ nome: '', cognome: '', ruolo: '', email: '', telefono: '', settore: '' });
+  const [a99xDettaglioRiunione, setA99xDettaglioRiunione] = useState<any>(null);
 
   // Fetch inviti ricevuti
   const fetchA99xInviti = async () => {
@@ -9918,9 +9919,12 @@ export default function DashboardPA() {
                             </div>
                             <div className="space-y-1">
                               {dayRiunioni.map((r: any) => (
-                                <div key={r.id} className="bg-[#8b5cf6]/15 border border-[#8b5cf6]/30 rounded px-2 py-1">
+                                <div key={r.id} onClick={() => setA99xDettaglioRiunione(r)} className="bg-[#8b5cf6]/15 border border-[#8b5cf6]/30 rounded px-2 py-1 cursor-pointer hover:bg-[#8b5cf6]/25 transition-all">
                                   <p className="text-[9px] text-[#8b5cf6] font-medium truncate">{r.titolo}</p>
                                   <p className="text-[8px] text-[#e8fbff]/40">{new Date(r.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</p>
+                                  {r.partecipanti && r.partecipanti.length > 0 && (
+                                    <p className="text-[7px] text-[#e8fbff]/30 truncate mt-0.5">{r.partecipanti.map((p: any) => p.nome).join(', ')}</p>
+                                  )}
                                 </div>
                               ))}
                               {dayInviti.map((inv: any) => (
@@ -9996,7 +10000,7 @@ export default function DashboardPA() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
                       <Clock className="h-4 w-4 text-[#8b5cf6]" />
-                      Slot Disponibilit\u00e0 Configurati
+                      Slot Disponibilità Configurati
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -10004,12 +10008,12 @@ export default function DashboardPA() {
                       <div className="text-center py-8">
                         <Clock className="h-10 w-10 text-[#8b5cf6]/30 mx-auto mb-3" />
                         <p className="text-[#e8fbff]/50 text-sm">Nessuno slot configurato</p>
-                        <p className="text-[#e8fbff]/30 text-xs mt-1">Clicca "Nuova Disponibilit\u00e0" per creare slot prenotabili dai cittadini</p>
+                        <p className="text-[#e8fbff]/30 text-xs mt-1">Clicca "Nuova Disponibilità" per creare slot prenotabili dai cittadini</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         {a99xDisponibilita.map((disp: any) => {
-                          const giorni = ['', 'Luned\u00ec', 'Marted\u00ec', 'Mercoled\u00ec', 'Gioved\u00ec', 'Venerd\u00ec', 'Sabato', 'Domenica'];
+                          const giorni = ['', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
                           return (
                             <div key={disp.id} className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4 flex items-center justify-between">
                               <div className="flex-1">
@@ -10027,7 +10031,7 @@ export default function DashboardPA() {
                                 <button onClick={async () => {
                                   try {
                                     const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                    await fetch(`${apiUrl}/api/a99x/disponibilita/${disp.id}`, {
+                                    await authenticatedFetch(`${apiUrl}/api/a99x/disponibilita/${disp.id}`, {
                                       method: 'PUT',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ attivo: !disp.attivo })
@@ -10041,7 +10045,7 @@ export default function DashboardPA() {
                                   if (!confirm('Eliminare questo slot?')) return;
                                   try {
                                     const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                    await fetch(`${apiUrl}/api/a99x/disponibilita/${disp.id}`, { method: 'DELETE' });
+                                    await authenticatedFetch(`${apiUrl}/api/a99x/disponibilita/${disp.id}`, { method: 'DELETE' });
                                     fetchA99xData();
                                   } catch (err) { console.error(err); }
                                 }} className="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-xs hover:bg-red-500/20">
@@ -10747,7 +10751,7 @@ export default function DashboardPA() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-[#e8fbff] font-bold text-lg flex items-center gap-2">
                       <CalendarDays className="h-5 w-5 text-[#8b5cf6]" />
-                      Nuova Disponibilit\u00e0
+                      Nuova Disponibilità
                     </h3>
                     <button onClick={() => setA99xNuovaDisp(false)} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">&times;</button>
                   </div>
@@ -10760,16 +10764,16 @@ export default function DashboardPA() {
                       <div>
                         <label className="block text-sm text-[#e8fbff]/70 mb-1">Giorno Settimana *</label>
                         <select value={a99xDispForm.giorno_settimana} onChange={(e) => setA99xDispForm({...a99xDispForm, giorno_settimana: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm">
-                          <option value="1">Luned\u00ec</option>
-                          <option value="2">Marted\u00ec</option>
-                          <option value="3">Mercoled\u00ec</option>
-                          <option value="4">Gioved\u00ec</option>
-                          <option value="5">Venerd\u00ec</option>
+                          <option value="1">Lunedì</option>
+                          <option value="2">Martedì</option>
+                          <option value="3">Mercoledì</option>
+                          <option value="4">Giovedì</option>
+                          <option value="5">Venerdì</option>
                           <option value="6">Sabato</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Modalit\u00e0</label>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Modalità</label>
                         <select value={a99xDispForm.modalita} onChange={(e) => setA99xDispForm({...a99xDispForm, modalita: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm">
                           <option value="PRESENZA">In Sede</option>
                           <option value="ONLINE">Online (Jitsi)</option>
@@ -10807,7 +10811,7 @@ export default function DashboardPA() {
                       onClick={async () => {
                         try {
                           const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                          const res = await fetch(`${apiUrl}/api/a99x/disponibilita`, {
+                          const res = await authenticatedFetch(`${apiUrl}/api/a99x/disponibilita`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -10831,14 +10835,88 @@ export default function DashboardPA() {
                             alert(data.error || 'Errore nella creazione');
                           }
                         } catch (err) {
-                          console.error('Errore creazione disponibilit\u00e0:', err);
+                          console.error('Errore creazione disponibilità:', err);
                         }
                       }}
                       disabled={!a99xDispForm.proprietario_nome}
                       className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Crea Disponibilit\u00e0
+                      Crea Disponibilità
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Dettaglio Riunione */}
+            {a99xDettaglioRiunione && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setA99xDettaglioRiunione(null)}>
+                <div className="bg-[#1a2332] border border-[#8b5cf6]/30 rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-[#e8fbff] font-bold text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-[#8b5cf6]" />
+                      Dettaglio Riunione
+                    </h3>
+                    <button onClick={() => setA99xDettaglioRiunione(null)} className="text-[#e8fbff]/50 hover:text-[#e8fbff] text-xl">&times;</button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="bg-[#0b1220] rounded-lg p-3 border border-[#8b5cf6]/20">
+                      <p className="text-[#8b5cf6] font-bold text-base">{a99xDettaglioRiunione.titolo}</p>
+                      <p className="text-[#e8fbff]/50 text-xs mt-1">{a99xDettaglioRiunione.descrizione || 'Nessuna descrizione'}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-[#0b1220] rounded-lg p-3 border border-[#8b5cf6]/10">
+                        <p className="text-[#e8fbff]/40 text-[10px] uppercase">Data e Ora</p>
+                        <p className="text-[#e8fbff] text-sm font-medium">{new Date(a99xDettaglioRiunione.data_inizio).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                        <p className="text-[#e8fbff]/70 text-xs">{new Date(a99xDettaglioRiunione.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - {a99xDettaglioRiunione.durata_minuti} min</p>
+                      </div>
+                      <div className="bg-[#0b1220] rounded-lg p-3 border border-[#8b5cf6]/10">
+                        <p className="text-[#e8fbff]/40 text-[10px] uppercase">Modalità</p>
+                        <p className="text-[#e8fbff] text-sm font-medium">{a99xDettaglioRiunione.modalita}</p>
+                        <p className="text-[#e8fbff]/70 text-xs">Stato: {a99xDettaglioRiunione.stato}</p>
+                      </div>
+                    </div>
+                    {a99xDettaglioRiunione.temi && a99xDettaglioRiunione.temi.length > 0 && (
+                      <div className="bg-[#0b1220] rounded-lg p-3 border border-[#8b5cf6]/10">
+                        <p className="text-[#e8fbff]/40 text-[10px] uppercase mb-1">Temi / Ordine del Giorno</p>
+                        <div className="flex flex-wrap gap-1">
+                          {a99xDettaglioRiunione.temi.map((t: string, i: number) => (
+                            <span key={i} className="bg-[#8b5cf6]/20 text-[#8b5cf6] text-[10px] px-2 py-0.5 rounded-full">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="bg-[#0b1220] rounded-lg p-3 border border-[#8b5cf6]/10">
+                      <p className="text-[#e8fbff]/40 text-[10px] uppercase mb-2">Partecipanti ({a99xDettaglioRiunione.partecipanti?.length || a99xDettaglioRiunione.num_partecipanti || 0})</p>
+                      {a99xDettaglioRiunione.partecipanti && a99xDettaglioRiunione.partecipanti.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {a99xDettaglioRiunione.partecipanti.map((p: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between bg-[#1a2332] rounded px-2 py-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-medium ${p.tipo === 'IMPRESA' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : p.tipo === 'COMUNE' ? 'bg-[#3b82f6]/20 text-[#3b82f6]' : 'bg-[#ec4899]/20 text-[#ec4899]'}`}>{p.tipo}</span>
+                                <span className="text-[#e8fbff] text-xs">{p.nome}</span>
+                              </div>
+                              <span className={`text-[8px] px-1.5 py-0.5 rounded font-medium ${p.stato === 'CONFERMATO' ? 'bg-[#10b981]/20 text-[#10b981]' : p.stato === 'RIFIUTATO' ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'bg-[#f59e0b]/20 text-[#f59e0b]'}`}>{p.stato}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[#e8fbff]/30 text-xs">Nessun partecipante registrato</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-[#0b1220] rounded-lg p-3 border border-[#8b5cf6]/10">
+                        <p className="text-[#e8fbff]/40 text-[10px] uppercase">Priorità</p>
+                        <p className="text-[#8b5cf6] text-lg font-bold">{a99xDettaglioRiunione.priorita_score}</p>
+                        <p className="text-[#e8fbff]/40 text-[9px]">U:{a99xDettaglioRiunione.urgenza} I:{a99xDettaglioRiunione.importanza} D:{a99xDettaglioRiunione.dipendenze} S:{a99xDettaglioRiunione.stakeholder}</p>
+                      </div>
+                      {a99xDettaglioRiunione.jitsi_link && (
+                        <a href={a99xDettaglioRiunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="bg-[#10b981]/10 rounded-lg p-3 border border-[#10b981]/30 flex flex-col items-center justify-center hover:bg-[#10b981]/20 transition-all">
+                          <Video className="h-5 w-5 text-[#10b981] mb-1" />
+                          <p className="text-[#10b981] text-xs font-medium">Entra in Jitsi</p>
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -10888,7 +10966,7 @@ export default function DashboardPA() {
                       onClick={async () => {
                         try {
                           const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                          const res = await fetch(`${apiUrl}/api/a99x/assessori`, {
+                          const res = await authenticatedFetch(`${apiUrl}/api/a99x/assessori`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
