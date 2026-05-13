@@ -1823,7 +1823,17 @@ export default function DashboardPA() {
   const [a99xFormS, setA99xFormS] = useState('1');
 
   // A99X Sotto-tab e nuovi moduli
-  const [a99xSubTab, setA99xSubTab] = useState<'dashboard' | 'calendario' | 'disponibilita' | 'prenotazioni' | 'assessori'>('dashboard');
+  const [a99xSubTab, setA99xSubTab] = useState<'dashboard' | 'calendario' | 'disponibilita' | 'prenotazioni' | 'assessori' | 'invita'>('dashboard');
+  // Invita Riunione state
+  const [a99xInvitaSearch, setA99xInvitaSearch] = useState('');
+  const [a99xInvitaResults, setA99xInvitaResults] = useState<any[]>([]);
+  const [a99xInvitaSelezionati, setA99xInvitaSelezionati] = useState<any[]>([]);
+  const [a99xInvitaForm, setA99xInvitaForm] = useState({ titolo: '', descrizione: '', data_inizio: '', durata_minuti: '30', modalita: 'ONLINE', sede_indirizzo: '', urgenza: '3', importanza: '3', dipendenze: '1', stakeholder: '1', temi: '' });
+  const [a99xInvitaLoading, setA99xInvitaLoading] = useState(false);
+  const [a99xInvitaSuccesso, setA99xInvitaSuccesso] = useState<any>(null);
+  // Inviti ricevuti + popup notifica
+  const [a99xInvitiRicevuti, setA99xInvitiRicevuti] = useState<any[]>([]);
+  const [a99xInvitoPopup, setA99xInvitoPopup] = useState<any>(null);
   const [a99xPrenotazioni, setA99xPrenotazioni] = useState<any[]>([]);
   const [a99xDisponibilita, setA99xDisponibilita] = useState<any[]>([]);
   const [a99xAssessori, setA99xAssessori] = useState<any[]>([]);
@@ -1833,6 +1843,90 @@ export default function DashboardPA() {
   const [a99xNuovoAssessore, setA99xNuovoAssessore] = useState(false);
   const [a99xDispForm, setA99xDispForm] = useState({ proprietario_nome: '', giorno_settimana: '1', ora_inizio: '09:00', ora_fine: '13:00', durata_slot_minuti: '30', max_prenotazioni_slot: '1', modalita: 'PRESENZA', sede_indirizzo: '' });
   const [a99xAssForm, setA99xAssForm] = useState({ nome: '', cognome: '', ruolo: '', email: '', telefono: '', settore: '' });
+
+  // Fetch inviti ricevuti
+  const fetchA99xInviti = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      const cId = comuneIdFromUrl || '1';
+      const resp = await fetch(`${apiUrl}/api/a99x/inviti-ricevuti?comune_id=${cId}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.success && data.data) {
+          setA99xInvitiRicevuti(data.data);
+          // Mostra popup per inviti pendenti
+          const pendenti = data.data.filter((i: any) => i.partecipante_stato === 'INVITATO');
+          if (pendenti.length > 0) {
+            setA99xInvitoPopup(pendenti[0]);
+            setTimeout(() => setA99xInvitoPopup(null), 10000);
+          }
+        }
+      }
+    } catch (err) { console.warn('Errore fetch inviti:', err); }
+  };
+
+  // Ricerca contatti per invito
+  const searchA99xContatti = async (query: string) => {
+    if (query.length < 2) { setA99xInvitaResults([]); return; }
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      const cId = comuneIdFromUrl || '1';
+      const resp = await fetch(`${apiUrl}/api/a99x/ricerca-contatti?q=${encodeURIComponent(query)}&comune_id=${cId}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.success) setA99xInvitaResults(data.data || []);
+      }
+    } catch (err) { console.warn('Errore ricerca contatti:', err); }
+  };
+
+  // Invia invito riunione
+  const inviaA99xRiunione = async () => {
+    if (!a99xInvitaForm.titolo || !a99xInvitaForm.data_inizio || a99xInvitaSelezionati.length === 0) return;
+    setA99xInvitaLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      const cId = comuneIdFromUrl || '1';
+      const body = {
+        comune_id: parseInt(cId),
+        titolo: a99xInvitaForm.titolo,
+        descrizione: a99xInvitaForm.descrizione,
+        temi: a99xInvitaForm.temi ? a99xInvitaForm.temi.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+        data_inizio: a99xInvitaForm.data_inizio,
+        durata_minuti: parseInt(a99xInvitaForm.durata_minuti) || 30,
+        modalita: a99xInvitaForm.modalita,
+        sede_indirizzo: a99xInvitaForm.sede_indirizzo,
+        urgenza: parseInt(a99xInvitaForm.urgenza) || 3,
+        importanza: parseInt(a99xInvitaForm.importanza) || 3,
+        dipendenze: parseInt(a99xInvitaForm.dipendenze) || 1,
+        stakeholder: parseInt(a99xInvitaForm.stakeholder) || 1,
+        creato_da_nome: 'PA',
+        creato_da_tipo: 'PA',
+        invitati: a99xInvitaSelezionati.map((s: any) => ({ tipo: s.tipo, id: s.id, nome: s.nome, email: s.email, telefono: s.telefono }))
+      };
+      const resp = await fetch(`${apiUrl}/api/a99x/invita-riunione`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.success) {
+          setA99xInvitaSuccesso(data.data);
+          setA99xInvitaSelezionati([]);
+          setA99xInvitaForm({ titolo: '', descrizione: '', data_inizio: '', durata_minuti: '30', modalita: 'ONLINE', sede_indirizzo: '', urgenza: '3', importanza: '3', dipendenze: '1', stakeholder: '1', temi: '' });
+          setA99xInvitaSearch('');
+          setA99xInvitaResults([]);
+        }
+      }
+    } catch (err) { console.error('Errore invio invito:', err); }
+    setA99xInvitaLoading(false);
+  };
+
+  // Accetta/Rifiuta invito dal calendario
+  const rispondiA99xInvito = async (token: string, azione: 'accetta' | 'rifiuta') => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      await fetch(`${apiUrl}/api/a99x/invito/${token}/${azione}`);
+      fetchA99xInviti();
+      fetchA99xData();
+    } catch (err) { console.warn('Errore risposta invito:', err); }
+  };
 
   const fetchA99xData = async () => {
     try {
@@ -1860,6 +1954,7 @@ export default function DashboardPA() {
   // Fetch A99X data on mount
   React.useEffect(() => {
     fetchA99xData();
+    fetchA99xInviti();
   }, [comuneIdFromUrl]);
 
   const espandiMessaggiInviatiPerImpresa = (messaggi: any[] = []) =>
@@ -9424,6 +9519,35 @@ export default function DashboardPA() {
 
           {/* TAB 25: A99X — Agenda Intelligente */}
           <TabsContent value="mio" className="space-y-6">
+            {/* POPUP NOTIFICA INVITO - angolo alto destra */}
+            {a99xInvitoPopup && (
+              <div className={`fixed top-4 right-4 z-[100] max-w-sm animate-pulse shadow-2xl rounded-xl border-2 p-4 ${
+                (a99xInvitoPopup.urgenza || 3) >= 4 ? 'bg-[#ef4444]/95 border-[#ef4444] shadow-red-500/40' :
+                (a99xInvitoPopup.urgenza || 3) >= 3 ? 'bg-[#f59e0b]/95 border-[#f59e0b] shadow-amber-500/40' :
+                'bg-[#10b981]/95 border-[#10b981] shadow-green-500/40'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">{(a99xInvitoPopup.urgenza || 3) >= 4 ? '\ud83d\udea8' : (a99xInvitoPopup.urgenza || 3) >= 3 ? '\ud83d\udce8' : '\ud83d\udcc5'}</div>
+                  <div className="flex-1">
+                    <p className="text-white font-bold text-sm">Hai un invito da confermare!</p>
+                    <p className="text-white/90 text-xs mt-1">{a99xInvitoPopup.titolo}</p>
+                    <p className="text-white/70 text-[10px] mt-0.5">
+                      {a99xInvitoPopup.data_inizio ? new Date(a99xInvitoPopup.data_inizio).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
+                    </p>
+                    <div className="flex gap-2 mt-2">
+                      {a99xInvitoPopup.token && (
+                        <>
+                          <button onClick={() => { rispondiA99xInvito(a99xInvitoPopup.token, 'accetta'); setA99xInvitoPopup(null); }} className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold rounded border border-white/30">ACCETTA</button>
+                          <button onClick={() => { rispondiA99xInvito(a99xInvitoPopup.token, 'rifiuta'); setA99xInvitoPopup(null); }} className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white/80 text-[10px] rounded border border-white/20">RIFIUTA</button>
+                        </>
+                      )}
+                      <button onClick={() => setA99xInvitoPopup(null)} className="px-2 py-1 text-white/50 hover:text-white text-[10px]">Chiudi</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Header A99X Operativo */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -9467,6 +9591,7 @@ export default function DashboardPA() {
               {[
                 { id: 'dashboard' as const, label: 'Dashboard', icon: '⚡' },
                 { id: 'calendario' as const, label: 'Calendario', icon: '📅' },
+                { id: 'invita' as const, label: 'Invita Riunione', icon: '📨' },
                 { id: 'disponibilita' as const, label: 'Disponibilità', icon: '🕐' },
                 { id: 'prenotazioni' as const, label: 'Prenotazioni', icon: '📋' },
                 { id: 'assessori' as const, label: 'Assessori', icon: '👥' },
@@ -9687,6 +9812,7 @@ export default function DashboardPA() {
                         const isToday = dateStr === new Date().toISOString().split('T')[0];
                         const dayRiunioni = a99xRiunioni.filter((r: any) => r.data_inizio && r.data_inizio.startsWith(dateStr));
                         const dayPren = a99xPrenotazioni.filter((p: any) => p.data_appuntamento === dateStr);
+                        const dayInviti = a99xInvitiRicevuti.filter((inv: any) => inv.data_inizio && inv.data_inizio.startsWith(dateStr));
                         return (
                           <div key={i} className={`bg-[#0b1220] rounded-lg p-3 min-h-[120px] border ${isToday ? 'border-[#8b5cf6]' : 'border-[#8b5cf6]/10'}`}>
                             <div className="flex items-center justify-between mb-2">
@@ -9698,6 +9824,18 @@ export default function DashboardPA() {
                                 <div key={r.id} className="bg-[#8b5cf6]/15 border border-[#8b5cf6]/30 rounded px-2 py-1">
                                   <p className="text-[9px] text-[#8b5cf6] font-medium truncate">{r.titolo}</p>
                                   <p className="text-[8px] text-[#e8fbff]/40">{new Date(r.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</p>
+                                </div>
+                              ))}
+                              {dayInviti.map((inv: any) => (
+                                <div key={`inv-${inv.id}`} className={`rounded px-2 py-1 border ${inv.partecipante_stato === 'INVITATO' ? 'bg-[#f59e0b]/15 border-[#f59e0b]/30' : inv.partecipante_stato === 'CONFERMATO' ? 'bg-[#10b981]/15 border-[#10b981]/30' : 'bg-[#ef4444]/15 border-[#ef4444]/30'}`}>
+                                  <p className={`text-[9px] font-medium truncate ${inv.partecipante_stato === 'INVITATO' ? 'text-[#f59e0b]' : inv.partecipante_stato === 'CONFERMATO' ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>{inv.titolo}</p>
+                                  <p className="text-[8px] text-[#e8fbff]/40">{new Date(inv.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - Invito</p>
+                                  {inv.partecipante_stato === 'INVITATO' && inv.token && (
+                                    <div className="flex gap-1 mt-1">
+                                      <button onClick={() => rispondiA99xInvito(inv.token, 'accetta')} className="text-[8px] bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30 rounded px-1.5 py-0.5 hover:bg-[#10b981]/40">Accetta</button>
+                                      <button onClick={() => rispondiA99xInvito(inv.token, 'rifiuta')} className="text-[8px] bg-[#ef4444]/20 text-[#ef4444] border border-[#ef4444]/30 rounded px-1.5 py-0.5 hover:bg-[#ef4444]/40">Rifiuta</button>
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                               {dayPren.map((p: any) => (
@@ -9729,11 +9867,13 @@ export default function DashboardPA() {
                           const isToday = dateStr === new Date().toISOString().split('T')[0];
                           const hasRiunioni = a99xRiunioni.some((r: any) => r.data_inizio && r.data_inizio.startsWith(dateStr));
                           const hasPren = a99xPrenotazioni.some((p: any) => p.data_appuntamento === dateStr);
+                          const hasInviti = a99xInvitiRicevuti.some((inv: any) => inv.data_inizio && inv.data_inizio.startsWith(dateStr));
                           cells.push(
                             <div key={d} className={`text-center py-2 rounded-lg cursor-pointer transition-all hover:bg-[#1a2332] ${isToday ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/40' : ''}`}>
                               <span className={`text-xs ${isToday ? 'text-[#8b5cf6] font-bold' : 'text-[#e8fbff]/70'}`}>{d}</span>
                               <div className="flex justify-center gap-0.5 mt-1">
                                 {hasRiunioni && <div className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]"></div>}
+                                {hasInviti && <div className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></div>}
                                 {hasPren && <div className="w-1.5 h-1.5 rounded-full bg-[#14b8a6]"></div>}
                               </div>
                             </div>
@@ -9745,6 +9885,7 @@ export default function DashboardPA() {
                   )}
                   <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#8b5cf6]/10">
                     <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]"></div><span className="text-[10px] text-[#e8fbff]/50">Riunioni</span></div>
+                    <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></div><span className="text-[10px] text-[#e8fbff]/50">Inviti Ricevuti</span></div>
                     <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#14b8a6]"></div><span className="text-[10px] text-[#e8fbff]/50">Prenotazioni</span></div>
                   </div>
                 </CardContent>
@@ -9989,6 +10130,195 @@ export default function DashboardPA() {
                       ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ===== SUB-TAB: INVITA RIUNIONE ===== */}
+            {a99xSubTab === 'invita' && (
+              <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
+                    <Send className="h-4 w-4 text-[#8b5cf6]" />
+                    Invita a Riunione
+                    <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-[10px]">Cerca e Invita</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Successo */}
+                  {a99xInvitaSuccesso && (
+                    <div className="bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg p-4">
+                      <p className="text-[#10b981] font-medium text-sm">Inviti inviati con successo!</p>
+                      <p className="text-[#e8fbff]/60 text-xs mt-1">{a99xInvitaSuccesso.inviti_inviati} inviti inviati per "{a99xInvitaSuccesso.riunione?.titolo}"</p>
+                      {a99xInvitaSuccesso.jitsi_link && <p className="text-[#8b5cf6] text-xs mt-1">Link Jitsi: {a99xInvitaSuccesso.jitsi_link}</p>}
+                      <button onClick={() => setA99xInvitaSuccesso(null)} className="mt-2 text-xs text-[#e8fbff]/40 hover:text-[#e8fbff]/70">Chiudi</button>
+                    </div>
+                  )}
+
+                  {/* Barra Ricerca */}
+                  <div>
+                    <label className="block text-sm text-[#e8fbff]/70 mb-1">Cerca Destinatari (Comune, Settore, Assessore, Impresa)</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#8b5cf6]/50" />
+                      <input
+                        value={a99xInvitaSearch}
+                        onChange={(e) => { setA99xInvitaSearch(e.target.value); searchA99xContatti(e.target.value); }}
+                        placeholder="Cerca per nome, settore, email, comune..."
+                        className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg pl-10 pr-3 py-2.5 text-[#e8fbff] text-sm focus:border-[#8b5cf6] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Risultati Ricerca */}
+                  {a99xInvitaResults.length > 0 && (
+                    <div className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg max-h-48 overflow-y-auto">
+                      {a99xInvitaResults.map((r: any, idx: number) => {
+                        const isSelected = a99xInvitaSelezionati.some((s: any) => s.tipo === r.tipo && s.id === r.id && s.email === r.email);
+                        const tipoBadge: any = { SETTORE: { bg: 'bg-[#14b8a6]/20', text: 'text-[#14b8a6]', border: 'border-[#14b8a6]/30' }, IMPRESA: { bg: 'bg-[#f59e0b]/20', text: 'text-[#f59e0b]', border: 'border-[#f59e0b]/30' }, ASSESSORE: { bg: 'bg-[#8b5cf6]/20', text: 'text-[#8b5cf6]', border: 'border-[#8b5cf6]/30' }, COMUNE: { bg: 'bg-[#3b82f6]/20', text: 'text-[#3b82f6]', border: 'border-[#3b82f6]/30' } };
+                        const badge = tipoBadge[r.tipo] || tipoBadge.COMUNE;
+                        return (
+                          <div
+                            key={`${r.tipo}-${r.id}-${idx}`}
+                            onClick={() => { if (!isSelected) setA99xInvitaSelezionati([...a99xInvitaSelezionati, r]); }}
+                            className={`p-3 border-b border-[#8b5cf6]/10 cursor-pointer hover:bg-[#1a2332]/50 transition-all ${isSelected ? 'opacity-40' : ''}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Badge className={`${badge.bg} ${badge.text} ${badge.border} text-[9px]`}>{r.tipo}</Badge>
+                              <span className="text-[#e8fbff] text-sm font-medium">{r.nome}</span>
+                              {r.comune_nome && <span className="text-[#e8fbff]/40 text-[10px]">({r.comune_nome})</span>}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 text-[10px] text-[#e8fbff]/50">
+                              {r.ruolo && <span>{r.ruolo}</span>}
+                              {r.email && <span>{r.email}</span>}
+                              {r.telefono && <span>{r.telefono}</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Selezionati (Chips) */}
+                  {a99xInvitaSelezionati.length > 0 && (
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Invitati Selezionati ({a99xInvitaSelezionati.length})</label>
+                      <div className="flex flex-wrap gap-2">
+                        {a99xInvitaSelezionati.map((s: any, idx: number) => (
+                          <div key={idx} className="flex items-center gap-1.5 bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 rounded-full px-3 py-1">
+                            <span className="text-[#e8fbff] text-xs">{s.nome}</span>
+                            <button onClick={() => setA99xInvitaSelezionati(a99xInvitaSelezionati.filter((_: any, i: number) => i !== idx))} className="text-[#e8fbff]/40 hover:text-red-400 text-xs ml-1">x</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Form Riunione */}
+                  <div className="border-t border-[#8b5cf6]/20 pt-4 space-y-3">
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Titolo Riunione *</label>
+                      <input
+                        value={a99xInvitaForm.titolo}
+                        onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, titolo: e.target.value})}
+                        placeholder="Es: Riunione SUAP con impresa XYZ"
+                        className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Data e Ora *</label>
+                        <input
+                          type="datetime-local"
+                          value={a99xInvitaForm.data_inizio}
+                          onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, data_inizio: e.target.value})}
+                          className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Durata (min)</label>
+                        <input
+                          type="number"
+                          value={a99xInvitaForm.durata_minuti}
+                          onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, durata_minuti: e.target.value})}
+                          className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Modalita</label>
+                        <select
+                          value={a99xInvitaForm.modalita}
+                          onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, modalita: e.target.value})}
+                          className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                        >
+                          <option value="ONLINE">Online (Jitsi)</option>
+                          <option value="PRESENZA">In Presenza</option>
+                          <option value="IBRIDO">Ibrido</option>
+                        </select>
+                      </div>
+                    </div>
+                    {(a99xInvitaForm.modalita === 'PRESENZA' || a99xInvitaForm.modalita === 'IBRIDO') && (
+                      <div>
+                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Indirizzo Sede</label>
+                        <input
+                          value={a99xInvitaForm.sede_indirizzo}
+                          onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, sede_indirizzo: e.target.value})}
+                          placeholder="Via Roma 1, Bologna"
+                          className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Temi / Ordine del Giorno (separati da virgola)</label>
+                      <input
+                        value={a99xInvitaForm.temi}
+                        onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, temi: e.target.value})}
+                        placeholder="Autorizzazione commerciale, Verifica documentale, Budget"
+                        className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Descrizione / Note</label>
+                      <textarea
+                        value={a99xInvitaForm.descrizione}
+                        onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, descrizione: e.target.value})}
+                        placeholder="Note aggiuntive, ordine del giorno dettagliato..."
+                        rows={3}
+                        className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm resize-none"
+                      />
+                    </div>
+                    {/* Priorita P = U x I x D x S */}
+                    <div className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-3">
+                      <p className="text-[#8b5cf6] text-xs font-medium mb-2">Priorita (P = U x I x D x S)</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        <div className="text-center">
+                          <label className="text-[#e8fbff]/50 text-[10px]">Urgenza</label>
+                          <input type="number" min="1" max="5" value={a99xInvitaForm.urgenza} onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, urgenza: e.target.value})} className="w-full bg-[#1a2332] border border-[#8b5cf6]/30 rounded p-1.5 text-[#e8fbff] text-sm text-center" />
+                        </div>
+                        <div className="text-center">
+                          <label className="text-[#e8fbff]/50 text-[10px]">Importanza</label>
+                          <input type="number" min="1" max="5" value={a99xInvitaForm.importanza} onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, importanza: e.target.value})} className="w-full bg-[#1a2332] border border-[#8b5cf6]/30 rounded p-1.5 text-[#e8fbff] text-sm text-center" />
+                        </div>
+                        <div className="text-center">
+                          <label className="text-[#e8fbff]/50 text-[10px]">Dipendenze</label>
+                          <input type="number" min="1" max="5" value={a99xInvitaForm.dipendenze} onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, dipendenze: e.target.value})} className="w-full bg-[#1a2332] border border-[#8b5cf6]/30 rounded p-1.5 text-[#e8fbff] text-sm text-center" />
+                        </div>
+                        <div className="text-center">
+                          <label className="text-[#e8fbff]/50 text-[10px]">Stakeholder</label>
+                          <input type="number" min="1" max="5" value={a99xInvitaForm.stakeholder} onChange={(e) => setA99xInvitaForm({...a99xInvitaForm, stakeholder: e.target.value})} className="w-full bg-[#1a2332] border border-[#8b5cf6]/30 rounded p-1.5 text-[#e8fbff] text-sm text-center" />
+                        </div>
+                      </div>
+                      <p className="text-center text-[#8b5cf6] text-xs mt-2">Score: {(parseInt(a99xInvitaForm.urgenza)||1) * (parseInt(a99xInvitaForm.importanza)||1) * (parseInt(a99xInvitaForm.dipendenze)||1) * (parseInt(a99xInvitaForm.stakeholder)||1)}</p>
+                    </div>
+                    {/* Bottone Invio */}
+                    <button
+                      onClick={inviaA99xRiunione}
+                      disabled={a99xInvitaLoading || !a99xInvitaForm.titolo || !a99xInvitaForm.data_inizio || a99xInvitaSelezionati.length === 0}
+                      className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium text-sm hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/25 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <Send className="h-4 w-4" />
+                      {a99xInvitaLoading ? 'Invio in corso...' : `Invia Inviti + Genera Link Jitsi (${a99xInvitaSelezionati.length} destinatari)`}
+                    </button>
+                  </div>
                 </CardContent>
               </Card>
             )}
