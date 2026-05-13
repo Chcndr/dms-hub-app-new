@@ -10274,7 +10274,7 @@ export default function DashboardPA() {
                           onClick={() => { setA99xInvitaSearch(''); setA99xShowDropdown(false); }}
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#e8fbff]/50 hover:text-[#e8fbff]"
                         >
-                          <X className="h-4 w-4" />
+                          <XCircle className="h-4 w-4" />
                         </button>
                       )}
                     </div>
