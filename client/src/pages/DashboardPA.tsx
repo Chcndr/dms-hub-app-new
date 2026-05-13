@@ -108,6 +108,7 @@ import {
   ListTodo,
   Video,
   Users2,
+  Loader2,
 } from "lucide-react";
 import {
   Card,
@@ -1831,6 +1832,15 @@ export default function DashboardPA() {
   const [a99xInvitaForm, setA99xInvitaForm] = useState({ titolo: '', descrizione: '', data_inizio: '', durata_minuti: '30', modalita: 'ONLINE', sede_indirizzo: '', urgenza: '3', importanza: '3', dipendenze: '1', stakeholder: '1', temi: '' });
   const [a99xInvitaLoading, setA99xInvitaLoading] = useState(false);
   const [a99xInvitaSuccesso, setA99xInvitaSuccesso] = useState<any>(null);
+  const [a99xSearchLoading, setA99xSearchLoading] = useState(false);
+  const [a99xSearchEntityType, setA99xSearchEntityType] = useState<'imprese' | 'comuni'>('comuni');
+  const [a99xShowDropdown, setA99xShowDropdown] = useState(false);
+  const [a99xImprese, setA99xImprese] = useState<any[]>([]);
+  const [a99xSettoriComuni, setA99xSettoriComuni] = useState<any[]>([]);
+  const [a99xLoadingImprese, setA99xLoadingImprese] = useState(false);
+  const [a99xLoadingSettori, setA99xLoadingSettori] = useState(false);
+  const a99xDropdownRef = React.useRef<HTMLDivElement>(null);
+  const a99xSearchTimer = React.useRef<any>(null);
   // Inviti ricevuti + popup notifica
   const [a99xInvitiRicevuti, setA99xInvitiRicevuti] = useState<any[]>([]);
   const [a99xInvitoPopup, setA99xInvitoPopup] = useState<any>(null);
@@ -1865,18 +1875,89 @@ export default function DashboardPA() {
     } catch (err) { console.warn('Errore fetch inviti:', err); }
   };
 
-  // Ricerca contatti per invito
-  const searchA99xContatti = async (query: string) => {
-    if (query.length < 2) { setA99xInvitaResults([]); return; }
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const cId = comuneIdFromUrl || '1';
-      const resp = await fetch(`${apiUrl}/api/a99x/ricerca-contatti?q=${encodeURIComponent(query)}&comune_id=${cId}`);
-      if (resp.ok) {
+  // Precarica imprese per la ricerca inviti (come NotificationsPanel)
+  React.useEffect(() => {
+    if (a99xSubTab !== 'invita') return;
+    const fetchA99xImprese = async () => {
+      setA99xLoadingImprese(true);
+      try {
+        const resp = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/imprese`));
         const data = await resp.json();
-        if (data.success) setA99xInvitaResults(data.data || []);
+        if (data.success && data.data) setA99xImprese(data.data);
+      } catch (err) { console.warn('[A99X] Errore fetch imprese:', err); }
+      setA99xLoadingImprese(false);
+    };
+    fetchA99xImprese();
+  }, [a99xSubTab]);
+
+  // Precarica settori comunali per la ricerca inviti (come NotificationsPanel)
+  React.useEffect(() => {
+    if (a99xSubTab !== 'invita') return;
+    const fetchA99xSettori = async () => {
+      setA99xLoadingSettori(true);
+      try {
+        const comuniRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/comuni`));
+        const comuniData = await comuniRes.json();
+        if (comuniData.success && comuniData.data) {
+          const allSettori: any[] = [];
+          for (const comune of comuniData.data) {
+            try {
+              const settoriRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/comuni/${comune.id}/settori`));
+              const settoriData = await settoriRes.json();
+              if (settoriData.success && settoriData.data) {
+                settoriData.data.forEach((s: any) => allSettori.push({ ...s, comune_nome: comune.nome }));
+              }
+            } catch {}
+          }
+          setA99xSettoriComuni(allSettori);
+        }
+      } catch (err) { console.warn('[A99X] Errore fetch settori:', err); }
+      setA99xLoadingSettori(false);
+    };
+    fetchA99xSettori();
+  }, [a99xSubTab]);
+
+  // Chiudi dropdown quando clicchi fuori
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (a99xDropdownRef.current && !a99xDropdownRef.current.contains(event.target as Node)) {
+        setA99xShowDropdown(false);
       }
-    } catch (err) { console.warn('Errore ricerca contatti:', err); }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Filtra imprese in locale (come NotificationsPanel)
+  const a99xFilteredImprese = a99xImprese.filter((imp: any) => {
+    if (!a99xInvitaSearch || a99xInvitaSearch.length < 2) return false;
+    const q = a99xInvitaSearch.toLowerCase();
+    return (imp.denominazione || imp.ragione_sociale || '').toLowerCase().includes(q) ||
+      (imp.codice_fiscale || '').toLowerCase().includes(q) ||
+      (imp.email || '').toLowerCase().includes(q);
+  });
+
+  // Filtra settori comunali in locale (come NotificationsPanel)
+  const a99xFilteredSettori = a99xSettoriComuni.filter((s: any) => {
+    if (!a99xInvitaSearch || a99xInvitaSearch.length < 2) return false;
+    const q = a99xInvitaSearch.toLowerCase();
+    return (s.comune_nome || '').toLowerCase().includes(q) ||
+      (s.tipo_settore || '').toLowerCase().includes(q) ||
+      (s.nome_settore || '').toLowerCase().includes(q) ||
+      (s.responsabile_nome || '').toLowerCase().includes(q) ||
+      (s.responsabile_cognome || '').toLowerCase().includes(q) ||
+      (s.email || '').toLowerCase().includes(q) ||
+      (s.pec || '').toLowerCase().includes(q);
+  });
+
+  // Seleziona contatto per invito (aggiunge alla lista, non sostituisce)
+  const a99xSelectContact = (contact: any) => {
+    const alreadySelected = a99xInvitaSelezionati.some((s: any) => s.tipo === contact.tipo && s.id === contact.id && s.email === contact.email);
+    if (!alreadySelected) {
+      setA99xInvitaSelezionati([...a99xInvitaSelezionati, contact]);
+    }
+    setA99xInvitaSearch('');
+    setA99xShowDropdown(false);
   };
 
   // Invia invito riunione
@@ -10128,63 +10209,158 @@ export default function DashboardPA() {
                     </div>
                   )}
 
-                  {/* Barra Ricerca */}
-                  <div>
-                    <label className="block text-sm text-[#e8fbff]/70 mb-1">Cerca Destinatari (Comune, Settore, Assessore, Impresa)</label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#8b5cf6]/50" />
-                      <input
-                        value={a99xInvitaSearch}
-                        onChange={(e) => { setA99xInvitaSearch(e.target.value); searchA99xContatti(e.target.value); }}
-                        placeholder="Cerca per nome, settore, email, comune..."
-                        className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg pl-10 pr-3 py-2.5 text-[#e8fbff] text-sm focus:border-[#8b5cf6] focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Risultati Ricerca */}
-                  {a99xInvitaResults.length > 0 && (
-                    <div className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg max-h-48 overflow-y-auto">
-                      {a99xInvitaResults.map((r: any, idx: number) => {
-                        const isSelected = a99xInvitaSelezionati.some((s: any) => s.tipo === r.tipo && s.id === r.id && s.email === r.email);
-                        const tipoBadge: any = { SETTORE: { bg: 'bg-[#14b8a6]/20', text: 'text-[#14b8a6]', border: 'border-[#14b8a6]/30' }, IMPRESA: { bg: 'bg-[#f59e0b]/20', text: 'text-[#f59e0b]', border: 'border-[#f59e0b]/30' }, ASSESSORE: { bg: 'bg-[#8b5cf6]/20', text: 'text-[#8b5cf6]', border: 'border-[#8b5cf6]/30' }, COMUNE: { bg: 'bg-[#3b82f6]/20', text: 'text-[#3b82f6]', border: 'border-[#3b82f6]/30' } };
-                        const badge = tipoBadge[r.tipo] || tipoBadge.COMUNE;
-                        return (
-                          <div
-                            key={`${r.tipo}-${r.id}-${idx}`}
-                            onClick={() => { if (!isSelected) setA99xInvitaSelezionati([...a99xInvitaSelezionati, r]); }}
-                            className={`p-3 border-b border-[#8b5cf6]/10 cursor-pointer hover:bg-[#1a2332]/50 transition-all ${isSelected ? 'opacity-40' : ''}`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Badge className={`${badge.bg} ${badge.text} ${badge.border} text-[9px]`}>{r.tipo}</Badge>
-                              <span className="text-[#e8fbff] text-sm font-medium">{r.nome}</span>
-                              {r.comune_nome && <span className="text-[#e8fbff]/40 text-[10px]">({r.comune_nome})</span>}
-                            </div>
-                            <div className="flex items-center gap-3 mt-1 text-[10px] text-[#e8fbff]/50">
-                              {r.ruolo && <span>{r.ruolo}</span>}
-                              {r.email && <span>{r.email}</span>}
-                              {r.telefono && <span>{r.telefono}</span>}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Selezionati (Chips) */}
+                  {/* Invitati Selezionati (Chips) — SOPRA la barra ricerca */}
                   {a99xInvitaSelezionati.length > 0 && (
-                    <div>
-                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Invitati Selezionati ({a99xInvitaSelezionati.length})</label>
+                    <div className="bg-[#0b1220] border border-[#10b981]/30 rounded-lg p-3">
+                      <label className="block text-xs text-[#10b981] font-medium mb-2">Invitati Selezionati ({a99xInvitaSelezionati.length})</label>
                       <div className="flex flex-wrap gap-2">
-                        {a99xInvitaSelezionati.map((s: any, idx: number) => (
-                          <div key={idx} className="flex items-center gap-1.5 bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 rounded-full px-3 py-1">
-                            <span className="text-[#e8fbff] text-xs">{s.nome}</span>
-                            <button onClick={() => setA99xInvitaSelezionati(a99xInvitaSelezionati.filter((_: any, i: number) => i !== idx))} className="text-[#e8fbff]/40 hover:text-red-400 text-xs ml-1">x</button>
-                          </div>
-                        ))}
+                        {a99xInvitaSelezionati.map((s: any, idx: number) => {
+                          const chipColor: any = { SETTORE: 'bg-[#14b8a6]/20 border-[#14b8a6]/40 text-[#14b8a6]', IMPRESA: 'bg-[#f59e0b]/20 border-[#f59e0b]/40 text-[#f59e0b]', ASSESSORE: 'bg-[#8b5cf6]/20 border-[#8b5cf6]/40 text-[#8b5cf6]', COMUNE: 'bg-[#3b82f6]/20 border-[#3b82f6]/40 text-[#3b82f6]' };
+                          return (
+                            <div key={idx} className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 ${chipColor[s.tipo] || chipColor.COMUNE}`}>
+                              <span className="text-[9px] font-bold uppercase opacity-60">{s.tipo}</span>
+                              <span className="text-xs font-medium text-[#e8fbff]">{s.nome}</span>
+                              {s.email && <span className="text-[9px] text-[#e8fbff]/40">{s.email}</span>}
+                              <button onClick={() => setA99xInvitaSelezionati(a99xInvitaSelezionati.filter((_: any, i: number) => i !== idx))} className="text-[#e8fbff]/40 hover:text-red-400 ml-1 text-sm font-bold">×</button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
+
+                  {/* Selezione tipo entita: Imprese o Comuni/Settori (come NotificationsPanel) */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant={a99xSearchEntityType === 'imprese' ? 'default' : 'outline'}
+                      onClick={() => { setA99xSearchEntityType('imprese'); setA99xInvitaSearch(''); setA99xShowDropdown(false); }}
+                      className={a99xSearchEntityType === 'imprese' ? 'bg-[#14b8a6] hover:bg-[#14b8a6]/80' : ''}
+                      size="sm"
+                    >
+                      <Building2 className="h-4 w-4 mr-2" />
+                      Cerca Impresa
+                    </Button>
+                    <Button
+                      variant={a99xSearchEntityType === 'comuni' ? 'default' : 'outline'}
+                      onClick={() => { setA99xSearchEntityType('comuni'); setA99xInvitaSearch(''); setA99xShowDropdown(false); }}
+                      className={a99xSearchEntityType === 'comuni' ? 'bg-[#8b5cf6] hover:bg-[#8b5cf6]/80' : ''}
+                      size="sm"
+                    >
+                      <Landmark className="h-4 w-4 mr-2" />
+                      Cerca Comune/Settore
+                    </Button>
+                  </div>
+
+                  {/* Ricerca (come NotificationsPanel) */}
+                  <div ref={a99xDropdownRef} className="relative">
+                    <label className="text-[#e8fbff]/70 text-sm mb-1 block flex items-center gap-2">
+                      {a99xSearchEntityType === 'imprese' ? (
+                        <><Building2 className="h-4 w-4" /> Cerca Impresa</>
+                      ) : (
+                        <><Landmark className="h-4 w-4" /> Cerca Settore Comunale</>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#e8fbff]/50" />
+                      <input
+                        placeholder={a99xSearchEntityType === 'imprese' ? 'Cerca per nome, CF o email...' : 'Cerca per comune, settore o responsabile...'}
+                        value={a99xInvitaSearch}
+                        onChange={e => { setA99xInvitaSearch(e.target.value); setA99xShowDropdown(true); }}
+                        onFocus={() => setA99xShowDropdown(true)}
+                        className="w-full bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] pl-10 pr-10 py-2.5 text-sm focus:border-[#14b8a6] focus:outline-none placeholder-[#e8fbff]/30"
+                      />
+                      {a99xInvitaSearch && (
+                        <button
+                          onClick={() => { setA99xInvitaSearch(''); setA99xShowDropdown(false); }}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#e8fbff]/50 hover:text-[#e8fbff]"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Dropdown risultati */}
+                    {a99xShowDropdown && a99xInvitaSearch && a99xInvitaSearch.length >= 2 && (
+                      <div className="absolute z-50 w-full mt-1 bg-[#1a2332] border border-[#14b8a6]/30 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        {a99xSearchEntityType === 'imprese' ? (
+                          a99xLoadingImprese ? (
+                            <div className="p-4 text-center text-[#e8fbff]/50">
+                              <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+                            </div>
+                          ) : a99xFilteredImprese.length === 0 ? (
+                            <div className="p-4 text-center text-[#e8fbff]/50">
+                              Nessuna impresa trovata
+                            </div>
+                          ) : (
+                            a99xFilteredImprese.slice(0, 10).map((impresa: any) => {
+                              const isSelected = a99xInvitaSelezionati.some((s: any) => s.tipo === 'IMPRESA' && s.id === impresa.id);
+                              return (
+                                <div
+                                  key={impresa.id}
+                                  onClick={() => {
+                                    if (!isSelected) {
+                                      a99xSelectContact({ tipo: 'IMPRESA', id: impresa.id, nome: impresa.denominazione || impresa.ragione_sociale, email: impresa.email, telefono: impresa.telefono });
+                                    }
+                                  }}
+                                  className={`p-3 hover:bg-[#14b8a6]/20 cursor-pointer border-b border-[#14b8a6]/10 last:border-b-0 ${isSelected ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="h-4 w-4 text-[#14b8a6]" />
+                                    <span className="text-[#e8fbff] font-semibold">{impresa.denominazione || impresa.ragione_sociale}</span>
+                                    {isSelected && <span className="text-[#10b981] text-[9px] ml-auto">Selezionato</span>}
+                                  </div>
+                                  <div className="text-[#e8fbff]/60 text-sm flex items-center gap-4 mt-1">
+                                    {impresa.codice_fiscale && <span>CF: {impresa.codice_fiscale}</span>}
+                                    {impresa.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {impresa.email}</span>}
+                                    {impresa.telefono && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {impresa.telefono}</span>}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )
+                        ) : (
+                          a99xLoadingSettori ? (
+                            <div className="p-4 text-center text-[#e8fbff]/50">
+                              <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+                            </div>
+                          ) : a99xFilteredSettori.length === 0 ? (
+                            <div className="p-4 text-center text-[#e8fbff]/50">
+                              Nessun settore comunale trovato
+                            </div>
+                          ) : (
+                            a99xFilteredSettori.slice(0, 10).map((settore: any) => {
+                              const isSelected = a99xInvitaSelezionati.some((s: any) => s.tipo === 'SETTORE' && s.id === settore.id);
+                              return (
+                                <div
+                                  key={settore.id}
+                                  onClick={() => {
+                                    if (!isSelected) {
+                                      a99xSelectContact({ tipo: 'SETTORE', id: settore.id, nome: `${settore.comune_nome} - ${settore.tipo_settore}`, comune_nome: settore.comune_nome, email: settore.pec || settore.email, telefono: settore.telefono, responsabile: settore.responsabile_nome ? `${settore.responsabile_nome} ${settore.responsabile_cognome || ''}` : '' });
+                                    }
+                                  }}
+                                  className={`p-3 hover:bg-[#8b5cf6]/20 cursor-pointer border-b border-[#8b5cf6]/10 last:border-b-0 ${isSelected ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Landmark className="h-4 w-4 text-[#8b5cf6]" />
+                                    <span className="text-[#e8fbff] font-semibold">{settore.comune_nome}</span>
+                                    <span className="text-[#8b5cf6]">-</span>
+                                    <span className="text-[#8b5cf6]">{settore.tipo_settore}</span>
+                                    {isSelected && <span className="text-[#10b981] text-[9px] ml-auto">Selezionato</span>}
+                                  </div>
+                                  <div className="text-[#e8fbff]/60 text-sm flex flex-wrap items-center gap-4 mt-1 ml-6">
+                                    {settore.responsabile_nome && <span>Resp: {settore.responsabile_nome} {settore.responsabile_cognome}</span>}
+                                    {settore.pec && <span className="flex items-center gap-1 text-[#f59e0b]"><Mail className="h-3 w-3" /> PEC: {settore.pec}</span>}
+                                    {settore.email && !settore.pec && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {settore.email}</span>}
+                                    {settore.telefono && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {settore.telefono}</span>}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Form Riunione */}
                   <div className="border-t border-[#8b5cf6]/20 pt-4 space-y-3">
