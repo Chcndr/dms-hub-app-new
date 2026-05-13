@@ -1834,7 +1834,10 @@ export default function DashboardPA() {
   const [a99xInvitaLoading, setA99xInvitaLoading] = useState(false);
   const [a99xInvitaSuccesso, setA99xInvitaSuccesso] = useState<any>(null);
   const [a99xSearchLoading, setA99xSearchLoading] = useState(false);
-  const [a99xSearchEntityType, setA99xSearchEntityType] = useState<'imprese' | 'comuni'>('comuni');
+  const [a99xSearchEntityType, setA99xSearchEntityType] = useState<'imprese' | 'comuni' | 'associazioni'>('comuni');
+  const [a99xAssociazioni, setA99xAssociazioni] = useState<any[]>([]);
+  const [a99xLoadingAssociazioni, setA99xLoadingAssociazioni] = useState(false);
+  const [a99xInvitaErrore, setA99xInvitaErrore] = useState('');
   const [a99xShowDropdown, setA99xShowDropdown] = useState(false);
   const [a99xImprese, setA99xImprese] = useState<any[]>([]);
   const [a99xSettoriComuni, setA99xSettoriComuni] = useState<any[]>([]);
@@ -1918,6 +1921,22 @@ export default function DashboardPA() {
     fetchA99xSettori();
   }, [a99xSubTab]);
 
+  // Precarica associazioni per la ricerca inviti
+  React.useEffect(() => {
+    if (a99xSubTab !== 'invita') return;
+    const fetchA99xAssociazioni = async () => {
+      setA99xLoadingAssociazioni(true);
+      try {
+        const resp = await fetch(`${MIHUB_API_BASE_URL}/bandi/associazioni`);
+        const data = await resp.json();
+        if (data.success && data.data) setA99xAssociazioni(data.data);
+        else if (Array.isArray(data)) setA99xAssociazioni(data);
+      } catch (err) { console.warn('[A99X] Errore fetch associazioni:', err); }
+      setA99xLoadingAssociazioni(false);
+    };
+    fetchA99xAssociazioni();
+  }, [a99xSubTab]);
+
   // Chiudi dropdown quando clicchi fuori
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1951,6 +1970,16 @@ export default function DashboardPA() {
       (s.pec || '').toLowerCase().includes(q);
   });
 
+  // Filtra associazioni in locale
+  const a99xFilteredAssociazioni = a99xAssociazioni.filter((a: any) => {
+    if (!a99xInvitaSearch || a99xInvitaSearch.length < 2) return false;
+    const q = a99xInvitaSearch.toLowerCase();
+    return (a.nome || '').toLowerCase().includes(q) ||
+      (a.tipo_ente || '').toLowerCase().includes(q) ||
+      (a.email || '').toLowerCase().includes(q) ||
+      (a.telefono || '').toLowerCase().includes(q);
+  });
+
   // Seleziona contatto per invito (aggiunge alla lista, non sostituisce)
   const a99xSelectContact = (contact: any) => {
     const alreadySelected = a99xInvitaSelezionati.some((s: any) => s.tipo === contact.tipo && s.id === contact.id && s.email === contact.email);
@@ -1963,7 +1992,10 @@ export default function DashboardPA() {
 
   // Invia invito riunione
   const inviaA99xRiunione = async () => {
-    if (!a99xInvitaForm.titolo || !a99xInvitaForm.data_inizio || a99xInvitaSelezionati.length === 0) return;
+    setA99xInvitaErrore('');
+    if (!a99xInvitaForm.titolo) { setA99xInvitaErrore('Inserisci il titolo della riunione'); return; }
+    if (!a99xInvitaForm.data_inizio) { setA99xInvitaErrore('Inserisci data e ora della riunione'); return; }
+    if (a99xInvitaSelezionati.length === 0) { setA99xInvitaErrore('Seleziona almeno un invitato dalla ricerca'); return; }
     setA99xInvitaLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
@@ -1985,18 +2017,24 @@ export default function DashboardPA() {
         creato_da_tipo: 'PA',
         invitati: a99xInvitaSelezionati.map((s: any) => ({ tipo: s.tipo, id: s.id, nome: s.nome, email: s.email, telefono: s.telefono }))
       };
+      console.log('[A99X] Invio riunione:', JSON.stringify(body));
       const resp = await fetch(`${apiUrl}/api/a99x/invita-riunione`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.success) {
-          setA99xInvitaSuccesso(data.data);
-          setA99xInvitaSelezionati([]);
-          setA99xInvitaForm({ titolo: '', descrizione: '', data_inizio: '', durata_minuti: '30', modalita: 'ONLINE', sede_indirizzo: '', urgenza: '3', importanza: '3', dipendenze: '1', stakeholder: '1', temi: '' });
-          setA99xInvitaSearch('');
-          setA99xInvitaResults([]);
-        }
+      const data = await resp.json();
+      console.log('[A99X] Risposta invio:', data);
+      if (resp.ok && data.success) {
+        setA99xInvitaSuccesso(data.data);
+        setA99xInvitaSelezionati([]);
+        setA99xInvitaForm({ titolo: '', descrizione: '', data_inizio: '', durata_minuti: '30', modalita: 'ONLINE', sede_indirizzo: '', urgenza: '3', importanza: '3', dipendenze: '1', stakeholder: '1', temi: '' });
+        setA99xInvitaSearch('');
+        setA99xInvitaResults([]);
+        fetchA99xData();
+      } else {
+        setA99xInvitaErrore(data.error || data.message || `Errore server (${resp.status}): riprova`);
       }
-    } catch (err) { console.error('Errore invio invito:', err); }
+    } catch (err: any) {
+      console.error('Errore invio invito:', err);
+      setA99xInvitaErrore(`Errore di rete: ${err.message || 'impossibile contattare il server'}`);
+    }
     setA99xInvitaLoading(false);
   };
 
@@ -10202,11 +10240,39 @@ export default function DashboardPA() {
                 <CardContent className="space-y-4">
                   {/* Successo */}
                   {a99xInvitaSuccesso && (
-                    <div className="bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg p-4">
-                      <p className="text-[#10b981] font-medium text-sm">Inviti inviati con successo!</p>
-                      <p className="text-[#e8fbff]/60 text-xs mt-1">{a99xInvitaSuccesso.inviti_inviati} inviti inviati per "{a99xInvitaSuccesso.riunione?.titolo}"</p>
-                      {a99xInvitaSuccesso.jitsi_link && <p className="text-[#8b5cf6] text-xs mt-1">Link Jitsi: {a99xInvitaSuccesso.jitsi_link}</p>}
-                      <button onClick={() => setA99xInvitaSuccesso(null)} className="mt-2 text-xs text-[#e8fbff]/40 hover:text-[#e8fbff]/70">Chiudi</button>
+                    <div className="bg-[#10b981]/10 border-2 border-[#10b981]/50 rounded-xl p-6 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-[#10b981]/20 flex items-center justify-center">
+                          <CalendarDays className="h-6 w-6 text-[#10b981]" />
+                        </div>
+                        <div>
+                          <p className="text-[#10b981] font-bold text-lg">Riunione Creata!</p>
+                          <p className="text-[#e8fbff]/60 text-sm">{a99xInvitaSuccesso.inviti_inviati || 0} inviti inviati con successo</p>
+                        </div>
+                      </div>
+                      <div className="bg-[#0b1220] rounded-lg p-4 space-y-2">
+                        <h4 className="text-[#e8fbff] font-semibold">{a99xInvitaSuccesso.riunione?.titolo || 'Riunione'}</h4>
+                        {a99xInvitaSuccesso.riunione?.data_inizio && (
+                          <p className="text-[#e8fbff]/60 text-sm">Data: {new Date(a99xInvitaSuccesso.riunione.data_inizio).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' })}</p>
+                        )}
+                        {a99xInvitaSuccesso.riunione?.modalita && (
+                          <p className="text-[#e8fbff]/60 text-sm">Modalita: {a99xInvitaSuccesso.riunione.modalita}</p>
+                        )}
+                        {a99xInvitaSuccesso.jitsi_link && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-[#8b5cf6] text-sm break-all">{a99xInvitaSuccesso.jitsi_link}</span>
+                            <button onClick={() => navigator.clipboard.writeText(a99xInvitaSuccesso.jitsi_link)} className="text-[#8b5cf6] hover:text-[#a78bfa] text-xs border border-[#8b5cf6]/30 rounded px-2 py-1 whitespace-nowrap">Copia Link</button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={() => { setA99xInvitaSuccesso(null); setA99xSubTab('calendario'); }} className="flex-1 py-2.5 bg-[#8b5cf6] text-white rounded-lg text-sm font-medium hover:bg-[#7c3aed] flex items-center justify-center gap-2">
+                          <CalendarDays className="h-4 w-4" /> Vai al Calendario
+                        </button>
+                        <button onClick={() => setA99xInvitaSuccesso(null)} className="flex-1 py-2.5 bg-[#1a2332] border border-[#10b981]/30 text-[#10b981] rounded-lg text-sm font-medium hover:bg-[#10b981]/10 flex items-center justify-center gap-2">
+                          <Send className="h-4 w-4" /> Nuovo Invito
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -10216,7 +10282,7 @@ export default function DashboardPA() {
                       <label className="block text-xs text-[#10b981] font-medium mb-2">Invitati Selezionati ({a99xInvitaSelezionati.length})</label>
                       <div className="flex flex-wrap gap-2">
                         {a99xInvitaSelezionati.map((s: any, idx: number) => {
-                          const chipColor: any = { SETTORE: 'bg-[#14b8a6]/20 border-[#14b8a6]/40 text-[#14b8a6]', IMPRESA: 'bg-[#f59e0b]/20 border-[#f59e0b]/40 text-[#f59e0b]', ASSESSORE: 'bg-[#8b5cf6]/20 border-[#8b5cf6]/40 text-[#8b5cf6]', COMUNE: 'bg-[#3b82f6]/20 border-[#3b82f6]/40 text-[#3b82f6]' };
+                          const chipColor: any = { SETTORE: 'bg-[#14b8a6]/20 border-[#14b8a6]/40 text-[#14b8a6]', IMPRESA: 'bg-[#f59e0b]/20 border-[#f59e0b]/40 text-[#f59e0b]', ASSESSORE: 'bg-[#8b5cf6]/20 border-[#8b5cf6]/40 text-[#8b5cf6]', COMUNE: 'bg-[#3b82f6]/20 border-[#3b82f6]/40 text-[#3b82f6]', ASSOCIAZIONE: 'bg-[#ec4899]/20 border-[#ec4899]/40 text-[#ec4899]' };
                           return (
                             <div key={idx} className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 ${chipColor[s.tipo] || chipColor.COMUNE}`}>
                               <span className="text-[9px] font-bold uppercase opacity-60">{s.tipo}</span>
@@ -10250,6 +10316,15 @@ export default function DashboardPA() {
                       <Landmark className="h-4 w-4 mr-2" />
                       Cerca Comune/Settore
                     </Button>
+                    <Button
+                      variant={a99xSearchEntityType === 'associazioni' ? 'default' : 'outline'}
+                      onClick={() => { setA99xSearchEntityType('associazioni'); setA99xInvitaSearch(''); setA99xShowDropdown(false); }}
+                      className={a99xSearchEntityType === 'associazioni' ? 'bg-[#ec4899] hover:bg-[#ec4899]/80' : ''}
+                      size="sm"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Cerca Associazione/Ente
+                    </Button>
                   </div>
 
                   {/* Ricerca (come NotificationsPanel) */}
@@ -10257,6 +10332,8 @@ export default function DashboardPA() {
                     <label className="text-[#e8fbff]/70 text-sm mb-1 block flex items-center gap-2">
                       {a99xSearchEntityType === 'imprese' ? (
                         <><Building2 className="h-4 w-4" /> Cerca Impresa</>
+                      ) : a99xSearchEntityType === 'associazioni' ? (
+                        <><Users className="h-4 w-4" /> Cerca Associazione/Ente</>
                       ) : (
                         <><Landmark className="h-4 w-4" /> Cerca Settore Comunale</>
                       )}
@@ -10264,7 +10341,7 @@ export default function DashboardPA() {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#e8fbff]/50" />
                       <input
-                        placeholder={a99xSearchEntityType === 'imprese' ? 'Cerca per nome, CF o email...' : 'Cerca per comune, settore o responsabile...'}
+                        placeholder={a99xSearchEntityType === 'imprese' ? 'Cerca per nome, CF o email...' : a99xSearchEntityType === 'associazioni' ? 'Cerca per nome associazione, tipo o email...' : 'Cerca per comune, settore o responsabile...'}
                         value={a99xInvitaSearch}
                         onChange={e => { setA99xInvitaSearch(e.target.value); setA99xShowDropdown(true); }}
                         onFocus={() => setA99xShowDropdown(true)}
@@ -10283,28 +10360,17 @@ export default function DashboardPA() {
                     {/* Dropdown risultati */}
                     {a99xShowDropdown && a99xInvitaSearch && a99xInvitaSearch.length >= 2 && (
                       <div className="absolute z-50 w-full mt-1 bg-[#1a2332] border border-[#14b8a6]/30 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                        {a99xSearchEntityType === 'imprese' ? (
+                        {/* Risultati Imprese */}
+                        {a99xSearchEntityType === 'imprese' && (
                           a99xLoadingImprese ? (
-                            <div className="p-4 text-center text-[#e8fbff]/50">
-                              <Loader2 className="h-5 w-5 animate-spin mx-auto" />
-                            </div>
+                            <div className="p-4 text-center text-[#e8fbff]/50"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></div>
                           ) : a99xFilteredImprese.length === 0 ? (
-                            <div className="p-4 text-center text-[#e8fbff]/50">
-                              Nessuna impresa trovata
-                            </div>
+                            <div className="p-4 text-center text-[#e8fbff]/50">Nessuna impresa trovata</div>
                           ) : (
                             a99xFilteredImprese.slice(0, 10).map((impresa: any) => {
                               const isSelected = a99xInvitaSelezionati.some((s: any) => s.tipo === 'IMPRESA' && s.id === impresa.id);
                               return (
-                                <div
-                                  key={impresa.id}
-                                  onClick={() => {
-                                    if (!isSelected) {
-                                      a99xSelectContact({ tipo: 'IMPRESA', id: impresa.id, nome: impresa.denominazione || impresa.ragione_sociale, email: impresa.email, telefono: impresa.telefono });
-                                    }
-                                  }}
-                                  className={`p-3 hover:bg-[#14b8a6]/20 cursor-pointer border-b border-[#14b8a6]/10 last:border-b-0 ${isSelected ? 'opacity-30 cursor-not-allowed' : ''}`}
-                                >
+                                <div key={impresa.id} onClick={() => { if (!isSelected) a99xSelectContact({ tipo: 'IMPRESA', id: impresa.id, nome: impresa.denominazione || impresa.ragione_sociale, email: impresa.email, telefono: impresa.telefono }); }} className={`p-3 hover:bg-[#14b8a6]/20 cursor-pointer border-b border-[#14b8a6]/10 last:border-b-0 ${isSelected ? 'opacity-30 cursor-not-allowed' : ''}`}>
                                   <div className="flex items-center gap-2">
                                     <Building2 className="h-4 w-4 text-[#14b8a6]" />
                                     <span className="text-[#e8fbff] font-semibold">{impresa.denominazione || impresa.ragione_sociale}</span>
@@ -10319,28 +10385,18 @@ export default function DashboardPA() {
                               );
                             })
                           )
-                        ) : (
+                        )}
+                        {/* Risultati Settori Comunali */}
+                        {a99xSearchEntityType === 'comuni' && (
                           a99xLoadingSettori ? (
-                            <div className="p-4 text-center text-[#e8fbff]/50">
-                              <Loader2 className="h-5 w-5 animate-spin mx-auto" />
-                            </div>
+                            <div className="p-4 text-center text-[#e8fbff]/50"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></div>
                           ) : a99xFilteredSettori.length === 0 ? (
-                            <div className="p-4 text-center text-[#e8fbff]/50">
-                              Nessun settore comunale trovato
-                            </div>
+                            <div className="p-4 text-center text-[#e8fbff]/50">Nessun settore comunale trovato</div>
                           ) : (
                             a99xFilteredSettori.slice(0, 10).map((settore: any) => {
                               const isSelected = a99xInvitaSelezionati.some((s: any) => s.tipo === 'SETTORE' && s.id === settore.id);
                               return (
-                                <div
-                                  key={settore.id}
-                                  onClick={() => {
-                                    if (!isSelected) {
-                                      a99xSelectContact({ tipo: 'SETTORE', id: settore.id, nome: `${settore.comune_nome} - ${settore.tipo_settore}`, comune_nome: settore.comune_nome, email: settore.pec || settore.email, telefono: settore.telefono, responsabile: settore.responsabile_nome ? `${settore.responsabile_nome} ${settore.responsabile_cognome || ''}` : '' });
-                                    }
-                                  }}
-                                  className={`p-3 hover:bg-[#8b5cf6]/20 cursor-pointer border-b border-[#8b5cf6]/10 last:border-b-0 ${isSelected ? 'opacity-30 cursor-not-allowed' : ''}`}
-                                >
+                                <div key={settore.id} onClick={() => { if (!isSelected) a99xSelectContact({ tipo: 'SETTORE', id: settore.id, nome: `${settore.comune_nome} - ${settore.tipo_settore}`, comune_nome: settore.comune_nome, email: settore.pec || settore.email, telefono: settore.telefono, responsabile: settore.responsabile_nome ? `${settore.responsabile_nome} ${settore.responsabile_cognome || ''}` : '' }); }} className={`p-3 hover:bg-[#8b5cf6]/20 cursor-pointer border-b border-[#8b5cf6]/10 last:border-b-0 ${isSelected ? 'opacity-30 cursor-not-allowed' : ''}`}>
                                   <div className="flex items-center gap-2">
                                     <Landmark className="h-4 w-4 text-[#8b5cf6]" />
                                     <span className="text-[#e8fbff] font-semibold">{settore.comune_nome}</span>
@@ -10353,6 +10409,33 @@ export default function DashboardPA() {
                                     {settore.pec && <span className="flex items-center gap-1 text-[#f59e0b]"><Mail className="h-3 w-3" /> PEC: {settore.pec}</span>}
                                     {settore.email && !settore.pec && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {settore.email}</span>}
                                     {settore.telefono && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {settore.telefono}</span>}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )
+                        )}
+                        {/* Risultati Associazioni/Enti */}
+                        {a99xSearchEntityType === 'associazioni' && (
+                          a99xLoadingAssociazioni ? (
+                            <div className="p-4 text-center text-[#e8fbff]/50"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></div>
+                          ) : a99xFilteredAssociazioni.length === 0 ? (
+                            <div className="p-4 text-center text-[#e8fbff]/50">Nessuna associazione/ente trovato</div>
+                          ) : (
+                            a99xFilteredAssociazioni.slice(0, 10).map((assoc: any) => {
+                              const isSelected = a99xInvitaSelezionati.some((s: any) => s.tipo === 'ASSOCIAZIONE' && s.id === assoc.id);
+                              return (
+                                <div key={assoc.id} onClick={() => { if (!isSelected) a99xSelectContact({ tipo: 'ASSOCIAZIONE', id: assoc.id, nome: assoc.nome, email: assoc.email, telefono: assoc.telefono }); }} className={`p-3 hover:bg-[#ec4899]/20 cursor-pointer border-b border-[#ec4899]/10 last:border-b-0 ${isSelected ? 'opacity-30 cursor-not-allowed' : ''}`}>
+                                  <div className="flex items-center gap-2">
+                                    <Users className="h-4 w-4 text-[#ec4899]" />
+                                    <span className="text-[#e8fbff] font-semibold">{assoc.nome}</span>
+                                    {assoc.tipo_ente && <span className="text-[#ec4899] text-xs">({assoc.tipo_ente})</span>}
+                                    {isSelected && <span className="text-[#10b981] text-[9px] ml-auto">Selezionato</span>}
+                                  </div>
+                                  <div className="text-[#e8fbff]/60 text-sm flex items-center gap-4 mt-1 ml-6">
+                                    {assoc.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {assoc.email}</span>}
+                                    {assoc.telefono && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {assoc.telefono}</span>}
+                                    {assoc.indirizzo && <span>{assoc.indirizzo}</span>}
                                   </div>
                                 </div>
                               );
@@ -10459,6 +10542,12 @@ export default function DashboardPA() {
                       </div>
                       <p className="text-center text-[#8b5cf6] text-xs mt-2">Score: {(parseInt(a99xInvitaForm.urgenza)||1) * (parseInt(a99xInvitaForm.importanza)||1) * (parseInt(a99xInvitaForm.dipendenze)||1) * (parseInt(a99xInvitaForm.stakeholder)||1)}</p>
                     </div>
+                    {/* Messaggio Errore */}
+                    {a99xInvitaErrore && (
+                      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                        <p className="text-red-400 text-sm font-medium">{a99xInvitaErrore}</p>
+                      </div>
+                    )}
                     {/* Bottone Invio */}
                     <button
                       onClick={inviaA99xRiunione}
@@ -10468,6 +10557,29 @@ export default function DashboardPA() {
                       <Send className="h-4 w-4" />
                       {a99xInvitaLoading ? 'Invio in corso...' : `Invia Inviti + Genera Link Jitsi (${a99xInvitaSelezionati.length} destinatari)`}
                     </button>
+                    {/* Popup Successo con Scheda Riunione */}
+                    {a99xInvitaSuccesso && (
+                      <div className="bg-[#10b981]/10 border border-[#10b981]/40 rounded-xl p-5 space-y-3">
+                        <div className="flex items-center gap-2 text-[#10b981] font-bold text-lg">
+                          <CalendarDays className="h-5 w-5" />
+                          Riunione Creata con Successo!
+                        </div>
+                        <div className="bg-[#0b1220] rounded-lg p-4 space-y-2">
+                          <p className="text-[#e8fbff] font-semibold">{a99xInvitaForm.titolo}</p>
+                          <p className="text-[#e8fbff]/70 text-sm">{a99xInvitaForm.data_inizio ? new Date(a99xInvitaForm.data_inizio).toLocaleString('it-IT') : ''} — {a99xInvitaForm.durata} min — {a99xInvitaForm.modalita}</p>
+                          {a99xInvitaForm.temi && <p className="text-[#8b5cf6] text-sm">Temi: {a99xInvitaForm.temi}</p>}
+                          <p className="text-[#e8fbff]/60 text-sm">Invitati: {a99xInvitaSelezionati.map((s: any) => s.nome).join(', ')}</p>
+                          <p className="text-[#e8fbff]/60 text-sm">Urgenza: {a99xInvitaForm.urgenza} — Importanza: {a99xInvitaForm.importanza}</p>
+                        </div>
+                        <p className="text-[#10b981]/70 text-sm">Email di invito inviate a tutti i destinatari. La riunione appare nel calendario.</p>
+                        <button
+                          onClick={() => { setA99xInvitaSuccesso(false); setA99xSubTab('dashboard'); }}
+                          className="w-full py-2 bg-[#10b981] text-white rounded-lg font-medium text-sm hover:bg-[#10b981]/80"
+                        >
+                          Torna alla Dashboard
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
