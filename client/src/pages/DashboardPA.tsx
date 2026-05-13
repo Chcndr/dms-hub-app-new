@@ -2022,7 +2022,7 @@ export default function DashboardPA() {
         invitati: a99xInvitaSelezionati.map((s: any) => ({ tipo: s.tipo, id: s.id, nome: s.nome, email: s.email, telefono: s.telefono }))
       };
       console.log('[A99X] Invio riunione:', JSON.stringify(body));
-      const resp = await fetch(`${apiUrl}/api/a99x/invita-riunione`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const resp = await authenticatedFetch(`${apiUrl}/api/a99x/invita-riunione`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await resp.json();
       console.log('[A99X] Risposta invio:', data);
       if (resp.ok && data.success) {
