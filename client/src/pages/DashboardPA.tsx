@@ -1927,7 +1927,7 @@ export default function DashboardPA() {
     const fetchA99xAssociazioni = async () => {
       setA99xLoadingAssociazioni(true);
       try {
-        const resp = await fetch(`${MIHUB_API_BASE_URL}/bandi/associazioni`);
+        const resp = await fetch(`${MIHUB_API_BASE_URL}/api/associazioni`);
         const data = await resp.json();
         if (data.success && data.data) setA99xAssociazioni(data.data);
         else if (Array.isArray(data)) setA99xAssociazioni(data);
@@ -1975,9 +1975,13 @@ export default function DashboardPA() {
     if (!a99xInvitaSearch || a99xInvitaSearch.length < 2) return false;
     const q = a99xInvitaSearch.toLowerCase();
     return (a.nome || '').toLowerCase().includes(q) ||
-      (a.tipo_ente || '').toLowerCase().includes(q) ||
+      (a.sigla || '').toLowerCase().includes(q) ||
+      (a.tipo || '').toLowerCase().includes(q) ||
       (a.email || '').toLowerCase().includes(q) ||
-      (a.telefono || '').toLowerCase().includes(q);
+      (a.pec || '').toLowerCase().includes(q) ||
+      (a.citta || '').toLowerCase().includes(q) ||
+      (a.presidente_cognome || '').toLowerCase().includes(q) ||
+      (a.referente_cognome || '').toLowerCase().includes(q);
   });
 
   // Seleziona contatto per invito (aggiunge alla lista, non sostituisce)
