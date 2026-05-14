@@ -1066,8 +1066,10 @@ export default function DashboardPA() {
 
   // Modalità impersonificazione: nascondi tab admin
   const isImpersonating = urlParams.get("impersonate") === "true";
-  const comuneIdFromUrl = urlParams.get("comune_id");
-  const comuneNomeFromUrl = urlParams.get("comune_nome");
+  // Super admin (non impersonificazione): identità MIO HUB con comune_id=0
+  const isSuperAdmin = !isImpersonating && !urlParams.get("comune_id");
+  const comuneIdFromUrl = urlParams.get("comune_id") || (isSuperAdmin ? '0' : null);
+  const comuneNomeFromUrl = urlParams.get("comune_nome") || (isSuperAdmin ? 'MIO HUB' : null);
 
   const [dashboardSubTab, setDashboardSubTab] = useState<
     "overview" | "mercati"
@@ -11078,8 +11080,7 @@ export default function DashboardPA() {
                       onClick={async () => {
                         try {
                           const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                          const cId = comuneIdFromUrl;
-                          if (!cId) { alert('Errore: comune non identificato'); return; }
+                          const cId = comuneIdFromUrl || '0';
                           let successCount = 0;
                           let errorMsg = '';
                           // Crea uno slot per ogni giorno selezionato
