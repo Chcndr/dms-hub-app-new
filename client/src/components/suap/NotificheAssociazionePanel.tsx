@@ -333,7 +333,7 @@ export default function NotificheAssociazionePanel({
               const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
               const totale = partecipanti.length;
               const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
-              const dataR = r.data_inizio ? new Date(r.data_inizio).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
+              const dataR = r.data_inizio ? new Date(r.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
               const mioStatoColors: Record<string, string> = {
                 'CONFERMATO': 'bg-green-500/20 text-green-400 border-green-500/30',
                 'RIFIUTATO': 'bg-red-500/20 text-red-400 border-red-500/30',

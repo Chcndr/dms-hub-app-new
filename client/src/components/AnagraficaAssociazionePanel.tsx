@@ -24,6 +24,11 @@ import {
   ClipboardCheck,
   Hash,
   Save,
+  Users,
+  Plus,
+  Trash2,
+  Edit3,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -72,6 +77,17 @@ interface Fattura {
   descrizione?: string;
 }
 
+interface Responsabile {
+  id: number;
+  nome: string;
+  cognome?: string;
+  ruolo?: string;
+  email?: string;
+  telefono?: string;
+  settore?: string;
+  note?: string;
+}
+
 const formatQuotaInput = (value: unknown) => {
   const numero = Number(value);
   return Number.isFinite(numero) ? numero.toFixed(2) : "";
@@ -83,10 +99,15 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
   );
   const [contratti, setContratti] = useState<Contratto[]>([]);
   const [fatture, setFatture] = useState<Fattura[]>([]);
+  const [responsabili, setResponsabili] = useState<Responsabile[]>([]);
   const [loading, setLoading] = useState(true);
   const [quotaInput, setQuotaInput] = useState("");
   const [quotaSaving, setQuotaSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("dati");
+  const [showAddResp, setShowAddResp] = useState(false);
+  const [editResp, setEditResp] = useState<Responsabile | null>(null);
+  const [respForm, setRespForm] = useState({ nome: '', cognome: '', ruolo: 'Responsabile', email: '', telefono: '', settore: '', note: '' });
+  const [respSaving, setRespSaving] = useState(false);
 
   const impState = getImpersonationParams();
   const associazioneId = impState.associazioneId;
@@ -98,10 +119,11 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
     if (!associazioneId) return;
     setLoading(true);
     try {
-      const [assocRes, contrattiRes, fattureRes] = await Promise.all([
+      const [assocRes, contrattiRes, fattureRes, respRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}`),
         fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/contratti`),
         fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/fatture`),
+        fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/responsabili`),
       ]);
 
       const assocData = await assocRes.json();
@@ -118,6 +140,11 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
       const fattureData = await fattureRes.json();
       if (fattureData.success && fattureData.data) {
         setFatture(fattureData.data);
+      }
+
+      const respData = await respRes.json();
+      if (respData.success && respData.responsabili) {
+        setResponsabili(respData.responsabili);
       }
     } catch (error) {
       console.error("Errore caricamento anagrafica associazione:", error);
@@ -272,6 +299,12 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
             className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]"
           >
             <Euro className="h-4 w-4 mr-1" /> Fatture
+          </TabsTrigger>
+          <TabsTrigger
+            value="responsabili"
+            className="data-[state=active]:bg-[#3b82f6]/20 data-[state=active]:text-[#3b82f6]"
+          >
+            <Users className="h-4 w-4 mr-1" /> Responsabili
           </TabsTrigger>
         </TabsList>
 
@@ -462,6 +495,156 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
                           EUR
                         </span>
                         {getStatoFatturaBadge(f.stato)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        {/* Tab Responsabili */}
+        <TabsContent value="responsabili">
+          <Card className="bg-[#1a2332] border-[#3b82f6]/30">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[#e8fbff] font-medium flex items-center gap-2">
+                  <Users className="h-4 w-4 text-[#3b82f6]" />
+                  Responsabili ({responsabili.length})
+                </h3>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setRespForm({ nome: '', cognome: '', ruolo: 'Responsabile', email: '', telefono: '', settore: '', note: '' });
+                    setEditResp(null);
+                    setShowAddResp(true);
+                  }}
+                  className="bg-[#10b981] hover:bg-[#059669] text-white"
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Aggiungi
+                </Button>
+              </div>
+
+              {/* Form Aggiungi/Modifica */}
+              {(showAddResp || editResp) && (
+                <div className="mb-4 p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/20 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[#e8fbff] text-sm font-medium">{editResp ? 'Modifica Responsabile' : 'Nuovo Responsabile'}</h4>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowAddResp(false); setEditResp(null); }}>
+                      <X className="h-4 w-4 text-[#e8fbff]/50" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-[#e8fbff]/50">Nome *</Label>
+                      <Input value={respForm.nome} onChange={e => setRespForm(p => ({ ...p, nome: e.target.value }))} className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm" placeholder="Nome" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-[#e8fbff]/50">Cognome</Label>
+                      <Input value={respForm.cognome} onChange={e => setRespForm(p => ({ ...p, cognome: e.target.value }))} className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm" placeholder="Cognome" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-[#e8fbff]/50">Ruolo</Label>
+                      <Input value={respForm.ruolo} onChange={e => setRespForm(p => ({ ...p, ruolo: e.target.value }))} className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm" placeholder="Responsabile" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-[#e8fbff]/50">Settore</Label>
+                      <Input value={respForm.settore} onChange={e => setRespForm(p => ({ ...p, settore: e.target.value }))} className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm" placeholder="Es. Commercio, Turismo..." />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-[#e8fbff]/50">Email</Label>
+                      <Input value={respForm.email} onChange={e => setRespForm(p => ({ ...p, email: e.target.value }))} className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm" placeholder="email@esempio.it" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-[#e8fbff]/50">Telefono</Label>
+                      <Input value={respForm.telefono} onChange={e => setRespForm(p => ({ ...p, telefono: e.target.value }))} className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm" placeholder="+39 ..." />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#e8fbff]/50">Note</Label>
+                    <Input value={respForm.note} onChange={e => setRespForm(p => ({ ...p, note: e.target.value }))} className="bg-[#1a2332] border-[#334155] text-[#e8fbff] h-8 text-sm" placeholder="Note aggiuntive..." />
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      if (!respForm.nome.trim()) { toast.error('Nome obbligatorio'); return; }
+                      setRespSaving(true);
+                      try {
+                        const url = editResp
+                          ? `${API_BASE_URL}/api/associazioni/responsabili/${editResp.id}`
+                          : `${API_BASE_URL}/api/associazioni/${associazioneId}/responsabili`;
+                        const method = editResp ? 'PUT' : 'POST';
+                        const res = await fetch(url, {
+                          method,
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(respForm),
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          toast.success(editResp ? 'Responsabile aggiornato' : 'Responsabile aggiunto');
+                          setShowAddResp(false);
+                          setEditResp(null);
+                          loadData();
+                        } else {
+                          toast.error(data.error || 'Errore');
+                        }
+                      } catch (err) {
+                        toast.error('Errore di connessione');
+                      } finally {
+                        setRespSaving(false);
+                      }
+                    }}
+                    disabled={respSaving}
+                    className="bg-[#3b82f6] hover:bg-[#2563eb] text-white w-full"
+                  >
+                    {respSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : (editResp ? 'Salva Modifiche' : 'Aggiungi Responsabile')}
+                  </Button>
+                </div>
+              )}
+
+              {/* Lista Responsabili */}
+              {responsabili.length === 0 ? (
+                <div className="text-center py-8 text-[#e8fbff]/50">
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                  <p>Nessun responsabile registrato</p>
+                  <p className="text-xs mt-1">Aggiungi i funzionari e responsabili dell'associazione</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {responsabili.map(r => (
+                    <div key={r.id} className="p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-[#e8fbff]">{r.nome} {r.cognome}</span>
+                            <Badge variant="outline" className="text-[#8b5cf6] border-[#8b5cf6]/50 text-[10px]">{r.ruolo || 'Responsabile'}</Badge>
+                            {r.settore && <Badge variant="outline" className="text-[#f59e0b] border-[#f59e0b]/50 text-[10px]">{r.settore}</Badge>}
+                          </div>
+                          <div className="flex flex-wrap gap-3 text-xs text-[#e8fbff]/50">
+                            {r.email && <span><Mail className="h-3 w-3 inline mr-1" />{r.email}</span>}
+                            {r.telefono && <span><Phone className="h-3 w-3 inline mr-1" />{r.telefono}</span>}
+                          </div>
+                          {r.note && <p className="text-xs text-[#e8fbff]/30 mt-1">{r.note}</p>}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => {
+                            setRespForm({ nome: r.nome, cognome: r.cognome || '', ruolo: r.ruolo || 'Responsabile', email: r.email || '', telefono: r.telefono || '', settore: r.settore || '', note: r.note || '' });
+                            setEditResp(r);
+                            setShowAddResp(false);
+                          }}>
+                            <Edit3 className="h-4 w-4 text-[#3b82f6]" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={async () => {
+                            if (!confirm('Rimuovere questo responsabile?')) return;
+                            try {
+                              const res = await fetch(`${API_BASE_URL}/api/associazioni/responsabili/${r.id}`, { method: 'DELETE' });
+                              const data = await res.json();
+                              if (data.success) { toast.success('Responsabile rimosso'); loadData(); }
+                              else toast.error(data.error || 'Errore');
+                            } catch { toast.error('Errore di connessione'); }
+                          }}>
+                            <Trash2 className="h-4 w-4 text-[#ef4444]" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}

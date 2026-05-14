@@ -456,7 +456,7 @@ export default function AppImpresaNotifiche() {
               const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
               const totale = partecipanti.length;
               const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
-              const dataR = r.data_inizio ? new Date(r.data_inizio).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
+              const dataR = r.data_inizio ? new Date(r.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
               const mioStatoColors: Record<string, string> = {
                 'CONFERMATO': 'bg-green-500/20 text-green-400 border-green-500/30',
                 'RIFIUTATO': 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -468,7 +468,7 @@ export default function AppImpresaNotifiche() {
                     {/* Header riunione */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="text-lg">{"\ud83d\udcc5"}</span>
+                        <span className="text-lg">📅</span>
                         <div className="min-w-0">
                           <h4 className="text-[#e8fbff] font-semibold text-sm truncate">{r.titolo || 'Riunione'}</h4>
                           <p className="text-[#e8fbff]/40 text-[10px]">{dataR}</p>
@@ -479,7 +479,7 @@ export default function AppImpresaNotifiche() {
                           {r.mio_stato === 'CONFERMATO' ? 'Accettato' : r.mio_stato === 'RIFIUTATO' ? 'Rifiutato' : 'In attesa'}
                         </Badge>
                         {r.jitsi_link && (
-                          <a href={r.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">{"\ud83c\udf10"} Jitsi</a>
+                          <a href={r.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">🌐 Jitsi</a>
                         )}
                       </div>
                     </div>
@@ -529,9 +529,9 @@ export default function AppImpresaNotifiche() {
                     <div className="space-y-1.5">
                       {partecipanti.map((p: any, idx: number) => {
                         const statoConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
-                          'CONFERMATO': { bg: 'bg-green-500/15 border-green-500/30', text: 'text-green-400', icon: '\u2705', label: 'Confermato' },
-                          'RIFIUTATO': { bg: 'bg-red-500/15 border-red-500/30', text: 'text-red-400', icon: '\u274c', label: 'Rifiutato' },
-                          'INVITATO': { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', icon: '\u23f3', label: 'In attesa' },
+                          'CONFERMATO': { bg: 'bg-green-500/15 border-green-500/30', text: 'text-green-400', icon: '✅', label: 'Confermato' },
+                          'RIFIUTATO': { bg: 'bg-red-500/15 border-red-500/30', text: 'text-red-400', icon: '❌', label: 'Rifiutato' },
+                          'INVITATO': { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', icon: '⏳', label: 'In attesa' },
                         };
                         const cfg = statoConfig[p.stato] || statoConfig['INVITATO'];
                         const tipoConfig: Record<string, { color: string; label: string }> = {
@@ -683,6 +683,22 @@ export default function AppImpresaNotifiche() {
                               setInvRiunioneStato(null);
                               setInvRiunioneLink('');
                               segnaComeLetta(notifica);
+                              // Se INVITO_RIUNIONE, carica lo stato reale dal backend
+                              if (notifica.tipo_messaggio === 'INVITO_RIUNIONE' && IMPRESA_EMAIL) {
+                                fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL)}`)
+                                  .then(r => r.json())
+                                  .then(data => {
+                                    if (data.success) {
+                                      const riunione = data.data?.find((r: any) => notifica.messaggio?.includes(r.titolo));
+                                      if (riunione) {
+                                        setInvRiunioneStato(riunione.mio_stato || 'INVITATO');
+                                        if (riunione.mio_stato === 'CONFERMATO') {
+                                          setInvRiunioneLink(riunione.jitsi_link || '');
+                                        }
+                                      }
+                                    }
+                                  }).catch(() => {});
+                              }
                             }}
                             className={`p-3 rounded-lg cursor-pointer transition-all ${
                               notificaSelezionata?.id === notifica.id
@@ -721,7 +737,7 @@ export default function AppImpresaNotifiche() {
                                   <span className="text-xs text-[#e8fbff]/30">
                                     {new Date(
                                       notifica.data_invio
-                                    ).toLocaleDateString("it-IT")}
+                                    ).toLocaleDateString("it-IT", { timeZone: 'Europe/Rome' })}
                                   </span>
                                 </div>
                               </div>
@@ -755,7 +771,7 @@ export default function AppImpresaNotifiche() {
                                 </p>
                                 <span className="text-xs text-[#e8fbff]/30">
                                   {new Date(msg.created_at).toLocaleDateString(
-                                    "it-IT"
+                                    "it-IT", { timeZone: 'Europe/Rome' }
                                   )}
                                 </span>
                               </div>
@@ -809,7 +825,7 @@ export default function AppImpresaNotifiche() {
                           Da: {notificaSelezionata.mittente_nome} •{" "}
                           {new Date(
                             notificaSelezionata.data_invio
-                          ).toLocaleString("it-IT")}
+                          ).toLocaleString("it-IT", { timeZone: 'Europe/Rome' })}
                         </CardDescription>
                       </div>
                     </div>

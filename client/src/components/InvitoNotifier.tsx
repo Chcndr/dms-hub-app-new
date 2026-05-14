@@ -64,20 +64,20 @@ export default function InvitoNotifier() {
       if (imp) {
         const parsed = JSON.parse(imp);
         if (parsed.isImpersonating) {
-          // Associazione
-          if (parsed.role === 'associazione' && parsed.associazioneId) {
+          // Associazione (entityType dal sessionStorage, role dall'URL)
+          if ((parsed.entityType === 'associazione' || parsed.role === 'associazione') && parsed.associazioneId) {
             return {
               tipo: 'ASSOCIAZIONE',
-              id: parsed.associazioneId,
+              id: parseInt(parsed.associazioneId) || parsed.associazioneId,
               nome: parsed.associazioneNome || 'Associazione',
               email: parsed.userEmail || parsed.email,
             };
           }
           // Comune
-          if (parsed.comuneId) {
+          if ((parsed.entityType === 'comune' || parsed.role === 'comune' || !parsed.entityType) && parsed.comuneId) {
             return {
               tipo: 'COMUNE',
-              comuneId: parsed.comuneId,
+              comuneId: parseInt(parsed.comuneId) || parsed.comuneId,
               nome: parsed.comuneNome || 'Comune',
               email: parsed.userEmail || parsed.email,
             };
@@ -85,10 +85,20 @@ export default function InvitoNotifier() {
         }
       }
 
-      // 2. Utente impresa (localStorage "user")
+      // 2. Utente (localStorage "user")
       const userStr = localStorage.getItem("user");
       if (userStr) {
         const user = JSON.parse(userStr);
+        // Super admin — check PRIMA di impresa per evitare che cada nel vuoto
+        if (user.email === 'chcndr@gmail.com' || user.is_super_admin === true || user.role === 'admin' || user.base_role === 'admin') {
+          return {
+            tipo: 'SUPERADMIN',
+            comuneId: 0,
+            nome: 'MIO HUB',
+            email: user.email,
+          };
+        }
+        // Impresa
         if (user.impresa_id) {
           return {
             tipo: 'IMPRESA',
@@ -97,34 +107,26 @@ export default function InvitoNotifier() {
             email: user.email || user.impresa_email || user.username,
           };
         }
-        // Super admin
-        if (user.email === 'chcndr@gmail.com' || user.role === 'admin') {
-          return {
-            tipo: 'SUPERADMIN',
-            comuneId: 0,
-            nome: 'MIO HUB',
-            email: user.email,
-          };
-        }
       }
 
       // 3. Firebase user
       const fbStr = localStorage.getItem("miohub_firebase_user");
       if (fbStr) {
         const fb = JSON.parse(fbStr);
+        // Super admin — check PRIMA di comune_id
+        if (fb.email === 'chcndr@gmail.com' || fb.isSuperAdmin === true || fb.role === 'pa') {
+          return {
+            tipo: 'SUPERADMIN',
+            comuneId: 0,
+            nome: 'MIO HUB',
+            email: fb.email,
+          };
+        }
         if (fb.comune_id) {
           return {
             tipo: 'COMUNE',
             comuneId: fb.comune_id,
             nome: fb.comune_nome || 'Comune',
-            email: fb.email,
-          };
-        }
-        if (fb.email === 'chcndr@gmail.com') {
-          return {
-            tipo: 'SUPERADMIN',
-            comuneId: 0,
-            nome: 'MIO HUB',
             email: fb.email,
           };
         }
@@ -256,7 +258,7 @@ export default function InvitoNotifier() {
     : { bg: 'from-blue-500 to-indigo-600', border: 'border-blue-400', glow: 'shadow-blue-500/40', badge: 'bg-blue-500', text: 'INVITO', icon: '📅', pulse: '' };
 
   const dataStr = inv.data_inizio 
-    ? new Date(inv.data_inizio).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    ? new Date(inv.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
     : '';
 
   return (

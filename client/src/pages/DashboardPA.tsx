@@ -1181,8 +1181,7 @@ export default function DashboardPA() {
   ): string => {
     if (num === undefined || num === null || isNaN(Number(num))) return "0";
     const n = typeof num === "string" ? parseFloat(num) : num;
-    return n.toLocaleString("it-IT", {
-      minimumFractionDigits: decimals,
+    return n.toLocaleString("it-IT", { minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     });
   };
@@ -1196,8 +1195,7 @@ export default function DashboardPA() {
     const n = typeof num === "string" ? parseFloat(num) : num;
     return (
       "€" +
-      n.toLocaleString("it-IT", {
-        minimumFractionDigits: decimals,
+      n.toLocaleString("it-IT", { minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
       })
     );
@@ -3803,7 +3801,7 @@ export default function DashboardPA() {
                             const weekDate = new Date(item.week);
                             const formattedDate = weekDate.toLocaleDateString(
                               "it-IT",
-                              { day: "2-digit", month: "short" }
+                              { timeZone: 'Europe/Rome', day: "2-digit", month: "short" }
                             );
                             return (
                               <div
@@ -4389,9 +4387,7 @@ export default function DashboardPA() {
                       <Clock className="h-3 w-3" />
                       <span>
                         Aggiornato:{" "}
-                        {new Date(envData.timestamp).toLocaleTimeString(
-                          "it-IT"
-                        )}
+                        {new Date(envData.timestamp).toLocaleTimeString("it-IT", { timeZone: 'Europe/Rome' })}
                       </span>
                     </div>
                   </div>
@@ -4681,8 +4677,7 @@ export default function DashboardPA() {
                     </div>
                     <div className="text-5xl font-bold text-[#14b8a6] mb-1">
                       €
-                      {appliedTccValue.toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
+                      {appliedTccValue.toLocaleString("it-IT", { minimumFractionDigits: 2,
                         maximumFractionDigits: 4,
                       })}
                     </div>
@@ -4826,7 +4821,7 @@ export default function DashboardPA() {
                             body: JSON.stringify({
                               policy_multiplier: policyMultiplier,
                               // NON sovrascrivere tcc_value - deve rimanere €0,089!
-                              policy_notes: `Leva: ${policyMultiplier} TCC per €10 - ${new Date().toLocaleDateString("it-IT")}`,
+                              policy_notes: `Leva: ${policyMultiplier} TCC per €10 - ${new Date().toLocaleDateString("it-IT", { timeZone: 'Europe/Rome' })}`,
                             }),
                           }
                         );
@@ -5256,13 +5251,11 @@ export default function DashboardPA() {
                                         : tx.description || "Rimborso"}
                                   </p>
                                   <p className="text-sm text-[#94a3b8]">
-                                    {new Date(tx.created_at).toLocaleDateString(
-                                      "it-IT"
-                                    )}{" "}
+                                    {new Date(tx.created_at).toLocaleDateString("it-IT", { timeZone: 'Europe/Rome' })}{" "}
                                     -{" "}
                                     {new Date(tx.created_at).toLocaleTimeString(
                                       "it-IT",
-                                      { hour: "2-digit", minute: "2-digit" }
+                                      { timeZone: 'Europe/Rome', hour: "2-digit", minute: "2-digit" }
                                     )}
                                   </p>
                                   <Badge
@@ -5281,8 +5274,7 @@ export default function DashboardPA() {
                                   className={`font-semibold ${isDeposit ? "text-[#10b981]" : "text-[#ef4444]"}`}
                                 >
                                   {isDeposit ? "+" : "-"}€
-                                  {euroValue.toLocaleString("it-IT", {
-                                    minimumFractionDigits: 2,
+                                  {euroValue.toLocaleString("it-IT", { minimumFractionDigits: 2,
                                     maximumFractionDigits: 2,
                                   })}
                                 </p>
@@ -5410,8 +5402,7 @@ export default function DashboardPA() {
                         €
                         {parseFloat(
                           calculateReimbursementNeeded()
-                        ).toLocaleString("it-IT", {
-                          minimumFractionDigits: 2,
+                        ).toLocaleString("it-IT", { minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </div>
@@ -5422,8 +5413,7 @@ export default function DashboardPA() {
                       </div>
                       <div className="text-xl font-bold text-[#14b8a6]">
                         €
-                        {editableParams.fundBalance.toLocaleString("it-IT", {
-                          minimumFractionDigits: 2,
+                        {editableParams.fundBalance.toLocaleString("it-IT", { minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </div>
@@ -6990,9 +6980,7 @@ export default function DashboardPA() {
                               <div className="mt-2 text-xs text-[#e8fbff]/50">
                                 <Calendar className="w-3 h-3 inline mr-1" />
                                 Inizio:{" "}
-                                {new Date(corso.data_inizio).toLocaleDateString(
-                                  "it-IT"
-                                )}
+                                {new Date(corso.data_inizio).toLocaleDateString("it-IT", { timeZone: 'Europe/Rome' })}
                               </div>
                             )}
                           </div>
@@ -7088,9 +7076,7 @@ export default function DashboardPA() {
                             </div>
                             <div className="text-xs text-[#e8fbff]/50">
                               Scade:{" "}
-                              {new Date(item.data_scadenza).toLocaleDateString(
-                                "it-IT"
-                              )}
+                              {new Date(item.data_scadenza).toLocaleDateString("it-IT", { timeZone: 'Europe/Rome' })}
                             </div>
                           </div>
                         </div>
@@ -7644,7 +7630,7 @@ export default function DashboardPA() {
                               {item.corso_data
                                 ? new Date(item.corso_data).toLocaleDateString(
                                     "it-IT",
-                                    {
+                                    { timeZone: 'Europe/Rome', 
                                       day: "2-digit",
                                       month: "short",
                                       year: "numeric",
@@ -7657,7 +7643,7 @@ export default function DashboardPA() {
                               {item.data_iscrizione
                                 ? new Date(
                                     item.data_iscrizione
-                                  ).toLocaleDateString("it-IT")
+                                  ).toLocaleDateString("it-IT", { timeZone: "Europe/Rome" })
                                 : "-"}
                             </div>
                             <div className="mt-2 flex flex-wrap justify-end gap-2">
@@ -8265,7 +8251,7 @@ export default function DashboardPA() {
                                   <span className="text-xs text-[#e8fbff]/50">
                                     {new Date(msg.created_at).toLocaleDateString(
                                       "it-IT",
-                                      {
+                                      { timeZone: 'Europe/Rome', 
                                         day: "2-digit",
                                         month: "short",
                                         hour: "2-digit",
@@ -8332,8 +8318,7 @@ export default function DashboardPA() {
                                   <span className="text-xs text-[#e8fbff]/50">
                                     {new Date(
                                       risposta.created_at
-                                    ).toLocaleDateString("it-IT", {
-                                      day: "2-digit",
+                                    ).toLocaleDateString("it-IT", { timeZone: 'Europe/Rome', day: "2-digit",
                                       month: "short",
                                       hour: "2-digit",
                                       minute: "2-digit",
@@ -8585,9 +8570,7 @@ export default function DashboardPA() {
                                 <Calendar className="w-3 h-3 inline mr-1" />
                                 Scade:{" "}
                                 {bando.scadenza
-                                  ? new Date(bando.scadenza).toLocaleDateString(
-                                      "it-IT"
-                                    )
+                                  ? new Date(bando.scadenza).toLocaleDateString("it-IT", { timeZone: 'Europe/Rome' })
                                   : "N/D"}
                               </div>
                               <div className="text-emerald-400">
@@ -8881,7 +8864,7 @@ export default function DashboardPA() {
                               {item.data_richiesta
                                 ? new Date(
                                     item.data_richiesta
-                                  ).toLocaleDateString("it-IT")
+                                  ).toLocaleDateString("it-IT", { timeZone: "Europe/Rome" })
                                 : "-"}
                             </div>
                             {(item.stato === 'RICHIESTA' || item.stato === 'PAGATO') && (
@@ -9102,7 +9085,7 @@ export default function DashboardPA() {
                               {item.data_scadenza
                                 ? new Date(
                                     item.data_scadenza
-                                  ).toLocaleDateString("it-IT")
+                                  ).toLocaleDateString("it-IT", { timeZone: "Europe/Rome" })
                                 : "N/D"}
                             </div>
                           </div>
@@ -9631,7 +9614,7 @@ export default function DashboardPA() {
                                   <span className="text-xs text-[#e8fbff]/50">
                                     {new Date(msg.created_at).toLocaleDateString(
                                       "it-IT",
-                                      {
+                                      { timeZone: 'Europe/Rome', 
                                         day: "2-digit",
                                         month: "short",
                                         hour: "2-digit",
@@ -9698,8 +9681,7 @@ export default function DashboardPA() {
                                   <span className="text-xs text-[#e8fbff]/50">
                                     {new Date(
                                       risposta.created_at
-                                    ).toLocaleDateString("it-IT", {
-                                      day: "2-digit",
+                                    ).toLocaleDateString("it-IT", { timeZone: 'Europe/Rome', day: "2-digit",
                                       month: "short",
                                       hour: "2-digit",
                                       minute: "2-digit",
@@ -9924,7 +9906,7 @@ export default function DashboardPA() {
                             }`}>{riunione.priorita_livello || 'NORMALE'}</Badge>
                           </div>
                           <p className="text-[#e8fbff]/50 text-xs">
-                            {new Date(riunione.data_inizio).toLocaleString('it-IT', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            {new Date(riunione.data_inizio).toLocaleString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                             {' • '}{riunione.durata_minuti} min
                             {riunione.tipo && ` • ${riunione.tipo}`}
                           </p>
@@ -9976,7 +9958,7 @@ export default function DashboardPA() {
                         <div className="flex-1">
                           <p className="text-[#e8fbff] text-sm font-medium">{task.titolo}</p>
                           <p className="text-[#e8fbff]/40 text-xs">
-                            {task.scadenza && `Scadenza: ${new Date(task.scadenza).toLocaleDateString('it-IT')}`}
+                            {task.scadenza && `Scadenza: ${new Date(task.scadenza).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' })}`}
                             {task.assegnato_a_nome && ` • ${task.assegnato_a_nome}`}
                           </p>
                         </div>
@@ -10039,8 +10021,8 @@ export default function DashboardPA() {
                       <button onClick={() => { const d = new Date(a99xCalendarioData); d.setDate(d.getDate() - 7); setA99xCalendarioData(d); }} className="px-2 py-1 bg-[#0b1220] border border-[#8b5cf6]/30 rounded text-[#e8fbff]/70 text-xs hover:border-[#8b5cf6]">&larr;</button>
                       <span className="text-[#e8fbff] text-sm font-medium min-w-[180px] text-center">
                         {a99xCalendarioVista === 'settimana'
-                          ? `${(() => { const d = new Date(a99xCalendarioData); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); d.setDate(diff); return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }); })()} - ${(() => { const d = new Date(a99xCalendarioData); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? 0 : 7); d.setDate(diff); return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }); })()}`
-                          : a99xCalendarioData.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
+                          ? `${(() => { const d = new Date(a99xCalendarioData); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); d.setDate(diff); return d.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', day: 'numeric', month: 'short' }); })()} - ${(() => { const d = new Date(a99xCalendarioData); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? 0 : 7); d.setDate(diff); return d.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', day: 'numeric', month: 'short', year: 'numeric' }); })()}`
+                          : a99xCalendarioData.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', month: 'long', year: 'numeric' })
                         }
                       </span>
                       <button onClick={() => { const d = new Date(a99xCalendarioData); d.setDate(d.getDate() + 7); setA99xCalendarioData(d); }} className="px-2 py-1 bg-[#0b1220] border border-[#8b5cf6]/30 rounded text-[#e8fbff]/70 text-xs hover:border-[#8b5cf6]">&rarr;</button>
@@ -10103,7 +10085,7 @@ export default function DashboardPA() {
                                 {hourRiunioni.map((r: any) => (
                                   <div key={r.id} onClick={() => setA99xDettaglioRiunione(r)} className="bg-[#8b5cf6]/20 border border-[#8b5cf6]/40 rounded px-1.5 py-1 cursor-pointer hover:bg-[#8b5cf6]/30 transition-all mb-0.5">
                                     <p className="text-[9px] text-[#8b5cf6] font-bold truncate">{r.titolo}</p>
-                                    <p className="text-[8px] text-[#e8fbff]/50">{new Date(r.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} · {r.durata_minuti || 30}min</p>
+                                    <p className="text-[8px] text-[#e8fbff]/50">{new Date(r.data_inizio).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit' })} · {r.durata_minuti || 30}min</p>
                                     <p className="text-[7px] text-[#e8fbff]/30 truncate">{r.creato_da_nome || 'MIO HUB'}</p>
                                   </div>
                                 ))}
@@ -10283,7 +10265,7 @@ export default function DashboardPA() {
                         const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
                         const totale = partecipanti.length;
                         const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
-                        const dataRiunione = riunione.data_inizio ? new Date(riunione.data_inizio).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
+                        const dataRiunione = riunione.data_inizio ? new Date(riunione.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
                         return (
                           <div key={riunione.id} className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4">
                             {/* Header riunione */}
@@ -10303,7 +10285,7 @@ export default function DashboardPA() {
                               </div>
                               <div className="flex items-center gap-2">
                                 {riunione.jitsi_link && (
-                                  <a href={riunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">{'\ud83c\udf10'} Jitsi</a>
+                                  <a href={riunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">🌐 Jitsi</a>
                                 )}
                                 <Badge className={`text-[9px] ${
                                   riunione.stato === 'COMPLETATA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
@@ -10332,9 +10314,9 @@ export default function DashboardPA() {
                               <div className="space-y-1.5">
                                 {partecipanti.map((p: any, idx: number) => {
                                   const statoConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
-                                    'CONFERMATO': { bg: 'bg-green-500/15 border-green-500/30', text: 'text-green-400', icon: '\u2705', label: 'Confermato' },
-                                    'RIFIUTATO': { bg: 'bg-red-500/15 border-red-500/30', text: 'text-red-400', icon: '\u274c', label: 'Rifiutato' },
-                                    'INVITATO': { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', icon: '\u23f3', label: 'In attesa' },
+                                    'CONFERMATO': { bg: 'bg-green-500/15 border-green-500/30', text: 'text-green-400', icon: '✅', label: 'Confermato' },
+                                    'RIFIUTATO': { bg: 'bg-red-500/15 border-red-500/30', text: 'text-red-400', icon: '❌', label: 'Rifiutato' },
+                                    'INVITATO': { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', icon: '⏳', label: 'In attesa' },
                                   };
                                   const cfg = statoConfig[p.stato] || statoConfig['INVITATO'];
                                   const tipoConfig: Record<string, { color: string; label: string }> = {
@@ -10377,7 +10359,7 @@ export default function DashboardPA() {
                                 </div>
                                 {riunione.jitsi_link && (
                                   <a href={riunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="mt-2 w-full px-4 py-2 bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 text-[#8b5cf6] rounded-lg text-xs font-medium hover:bg-[#8b5cf6]/30 transition-all flex items-center justify-center gap-2">
-                                    \ud83c\udfac Apri Videoconferenza Jitsi
+                                    🎬 Apri Videoconferenza Jitsi
                                   </a>
                                 )}
                               </div>
@@ -10386,12 +10368,12 @@ export default function DashboardPA() {
                             {isAssociazioneImpersonation() && riunione.mio_stato === 'CONFERMATO' && (
                               <div className="mt-3 pt-3 border-t border-green-500/20">
                                 <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-                                  <span className="text-green-400 text-sm">\u2705</span>
+                                  <span className="text-green-400 text-sm">✅</span>
                                   <span className="text-green-400 text-xs font-medium">Hai confermato la partecipazione</span>
                                 </div>
                                 {riunione.jitsi_link && (
                                   <a href={riunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="mt-2 w-full px-4 py-2.5 bg-gradient-to-r from-[#8b5cf6] to-[#6366f1] text-white rounded-lg text-sm font-bold hover:from-[#7c3aed] hover:to-[#4f46e5] transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2">
-                                    \ud83c\udfac Partecipa alla Videoconferenza
+                                    🎬 Partecipa alla Videoconferenza
                                   </a>
                                 )}
                               </div>
@@ -10400,7 +10382,7 @@ export default function DashboardPA() {
                             {isAssociazioneImpersonation() && riunione.mio_stato === 'RIFIUTATO' && (
                               <div className="mt-3 pt-3 border-t border-red-500/20">
                                 <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-                                  <span className="text-red-400 text-sm">\u274c</span>
+                                  <span className="text-red-400 text-sm">❌</span>
                                   <span className="text-red-400 text-xs font-medium">Hai rifiutato l'invito</span>
                                 </div>
                               </div>
@@ -10613,7 +10595,7 @@ export default function DashboardPA() {
                       <div className="bg-[#0b1220] rounded-lg p-4 space-y-2">
                         <h4 className="text-[#e8fbff] font-semibold">{a99xInvitaSuccesso.riunione?.titolo || 'Riunione'}</h4>
                         {a99xInvitaSuccesso.riunione?.data_inizio && (
-                          <p className="text-[#e8fbff]/60 text-sm">Data: {new Date(a99xInvitaSuccesso.riunione.data_inizio).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' })}</p>
+                          <p className="text-[#e8fbff]/60 text-sm">Data: {new Date(a99xInvitaSuccesso.riunione.data_inizio).toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'full', timeStyle: 'short' })}</p>
                         )}
                         {a99xInvitaSuccesso.riunione?.modalita && (
                           <p className="text-[#e8fbff]/60 text-sm">Modalita: {a99xInvitaSuccesso.riunione.modalita}</p>
@@ -11323,8 +11305,8 @@ export default function DashboardPA() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-[#0b1220] rounded-lg p-3 border border-[#8b5cf6]/10">
                         <p className="text-[#e8fbff]/40 text-[10px] uppercase">Data e Ora</p>
-                        <p className="text-[#e8fbff] text-sm font-medium">{new Date(a99xDettaglioRiunione.data_inizio).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                        <p className="text-[#e8fbff]/70 text-xs">{new Date(a99xDettaglioRiunione.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - {a99xDettaglioRiunione.durata_minuti} min</p>
+                        <p className="text-[#e8fbff] text-sm font-medium">{new Date(a99xDettaglioRiunione.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                        <p className="text-[#e8fbff]/70 text-xs">{new Date(a99xDettaglioRiunione.data_inizio).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit' })} - {a99xDettaglioRiunione.durata_minuti} min</p>
                       </div>
                       <div className="bg-[#0b1220] rounded-lg p-3 border border-[#8b5cf6]/10">
                         <p className="text-[#e8fbff]/40 text-[10px] uppercase">Modalità</p>
