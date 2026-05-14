@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.23.0 (Rimanda/Elimina Riunione + Accetta/Rifiuta Associazioni + App Impresa Conferma Video)
+> **Versione:** 10.24.0 (Fix InvitoNotifier + Timezone Europe/Rome + Responsabili Associazione)
 > **Data:** 14 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,14 +9,34 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `f6101de` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `2b715e6` (master) — dms-hub-app-new |
+> | **GitHub Backend** | Allineato | `d71afaf` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `b1a74c3` (master) — dms-hub-app-new |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
 >
 > ---
 > ---
+### CHANGELOG v10.24.0 (14 Mag 2026)
+**Fix InvitoNotifier Popup, Timezone Europe/Rome, Emoji, Stato Persistente App, Responsabili Associazione**
+
+**Stato deploy:**
+| Sistema | Commit | Stato |
+|---|---|---|
+| GitHub `mihub-backend-rest` master | `d71afaf` | Allineato |
+| GitHub `dms-hub-app-new` master | `b1a74c3` | Allineato |
+| Hetzner backend (api.miohub.it) | Autodeploy | In corso |
+| Vercel frontend (miohub.it) | Autodeploy | In corso |
+
+**Fix implementati:**
+1. **InvitoNotifier popup non appariva** — BUG CRITICO: sessionStorage usa `entityType` non `role`. Fixato il check per riconoscere associazioni e imprese impersonate. Aggiunto check `is_super_admin` per il super admin.
+2. **Fuso orario sventrato** — Aggiunto `timeZone: 'Europe/Rome'` a TUTTE le chiamate `toLocaleString/toLocaleDateString/toLocaleTimeString` in DashboardPA, AppImpresaNotifiche, InvitoNotifier e backend.
+3. **Emoji rotte** — Sostituite escape sequences `\u2705`, `\ud83c\udfac` con emoji reali in DashboardPA e AppImpresaNotifiche.
+4. **App Impresa stato persistente** — Quando si apre una notifica INVITO_RIUNIONE già accettata/rifiutata, ora legge `mio_stato` dal backend via `le-mie-riunioni` e mostra lo stato corretto (Partecipa Video / Rifiutato) invece di rimostrare i pulsanti.
+5. **Responsabili Associazione** — Nuova tabella `responsabili_associazione` con CRUD completo. Nuovo tab "Responsabili" in AnagraficaAssociazionePanel con form aggiungi/modifica/elimina. Campi: nome, cognome, ruolo, email, telefono, settore, note.
+6. **Backend endpoint responsabili** — GET/POST `/:id/responsabili`, PUT/DELETE `/responsabili/:responsabileId`.
+
+---
 ### CHANGELOG v10.23.0 (14 Mag 2026)
 **Rimanda/Elimina Riunione, Accetta/Rifiuta Associazioni, InvitoNotifier Responsive + Settore, App Impresa Conferma Video**
 
