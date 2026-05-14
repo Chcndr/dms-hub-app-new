@@ -10006,7 +10006,9 @@ export default function DashboardPA() {
                 </CardHeader>
                 <CardContent>
                   {a99xCalendarioVista === 'settimana' ? (
-                    <div className="grid grid-cols-7 gap-2">
+                    <div className="grid grid-cols-[50px_repeat(7,1fr)] gap-0">
+                      {/* Header giorni */}
+                      <div className="text-center text-[10px] text-[#e8fbff]/30 font-medium py-2"></div>
                       {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map((g, i) => {
                         const d = new Date(a99xCalendarioData);
                         const day = d.getDay();
@@ -10015,47 +10017,59 @@ export default function DashboardPA() {
                         cellDate.setDate(diff);
                         const dateStr = cellDate.toISOString().split('T')[0];
                         const isToday = dateStr === new Date().toISOString().split('T')[0];
-                        const dayRiunioni = a99xRiunioni.filter((r: any) => r.data_inizio && r.data_inizio.startsWith(dateStr));
-                        const dayPren = a99xPrenotazioni.filter((p: any) => p.data_appuntamento === dateStr);
-                        const dayInviti = a99xInvitiRicevuti.filter((inv: any) => inv.data_inizio && inv.data_inizio.startsWith(dateStr));
                         return (
-                          <div key={i} className={`bg-[#0b1220] rounded-lg p-3 min-h-[120px] border ${isToday ? 'border-[#8b5cf6]' : 'border-[#8b5cf6]/10'}`}>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-[10px] text-[#e8fbff]/50 font-medium">{g}</span>
-                              <span className={`text-sm font-bold ${isToday ? 'text-[#8b5cf6] bg-[#8b5cf6]/20 w-7 h-7 rounded-full flex items-center justify-center' : 'text-[#e8fbff]/70'}`}>{cellDate.getDate()}</span>
-                            </div>
-                            <div className="space-y-1">
-                              {dayRiunioni.map((r: any) => (
-                                <div key={r.id} onClick={() => setA99xDettaglioRiunione(r)} className="bg-[#8b5cf6]/15 border border-[#8b5cf6]/30 rounded px-2 py-1 cursor-pointer hover:bg-[#8b5cf6]/25 transition-all">
-                                  <p className="text-[9px] text-[#8b5cf6] font-medium truncate">{r.titolo}</p>
-                                  <p className="text-[8px] text-[#e8fbff]/40">{new Date(r.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</p>
-                                  {r.partecipanti && r.partecipanti.length > 0 && (
-                                    <p className="text-[7px] text-[#e8fbff]/30 truncate mt-0.5">{r.partecipanti.map((p: any) => p.nome).join(', ')}</p>
-                                  )}
-                                </div>
-                              ))}
-                              {dayInviti.map((inv: any) => (
-                                <div key={`inv-${inv.id}`} className={`rounded px-2 py-1 border ${inv.partecipante_stato === 'INVITATO' ? 'bg-[#f59e0b]/15 border-[#f59e0b]/30' : inv.partecipante_stato === 'CONFERMATO' ? 'bg-[#10b981]/15 border-[#10b981]/30' : 'bg-[#ef4444]/15 border-[#ef4444]/30'}`}>
-                                  <p className={`text-[9px] font-medium truncate ${inv.partecipante_stato === 'INVITATO' ? 'text-[#f59e0b]' : inv.partecipante_stato === 'CONFERMATO' ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>{inv.titolo}</p>
-                                  <p className="text-[8px] text-[#e8fbff]/40">{new Date(inv.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - Invito</p>
-                                  {inv.partecipante_stato === 'INVITATO' && inv.token && (
-                                    <div className="flex gap-1 mt-1">
-                                      <button onClick={() => rispondiA99xInvito(inv.token, 'accetta')} className="text-[8px] bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30 rounded px-1.5 py-0.5 hover:bg-[#10b981]/40">Accetta</button>
-                                      <button onClick={() => rispondiA99xInvito(inv.token, 'rifiuta')} className="text-[8px] bg-[#ef4444]/20 text-[#ef4444] border border-[#ef4444]/30 rounded px-1.5 py-0.5 hover:bg-[#ef4444]/40">Rifiuta</button>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                              {dayPren.map((p: any) => (
-                                <div key={p.id} className="bg-[#14b8a6]/15 border border-[#14b8a6]/30 rounded px-2 py-1">
-                                  <p className="text-[9px] text-[#14b8a6] font-medium truncate">{p.nome} {p.cognome}</p>
-                                  <p className="text-[8px] text-[#e8fbff]/40">{p.ora_inizio} - Prenotazione</p>
-                                </div>
-                              ))}
-                            </div>
+                          <div key={i} className={`text-center py-2 border-b border-l border-[#8b5cf6]/10 ${isToday ? 'bg-[#8b5cf6]/10' : ''}`}>
+                            <span className="text-[10px] text-[#e8fbff]/50 font-medium">{g}</span>
+                            <span className={`ml-1 text-sm font-bold ${isToday ? 'text-[#8b5cf6]' : 'text-[#e8fbff]/70'}`}>{cellDate.getDate()}</span>
                           </div>
                         );
                       })}
+                      {/* Fasce orarie 08:00 - 20:00 */}
+                      {Array.from({ length: 13 }, (_, h) => h + 8).map(hour => (
+                        <React.Fragment key={hour}>
+                          <div className="text-right pr-2 py-2 text-[9px] text-[#e8fbff]/30 border-t border-[#8b5cf6]/5">
+                            {String(hour).padStart(2, '0')}:00
+                          </div>
+                          {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map((_, i) => {
+                            const d = new Date(a99xCalendarioData);
+                            const day = d.getDay();
+                            const diff = d.getDate() - day + (day === 0 ? -6 : 1) + i;
+                            const cellDate = new Date(d);
+                            cellDate.setDate(diff);
+                            const dateStr = cellDate.toISOString().split('T')[0];
+                            const isToday = dateStr === new Date().toISOString().split('T')[0];
+                            // Riunioni in questa fascia oraria
+                            const hourRiunioni = a99xRiunioni.filter((r: any) => {
+                              if (!r.data_inizio || !r.data_inizio.startsWith(dateStr)) return false;
+                              const rHour = new Date(r.data_inizio).getHours();
+                              return rHour === hour;
+                            });
+                            // Prenotazioni in questa fascia
+                            const hourPren = a99xPrenotazioni.filter((p: any) => {
+                              if (p.data_appuntamento !== dateStr || !p.ora_inizio) return false;
+                              const pH = parseInt(p.ora_inizio.split(':')[0], 10);
+                              return pH === hour;
+                            });
+                            return (
+                              <div key={i} className={`border-t border-l border-[#8b5cf6]/5 min-h-[40px] p-0.5 ${isToday ? 'bg-[#8b5cf6]/5' : ''}`}>
+                                {hourRiunioni.map((r: any) => (
+                                  <div key={r.id} onClick={() => setA99xDettaglioRiunione(r)} className="bg-[#8b5cf6]/20 border border-[#8b5cf6]/40 rounded px-1.5 py-1 cursor-pointer hover:bg-[#8b5cf6]/30 transition-all mb-0.5">
+                                    <p className="text-[9px] text-[#8b5cf6] font-bold truncate">{r.titolo}</p>
+                                    <p className="text-[8px] text-[#e8fbff]/50">{new Date(r.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} · {r.durata_minuti || 30}min</p>
+                                    <p className="text-[7px] text-[#e8fbff]/30 truncate">{r.creato_da_nome || 'MIO HUB'}</p>
+                                  </div>
+                                ))}
+                                {hourPren.map((p: any) => (
+                                  <div key={p.id} className="bg-[#14b8a6]/15 border border-[#14b8a6]/30 rounded px-1.5 py-1 mb-0.5">
+                                    <p className="text-[9px] text-[#14b8a6] font-medium truncate">{p.nome} {p.cognome}</p>
+                                    <p className="text-[8px] text-[#e8fbff]/40">{p.ora_inizio}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })}
+                        </React.Fragment>
+                      ))}
                     </div>
                   ) : (
                     <div className="grid grid-cols-7 gap-1">
@@ -10075,13 +10089,13 @@ export default function DashboardPA() {
                           const isToday = dateStr === new Date().toISOString().split('T')[0];
                           const hasRiunioni = a99xRiunioni.some((r: any) => r.data_inizio && r.data_inizio.startsWith(dateStr));
                           const hasPren = a99xPrenotazioni.some((p: any) => p.data_appuntamento === dateStr);
-                          const hasInviti = a99xInvitiRicevuti.some((inv: any) => inv.data_inizio && inv.data_inizio.startsWith(dateStr));
+                          // Inviti rimossi dal calendario mese - solo riunioni e prenotazioni
                           cells.push(
                             <div key={d} className={`text-center py-2 rounded-lg cursor-pointer transition-all hover:bg-[#1a2332] ${isToday ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/40' : ''}`}>
                               <span className={`text-xs ${isToday ? 'text-[#8b5cf6] font-bold' : 'text-[#e8fbff]/70'}`}>{d}</span>
                               <div className="flex justify-center gap-0.5 mt-1">
                                 {hasRiunioni && <div className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]"></div>}
-                                {hasInviti && <div className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></div>}
+
                                 {hasPren && <div className="w-1.5 h-1.5 rounded-full bg-[#14b8a6]"></div>}
                               </div>
                             </div>
@@ -10093,7 +10107,6 @@ export default function DashboardPA() {
                   )}
                   <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#8b5cf6]/10">
                     <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]"></div><span className="text-[10px] text-[#e8fbff]/50">Riunioni</span></div>
-                    <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></div><span className="text-[10px] text-[#e8fbff]/50">Inviti Ricevuti</span></div>
                     <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#14b8a6]"></div><span className="text-[10px] text-[#e8fbff]/50">Prenotazioni</span></div>
                   </div>
                 </CardContent>
