@@ -2077,7 +2077,7 @@ export default function DashboardPA() {
     setA99xInvitaLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const cId = comuneIdFromUrl || '1';
+      const cId = comuneIdFromUrl || '0';
       const body = {
         comune_id: parseInt(cId),
         titolo: a99xInvitaForm.titolo,
@@ -2143,13 +2143,21 @@ export default function DashboardPA() {
       }
 
       if (!cId) {
-        // Super admin senza impersonificazione: mostra tutte le riunioni
-        const riunioniRes = await fetch(`${apiUrl}/api/a99x/riunioni`);
-        const taskRes = await fetch(`${apiUrl}/api/a99x/task`);
+        // Super admin senza impersonificazione: mostra TUTTO (riunioni, task, assessori, disponibilità, prenotazioni)
+        const [riunioniRes, taskRes, prenRes, dispRes, assRes] = await Promise.all([
+          fetch(`${apiUrl}/api/a99x/riunioni`),
+          fetch(`${apiUrl}/api/a99x/task`),
+          fetch(`${apiUrl}/api/a99x/prenotazioni`).catch(() => null),
+          fetch(`${apiUrl}/api/a99x/disponibilita`).catch(() => null),
+          fetch(`${apiUrl}/api/a99x/assessori`).catch(() => null)
+        ]);
         const riunioniData = await riunioniRes.json();
         const taskData = await taskRes.json();
         if (riunioniData.success) setA99xRiunioni(riunioniData.data || []);
         if (taskData.success) setA99xTask(taskData.data || []);
+        if (prenRes) { const d = await prenRes.json(); if (d.success) setA99xPrenotazioni(d.data || []); }
+        if (dispRes) { const d = await dispRes.json(); if (d.success) setA99xDisponibilita(d.data || []); }
+        if (assRes) { const d = await assRes.json(); if (d.success) setA99xAssessori(d.data || []); }
         return;
       }
 
@@ -10169,7 +10177,7 @@ export default function DashboardPA() {
                         <p className="text-[#e8fbff]/50 text-xs">Condividi questo link con i cittadini per prenotare appuntamenti</p>
                       </div>
                       <button onClick={() => {
-                        const url = `${import.meta.env.VITE_API_URL || 'https://api.miohub.it'}/tools/prenota-appuntamento.html?comune=${comuneIdFromUrl || '1'}`;
+                        const url = `${import.meta.env.VITE_API_URL || 'https://api.miohub.it'}/tools/prenota-appuntamento.html?comune=${comuneIdFromUrl || '0'}`;
                         navigator.clipboard.writeText(url);
                         alert('Link copiato negli appunti!');
                       }} className="px-4 py-2 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded-lg text-xs font-medium hover:bg-[#14b8a6]/30 transition-all">
@@ -10287,8 +10295,8 @@ export default function DashboardPA() {
                             ) : (
                               <p className="text-[#e8fbff]/30 text-xs text-center py-2">Nessun invitato per questa riunione</p>
                             )}
-                            {/* Pulsante Aggiungi Partecipante - solo per il creatore */}
-                            {String(riunione.comune_id) === String(comuneIdFromUrl) && (
+                            {/* Pulsante Aggiungi Partecipante - visibile per creatore o super admin */}
+                            {(!comuneIdFromUrl || String(riunione.comune_id) === String(comuneIdFromUrl)) && (
                               <div className="mt-3 pt-3 border-t border-[#8b5cf6]/10">
                                 {a99xAddPartRiunioneId === riunione.id ? (
                                   <div className="space-y-2">
@@ -10876,7 +10884,7 @@ export default function DashboardPA() {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                              comune_id: comuneIdFromUrl || '1',
+                              comune_id: comuneIdFromUrl || '0',
                               titolo: a99xFormTitolo,
                               descrizione: a99xFormDescrizione,
                               tipo: a99xFormTipo,
@@ -11244,7 +11252,7 @@ export default function DashboardPA() {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                              comune_id: comuneIdFromUrl || '1',
+                              comune_id: comuneIdFromUrl || '0',
                               ...a99xAssForm
                             })
                           });
