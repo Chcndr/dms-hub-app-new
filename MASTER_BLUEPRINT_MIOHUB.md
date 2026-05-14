@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.22.0 (Fix Globale comune_id + InvitoNotifier + Calendario + Accetta/Rifiuta)
+> **Versione:** 10.23.0 (Rimanda/Elimina Riunione + Accetta/Rifiuta Associazioni + App Impresa Conferma Video)
 > **Data:** 14 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,14 +9,45 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `dc458c8` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `7894bf9` (master) — dms-hub-app-new |
+> | **GitHub Backend** | Allineato | `f6101de` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `2b715e6` (master) — dms-hub-app-new |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
 >
 > ---
 > ---
+### CHANGELOG v10.23.0 (14 Mag 2026)
+**Rimanda/Elimina Riunione, Accetta/Rifiuta Associazioni, InvitoNotifier Responsive + Settore, App Impresa Conferma Video**
+
+**Stato deploy:**
+| Sistema | Commit | Stato |
+|---|---|---|
+| GitHub `mihub-backend-rest` master | `f6101de` | Allineato |
+| Hetzner backend (api.miohub.it) | `f6101de` | Autodeploy |
+| GitHub `dms-hub-app-new` master | `2b715e6` | Allineato |
+| Vercel frontend (miohub.it) | `2b715e6` | Autodeploy completato |
+
+**Modifiche Backend (a99x-agenda.js):**
+1. **POST /riunioni/:id/rimanda** — Nuovo endpoint: aggiorna data_inizio, resetta tutti i partecipanti a INVITATO, invia notifica RIUNIONE_RIMANDATA a tutti
+2. **DELETE /riunioni/:id** — Migliorato: ora invia notifica RIUNIONE_ANNULLATA a tutti i partecipanti prima di eliminare
+3. **GET /le-mie-riunioni** — Arricchito: aggiunto r.creato_da_tipo e r.comune_id nella query SELECT
+
+**Modifiche Frontend (DashboardPA.tsx):**
+1. **Pulsanti Accetta/Rifiuta per associazioni** — Nella sezione Conferme Inviti, se l'utente è associazione e mio_stato=INVITATO, mostra pulsanti verdi/rossi
+2. **Pulsanti Rimanda Riunione / Elimina Evento** — Per il creatore (comune_id match), mostra pulsanti con modale conferma + date picker per rimandare
+3. **State aggiunti:** a99xRimandaRiunioneId, a99xRimandaNuovaData, a99xEliminaRiunioneId + funzioni rimandaRiunione/eliminaRiunione
+
+**Modifiche Frontend (InvitoNotifier.tsx):**
+1. **Settore/tipo creatore** — Aggiunto campo creato_da_tipo all'interfaccia InvitoData e visualizzato nel popup come badge colorato
+2. **Responsive mobile** — Popup con max-h-[80vh] overflow-y-auto, larghezza w-[calc(100vw-2rem)] sm:w-96, testo responsive
+
+**Modifiche Frontend (AppImpresaNotifiche.tsx):**
+1. **Blocco INVITO_RIUNIONE** — Quando la notifica selezionata è tipo INVITO_RIUNIONE, mostra popup con pulsanti Conferma/Rinuncia
+2. **Pulsante Partecipa Video** — Dopo conferma, mostra badge verde + pulsante viola "Partecipa alla Videoconferenza" con link Jitsi
+3. **State aggiunti:** invRiunioneStato, invRiunioneLink (resettati al cambio notifica)
+
+---
 ### CHANGELOG v10.22.0 (14 Mag 2026)
 **Fix Globale comune_id, InvitoNotifier Universale, Calendario Aggiornato, Pulsanti Accetta/Rifiuta**
 
