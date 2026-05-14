@@ -1869,6 +1869,10 @@ export default function DashboardPA() {
   const [a99xEliminaRiunioneId, setA99xEliminaRiunioneId] = useState<number | null>(null);
   const [a99xEliminaLoading, setA99xEliminaLoading] = useState(false);
 
+  // === Riunioni associazione per sezione Enti & Associazioni ===
+  const [entiAssocRiunioni, setEntiAssocRiunioni] = useState<any[]>([]);
+  const [entiAssocRiunioniLoading, setEntiAssocRiunioniLoading] = useState(false);
+
   // Ricerca contatti per aggiungere partecipante
   const searchContactsForAdd = async (q: string) => {
     if (q.length < 2) { setA99xAddPartResults([]); return; }
@@ -2235,7 +2239,28 @@ export default function DashboardPA() {
     fetchA99xInviti();
   }, [comuneIdFromUrl]);
 
-  const espandiMessaggiInviatiPerImpresa = (messaggi: any[] = []) =>
+  // === Fetch riunioni per sezione Enti & Associazioni ===
+  const fetchEntiAssocRiunioni = async () => {
+    const imp = getImpersonationParams();
+    const assocId = imp.associazioneId || new URLSearchParams(window.location.search).get('associazione_id');
+    if (!assocId) { setEntiAssocRiunioni([]); return; }
+    setEntiAssocRiunioniLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      const res = await fetch(`${apiUrl}/api/a99x/le-mie-riunioni?riferimento_id=${assocId}&tipo=ASSOCIAZIONE`);
+      const data = await res.json();
+      if (data.success) setEntiAssocRiunioni(data.data || []);
+    } catch (err) { console.error('Errore fetch riunioni enti/assoc:', err); }
+    finally { setEntiAssocRiunioniLoading(false); }
+  };
+
+  React.useEffect(() => {
+    fetchEntiAssocRiunioni();
+    const interval = setInterval(fetchEntiAssocRiunioni, 20000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const espandiMessaggiInviatiPerImpresaa = (messaggi: any[] = []) =>
     messaggi.flatMap((m: any) => {
       const dettagli = Array.isArray(m.destinatari_dettaglio)
         ? m.destinatari_dettaglio
@@ -8372,6 +8397,136 @@ export default function DashboardPA() {
                     </div>
                   </CardContent>
                 </Card>
+                {/* === Le Mie Riunioni PA (inviti ricevuti dall'associazione) === */}
+                {entiAssocRiunioni.length > 0 && (
+                  <Card className="bg-[#1a2332] border-[#8b5cf6]/20">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                          <Users className="h-5 w-5 text-[#8b5cf6]" />
+                          Le Mie Riunioni PA
+                          <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-[10px]">{entiAssocRiunioni.length}</Badge>
+                        </CardTitle>
+                        <button onClick={fetchEntiAssocRiunioni} className="px-3 py-1.5 border border-[#8b5cf6]/30 text-[#8b5cf6] rounded-lg text-xs hover:bg-[#8b5cf6]/10 transition-all flex items-center gap-1">
+                          <RefreshCw className={`w-3 h-3 ${entiAssocRiunioniLoading ? 'animate-spin' : ''}`} /> Aggiorna
+                        </button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {entiAssocRiunioni.map((r: any) => {
+                        const partecipanti = r.partecipanti || [];
+                        const confermati = partecipanti.filter((p: any) => p.stato === 'CONFERMATO').length;
+                        const rifiutati = partecipanti.filter((p: any) => p.stato === 'RIFIUTATO').length;
+                        const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
+                        const totale = partecipanti.length;
+                        const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
+                        const dataR = r.data_inizio ? new Date(r.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
+                        const mioStatoColors: Record<string, string> = {
+                          'CONFERMATO': 'bg-green-500/20 text-green-400 border-green-500/30',
+                          'RIFIUTATO': 'bg-red-500/20 text-red-400 border-red-500/30',
+                          'INVITATO': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+                        };
+                        const now = new Date();
+                        const riunioneDate = r.data_inizio ? new Date(r.data_inizio) : null;
+                        const durata = r.durata_minuti || 60;
+                        const fineRiunione = riunioneDate ? new Date(riunioneDate.getTime() + durata * 60000) : null;
+                        const isScaduta = fineRiunione ? fineRiunione < now : false;
+                        return (
+                          <div key={r.id} className={`bg-[#0b1220] border rounded-lg p-4 ${isScaduta ? 'border-[#e8fbff]/10 opacity-60' : 'border-[#8b5cf6]/20'}`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <span className="text-lg">{isScaduta ? '\u23F0' : '\uD83D\uDCC5'}</span>
+                                <div className="min-w-0">
+                                  <h4 className="text-[#e8fbff] font-semibold text-sm truncate">{r.titolo || 'Riunione'}</h4>
+                                  <p className="text-[#e8fbff]/40 text-[10px]">{dataR}{isScaduta ? ' (conclusa)' : ''}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={`text-[9px] ${mioStatoColors[r.mio_stato] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
+                                  {r.mio_stato === 'CONFERMATO' ? 'Accettato' : r.mio_stato === 'RIFIUTATO' ? 'Rifiutato' : 'In attesa'}
+                                </Badge>
+                                {r.jitsi_link && !isScaduta && (
+                                  <a href={r.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">\uD83C\uDF10 Jitsi</a>
+                                )}
+                              </div>
+                            </div>
+                            {/* Pulsanti ACCETTA / RIFIUTA se stato è INVITATO e c'è il token */}
+                            {!isScaduta && (r.mio_stato === 'INVITATO' || r.partecipante_stato === 'INVITATO') && r.token && (
+                              <div className="flex gap-2 mb-3">
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                      const res = await fetch(`${apiUrl}/api/a99x/invito/${r.token}/accetta`);
+                                      if (res.ok) fetchEntiAssocRiunioni();
+                                    } catch {}
+                                  }}
+                                  className="flex-1 py-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-xs rounded-lg shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-green-700 active:scale-95 transition-all flex items-center justify-center gap-1"
+                                >
+                                  \u2705 ACCETTA
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                      const res = await fetch(`${apiUrl}/api/a99x/invito/${r.token}/rifiuta`);
+                                      if (res.ok) fetchEntiAssocRiunioni();
+                                    } catch {}
+                                  }}
+                                  className="flex-1 py-2 bg-gradient-to-r from-red-500 to-red-700 text-white font-bold text-xs rounded-lg shadow-lg shadow-red-500/30 hover:from-red-600 hover:to-red-800 active:scale-95 transition-all flex items-center justify-center gap-1"
+                                >
+                                  \u274C RIFIUTA
+                                </button>
+                              </div>
+                            )}
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[#e8fbff]/50 text-[10px]">Conferme: {confermati}/{totale}</span>
+                                <span className="text-[#e8fbff]/50 text-[10px]">{percentuale}%</span>
+                              </div>
+                              <div className="w-full bg-[#1a2332] rounded-full h-2 overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${totale > 0 ? ((confermati + rifiutati) / totale) * 100 : 0}%`, background: `linear-gradient(to right, #22c55e ${totale > 0 ? (confermati / (confermati + rifiutati || 1)) * 100 : 0}%, #ef4444 0%)` }}></div>
+                              </div>
+                              <div className="flex items-center gap-3 mt-1.5">
+                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span><span className="text-green-400">{confermati} confermati</span></span>
+                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span><span className="text-red-400">{rifiutati} rifiutati</span></span>
+                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span><span className="text-yellow-400">{inAttesa} in attesa</span></span>
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              {partecipanti.map((p: any, idx: number) => {
+                                const statoConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
+                                  'CONFERMATO': { bg: 'bg-green-500/15 border-green-500/30', text: 'text-green-400', icon: '\u2705', label: 'Confermato' },
+                                  'RIFIUTATO': { bg: 'bg-red-500/15 border-red-500/30', text: 'text-red-400', icon: '\u274C', label: 'Rifiutato' },
+                                  'INVITATO': { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', icon: '\u23F3', label: 'In attesa' },
+                                };
+                                const cfg = statoConfig[p.stato] || statoConfig['INVITATO'];
+                                const tipoConfig: Record<string, { color: string; label: string }> = {
+                                  'IMPRESA': { color: 'text-[#14b8a6]', label: 'Impresa' },
+                                  'ASSOCIAZIONE': { color: 'text-[#f59e0b]', label: 'Associazione' },
+                                  'ASSESSORE': { color: 'text-[#8b5cf6]', label: 'Assessore' },
+                                  'SETTORE': { color: 'text-[#3b82f6]', label: 'Settore' },
+                                  'COMUNE': { color: 'text-[#06b6d4]', label: 'Comune' },
+                                };
+                                const tipoCfg = tipoConfig[p.tipo] || { color: 'text-[#e8fbff]/50', label: p.tipo };
+                                return (
+                                  <div key={idx} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${cfg.bg} transition-all`}>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="text-sm">{cfg.icon}</span>
+                                      <span className="text-[#e8fbff] text-xs font-medium truncate">{p.nome}</span>
+                                      <Badge className={`text-[8px] ${tipoCfg.color} bg-transparent border-current/30`}>{tipoCfg.label}</Badge>
+                                    </div>
+                                    <span className={`text-[10px] font-semibold ${cfg.text}`}>{cfg.label}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* SOTTO-TAB: ASSOCIAZIONI & BANDI */}
@@ -9735,6 +9890,135 @@ export default function DashboardPA() {
                     </div>
                   </CardContent>
                 </Card>
+                {/* === Le Mie Riunioni PA (inviti ricevuti dall'associazione) === */}
+                {entiAssocRiunioni.length > 0 && (
+                  <Card className="bg-[#1a2332] border-[#8b5cf6]/20">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                          <Users className="h-5 w-5 text-[#8b5cf6]" />
+                          Le Mie Riunioni PA
+                          <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-[10px]">{entiAssocRiunioni.length}</Badge>
+                        </CardTitle>
+                        <button onClick={fetchEntiAssocRiunioni} className="px-3 py-1.5 border border-[#8b5cf6]/30 text-[#8b5cf6] rounded-lg text-xs hover:bg-[#8b5cf6]/10 transition-all flex items-center gap-1">
+                          <RefreshCw className={`w-3 h-3 ${entiAssocRiunioniLoading ? 'animate-spin' : ''}`} /> Aggiorna
+                        </button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {entiAssocRiunioni.map((r: any) => {
+                        const partecipanti = r.partecipanti || [];
+                        const confermati = partecipanti.filter((p: any) => p.stato === 'CONFERMATO').length;
+                        const rifiutati = partecipanti.filter((p: any) => p.stato === 'RIFIUTATO').length;
+                        const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
+                        const totale = partecipanti.length;
+                        const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
+                        const dataR = r.data_inizio ? new Date(r.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
+                        const mioStatoColors: Record<string, string> = {
+                          'CONFERMATO': 'bg-green-500/20 text-green-400 border-green-500/30',
+                          'RIFIUTATO': 'bg-red-500/20 text-red-400 border-red-500/30',
+                          'INVITATO': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+                        };
+                        const now = new Date();
+                        const riunioneDate = r.data_inizio ? new Date(r.data_inizio) : null;
+                        const durata = r.durata_minuti || 60;
+                        const fineRiunione = riunioneDate ? new Date(riunioneDate.getTime() + durata * 60000) : null;
+                        const isScaduta = fineRiunione ? fineRiunione < now : false;
+                        return (
+                          <div key={r.id} className={`bg-[#0b1220] border rounded-lg p-4 ${isScaduta ? 'border-[#e8fbff]/10 opacity-60' : 'border-[#8b5cf6]/20'}`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <span className="text-lg">{isScaduta ? '\u23F0' : '\uD83D\uDCC5'}</span>
+                                <div className="min-w-0">
+                                  <h4 className="text-[#e8fbff] font-semibold text-sm truncate">{r.titolo || 'Riunione'}</h4>
+                                  <p className="text-[#e8fbff]/40 text-[10px]">{dataR}{isScaduta ? ' (conclusa)' : ''}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={`text-[9px] ${mioStatoColors[r.mio_stato] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
+                                  {r.mio_stato === 'CONFERMATO' ? 'Accettato' : r.mio_stato === 'RIFIUTATO' ? 'Rifiutato' : 'In attesa'}
+                                </Badge>
+                                {r.jitsi_link && !isScaduta && (
+                                  <a href={r.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">\uD83C\uDF10 Jitsi</a>
+                                )}
+                              </div>
+                            </div>
+                            {!isScaduta && (r.mio_stato === 'INVITATO' || r.partecipante_stato === 'INVITATO') && r.token && (
+                              <div className="flex gap-2 mb-3">
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                      const res = await fetch(`${apiUrl}/api/a99x/invito/${r.token}/accetta`);
+                                      if (res.ok) fetchEntiAssocRiunioni();
+                                    } catch {}
+                                  }}
+                                  className="flex-1 py-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-xs rounded-lg shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-green-700 active:scale-95 transition-all flex items-center justify-center gap-1"
+                                >
+                                  \u2705 ACCETTA
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                      const res = await fetch(`${apiUrl}/api/a99x/invito/${r.token}/rifiuta`);
+                                      if (res.ok) fetchEntiAssocRiunioni();
+                                    } catch {}
+                                  }}
+                                  className="flex-1 py-2 bg-gradient-to-r from-red-500 to-red-700 text-white font-bold text-xs rounded-lg shadow-lg shadow-red-500/30 hover:from-red-600 hover:to-red-800 active:scale-95 transition-all flex items-center justify-center gap-1"
+                                >
+                                  \u274C RIFIUTA
+                                </button>
+                              </div>
+                            )}
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[#e8fbff]/50 text-[10px]">Conferme: {confermati}/{totale}</span>
+                                <span className="text-[#e8fbff]/50 text-[10px]">{percentuale}%</span>
+                              </div>
+                              <div className="w-full bg-[#1a2332] rounded-full h-2 overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${totale > 0 ? ((confermati + rifiutati) / totale) * 100 : 0}%`, background: `linear-gradient(to right, #22c55e ${totale > 0 ? (confermati / (confermati + rifiutati || 1)) * 100 : 0}%, #ef4444 0%)` }}></div>
+                              </div>
+                              <div className="flex items-center gap-3 mt-1.5">
+                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span><span className="text-green-400">{confermati} confermati</span></span>
+                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span><span className="text-red-400">{rifiutati} rifiutati</span></span>
+                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span><span className="text-yellow-400">{inAttesa} in attesa</span></span>
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              {partecipanti.map((p: any, idx: number) => {
+                                const statoConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
+                                  'CONFERMATO': { bg: 'bg-green-500/15 border-green-500/30', text: 'text-green-400', icon: '\u2705', label: 'Confermato' },
+                                  'RIFIUTATO': { bg: 'bg-red-500/15 border-red-500/30', text: 'text-red-400', icon: '\u274C', label: 'Rifiutato' },
+                                  'INVITATO': { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', icon: '\u23F3', label: 'In attesa' },
+                                };
+                                const cfg = statoConfig[p.stato] || statoConfig['INVITATO'];
+                                const tipoConfig: Record<string, { color: string; label: string }> = {
+                                  'IMPRESA': { color: 'text-[#14b8a6]', label: 'Impresa' },
+                                  'ASSOCIAZIONE': { color: 'text-[#f59e0b]', label: 'Associazione' },
+                                  'ASSESSORE': { color: 'text-[#8b5cf6]', label: 'Assessore' },
+                                  'SETTORE': { color: 'text-[#3b82f6]', label: 'Settore' },
+                                  'COMUNE': { color: 'text-[#06b6d4]', label: 'Comune' },
+                                };
+                                const tipoCfg = tipoConfig[p.tipo] || { color: 'text-[#e8fbff]/50', label: p.tipo };
+                                return (
+                                  <div key={idx} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${cfg.bg} transition-all`}>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="text-sm">{cfg.icon}</span>
+                                      <span className="text-[#e8fbff] text-xs font-medium truncate">{p.nome}</span>
+                                      <Badge className={`text-[8px] ${tipoCfg.color} bg-transparent border-current/30`}>{tipoCfg.label}</Badge>
+                                    </div>
+                                    <span className={`text-[10px] font-semibold ${cfg.text}`}>{cfg.label}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* SOTTO-TAB: SCIA & PRATICHE (Associazioni di Categoria) */}

@@ -21,6 +21,7 @@ import {
   Briefcase,
   UserCheck,
   Hash,
+  Pencil,
 } from "lucide-react";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
 
@@ -176,6 +177,13 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
   // Impersonificazione
   const [impersonating, setImpersonating] = useState(false);
 
+  // Responsabili associazione
+  const [responsabili, setResponsabili] = useState<any[]>([]);
+  const [loadingResponsabili, setLoadingResponsabili] = useState(false);
+  const [showResponsabileForm, setShowResponsabileForm] = useState(false);
+  const [responsabileForm, setResponsabileForm] = useState({ nome: '', cognome: '', ruolo: '', email: '', telefono: '', settore: '', note: '' });
+  const [editingResponsabile, setEditingResponsabile] = useState<any>(null);
+
   // Ruoli disponibili
   const RUOLI_ASSOCIAZIONE = [
     {
@@ -286,6 +294,54 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
     }
   };
 
+  const fetchResponsabili = async (id: number) => {
+    setLoadingResponsabili(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/associazioni/${id}/responsabili`);
+      const data = await res.json();
+      if (data.success) setResponsabili(data.responsabili || []);
+    } catch (error) {
+      console.error("Error fetching responsabili:", error);
+    } finally {
+      setLoadingResponsabili(false);
+    }
+  };
+
+  const handleSaveResponsabile = async () => {
+    if (!selectedAssociazione) return;
+    try {
+      if (editingResponsabile) {
+        await fetch(`${API_BASE_URL}/api/associazioni/responsabili/${editingResponsabile.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(responsabileForm),
+        });
+      } else {
+        await fetch(`${API_BASE_URL}/api/associazioni/${selectedAssociazione.id}/responsabili`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(responsabileForm),
+        });
+      }
+      setShowResponsabileForm(false);
+      setEditingResponsabile(null);
+      setResponsabileForm({ nome: '', cognome: '', ruolo: '', email: '', telefono: '', settore: '', note: '' });
+      fetchResponsabili(selectedAssociazione.id);
+    } catch (error) {
+      console.error('Error saving responsabile:', error);
+    }
+  };
+
+  const handleDeleteResponsabile = async (responsabileId: number) => {
+    if (!selectedAssociazione) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/associazioni/responsabili/${responsabileId}`, { method: 'DELETE' });
+      fetchResponsabili(selectedAssociazione.id);
+    } catch (error) {
+      console.error('Error deleting responsabile:', error);
+    }
+  };
+
   useEffect(() => {
     fetchAssociazioni();
   }, []);
@@ -295,6 +351,7 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
       if (activeTab === "fatturazione")
         fetchFatturazione(selectedAssociazione.id);
       if (activeTab === "permessi") fetchPermessi(selectedAssociazione.id);
+      if (activeTab === "contatti") fetchResponsabili(selectedAssociazione.id);
     }
   }, [selectedAssociazione, activeTab]);
 
@@ -1248,6 +1305,82 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
                       )}
                     </div>
                   </div>
+                </div>
+
+                {/* Responsabili Associazione */}
+                <div className="p-4 bg-gray-700/30 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-violet-400 flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Responsabili Operativi
+                      {responsabili.length > 0 && <span className="text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full">{responsabili.length}</span>}
+                    </h4>
+                    <button
+                      onClick={() => { setShowResponsabileForm(true); setEditingResponsabile(null); setResponsabileForm({ nome: '', cognome: '', ruolo: '', email: '', telefono: '', settore: '', note: '' }); }}
+                      className="text-xs px-3 py-1.5 bg-violet-500/20 text-violet-300 rounded-lg hover:bg-violet-500/30 transition-colors flex items-center gap-1"
+                    >
+                      + Aggiungi
+                    </button>
+                  </div>
+
+                  {showResponsabileForm && (
+                    <div className="mb-4 p-3 bg-gray-800/50 rounded-lg border border-violet-500/20 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <input placeholder="Nome" value={responsabileForm.nome} onChange={e => setResponsabileForm(p => ({...p, nome: e.target.value}))} className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
+                        <input placeholder="Cognome" value={responsabileForm.cognome} onChange={e => setResponsabileForm(p => ({...p, cognome: e.target.value}))} className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
+                        <input placeholder="Ruolo" value={responsabileForm.ruolo} onChange={e => setResponsabileForm(p => ({...p, ruolo: e.target.value}))} className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
+                        <input placeholder="Email" value={responsabileForm.email} onChange={e => setResponsabileForm(p => ({...p, email: e.target.value}))} className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
+                        <input placeholder="Telefono" value={responsabileForm.telefono} onChange={e => setResponsabileForm(p => ({...p, telefono: e.target.value}))} className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
+                        <input placeholder="Settore" value={responsabileForm.settore} onChange={e => setResponsabileForm(p => ({...p, settore: e.target.value}))} className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
+                      </div>
+                      <input placeholder="Note" value={responsabileForm.note} onChange={e => setResponsabileForm(p => ({...p, note: e.target.value}))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
+                      <div className="flex gap-2">
+                        <button onClick={handleSaveResponsabile} className="px-4 py-2 bg-violet-500 text-white rounded text-xs font-medium hover:bg-violet-600 transition-colors">{editingResponsabile ? 'Aggiorna' : 'Salva'}</button>
+                        <button onClick={() => { setShowResponsabileForm(false); setEditingResponsabile(null); }} className="px-4 py-2 bg-gray-600 text-white rounded text-xs hover:bg-gray-500 transition-colors">Annulla</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {loadingResponsabili ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+                    </div>
+                  ) : responsabili.length === 0 ? (
+                    <p className="text-gray-500 text-sm text-center py-3">Nessun responsabile aggiunto</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {responsabili.map((r: any) => (
+                        <div key={r.id} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-600/30 hover:border-violet-500/30 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white text-sm font-medium">{r.nome} {r.cognome}</span>
+                              {r.ruolo && <span className="text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded">{r.ruolo}</span>}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                              {r.email && <span>{r.email}</span>}
+                              {r.telefono && <span>{r.telefono}</span>}
+                              {r.settore && <span className="text-violet-300/70">{r.settore}</span>}
+                            </div>
+                            {r.note && <p className="text-xs text-gray-500 mt-1">{r.note}</p>}
+                          </div>
+                          <div className="flex items-center gap-1 ml-2">
+                            <button
+                              onClick={() => { setEditingResponsabile(r); setResponsabileForm({ nome: r.nome || '', cognome: r.cognome || '', ruolo: r.ruolo || '', email: r.email || '', telefono: r.telefono || '', settore: r.settore || '', note: r.note || '' }); setShowResponsabileForm(true); }}
+                              className="p-1.5 text-gray-400 hover:text-cyan-400 transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteResponsabile(r.id)}
+                              className="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.24.0 (Fix InvitoNotifier + Timezone Europe/Rome + Responsabili Associazione)
+> **Versione:** 10.25.0 (Notifiche Riunioni in Enti & Associazioni + Responsabili Admin + Partecipante con Notifica)
 > **Data:** 14 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,14 +9,27 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `d71afaf` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `b1a74c3` (master) — dms-hub-app-new |
+> | **GitHub Backend** | Allineato | (pending push) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | (pending push) — dms-hub-app-new |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
 >
 > ---
 > ---
+### CHANGELOG v10.25.0 (14 Mag 2026)
+**Notifiche Riunioni in Enti & Associazioni, Aggiungi Partecipante con Notifica, Responsabili in Admin e Ricerca-Contatti, App Impresa Stato Persistente Migliorato, Riunioni Scadute**
+
+**Fix implementati:**
+1. **Notifiche riunioni spostate in Enti & Associazioni** — Le card "Le Mie Riunioni PA" ora appaiono nei sotto-tab "Enti Formatori" e "Associazioni & Bandi" della sezione "Enti & Associazioni", NON più nel tab SUAP PRATICHE (NotificheAssociazionePanel). Rimossa la sezione riunioni dal NotificheAssociazionePanel.
+2. **Aggiungi Partecipante con notifica** — L'endpoint POST `/riunioni/:id/partecipanti` ora crea anche un invito con token + notifica INVITO_RIUNIONE, esattamente come `invita-riunione-singolo`.
+3. **Responsabili in ricerca-contatti** — L'endpoint GET `/ricerca-contatti` ora cerca anche nella tabella `responsabili_associazione` (nome, cognome, email, ruolo) e li restituisce come tipo RESPONSABILE.
+4. **Responsabili in vista Admin (Contatti & Referenti)** — Nuova sezione "Responsabili Operativi" nel tab Contatti & Referenti dell'AssociazioniPanel con CRUD completo (aggiungi, modifica, elimina).
+5. **App Impresa stato persistente migliorato** — `getImpresaData()` ora legge da 4 fonti in ordine di priorità: sessionStorage impersonation, localStorage user, localStorage miohub_firebase_user, URL params.
+6. **Riunioni scadute** — Nell'AppImpresaNotifiche le riunioni concluse (data_inizio + durata < now) vengono mostrate con opacity ridotta, icona orologio, label "(conclusa)" e pulsanti Accetta/Rifiuta/Jitsi nascosti.
+7. **crypto import** — Aggiunto `require('crypto')` all'inizio di a99x-agenda.js (prima era solo locale in un endpoint).
+
+---
 ### CHANGELOG v10.24.0 (14 Mag 2026)
 **Fix InvitoNotifier Popup, Timezone Europe/Rome, Emoji, Stato Persistente App, Responsabili Associazione**
 

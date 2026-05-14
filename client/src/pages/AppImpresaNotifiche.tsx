@@ -97,18 +97,54 @@ export default function AppImpresaNotifiche() {
   const firmatoFileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // ID impresa demo (in produzione verrà dall'autenticazione)
+  // v10.25.0: Stato persistente - legge da più fonti di storage (come InvitoNotifier e DashboardImpresa)
   const getImpresaData = () => {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      return {
-        id: user.impresa_id || null,
-        nome: user.impresa_nome || user.name || "Impresa",
-        email: user.email || user.impresa_email || user.username || "",
-      };
+    // 1. Prova sessionStorage impersonation
+    try {
+      const impStr = sessionStorage.getItem('miohub_impersonation');
+      if (impStr) {
+        const imp = JSON.parse(impStr);
+        if (imp.impresaId) {
+          return { id: imp.impresaId, nome: imp.impresaNome || 'Impresa', email: imp.impresaEmail || '' };
+        }
+      }
+    } catch {}
+    // 2. Prova localStorage user (legacy)
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.impresa_id || user.email) {
+          return {
+            id: user.impresa_id || null,
+            nome: user.impresa_nome || user.name || 'Impresa',
+            email: user.email || user.impresa_email || user.username || '',
+          };
+        }
+      }
+    } catch {}
+    // 3. Prova miohub_firebase_user
+    try {
+      const fbStr = localStorage.getItem('miohub_firebase_user');
+      if (fbStr) {
+        const fb = JSON.parse(fbStr);
+        if (fb.impresa_id || fb.email) {
+          return {
+            id: fb.impresa_id || null,
+            nome: fb.impresa_nome || fb.displayName || 'Impresa',
+            email: fb.email || '',
+          };
+        }
+      }
+    } catch {}
+    // 4. Prova URL params
+    const params = new URLSearchParams(window.location.search);
+    const urlId = params.get('impresa_id');
+    const urlEmail = params.get('email');
+    if (urlId || urlEmail) {
+      return { id: urlId ? parseInt(urlId) : null, nome: 'Impresa', email: urlEmail || '' };
     }
-    return { id: null, nome: "Impresa" };
+    return { id: null, nome: 'Impresa', email: '' };
   };
   const impresaData = getImpresaData();
   const IMPRESA_ID = impresaData.id;
@@ -462,29 +498,35 @@ export default function AppImpresaNotifiche() {
                 'RIFIUTATO': 'bg-red-500/20 text-red-400 border-red-500/30',
                 'INVITATO': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
               };
+              // v10.25.0: Riunioni scadute + fuso orario
+              const now = new Date();
+              const riunioneDate = r.data_inizio ? new Date(r.data_inizio) : null;
+              const durata = r.durata_minuti || 60;
+              const fineRiunione = riunioneDate ? new Date(riunioneDate.getTime() + durata * 60000) : null;
+              const isScaduta = fineRiunione ? fineRiunione < now : false;
               return (
-                <Card key={r.id} className="bg-[#1a2332] border-[#8b5cf6]/20">
+                <Card key={r.id} className={`bg-[#1a2332] ${isScaduta ? 'border-[#e8fbff]/10 opacity-60' : 'border-[#8b5cf6]/20'}`}>
                   <CardContent className="p-4">
                     {/* Header riunione */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="text-lg">📅</span>
+                        <span className="text-lg">{isScaduta ? '\u23F0' : '\uD83D\uDCC5'}</span>
                         <div className="min-w-0">
                           <h4 className="text-[#e8fbff] font-semibold text-sm truncate">{r.titolo || 'Riunione'}</h4>
-                          <p className="text-[#e8fbff]/40 text-[10px]">{dataR}</p>
+                          <p className="text-[#e8fbff]/40 text-[10px]">{dataR}{isScaduta ? ' (conclusa)' : ''}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge className={`text-[9px] ${mioStatoColors[r.mio_stato] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
                           {r.mio_stato === 'CONFERMATO' ? 'Accettato' : r.mio_stato === 'RIFIUTATO' ? 'Rifiutato' : 'In attesa'}
                         </Badge>
-                        {r.jitsi_link && (
+                        {r.jitsi_link && !isScaduta && (
                           <a href={r.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">🌐 Jitsi</a>
                         )}
                       </div>
                     </div>
-                    {/* Pulsanti ACCETTA / RIFIUTA se stato è INVITATO e c'è il token */}
-                    {(r.mio_stato === 'INVITATO' || r.partecipante_stato === 'INVITATO') && r.token && (
+                    {/* Pulsanti ACCETTA / RIFIUTA se stato è INVITATO e c'è il token e non scaduta */}
+                    {!isScaduta && (r.mio_stato === 'INVITATO' || r.partecipante_stato === 'INVITATO') && r.token && (
                       <div className="flex gap-2 mb-3">
                         <button
                           onClick={async () => {
