@@ -1865,6 +1865,11 @@ export default function DashboardPA() {
   const [a99xAddPartQuery, setA99xAddPartQuery] = useState('');
   const [a99xAddPartResults, setA99xAddPartResults] = useState<any[]>([]);
   const [a99xAddPartLoading, setA99xAddPartLoading] = useState(false);
+  const [a99xRimandaRiunioneId, setA99xRimandaRiunioneId] = useState<number | null>(null);
+  const [a99xRimandaNuovaData, setA99xRimandaNuovaData] = useState('');
+  const [a99xRimandaLoading, setA99xRimandaLoading] = useState(false);
+  const [a99xEliminaRiunioneId, setA99xEliminaRiunioneId] = useState<number | null>(null);
+  const [a99xEliminaLoading, setA99xEliminaLoading] = useState(false);
 
   // Ricerca contatti per aggiungere partecipante
   const searchContactsForAdd = async (q: string) => {
@@ -2126,6 +2131,49 @@ export default function DashboardPA() {
       fetchA99xInviti();
       fetchA99xData();
     } catch (err) { console.warn('Errore risposta invito:', err); }
+  };
+
+  // Rimanda riunione - cambia data e notifica tutti i partecipanti
+  const rimandaRiunione = async (riunioneId: number, nuovaData: string) => {
+    if (!nuovaData) return;
+    setA99xRimandaLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      const resp = await fetch(`${apiUrl}/api/a99x/riunioni/${riunioneId}/rimanda`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nuova_data: nuovaData })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setA99xRimandaRiunioneId(null);
+        fetchA99xData();
+      } else {
+        console.warn('Errore rimanda riunione:', data.error);
+      }
+    } catch (err) { console.warn('Errore rimanda riunione:', err); }
+    setA99xRimandaLoading(false);
+  };
+
+  // Elimina riunione e notifica tutti i partecipanti
+  const eliminaRiunione = async (riunioneId: number) => {
+    setA99xEliminaLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      const resp = await fetch(`${apiUrl}/api/a99x/riunioni/${riunioneId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notifica_partecipanti: true })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setA99xEliminaRiunioneId(null);
+        fetchA99xData();
+      } else {
+        console.warn('Errore elimina riunione:', data.error);
+      }
+    } catch (err) { console.warn('Errore elimina riunione:', err); }
+    setA99xEliminaLoading(false);
   };
 
   const fetchA99xData = async () => {
@@ -10310,8 +10358,55 @@ export default function DashboardPA() {
                             ) : (
                               <p className="text-[#e8fbff]/30 text-xs text-center py-2">Nessun invitato per questa riunione</p>
                             )}
-                            {/* Pulsante Aggiungi Partecipante - visibile per creatore o super admin */}
-                            {(!comuneIdFromUrl || String(riunione.comune_id) === String(comuneIdFromUrl)) && (
+                            {/* Pulsanti Accetta/Rifiuta per l'associazione invitata */}
+                            {isAssociazioneImpersonation() && riunione.mio_stato === 'INVITATO' && riunione.token && (
+                              <div className="mt-3 pt-3 border-t border-[#8b5cf6]/10">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => rispondiA99xInvito(riunione.token, 'accetta')}
+                                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg text-sm font-bold hover:from-green-500 hover:to-green-400 transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-2"
+                                  >
+                                    <span>\u2713</span> ACCETTA
+                                  </button>
+                                  <button
+                                    onClick={() => rispondiA99xInvito(riunione.token, 'rifiuta')}
+                                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg text-sm font-bold hover:from-red-500 hover:to-red-400 transition-all shadow-lg shadow-red-500/20 flex items-center justify-center gap-2"
+                                  >
+                                    <span>\u2718</span> RIFIUTA
+                                  </button>
+                                </div>
+                                {riunione.jitsi_link && (
+                                  <a href={riunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="mt-2 w-full px-4 py-2 bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 text-[#8b5cf6] rounded-lg text-xs font-medium hover:bg-[#8b5cf6]/30 transition-all flex items-center justify-center gap-2">
+                                    \ud83c\udfac Apri Videoconferenza Jitsi
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                            {/* Stato confermato per l'associazione */}
+                            {isAssociazioneImpersonation() && riunione.mio_stato === 'CONFERMATO' && (
+                              <div className="mt-3 pt-3 border-t border-green-500/20">
+                                <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                                  <span className="text-green-400 text-sm">\u2705</span>
+                                  <span className="text-green-400 text-xs font-medium">Hai confermato la partecipazione</span>
+                                </div>
+                                {riunione.jitsi_link && (
+                                  <a href={riunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="mt-2 w-full px-4 py-2.5 bg-gradient-to-r from-[#8b5cf6] to-[#6366f1] text-white rounded-lg text-sm font-bold hover:from-[#7c3aed] hover:to-[#4f46e5] transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2">
+                                    \ud83c\udfac Partecipa alla Videoconferenza
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                            {/* Stato rifiutato per l'associazione */}
+                            {isAssociazioneImpersonation() && riunione.mio_stato === 'RIFIUTATO' && (
+                              <div className="mt-3 pt-3 border-t border-red-500/20">
+                                <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+                                  <span className="text-red-400 text-sm">\u274c</span>
+                                  <span className="text-red-400 text-xs font-medium">Hai rifiutato l'invito</span>
+                                </div>
+                              </div>
+                            )}
+                            {/* Pulsanti Rimanda/Elimina + Aggiungi Partecipante - visibile per creatore o super admin */}
+                            {(!comuneIdFromUrl || String(riunione.comune_id) === String(comuneIdFromUrl)) && !isAssociazioneImpersonation() && (
                               <div className="mt-3 pt-3 border-t border-[#8b5cf6]/10">
                                 {a99xAddPartRiunioneId === riunione.id ? (
                                   <div className="space-y-2">
@@ -10371,6 +10466,71 @@ export default function DashboardPA() {
                                   >
                                     <UserPlus className="h-3.5 w-3.5" /> Aggiungi Partecipante
                                   </button>
+                                )}
+                                {/* Pulsanti Rimanda e Elimina Evento */}
+                                <div className="flex items-center gap-2 mt-2">
+                                  <button
+                                    onClick={() => { setA99xRimandaRiunioneId(riunione.id); setA99xRimandaNuovaData(''); }}
+                                    className="flex-1 px-3 py-2 bg-[#f59e0b]/15 border border-[#f59e0b]/30 text-[#f59e0b] rounded-lg text-[10px] font-medium hover:bg-[#f59e0b]/25 transition-all flex items-center justify-center gap-1.5"
+                                  >
+                                    <RefreshCw className="h-3 w-3" /> Rimanda Riunione
+                                  </button>
+                                  <button
+                                    onClick={() => setA99xEliminaRiunioneId(riunione.id)}
+                                    className="flex-1 px-3 py-2 bg-red-500/15 border border-red-500/30 text-red-400 rounded-lg text-[10px] font-medium hover:bg-red-500/25 transition-all flex items-center justify-center gap-1.5"
+                                  >
+                                    <Trash2 className="h-3 w-3" /> Elimina Evento
+                                  </button>
+                                </div>
+                                {/* Modale inline Rimanda Riunione */}
+                                {a99xRimandaRiunioneId === riunione.id && (
+                                  <div className="mt-2 p-3 bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-lg space-y-2">
+                                    <p className="text-[#f59e0b] text-xs font-medium">Seleziona nuova data e ora:</p>
+                                    <input
+                                      type="datetime-local"
+                                      value={a99xRimandaNuovaData}
+                                      onChange={(e) => setA99xRimandaNuovaData(e.target.value)}
+                                      className="w-full bg-[#1a2332] border border-[#f59e0b]/30 rounded-lg px-3 py-2 text-[#e8fbff] text-xs"
+                                    />
+                                    <p className="text-[#e8fbff]/40 text-[10px]">Tutti i partecipanti verranno notificati e dovranno riconfermare.</p>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => rimandaRiunione(riunione.id, a99xRimandaNuovaData)}
+                                        disabled={!a99xRimandaNuovaData || a99xRimandaLoading}
+                                        className="flex-1 px-3 py-2 bg-[#f59e0b] text-black rounded-lg text-xs font-bold hover:bg-[#f59e0b]/80 transition-all disabled:opacity-40"
+                                      >
+                                        {a99xRimandaLoading ? 'Rimandando...' : 'Conferma Rimanda'}
+                                      </button>
+                                      <button
+                                        onClick={() => setA99xRimandaRiunioneId(null)}
+                                        className="px-3 py-2 text-[#e8fbff]/50 hover:text-[#e8fbff] text-xs"
+                                      >
+                                        Annulla
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                                {/* Modale inline Elimina Evento */}
+                                {a99xEliminaRiunioneId === riunione.id && (
+                                  <div className="mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg space-y-2">
+                                    <p className="text-red-400 text-xs font-medium">Sei sicuro di voler eliminare questa riunione?</p>
+                                    <p className="text-[#e8fbff]/40 text-[10px]">Tutti i partecipanti verranno notificati dell'annullamento.</p>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => eliminaRiunione(riunione.id)}
+                                        disabled={a99xEliminaLoading}
+                                        className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-40"
+                                      >
+                                        {a99xEliminaLoading ? 'Eliminando...' : 'Conferma Eliminazione'}
+                                      </button>
+                                      <button
+                                        onClick={() => setA99xEliminaRiunioneId(null)}
+                                        className="px-3 py-2 text-[#e8fbff]/50 hover:text-[#e8fbff] text-xs"
+                                      >
+                                        Annulla
+                                      </button>
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             )}

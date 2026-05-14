@@ -34,6 +34,7 @@ interface InvitoData {
   organizzatore_nome?: string;
   organizzatore_email?: string;
   creato_da_nome?: string;
+  creato_da_tipo?: string;
   partecipante_stato: string;
   token: string;
   partecipanti_count?: number;
@@ -207,6 +208,7 @@ export default function InvitoNotifier() {
               importanza: r.importanza || 3,
               organizzatore_nome: r.creato_da_nome,
               creato_da_nome: r.creato_da_nome,
+              creato_da_tipo: r.creato_da_tipo,
               partecipante_stato: r.partecipante_stato,
               token: r.token,
               partecipanti_count: r.partecipanti?.length || 0,
@@ -261,7 +263,7 @@ export default function InvitoNotifier() {
     <>
       {/* Card flottante angolo alto-destra — z-[99998] per stare sotto SpuntaNotifier ma sopra tutto il resto */}
       <div 
-        className={`fixed top-4 right-4 z-[99998] w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl border-2 ${colorScheme.border} shadow-2xl ${colorScheme.glow} overflow-hidden ${colorScheme.pulse}`}
+        className={`fixed top-2 right-2 sm:top-4 sm:right-4 z-[99998] w-[calc(100vw-1rem)] sm:w-[380px] max-w-[400px] max-h-[calc(100vh-1rem)] overflow-y-auto rounded-2xl border-2 ${colorScheme.border} shadow-2xl ${colorScheme.glow} overflow-hidden ${colorScheme.pulse}`}
         style={{ animation: urgenza >= 3 ? 'invito-glow 2s ease-in-out infinite' : undefined }}
       >
         {/* Header con gradiente */}
@@ -340,6 +342,11 @@ export default function InvitoNotifier() {
               <div className="flex items-center gap-2 text-[#e8fbff]/70 text-xs">
                 <Users className="h-3.5 w-3.5 text-[#f59e0b] flex-shrink-0" />
                 <span>Da: <strong className="text-[#e8fbff]">{inv.organizzatore_nome || inv.creato_da_nome}</strong></span>
+              </div>
+            )}
+            {inv.creato_da_tipo && (
+              <div className="flex items-center gap-2 text-[#e8fbff]/50 text-[10px] ml-5">
+                <span>Settore: <strong className="text-[#e8fbff]/70">{inv.creato_da_tipo === 'PA' ? 'Pubblica Amministrazione' : inv.creato_da_tipo}</strong></span>
               </div>
             )}
           </div>

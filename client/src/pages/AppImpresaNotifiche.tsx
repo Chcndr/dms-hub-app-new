@@ -40,6 +40,7 @@ import {
   Loader2,
   CheckCircle2,
   Video,
+  XCircle,
 } from "lucide-react";
 import {
   Card,
@@ -91,6 +92,8 @@ export default function AppImpresaNotifiche() {
   const [invioRisposta, setInvioRisposta] = useState(false);
   const [uploadingFirmato, setUploadingFirmato] = useState(false);
   const [firmatoSuccess, setFirmatoSuccess] = useState(false);
+  const [invRiunioneStato, setInvRiunioneStato] = useState<string | null>(null);
+  const [invRiunioneLink, setInvRiunioneLink] = useState<string>('');
   const firmatoFileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -677,6 +680,8 @@ export default function AppImpresaNotifiche() {
                             key={`ric-${notifica.id}`}
                             onClick={() => {
                               setNotificaSelezionata(notifica);
+                              setInvRiunioneStato(null);
+                              setInvRiunioneLink('');
                               segnaComeLetta(notifica);
                             }}
                             className={`p-3 rounded-lg cursor-pointer transition-all ${
@@ -994,6 +999,96 @@ export default function AppImpresaNotifiche() {
                         </div>
                       </div>
                     )}
+
+                  {/* Blocco INVITO_RIUNIONE — Conferma/Rinuncia + Partecipa Video */}
+                  {notificaSelezionata.tipo_messaggio === "INVITO_RIUNIONE" && (
+                    <div className="bg-gradient-to-r from-[#8b5cf6]/10 to-[#6366f1]/10 border border-[#8b5cf6]/30 rounded-lg p-3 sm:p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-[#8b5cf6]/20 flex items-center justify-center flex-shrink-0">
+                          <Video className="w-5 h-5 text-[#8b5cf6]" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[#e8fbff] font-medium text-sm sm:text-base">Invito Riunione</p>
+                          <p className="text-[#e8fbff]/50 text-xs sm:text-sm">Conferma o rifiuta la tua partecipazione</p>
+                        </div>
+                      </div>
+                      {/* Pulsanti Conferma / Rinuncia */}
+                      {(!invRiunioneStato || invRiunioneStato === 'INVITATO') && (
+                        <div className="flex gap-2 mb-3">
+                          <button
+                            onClick={async () => {
+                              try {
+                                // Cerca il token dall'endpoint le-mie-riunioni
+                                const res = await fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL)}`);
+                                const data = await res.json();
+                                if (data.success) {
+                                  // Trova la riunione corrispondente dalla notifica
+                                  const riunione = data.data?.find((r: any) => 
+                                    notificaSelezionata.messaggio?.includes(r.titolo)
+                                  );
+                                  if (riunione?.token) {
+                                    const accRes = await fetch(`https://api.miohub.it/api/a99x/invito/${riunione.token}/accetta`);
+                                    if (accRes.ok) {
+                                      setInvRiunioneStato('CONFERMATO');
+                                      setInvRiunioneLink(riunione.jitsi_link || '');
+                                    }
+                                  }
+                                }
+                              } catch {}
+                            }}
+                            className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-xs rounded-lg shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-green-700 active:scale-95 transition-all flex items-center justify-center gap-1"
+                          >
+                            <CheckCircle className="w-4 h-4" /> CONFERMA
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL)}`);
+                                const data = await res.json();
+                                if (data.success) {
+                                  const riunione = data.data?.find((r: any) => 
+                                    notificaSelezionata.messaggio?.includes(r.titolo)
+                                  );
+                                  if (riunione?.token) {
+                                    const rifRes = await fetch(`https://api.miohub.it/api/a99x/invito/${riunione.token}/rifiuta`);
+                                    if (rifRes.ok) setInvRiunioneStato('RIFIUTATO');
+                                  }
+                                }
+                              } catch {}
+                            }}
+                            className="flex-1 py-2.5 bg-gradient-to-r from-red-500 to-red-700 text-white font-bold text-xs rounded-lg shadow-lg shadow-red-500/30 hover:from-red-600 hover:to-red-800 active:scale-95 transition-all flex items-center justify-center gap-1"
+                          >
+                            <XCircle className="w-4 h-4" /> RINUNCIA
+                          </button>
+                        </div>
+                      )}
+                      {/* Stato confermato + Pulsante Partecipa Video */}
+                      {invRiunioneStato === 'CONFERMATO' && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg p-2">
+                            <CheckCircle2 className="w-4 h-4 text-green-400" />
+                            <span className="text-green-400 text-xs font-semibold">Partecipazione confermata!</span>
+                          </div>
+                          {invRiunioneLink && (
+                            <a
+                              href={invRiunioneLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block w-full py-3 bg-gradient-to-r from-[#8b5cf6] to-[#6366f1] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#8b5cf6]/30 hover:from-[#7c3aed] hover:to-[#4f46e5] active:scale-95 transition-all text-center"
+                            >
+                              🎥 Partecipa alla Videoconferenza
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {invRiunioneStato === 'RIFIUTATO' && (
+                        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg p-2">
+                          <XCircle className="w-4 h-4 text-red-400" />
+                          <span className="text-red-400 text-xs font-semibold">Hai rifiutato questo invito</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Azioni Rapide */}
                   {isNotificaCorso(notificaSelezionata) ? (
