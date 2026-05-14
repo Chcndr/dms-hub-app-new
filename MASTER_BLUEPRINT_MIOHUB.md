@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.20.0 (A99X Conferme Inviti + Disponibilità Settimanale + Filtro Riunioni + Aggiungi Partecipanti)
+> **Versione:** 10.21.0 (Identità MIO HUB Super Admin + Fix Jitsi Lobby + Fix Middleware comune_id=0)
 > **Data:** 14 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,11 +9,61 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `e22e746` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `6f9f97b` (master) — dms-hub-app-new |
+> | **GitHub Backend** | Allineato | `cabfebf` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `c0029b9` (master) — dms-hub-app-new |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
-> | **Neon (DB)** | Integro | 195+ tabelle, a99x_riunioni con colonna creato_da_nome |
+> | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
+>
+> ---
+> ### CHANGELOG v10.21.0 (14 Mag 2026)
+> **Identità MIO HUB per Super Admin, Fix Jitsi Lobby, Fix Middleware comune_id=0, Eliminazione Duplicati**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `cabfebf` | Allineato |
+> | Hetzner backend (api.miohub.it) | `cabfebf` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `c0029b9` | Allineato |
+> | Vercel frontend (miohub.it) | `c0029b9` | Autodeploy completato |
+>
+> **FEATURE #1: Identità MIO HUB per Super Admin (comune_id=0)**
+>
+> - Il super admin (Andrea Checchi, titolare MIO HUB) ora ha un'identità operativa dedicata con `comune_id=0` e `comuneNome='MIO HUB'`.
+> - Quando accede alla DashboardPA senza impersonificazione, il sistema riconosce automaticamente l'utente e imposta `comuneIdFromUrl='0'` e `comuneNomeFromUrl='MIO HUB'`.
+> - Tutte le riunioni, assessori, disponibilità e task creati dal super admin hanno `comune_id=0` (MIO HUB), NON più `comune_id=1` (Grosseto).
+> - Il pulsante "Aggiungi Partecipante" è ora visibile anche per il super admin (quando `comuneIdFromUrl` è null/0).
+> - Il super admin carica assessori, disponibilità e prenotazioni con `comune_id=0`.
+>
+> **FIX #1: Jitsi Meet — Lobby disabilitata per accesso diretto**
+>
+> - Il servizio `jitsi-service.js` ora genera link con parametri hash per disabilitare la lobby: `config.prejoinConfig.enabled=false`, `config.lobby.enabled=false`, `config.disableDeepLinking=true`.
+> - I partecipanti possono entrare direttamente nella riunione senza attendere approvazione del moderatore.
+> - Le nuove riunioni avranno automaticamente questi parametri nel link Jitsi.
+>
+> **FIX #2: Middleware `validateImpersonation` — Accetta comune_id=0**
+>
+> - Il middleware rifiutava `comune_id=0` con errore "deve essere un numero intero positivo".
+> - Fix: cambiato `parsedComuneId <= 0` in `parsedComuneId < 0` per accettare 0 (MIO HUB).
+>
+> **FIX #3: Migrazione dati da comune_id=1 a comune_id=0**
+>
+> - Riunione "test" (id=1) migrata da `comune_id=1` (Grosseto) a `comune_id=0` (MIO HUB).
+> - Assessori migrati da `comune_id=1` a `comune_id=0`.
+> - Assessore duplicato (id=2) eliminato dal database (hard delete).
+> - Grosseto (comune_id=1) non vede più riunioni che non gli appartengono.
+> - Endpoint `POST /api/a99x/migra-a-miohub` aggiornato con supporto `delete_assessori` per hard delete.
+>
+> **Vincoli negativi (NON FARE):**
+> - NON usare `comune_id=1` come fallback per il super admin — `comune_id=0` è l'identità MIO HUB
+> - NON rifiutare `comune_id=0` nel middleware di validazione — è un valore valido (MIO HUB)
+> - NON usare `parsedComuneId <= 0` nel middleware — deve essere `< 0` per accettare 0
+> - NON generare link Jitsi senza i parametri hash di configurazione (lobby, prejoin, deepLinking)
+> - NON creare assessori duplicati — verificare prima se esiste già
+>
+> **File modificati:**
+> - Frontend: `DashboardPA.tsx` (identità MIO HUB, pulsante aggiungi partecipante per super admin, fetch assessori/disponibilità per super admin)
+> - Backend: `src/services/jitsi-service.js` (lobby disabilitata), `middleware/validateImpersonation.js` (accetta comune_id=0), `routes/a99x-agenda.js` (endpoint migra-a-miohub con hard delete)
 >
 > ---
 > ### CHANGELOG v10.20.0 (14 Mag 2026)
