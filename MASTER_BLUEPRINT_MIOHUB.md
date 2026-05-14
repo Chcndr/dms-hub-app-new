@@ -1,6 +1,6 @@
-# MASTER BLUEPRINT — MIOHUB
+# 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.13.0 — STABILE (A99X Agenda Intelligente — Conferme Inviti, Disponibilità, Filtro Riunioni)
+> **Versione:** 10.20.0 (A99X Conferme Inviti + Disponibilità Settimanale + Filtro Riunioni + Aggiungi Partecipanti)
 > **Data:** 14 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,45 +9,23 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `cefb272` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `208a298` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy da `cefb272` |
-> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `208a298` (autodeploy) |
-> | **Neon (DB)** | Integro | Wallet TCC per impresa, totale_associati=14, documents con atto notarile SCIA, tabella a99x_riunioni con colonna creato_da_nome |
->
-> **Sicurezza — Anti-Scanner Middleware v1.0.0:**
-> - Middleware `antiScanner.js` montato PRIMA dell'apiLogger
-> - Blocco richieste senza User-Agent + honeypot (22 endpoint trappola)
-> - Rate limiting 404: 5 errori/min = ban 15min, honeypot = ban 1h
-> - Logging eventi sicurezza in `mio_agent_logs` (agent='security')
-> - Endpoint stats: `GET /api/security/scanner-stats`
-> - Rilevati 484 tentativi di scanning a maggio da 20+ IP (Bulgaria, Russia, Corea, USA)
->
-> **Integrità DB verificata:**
-> - operator_daily_wallet: regola = 1 solo wallet open PER IMPRESA (non per operatore)
-> - Solo 2 wallet open: id=102 (impresa_id=9, Intim8, 451 TCC/€40) + id=103 (impresa_id=38, MIO TEST, vuoto)
-> - 10 wallet orfani vuoti chiusi come processed
-> - 19 wallet orfani (operator_id=NULL) eliminati in sessione precedente
-> - Wallet 68 (operator_id=1, orfano): chiuso come processed
->
-> **Architettura TCC Wallet (NUOVA v10.8.0):**
-> - Il wallet operatore è ora basato su `impresa_id` (non `operator_id`)
-> - Ogni impresa ha UN SOLO wallet open alla volta
-> - Un operatore può gestire più imprese con wallet separati
-> - Il settlement chiude il wallet e ne crea uno nuovo per la stessa impresa
-> - Backward compatibility: se impresa_id non è passato, fallback a operator_id
+> | **GitHub Backend** | Allineato | `e22e746` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `6f9f97b` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
+> | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
+> | **Neon (DB)** | Integro | 195+ tabelle, a99x_riunioni con colonna creato_da_nome |
 >
 > ---
-> ### CHANGELOG v10.13.0 (14 Mag 2026)
-> **A99X Agenda Intelligente — Conferme Inviti, Disponibilità, Filtro Riunioni, Aggiungi Partecipanti**
+> ### CHANGELOG v10.20.0 (14 Mag 2026)
+> **A99X Conferme Inviti, Disponibilità Settimanale, Filtro Riunioni per Utente, Aggiungi Partecipanti Post-Creazione**
 >
 > **Stato deploy:**
 > | Sistema | Commit | Stato |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | `cefb272` | Allineato |
-> | Hetzner backend (api.miohub.it) | `cefb272` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `208a298` | Allineato |
-> | Vercel frontend | `208a298` | Autodeploy completato |
+> | GitHub `mihub-backend-rest` master | `e22e746` | Allineato |
+> | Hetzner backend (api.miohub.it) | `e22e746` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `6f9f97b` | Allineato |
+> | Vercel frontend (miohub.it) | `6f9f97b` | Autodeploy completato |
 >
 > **FEATURE #1: Tab "Conferme Inviti" in DashboardPA (ex "Prenotazioni")**
 >
@@ -65,6 +43,7 @@
 > - Aggiornamento automatico ogni 20 secondi (tempo reale).
 > - Link Jitsi per accedere alla videoconferenza.
 > - Badge "Accettato/Rifiutato/In attesa" per il proprio stato.
+> - Nuovo endpoint backend `GET /api/a99x/le-mie-riunioni` (accetta email o riferimento_id+tipo).
 >
 > **FEATURE #3: Form "Nuova Disponibilità" rifatto con giorni/orari settimanali**
 >
@@ -97,12 +76,6 @@
 > - Aggiunta auto-migration che crea la colonna `creato_da_nome VARCHAR(255)` se non esiste.
 > - L'INSERT della riunione ora salva anche `creato_da_nome` (nome del comune che crea la riunione).
 >
-> **Nuovo endpoint backend: `GET /api/a99x/le-mie-riunioni`**
->
-> - Accetta `email` o `riferimento_id` + `tipo` come parametri.
-> - Restituisce le riunioni dell'invitato con tutti i partecipanti e il loro stato.
-> - Usato sia dalla dashboard imprese che associazioni.
->
 > **Vincoli negativi (NON FARE):**
 > - NON usare fallback `|| '1'` per `comuneIdFromUrl` — causa visualizzazione riunioni di altri comuni
 > - NON mostrare riunioni A99X a utenti che non hanno un `comune_id` valido nell'URL (es. associazioni in impersonificazione senza comune_id)
@@ -114,1072 +87,355 @@
 > - Backend: `routes/a99x-agenda.js` (endpoint le-mie-riunioni, invita-riunione-singolo, migration creato_da_nome), `routes/notifiche.js` (limite 200)
 >
 > ---
-> ### CHANGELOG v10.12.0 (11 Mag 2026)
-> **Fix Attestati Qualifiche + SCIA Atto Notarile + Cleanup Adempimenti App Impresa**
+> ### CHANGELOG v10.19.0 (14 Mag 2026)
+> **A99X Fase 3A COMPLETATA — Schedulazione Pubblica Nativa, Sistema Inviti Riunione, Ricerca Unificata IPA, Popup Notifica Globale**
 >
 > **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `f6ec9e2` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `f6ec9e2` | Da riavviare PM2 |
-> | GitHub `dms-hub-app-new` master | `703a31b` | Allineato |
-> | Vercel frontend | `703a31b` | Autodeploy completato |
+> | Sistema | Commit | Tag | Stato |
+> |---|---|---|---|
+> | GitHub `mihub-backend-rest` master | `9e36716` | `v10.19.0-a99x-fase3a` | Allineato |
+> | Hetzner backend (api.miohub.it) | `9e36716` | `v10.19.0-a99x-fase3a` | Autodeploy OK |
+> | GitHub `dms-hub-app-new` master | `76339f2` | `v10.19.0-a99x-fase3a` | Allineato |
+> | Vercel frontend (miohub.it) | `76339f2` | `v10.19.0-a99x-fase3a` | Autodeploy OK |
+> | Database Neon | 195 tabelle | — | Stabile (191 + 4 A99X Fase 3A) |
 >
-> **BUG FIX #1: Icona Eye attestato SICUREZZA_LAVORO mancante (App Impresa + Dashboard PA)**
+> **A99X FASE 3A — COMPLETATA (14 Mag 2026):**
 >
-> - **Root cause:** La query in `qualificazioni.js` aveva un filtro `AND ap.collaboratore_id IS NULL` che escludeva gli attestati generati per collaboratori (es. Andrea Checchi, Socio). L'attestato SICUREZZA_LAVORO (ATT-SIC-2026-00005) era stato generato per il collaboratore, non direttamente per l'impresa.
-> - **Fix backend:** Rimosso filtro `collaboratore_id IS NULL` in `routes/qualificazioni.js` — ora la query trova attestati sia dell'impresa che dei collaboratori.
-> - **Fix backend:** Aggiunto campo `attestato_pdf_url` nella query `GET /api/imprese/:id/qualificazioni` in `routes/imprese.js` per la Dashboard PA.
-> - **Fix frontend:** Aggiunta icona Eye (cyan) + Download PDF nella tabella qualificazioni e nella matrice formazione team in `ImpreseQualificazioniPanel.tsx`.
+> *3A.1 Schedulazione Pubblica Nativa (Sostituzione Cal.com):*
+> - 3 nuove tabelle: `a99x_disponibilita`, `a99x_prenotazioni`, `a99x_chiusure`
+> - Router `routes/a99x-scheduling.js` con 12 endpoint (pubblici e PA)
+> - Widget pubblico `prenota-appuntamento.html` (wizard 4 step, email automatiche, link Jitsi)
+> - Sotto-tab "Disponibilità" nel frontend per configurare slot prenotabili
+> - Sotto-tab "Prenotazioni" nel frontend per gestire le richieste dei cittadini
 >
-> **BUG FIX #2: Rimozione card VISURA_CAMERALE e PARTITA_IVA (App Impresa)**
+> *3A.2 Sistema Inviti Riunione:*
+> - Tabella `a99x_inviti` con token univoco per accettazione via email
+> - Sotto-tab "Invita Riunione" nel frontend con form completo e priorità P=UxIxDxS
+> - Endpoint `POST /api/a99x/invita-riunione` (crea riunione, partecipanti, invia email)
+> - Pagine pubbliche di accettazione/rifiuto invito via token
+> - Inviti ricevuti visibili nel Calendario (colore arancione) con bottoni Accetta/Rifiuta inline
 >
-> - Le card gialle "VISURA_CAMERALE" e "PARTITA_IVA" nella sezione Qualifiche dell'app impresa non avevano senso come adempimenti.
-> - **Fix frontend:** Filtrate in `AnagraficaPage.tsx` — escluse sia dalla lista adempimenti che dai mancanti.
+> *3A.3 Ricerca Unificata (IndiceIPA + Imprese + Associazioni):*
+> - Endpoint `GET /api/a99x/ricerca-contatti`
+> - Ricerca frontend con 3 tab: "Cerca Impresa" (turchese), "Cerca Comune/Settore" (viola), "Cerca Associazione/Ente" (rosa)
+> - Precaricamento dati da `/api/imprese`, `/api/comuni/settori`, `/api/associazioni`
+> - Filtro locale istantaneo e selezione multipla con chip colorati
 >
-> **BUG FIX #3: Bottone Apri PDF Atto Notarile nelle richieste SCIA**
->
-> - Le richieste SCIA con atto notarile allegato (salvato in tabella `documents`, link in `richieste_servizi.documenti_allegati`) non mostravano un bottone per visualizzare il PDF.
-> - **Fix backend:** Aggiunto campo `documenti_allegati` nella query `GET /api/associazioni/:id/richieste-servizi` in `routes/associazioni-v9.js`.
-> - **Fix frontend:** Aggiunto bottone "Apri PDF" (giallo, icona FileText) in `GestioneServiziAssociazionePanel.tsx` per le richieste SCIA con documenti allegati.
-> - **Fix frontend:** Aggiunto bottone "Apri Atto Notarile" (giallo, icona FileText) in `NotificheAssociazionePanel.tsx` per le notifiche SCIA ricevute.
->
-> **BUG FIX #4: Gestisci SCIA apre direttamente il form di compilazione**
->
-> - Il bottone "Gestisci" per le richieste SCIA navigava al tab SCIA & Bandi ma non apriva il form.
-> - **Fix frontend:** Aggiunto `openForm: true` nel detail dell'evento `navigate-to-scia-form` in `GestioneServiziAssociazionePanel.tsx` e `NotificheAssociazionePanel.tsx`.
->
-> **Vincoli negativi (NON FARE):**
-> - NON aggiungere filtro `collaboratore_id IS NULL` nelle query attestati — gli attestati dei collaboratori valgono per l'impresa
-> - NON usare card VISURA_CAMERALE e PARTITA_IVA come adempimenti obbligatori — sono dati anagrafici, non qualifiche
-> - Il campo `documenti_allegati` in `richieste_servizi` è un array JSON di URL (es. `['/api/documents/1/download']`) — NON cambiare formato
->
-> **File modificati:**
-> - Frontend: `AnagraficaPage.tsx`, `ImpreseQualificazioniPanel.tsx`, `GestioneServiziAssociazionePanel.tsx`, `NotificheAssociazionePanel.tsx`
-> - Backend: `routes/qualificazioni.js`, `routes/imprese.js`, `routes/associazioni-v9.js`
+> *3A.4 Popup Notifica Globale (InvitoNotifier):*
+> - Componente React globale montato in `App.tsx` (visibile in tutta la dashboard)
+> - Polling ogni 30s per inviti pendenti
+> - Card flottante persistente in alto a destra (non sparisce finché non si accetta/rifiuta)
+> - Colore e animazione glow basati sull'urgenza (Rosso 4-5, Arancione 3, Verde 1-2)
 >
 > ---
-> ### CHANGELOG v10.11.0 (10 Mag 2026)
-> **PDF Attestato Corsi + Popup SCIA con Upload Atto Notarile + Tab Gestisci SCIA + KPI Totale Associati**
+> ### CHANGELOG v10.18.0 (14 Mag 2026)
+> **A99X Fase 1 e Fase 2 COMPLETATE — Sistema email SMTP operativo, Agenda Intelligente, Jitsi Meet, Follow-up automatico, Dismissione MIO Agent**
 >
 > **Stato deploy:**
-> | Sistema | Commit | Stato |
+> | Sistema | Commit | Tag | Stato |
+> |---|---|---|---|
+> | GitHub `mihub-backend-rest` master | `015fac9` | `v10.18.0-a99x-fase2` | Allineato |
+> | Hetzner backend (api.miohub.it) | `015fac9` | `v10.18.0-a99x-fase2` | Autodeploy OK |
+> | GitHub `dms-hub-app-new` master | `6bfb42a` | — | Allineato |
+> | Vercel frontend (miohub.it) | `6bfb42a` | — | Autodeploy OK |
+> | Database Neon | 191 tabelle | — | Stabile (184 + 5 A99X + 2 formazione) |
+>
+> **A99X FASE 1 — COMPLETATA (13-14 Mag 2026):**
+>
+> *1A. Dismissione MIO Agent:*
+> - Tab "MIO Agent" rimosso dal frontend, sostituito con Tab "A99X — Agenda Intelligente"
+> - File legacy `orchestrator.js` e `mioAgent.js` archiviati in `_cantina/`
+> - Zapier NLA completamente rimosso
+>
+> *1B. Sistema Email SMTP Aruba — OPERATIVO:*
+> - Modulo: `src/services/email-service.js` (nodemailer)
+> - Server: `smtps.aruba.it` porta **587 STARTTLS** (NON 465 — bloccata da Hetzner)
+> - Mittente: `info@miohub.it` / Password: `Vivi1791.`
+> - Router: `routes/notifications-smtp.js` — endpoint `/api/mihub/notifications/send` e `/all`
+> - Limite: 10.000 notifiche (rimosso il vecchio limite di 100)
+> - **Verificato:** email test inviata e ricevuta a `checchi@me.com`
+>
+> *1C. Dominio miohub.it:* Già completato in v10.16.0
+>
+> *1E. Integrazione Corsi con Scelta A99X/Esterno:*
+> - Tabelle `formazione_relatori` e `formazione_corso_relatori` create (auto-migration in `routes/formazione.js`)
+> - CRUD relatori operativo: `GET/POST/PUT/DELETE /api/formazione/relatori`
+> - Dialog notifica corso con scelta piattaforma A99X/Esterno implementato in 3 punti:
+>   - `GestioneCorsiAssociazionePanel.tsx`
+>   - `DashboardPA.tsx` (2 punti)
+>   - `NotificheAssociazionePanel.tsx`
+> - Link Jitsi automatico nelle notifiche corsi quando piattaforma = A99X
+> - Checkbox "Invia anche ai relatori" con consenso esplicito dell'ente
+>
+> *1D. Settore TRANSIZIONE_DIGITALE:*
+> - Aggiunto `TRANSIZIONE_DIGITALE` (RTD — art. 17 CAD) a `TIPI_SETTORE` in `routes/comuni.js`
+>
+> **A99X FASE 2 — COMPLETATA (14 Mag 2026):**
+>
+> *2A. Tabelle Database A99X (5 tabelle, auto-migration):*
+> - `a99x_assessori` — Anagrafica assessori con deleghe
+> - `a99x_riunioni` — Riunioni e appuntamenti (con link Jitsi automatico)
+> - `a99x_partecipanti` — Partecipanti alle riunioni
+> - `a99x_task` — Task follow-up con priorità e scadenze
+> - `a99x_follow_up` — Log follow-up automatici con reminder
+> - Pattern: `CREATE TABLE IF NOT EXISTS` all'avvio del router (NON file migrazione separati)
+>
+> *2B. Router A99X Agenda (`routes/a99x-agenda.js`) — 19 endpoint CRUD:*
+> - `GET/POST /api/a99x/assessori` — CRUD assessori
+> - `GET/POST /api/a99x/riunioni` — CRUD riunioni (genera link Jitsi automatico)
+> - `GET/POST /api/a99x/task` — CRUD task follow-up
+> - `GET /api/a99x/dashboard` — statistiche e prossimi eventi
+> - `GET /api/a99x/calendario` — vista calendario
+> - `POST /api/a99x/jitsi/genera-link` — genera link Jitsi standalone
+>
+> *2C. Servizio Jitsi Meet (`src/services/jitsi-service.js`):*
+> - Generazione automatica link: `https://meet.jit.si/a99x-{tipo}-{id}-{random}`
+> - Integrato in: creazione riunioni, notifiche corsi, endpoint standalone
+> - **DECISIONE:** Jitsi Meet pubblico (meet.jit.si) — NON self-hosted (troppo pesante per Hetzner)
+>
+> *2D. Follow-up Automatico (`src/services/a99x-followup-service.js`):*
+> - Algoritmo priorità: **P = U × I × D × S** (Urgenza × Impatto × Dipendenze × Stakeholder)
+> - Reminder email automatici basati su scadenza task
+> - Integrato con email-service.js per invio SMTP
+>
+> *2E. Frontend Tab A99X (DashboardPA.tsx):*
+> - Calendario visuale con prossime riunioni
+> - Card statistiche (riunioni, task, follow-up)
+> - Lista riunioni con badge priorità/stato e pulsante Jitsi
+> - Sezione Task Follow-up con filtri
+> - Dialog "Nuova Riunione" con campi completi + fattori priorità
+> - Card esplicativa algoritmo P = U × I × D × S
+>
+> **DECISIONE STRATEGICA — Cal.com ABBANDONATO:**
+> - Cal.com è andato **closed source** il 14 aprile 2026 (motivi sicurezza AI)
+> - Cal.diy (fork MIT) è esplicitamente "non per produzione/enterprise"
+> - Cal.com/Cal.diy self-hosted è troppo pesante per Hetzner 2vCPU/4GB
+> - **Scelta definitiva:** Soluzione nativa A99X (estensione del sistema esistente)
+> - Schedulazione pubblica (Fase 3A) sarà implementata come modulo interno Node.js + PostgreSQL
+>
+> **STATO COMPONENTI A99X (14 Mag 2026):**
+> | Componente | Stato | File/Endpoint |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | `c49bd92` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `c49bd92` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `ddf4bab` | Allineato |
-> | Vercel frontend | `ddf4bab` | Autodeploy |
+> | Email SMTP Aruba | ✅ OPERATIVO | `src/services/email-service.js`, `routes/notifications-smtp.js` |
+> | Jitsi Meet | ✅ OPERATIVO | `src/services/jitsi-service.js` |
+> | Follow-up Automatico | ✅ OPERATIVO | `src/services/a99x-followup-service.js` |
+> | Router A99X (25+ endpoint) | ✅ OPERATIVO | `routes/a99x-agenda.js` (19 CRUD + 6 inviti/ricerca) |
+> | Tab A99X Frontend (6 sotto-tab) | ✅ OPERATIVO | `DashboardPA.tsx` (Dashboard, Calendario, Invita Riunione, Disponibilità, Prenotazioni, Assessori) |
+> | CRUD Relatori | ✅ OPERATIVO | `routes/formazione.js` |
+> | Scelta A99X/Esterno Corsi | ✅ OPERATIVO | 3 componenti frontend |
+> | Schedulazione Pubblica | ✅ OPERATIVO (Fase 3A) | `routes/a99x-scheduling.js`, `prenota-appuntamento.html` |
+> | Sistema Inviti Riunione | ✅ OPERATIVO (Fase 3A) | `routes/a99x-agenda.js`, `InvitoNotifier.tsx` |
+> | Ricerca Unificata IPA | ✅ OPERATIVO (Fase 3A) | `routes/a99x-agenda.js`, `DashboardPA.tsx` |
+> | Traduzione/STT | 🔲 DA FARE (Fase 3B) | Whisper + DeepL |
+> | Cal.com/Cal.diy | ❌ ABBANDONATO | Closed source, troppo pesante |
+> | MIO Agent | ❌ DISMESSO | Archiviato in `_cantina/` |
 >
-> **FEATURE #1: Fix PDF Attestato Corsi (PresenzeAssociatiPanel.tsx)**
+> **VINCOLI NEGATIVI (cosa NON fare — A99X):**
+> - NON usare porta 465 SMTP — bloccata da Hetzner, usare **587 STARTTLS**
+> - NON installare Cal.com o Cal.diy self-hosted — troppo pesante, closed source
+> - NON dipendere da servizi cloud scheduling esterni — rischio vendor lock-in
+> - NON usare email `info@dms.associates` — il mittente è `info@miohub.it`
+> - NON usare password `Viola1791.` — la password corretta è `Vivi1791.`
+> - NON modificare flusso prenotazione/pagamento corsi esistente
+> - NON rendere obbligatorio il link A99X — l'ente deve poter scegliere
+> - NON inviare notifiche ai relatori senza checkbox consenso dell'ente
+> - NON esporre email relatori alle imprese
+> - `comuneId` in DashboardPA è dentro useEffect — usare `comuneIdFromUrl` (riga ~1066) a livello componente
+> - Token GitHub App (`ghu_`) NON ha permesso `workflows` — non può modificare `.github/workflows/`
+> - NON usare icone lucide-react senza verificare che siano importate nel file (errore "Can't find variable: X/Phone")
+> - NON fare build locale per il frontend — il deploy è automatico da GitHub push su Vercel
+> - NON usare `MIHUB_API` dentro funzioni fuori da useEffect — usare `MIHUB_API_BASE_URL` importato
+> - NON clonare i repo con doppio nesting (es. `mihub-backend-rest/mihub-backend-rest/`) — verificare la struttura dopo il clone
 >
-> - Fix icona Eye per PDF attestato: ora usa `attestato_pdf_url` dal backend invece di costruire URL manualmente.
->
-> **FEATURE #2: Popup SCIA Subingresso con Upload Atto Notarile (AnagraficaPage.tsx)**
->
-> - Nuovi stati: `showSciaPopup`, `sciaFile`, `sciaUploading`.
-> - Funzione `handleConfirmScia` → POST a `/api/bandi/richieste-con-allegato` con FormData (file + metadati).
-> - Popup upload atto notarile per SCIA Subingresso (appare dopo popup mercato).
-> - In `handleRichiestaServizio`: intercetta servizi con nome contenente "scia" → apre popup SCIA.
->
-> **FEATURE #3: Endpoint Upload Atto Notarile SCIA (Backend routes/bandi.js)**
->
-> - Aggiunto `const crypto = require('crypto')` e multer config `uploadRichiesta`.
-> - Nuovo endpoint `POST /richieste-con-allegato` con upload file → salva in `documents`, crea richiesta con `documenti_allegati`, invia notifica all'associazione.
->
-> **FEATURE #4: Tab Gestisci SCIA**
->
-> - `GestioneServiziAssociazionePanel.tsx`: bottone "Gestisci" viola per richieste SCIA → dispatch `navigate-to-scia-form`.
-> - `NotificheAssociazionePanel.tsx`: bottone "Gestisci - Nuova SCIA" per notifiche SCIA ricevute.
-> - `SuapPanel.tsx`: listener `navigate-to-scia-form` → `setActiveTab("pratiche"); setShowSciaForm(true)`.
-> - `DashboardPA.tsx`: listener `navigate-to-scia-form` → `setActiveTab("docs"); setDocsSubTab("scia-pratiche")`.
->
-> **FEATURE #5: KPI Totale Associati (DashboardPA.tsx + Backend routes/stats.js)**
->
-> - KPI card "Totale Associati" con icona UserCheck nella griglia overview (griglia ora `lg:grid-cols-5`).
-> - `totale_associati` aggiunto in `combinedOverview`.
-> - Backend: aggiunta query `tesseramenti_associazione WHERE stato = 'ATTIVO'` nel `Promise.all` di stats/overview.
-> - Campo `totale_associati` nel response JSON.
->
-> **File modificati:**
-> - Frontend: `PresenzeAssociatiPanel.tsx`, `AnagraficaPage.tsx`, `GestioneServiziAssociazionePanel.tsx`, `NotificheAssociazionePanel.tsx`, `SuapPanel.tsx`, `DashboardPA.tsx`
-> - Backend: `routes/bandi.js` (+154 righe), `routes/stats.js` (+7 righe)
+> **ROADMAP A99X (aggiornata):**
+> | Fase | Stato | Contenuto |
+> |---|---|---|
+> | Fase 1 — Consolidamento | ✅ COMPLETATA | SMTP, dismissione MIO Agent, corsi A99X/Esterno, relatori, RTD |
+> | Fase 2 — Agenda Intelligente | ✅ COMPLETATA | Tabelle, endpoint, Jitsi, follow-up, frontend |
+> | Fase 3A — Schedulazione Pubblica | ✅ COMPLETATA | Disponibilità, prenotazioni, widget cittadini, inviti riunione, ricerca IPA |
+> | Fase 3B — Traduzione/STT | 🔲 PIANIFICATA | Whisper + DeepL + Piper |
+> | Fase 4 — Scale-up Nazionale | 🔲 FUTURO | Onboarding nuovi Comuni |
 >
 > ---
-> ### CHANGELOG v10.8.0 (10 Mag 2026)
-> **Wallet TCC basato su impresa_id — Soluzione Definitiva**
->
-> **Root cause:** il wallet cercava per operator_id, ma un operatore (Andrea Checchi, id=42) gestisce
-> più imprese (MIO TEST impresa_id=38, Intim8 impresa_id=9). Risultato: transazioni di Intim8 finivano
-> nel wallet di MIO TEST perché entrambe usavano operator_id=42.
->
-> **Fix implementato:**
-> - Backend: tutti gli endpoint TCC (GET wallet, POST issue, POST redeem-spend, POST settlement)
->   ora cercano/creano wallet per `impresa_id` invece che per `operator_id`
-> - Frontend: HubOperatore.tsx passa `impresa_id` in tutte le chiamate API
-> - DB: wallet corretti (Intim8: 451 TCC/€40, MIO TEST: azzerato post-settlement)
+> ### CHANGELOG v10.16.0 (13 Mag 2026)
+> **Dominio miohub.it attivo + Verifica allineamento completa + Progetto operativo AVA/A99X + Punto di ripristino stabile**
 >
 > **Stato deploy:**
-> | Sistema | Commit | Stato |
+> | Sistema | Commit | Tag | Stato |
+> |---|---|---|---|
+> | GitHub `mihub-backend-rest` master | `423c734` | `STABLE-v10.15.0-20260513` | Allineato |
+> | Hetzner backend (api.mio-hub.me + api.miohub.it) | `423c734` | `STABLE-v10.15.0-20260513` | Autodeploy OK |
+> | GitHub `dms-hub-app-new` master | `d5adacc` | `STABLE-v10.15.0-20260513` | Allineato |
+> | Vercel frontend (miohub.it + www.miohub.it + dms-hub-app-new.vercel.app) | `d5adacc` | `STABLE-v10.15.0-20260513` | Autodeploy |
+> | GitHub `MIO-hub` master | `b42553b` | `STABLE-v44-20260513` | Catalogo v44, 619 endpoint |
+>
+> **NUOVO DOMINIO miohub.it:**
+> - Registrato su Aruba (account: 19791779@aruba.it, utente: Digital Market System)
+> - Scadenza: 13/05/2027
+> - Piano: Dominio con email (5 caselle email incluse)
+> - DNS configurati su Aruba (dns-panel.aruba.it):
+>   - `A` → `@` → `76.76.21.21` (Vercel)
+>   - `CNAME` → `www` → `cname.vercel-dns.com` (Vercel)
+>   - `A` → `api` → `157.90.29.66` (Hetzner)
+>   - Record `mail` e `mx` → IP Aruba (posta elettronica, NON toccare)
+> - Vercel: domini custom `miohub.it` e `www.miohub.it` aggiunti al progetto `dms-hub-app-new`
+> - Hetzner Nginx: file `/etc/nginx/sites-enabled/api.miohub.it.conf` creato con SSL Let's Encrypt (scade 11/08/2026, rinnovo automatico)
+> - CORS: aggiunti `https://miohub.it`, `https://www.miohub.it`, `https://api.miohub.it` in `allowedOrigins` (index.js)
+> - Backup pre-modifica: `index.js.bak.20260513`
+> - Il vecchio dominio `mio-hub.me` e `dms-hub-app-new.vercel.app` continuano a funzionare in parallelo
+>
+> **INDIRIZZI DI ACCESSO AL SISTEMA:**
+> | Componente | Nuovo indirizzo | Vecchio indirizzo (ancora attivo) |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | `c335d65` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `c335d65` | Autodeploy v10.8.0 |
-> | GitHub `dms-hub-app-new` master | `a7be7d0` | Allineato |
-> | Vercel frontend | `a7be7d0` | Autodeploy |
+> | Frontend (App/Dashboard) | `https://miohub.it` | `https://dms-hub-app-new.vercel.app` |
+> | Frontend (www) | `https://www.miohub.it` | — |
+> | Backend API | `https://api.miohub.it` | `https://api.mio-hub.me` |
+> | Backend API (nip.io) | — | `https://mihub.157-90-29-66.nip.io` |
 >
-> **BUG FIX #1: SUAP — Creazione Concessioni (Frontend `e83e9cd` + DB fix)**
+> **PUNTO DI RIPRISTINO STABILE (13 Mag 2026):**
+> - Tag `STABLE-v10.15.0-20260513` su tutti e 3 i repository
+> - Verifica allineamento completata: GitHub ↔ Hetzner ↔ Vercel ↔ Neon tutti sincronizzati
+> - 184 tabelle DB Neon attive e funzionanti
+> - Per ripristinare: `git checkout STABLE-v10.15.0-20260513` su ogni repo
 >
-> - **Autocompilazione Comune Rilascio:** Il campo "Comune Rilascio" nel form concessioni ora si compila automaticamente leggendo il comune impersonalizzato via `getImpersonationParams()` invece di restare vuoto.
-> - **Autocompilazione Oggetto:** Il campo "Oggetto" ora si compila automaticamente in base al tipo concessione selezionato (es. "Concessione Tipo A - Posteggio Mercato").
-> - **Fix errore "Failed to create concession":** La colonna `giorno` era `varchar(50)` e troncava i valori. Allargata a `varchar(255)` direttamente su DB Neon, insieme a `dimensioni_lineari`, `qualita`, `numero_protocollo`, `autorizzazione_precedente_pg`.
+> **ANALISI MIO AGENT vs AVA AI (Decisione strategica):**
+> - **MIO Agent: DEPRECATO** — Zapier NLA non funziona (errore 400), agente SSH insicuro, dati PA su server USA
+> - **AVA AI: OPERATIVA** — Chat AI streaming SSE, Ollama self-hosted, RBAC 4 livelli, Data Access Gateway, sistema quote
+> - **Decisione: Abbandonare MIO Agent, sviluppare AVA AI / Progetto A99X**
+> - Documento progetto operativo: `PROGETTO_OPERATIVO_A99X.md` (nel repo backend)
+> - Roadmap A99X: Fase 1 (immediata) → Fase 2 (estate 2026) → Fase 3 (autunno 2026) → Fase 4 (inizio 2027)
 >
-> **BUG FIX #2: TCC Carbon Credit — Wallet Operatore (Backend `5c07610` → `b6d13d1` + DB fix)**
+> **SISTEMA NOTIFICHE:**
+> - Stato attuale: ✅ OPERATIVO (SMTP Aruba via nodemailer — vedi changelog v10.18.0)
+> - Mittente: `info@miohub.it` porta 587 STARTTLS
+> - Vecchio sistema Zapier NLA: DISMESSO (errore 400, non conforme GDPR)
 >
-> **Root cause:** Le query in `tcc-v2.js` cercavano `settlement_status = 'open'` senza filtrare per operatore univoco. Poiché il settlement è manuale, i wallet restavano "open" per sempre dalla data di creazione. Quando un operatore (es. Intim8, operator_id=42) aveva un vecchio wallet open (id=72, data 2026-02-17), le transazioni nuove (es. redeem del 10 maggio) aggiornavano il wallet vecchio invece di quello corrente. Risultato: gli incassi non venivano conteggiati nel wallet del giorno.
+> **CARTELLA `_cantina/` (nel repo frontend):**
+> - Contiene il vecchio backend dismesso che girava su Vercel (prima della migrazione a Hetzner)
+> - NON è codice attivo — solo archivio storico di riferimento
+> - Schema Drizzle archiviato: 85 tabelle (le restanti ~99 create via SQL raw dal backend REST)
 >
-> **Soluzione definitiva — Regola: UN SOLO WALLET OPEN PER OPERATORE:**
-> - Ogni operatore ha al massimo 1 wallet con `settlement_status = 'open'` alla volta
-> - Le transazioni (issue, redeem) vanno SEMPRE sul wallet open esistente
-> - Solo il settlement chiude il wallet e ne crea uno nuovo
-> - Il GET wallet restituisce quello open, oppure ne crea uno se non esiste
->
-> **Endpoint modificati in `routes/tcc-v2.js`:**
-> - `GET /operator/wallet/:operatorId` — cerca l'unico wallet open (qualsiasi data), crea solo se non esiste
-> - `POST /operator/issue` — cerca l'unico wallet open, aggiorna quello
-> - `POST /operator/redeem-spend` — cerca l'unico wallet open, aggiorna quello
-> - `POST /operator/settlement` — chiude l'unico wallet open, ne crea uno nuovo
->
-> **DB cleanup eseguito:**
-> - Wallet 72 (operator 42, 2026-02-17): `tcc_redeemed` 113→0, chiuso come `processed`
-> - Wallet 100, 101 (operator 260, 2026-05-08): chiusi come `processed` (dati test sporchi)
-> - 19 wallet orfani (operator_id=NULL, 2026-03-04): eliminati
-> - Wallet 103 (operator 42, 2026-05-10): `tcc_redeemed` 0→113, `euro_sales` 0→10.00 (dati corretti)
->
-> **Vincoli negativi (NON FARE):**
-> - NON creare un nuovo wallet open se ne esiste già uno per l'operatore
-> - NON cercare wallet per `settlement_status = 'open'` senza verificare che sia l'unico
-> - NON filtrare wallet per data nelle transazioni — il wallet open è unico e va usato sempre
-> - I wallet dei cittadini (extended_users.wallet_balance) NON sono coinvolti — sono un campo singolo
+> **VINCOLI NEGATIVI (cosa NON fare):**
+> - NON modificare i record DNS `mail` e `mx` su Aruba — servono per la posta elettronica
+> - NON rimuovere il vecchio dominio `mio-hub.me` — deve restare attivo in parallelo
+> - NON cambiare le variabili d'ambiente `VITE_API_URL` nel frontend — restano su `api.mio-hub.me`
+> - NON toccare login, cookie, JWT, sessioni — il cambio dominio è solo a livello DNS/accesso
+> - NON riattivare MIO Agent o Zapier NLA — sistema deprecato
 >
 > ---
-> ### CHANGELOG v10.6.0 (08 Mag 2026)
-> **Fix Modulo TEAM: PDF Attestati compatti in una pagina, Matrice Formazione completa, Auto-calcolo Scadenze e Ore**
+> ### CHANGELOG v10.13.0 (12 Mag 2026)
+> **Moduli ANPR e App IO Backend + Frontend collegato a endpoint reali**
 >
 > **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `51a1ac0` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `51a1ac0` | Autodeploy v10.6.0 |
-> | GitHub `dms-hub-app-new` master | `13c3ef9` | Allineato |
-> | Vercel frontend | `13c3ef9` | Autodeploy |
+> | Sistema | Commit | Tag | Stato |
+> |---|---|---|---|
+> | GitHub `mihub-backend-rest` master | `91689c8` | — | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `91689c8` | — | Autodeploy OK |
+> | GitHub `dms-hub-app-new` master | `6502b57` | — | Allineato |
+> | Vercel frontend | `6502b57` | — | Autodeploy |
 >
-> **FRONTEND (Commits `2b847e3` → `13c3ef9`):**
+> **BACKEND — routes/anpr.js (280+ righe):**
+> - `GET /api/anpr/status` — stato connessione, modalità sandbox/production, CF disponibili
+> - `GET /api/anpr/residenza/:cf` — verifica residenza completa (soggetto + indirizzo + stato civile)
+> - `GET /api/anpr/famiglia/:cf` — stato famiglia (componenti, tipo, data costituzione)
+> - `POST /api/anpr/verifica-batch` — verifica multipla fino a 10 CF
+> - `GET /api/anpr/audit` — storico chiamate ANPR
+> - Modalità sandbox con 5 CF realistici, pronto per PDND production
 >
-> **Form "Registra Nuovo Attestato":**
-> - **Auto-calcolo data scadenza:** Selezionando il tipo di attestato, la data di scadenza si calcola automaticamente in base alla normativa (es. HACCP +3 anni, Sicurezza +5 anni, Preposto +2 anni).
-> - **Auto-compilazione ore:** Il campo ore si compila automaticamente in base al tipo di corso.
-> - **Auto-compilazione Ente Rilascio:** Quando si è in modalità impersonificazione, il nome dell'associazione si inserisce automaticamente come ente di rilascio.
+> **BACKEND — routes/appio.js (370+ righe):**
+> - `GET /api/appio/status` — stato connessione, API key, statistiche invio
+> - `GET /api/appio/templates` — 5 template messaggi (Scadenza, Pagamento, Comunicazione, SCIA, Sanzione)
+> - `GET /api/appio/templates/:id` — dettaglio singolo template
+> - `POST /api/appio/send-message` — invio messaggio con template e parametri
+> - `GET /api/appio/messages` — storico messaggi inviati con filtri
+> - `POST /api/appio/test-connection` — test connessione API App IO
+> - Modalità sandbox (simula invio), pronto per produzione con APPIO_API_KEY
 >
-> **Dashboard PA & Pannelli:**
-> - **Card Corsi:** Le card dei corsi nella sezione "Enti Formatori" ora mostrano il nome dell'associazione impersonificata invece dei nomi hardcoded dal DB.
-> - **Liste Scadenze:** Aggiunti i collaboratori (membri del team) con attestati scaduti/in scadenza, non solo le qualifiche impresa. Mostra il nome del collaboratore con un badge "TEAM".
-> - **Matrice Formazione Team (`MarketCompaniesTab`):** 
->   - Risolto bug critico di rendering (`getStatusBadge`) che mostrava tutto come "Mancante" a causa di case-sensitivity (stati in MAIUSCOLO dal backend).
->   - La matrice ora mostra **TUTTI** gli attestati posseduti dal collaboratore (anche se non obbligatori) e quelli mancanti rispetto agli obbligatori.
->   - Aggiunta icona "📄" per il download immediato del PDF dell'attestato direttamente dalla matrice.
+> **FRONTEND — PiattaformePA.tsx + piattaformePA.ts:**
+> - Rimossi mock APPIO_STATUS, MOCK_TEMPLATES, MOCK_CF_DB
+> - Collegato App IO Panel a endpoint reali (useQuery → getAppIoStatus, getAppIoTemplates)
+> - Collegato ANPR Panel a endpoint reali (useQuery → getAnprStatus, useMutation → verificaResidenza)
+> - Badge dinamici: "Sandbox" (cyan) / "Live" (green) / "Live (PDND)" basati su risposta backend
+> - Risultati verifica mostrano source reale (Sandbox/PDND)
 >
-> **BACKEND (Commits `f204097` → `51a1ac0`):**
->
-> **Generazione PDF Attestati:**
-> - **Compressione Layout:** Riscritto il codice PDFKit (`attestati.js`) per comprimere il layout in **una sola pagina A4** (ridotti margini a 40px, font sizes ottimizzati, spazi `moveDown` ridotti del 40-60%).
-> - **Integrazione Flusso Manuale:** Il `POST /formazione/attestati` ora genera automaticamente il PDF in `attestati_pdf` anche quando l'attestato viene registrato manualmente dalla PA/Associazione.
->
-> **Gestione Dati TEAM vs Impresa:**
-> - **Separazione Corretta:** Il salvataggio degli attestati ora distingue correttamente tra impresa e collaboratore. Se `collaboratore_id` è presente, l'attestato viene salvato **SOLO** in `qualificazioni_collaboratori` e non in `qualificazioni` (impresa).
-> - **Matrice Formazione:** L'endpoint `team/matrice` ora restituisce `tutti_tipi_attestati` e l'`attestato_id` per permettere il download del PDF dal frontend.
-> - **Scadenze:** La query delle scadenze ora usa una `UNION ALL` per includere anche le `qualificazioni_collaboratori` con il calcolo dei giorni reali alla scadenza.
+> **STATO PIATTAFORME PA (aggiornato):**
+> | Piattaforma | Stato Backend | Stato Frontend | Per Produzione |
+> |---|---|---|---|
+> | PDND | Live (collaudo) | Collegato | Client ID + Key ID + RSA |
+> | SSU | Live (in config) | Collegato | Back Office URL |
+> | App IO | Sandbox attivo | Collegato | APPIO_API_KEY |
+> | ANPR | Sandbox attivo | Collegato | PDND configurato |
+> | SSO/ARPA | Live (trial) | Collegato | ARPA_CLIENT_SECRET |
+> | Audit Trail | Live | Collegato | — |
 >
 > ---
-> ### CHANGELOG v10.5.0 (08 Mag 2026)
-> **Popup saldo negativo spunta, protezione SPUNTA_TERMINATA, fix storico aggregazione sessioni**
+> ### CHANGELOG v10.12.0 (12 Mag 2026)
+> **Verifica Firma Digitale CAdES/PAdES + Guida ARPA/SPID + Tab Riconciliazione Incassi**
 >
 > **Stato deploy:**
-> | Sistema | Commit | Stato |
+> | Sistema | Commit | Tag | Stato |
+> |---|---|---|---|
+> | GitHub `mihub-backend-rest` master | `1d80018` | v2.5.0 | Allineato |
+> | Hetzner backend (api.mio-hub.me) | `1d80018` | v2.5.0 | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `c406477` | v2.5.0 | Allineato |
+> | Vercel frontend | `c406477` | v2.5.0 | Autodeploy |
+>
+> **BACKEND — 3 commit (da `f9ea314` a `1d80018`):**
+>
+> **Modulo Verifica Firma Digitale Reale (`routes/firma-verifica.js`, 530+ righe):**
+> - CAdES (.p7m): parsing ASN.1/PKCS#7 con `node-forge`, estrazione PDF originale embedded, verifica firma crittografica
+> - PAdES (.pdf firmato): estrazione ByteRange, parsing firma PKCS#7 embedded nel PDF
+> - Estrazione certificato X.509: CN (nome firmatario), CF (da serialNumber TINIT-), Organizzazione
+> - Verifica crittografica con `openssl cms -verify` (fallback robusto)
+> - Validazione catena di certificazione con CA bundle AgID (6 certificati root)
+> - Rilevamento FEQ: qcStatements OID + QTSP italiani noti (InfoCert, Aruba, Namirial, Poste, Actalis)
+> - Dipendenza: `node-forge 1.4.0`
+>
+> **Integrazione in Endpoint Upload-Firmato (`routes/suap.js`):**
+> - Endpoint `POST /api/suap/pratiche/:id/upload-firmato` ora usa `verificaFirmaDigitale()` per verifica reale
+> - CF firmatario estratto dal certificato X.509 (non più dal body della request)
+> - Stato firma: `VERIFIED` (firma crittograficamente valida), `REJECTED` (firma non valida), `SIGNED` (in attesa verifica manuale)
+> - Response include blocco `verifica_crittografica` con: valida, cn_firmatario, organizzazione, catena_valida, certificato_qualificato, scadenza, errori
+> - Fallback graceful: se modulo non disponibile, accetta come v1
+>
+> **Bundle Certificati CA AgID (`certs/`):**
+> - `AgID-CA.pem`, `IT_tsl3.pem`, `IT_tsl4.pem`, `IT_tsl5.pem`, `IT_tsl6.pem`
+> - `agid-ca-bundle.pem` (solo AgID), `full-ca-bundle.pem` (sistema + AgID)
+>
+> **Guida Registrazione ARPA Toscana (`GUIDA_REGISTRAZIONE_ARPA_SPID.md`):**
+> - Passi per registrazione client OAuth su portale ARPA (oscat.regione.toscana.it)
+> - Configurazione variabili d'ambiente (`ARPA_CLIENT_SECRET`)
+> - Flusso tecnico completo OAuth2 + PKCE (frontend → backend → ARPA → callback)
+> - Mapping ruoli SPID → MIO HUB
+> - Checklist pre-go-live
+>
+> **FRONTEND — 1 commit (`c406477`):**
+>
+> **Tab Riconciliazione Incassi (`WalletPanel.tsx`):**
+> - Componente `RiconciliazioneIncassiTab` (470+ righe) — sostituisce placeholder
+> - 5 card KPI: Totali, In Attesa, Pagate, Scadute, Fallite
+> - Pannello stato gateway PagoPA: provider, ente, modalità (sandbox/produzione)
+> - Toolbar: ricerca per IUV, filtro per stato (dropdown), refresh, pulsante Riconcilia
+> - Tabella posizioni debitorie: IUV, causale, tipo, importo, stato (badge colorato), debitore, date
+> - Dialog "Test Callback": simula callback pagamento E-FIL per test riconciliazione sandbox
+> - Info box: riconciliazione automatica attiva via callback PagoPA/E-FIL
+> - Integra con endpoint: `/api/pagopa/status`, `/posizioni`, `/posizioni/:iuv`, `/riconcilia`, `/simula-callback`
+>
+> **STATO COMPONENTI CHIAVE (12 Mag 2026):**
+> | Componente | Stato | Note |
 > |---|---|---|
-> | GitHub `mihub-backend-rest` master | `f204097` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `f204097` | Autodeploy v10.5.0 |
-> | GitHub `dms-hub-app-new` master | `2b847e3` | Allineato |
-> | Vercel frontend | `2b847e3` | Autodeploy |
->
-> **FRONTEND (1 commit: `0261efb` → `2b847e3`):**
->
-> **SpuntaNotifier — Popup SALDO INSUFFICIENTE alla scelta posteggio:**
-> - **Problema:** Quando uno spuntista con wallet negativo sceglieva un posteggio, il backend restituiva 403 `SALDO_NEGATIVO` ma il frontend faceva solo `console.error` senza mostrare nulla all'utente.
-> - **Fix:** Aggiunto nuovo stato `SALDO_NEGATIVO` all'interfaccia `SpuntaState`. Quando il backend risponde 403, il frontend setta lo stato e mostra un **overlay fullscreen rosso** identico a quello della presenza concessione (icona X, titolo "SALDO INSUFFICIENTE", messaggio saldo, pulsante CHIUDI).
-> - Aggiunti campi `saldo_messaggio` e `stall_number_scelto` all'interfaccia per memorizzare i dettagli.
->
-> **SpuntaNotifier — Protezione SPUNTA_TERMINATA non sovrascrive popup ultimo spuntista:**
-> - **Problema:** Quando l'ultimo spuntista sceglieva il posteggio, il backend emetteva `SPUNTA_TERMINATA` via SSE che arrivava al frontend PRIMA o CONTEMPORANEAMENTE al popup POSTEGGIO_ASSEGNATO, sovrascrivendolo.
-> - **Fix frontend:** Nel handler SSE `SPUNTA_TERMINATA`, aggiunto check: se lo stato è già `ASSEGNATO` o `SALDO_NEGATIVO`, il messaggio viene **ignorato** (return prev). La chiusura SSE avviene con `setTimeout(500ms)` per sicurezza.
-> - **Fix backend:** Il `broadcastSSE(sessionId, fineEvt)` di `SPUNTA_TERMINATA` ora viene emesso con un **ritardo di 3 secondi** (`setTimeout(() => broadcastSSE(...), 3000)`) per dare tempo al popup dell'ultimo spuntista di apparire.
->
-> **BACKEND (2 commit: `94be06d` → `f204097`):**
->
-> **presenze.js — Fix storico aggregazione sessioni:**
-> - **Problema:** L'endpoint `GET /sessioni/:id/dettaglio` aveva un fallback che, quando una sessione non aveva record in `market_session_details`, cercava TUTTE le sessioni dello stesso giorno (`allSessionIds`) e le aggregava. Questo causava 40+ record nello storico del 06/05 (giorno con molti test).
-> - **Fix:** Rimosso completamente il fallback `allSessionIds`. Ora: (1) cerca in `market_session_details` per la sessione specifica, (2) se vuoto, fallback su `vendor_presences` per la sola sessione. Nessuna aggregazione cross-sessione.
->
-> **presenze-live.js — Ritardo SPUNTA_TERMINATA:**
-> - Aggiunto `setTimeout(() => broadcastSSE(sessionId, fineEvt), 3000)` nella funzione `attivaProssimoTurno` quando non ci sono più spuntisti in coda.
-> - Questo dà 3 secondi di tempo al popup POSTEGGIO_ASSEGNATO o SALDO_NEGATIVO dell'ultimo spuntista di apparire prima che `SPUNTA_TERMINATA` venga inviato a tutti.
->
-> ---
-> ### CHANGELOG v10.4.0 (07 Mag 2026)
-> **Fix sfarfallamento mappa spunta PA, Rinuncia Spunta App, stato_presenza nello storico presenze**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `94be06d` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `94be06d` | Autodeploy v10.4.0 |
-> | GitHub `dms-hub-app-new` master | `7b32118` | Allineato |
-> | Vercel frontend | `7b32118` | Autodeploy |
->
-> **FRONTEND (4 commit: `841974a` → `7b32118`):**
->
-> **MarketMapComponent — Fix sfarfallamento mappa durante spunta PA:**
-> - **Problema:** Quando il vigile cliccava su un posteggio in modalità spunta, la mappa faceva `flyTo` per centrare il posteggio + il popup Leaflet faceva `autoPan` per rendersi visibile → doppio spostamento = sfarfallamento.
-> - **Fix 1:** Aggiunto `autoPan={false}` a tutti i `<Popup>` Leaflet (posteggi, marker centro, mercati Italia).
-> - **Fix 2:** Aggiunto prop `disabled` al `StallCenterController`: quando `isSpuntaMode=true`, il `flyTo` viene disabilitato. La mappa resta ferma durante la spunta, il popup si apre sul posteggio senza spostare nulla.
-> - **Nota:** Il `flyTo` resta attivo nell'app impresa (cellulare) dove `isSpuntaMode=false`.
->
-> **PresenzePage — Pulsante Rinuncia Spunta nella card ATTESA SPUNTA:**
-> - Aggiunto **quadratino rosso** (icona `XCircle`) sulla destra della card "ATTESA SPUNTA" (stessa dimensione dell'icona orologio a sinistra).
-> - Click → `window.confirm()` → chiama `POST /api/presenze-live/spunta/rinuncia` → mostra popup fullscreen "RINUNCIA REGISTRATA".
-> - Aggiunta anche striscia rossa "RINUNCIA ALLA SPUNTA" nella schermata lista posteggi della PresenzePage.
->
-> **SpuntaNotifier — Striscia rossa Rinuncia nella lista posteggi:**
-> - Aggiunta **striscia rossa fissa in fondo** alla schermata "SCEGLI POSTEGGIO" nel SpuntaNotifier (il componente globale che appare quando è il turno).
-> - Testo: "RINUNCIA ALLA SPUNTA" — stessa logica: conferma → rinuncia → chiude overlay.
-> - La striscia è `flex-shrink-0` e resta sempre visibile anche scrollando la lista posteggi.
->
-> **ControlliSanzioniPanel — Badge stato_presenza nella tabella Spuntisti:**
-> - Nella colonna **N°** della tabella Spuntisti (storico presenze), quando `stall_number` è null mostra un badge colorato:
->   - `RINUNCIATO` (arancione, `bg-orange-500/20 text-orange-400`) — rinuncia volontaria o tempo scaduto
->   - `SALDO NEG.` (rosso, `bg-red-500/20 text-red-400`) — saldo wallet negativo
->   - `NO POSTI` (rosso, `bg-red-500/20 text-red-400`) — non c'erano più posteggi disponibili
-> - Aggiunto campo `stato_presenza?: string | null` all'interfaccia `SessionDetail`.
->
-> **BACKEND (3 commit: `401e312` → `94be06d`):**
->
-> **Database — Nuova colonna `stato_presenza`:**
-> - `ALTER TABLE market_session_details ADD COLUMN stato_presenza VARCHAR(30) DEFAULT NULL`
-> - Valori possibili: `presente`, `rinunciato`, `saldo_negativo`, `rinuncia_forzata`, `NULL` (concessionari)
-> - Popolati tutti i record esistenti con migrazione (854 presente, 10 rinunciato)
->
-> **presenze.js — Chiusura mercato manuale:**
-> - Query SELECT per `market_session_details` ora include `LEFT JOIN LATERAL spunta_coda` per calcolare `stato_presenza`.
-> - INSERT include il campo `stato_presenza` ($17).
-> - Endpoint `GET /sessioni/:id/dettaglio`: usa `COALESCE(msd.stato_presenza, CASE...JOIN spunta_coda)` — prima legge la colonna salvata, poi fallback al JOIN per vecchi record senza colonna.
->
-> **market-auto-phases.js — Chiusura automatica:**
-> - Stessa modifica: JOIN con `spunta_coda` + INSERT con `stato_presenza`.
->
-> **test-mercato.js — Chiusura test:**
-> - Stessa modifica: JOIN con `spunta_coda` + INSERT con `stato_presenza`.
->
-> **Logica CASE per stato_presenza (tutte le query):**
-> ```sql
-> CASE
->   WHEN sc.stato = 'ASSEGNATO' THEN 'presente'
->   WHEN sc.stato = 'RINUNCIATO' THEN 'rinunciato'
->   WHEN sc.stato = 'SALTATO' AND wallet.balance < 0 THEN 'saldo_negativo'
->   WHEN sc.stato = 'SALTATO' THEN 'rinunciato'
->   WHEN sc.stato = 'SCADUTO' THEN 'rinunciato'
->   WHEN sc.stato IN ('COMPLETATO') AND stall_id IS NULL THEN 'rinuncia_forzata'
->   WHEN stall_id IS NOT NULL THEN 'presente'
->   ELSE NULL
-> END
-> ```
->
-> ---
-> ### CHANGELOG v10.3.0 (07 Mag 2026)
-> **Popup PA mini fissi, SpuntaNotifier fix race condition, impresaId citizen fix, 31 nuovi endpoint registrati**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `d42ea36` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `d42ea36` | Autodeploy v10.3.0 |
-> | GitHub `dms-hub-app-new` master | `6b0689d` | Allineato |
-> | Vercel frontend | `6b0689d` | Autodeploy |
->
-> **FRONTEND (14 commit: `da79625` → `6b0689d`):**
->
-> **GestioneMercati — Popup PA Mini (vista vigili):**
-> - **Popup Turno (giallo/amber):** Trasformato da fullscreen a mini-popup fisso `fixed top-4 right-4` (280px). Mostra nome spuntista, timer countdown, posizione e posteggi rimasti. Pulsante Rinuncia integrato.
-> - **Popup Saldo Negativo (rosso):** Trasformato da fullscreen a mini-popup fisso (280px). Auto-chiusura 3s con auto-skip al prossimo spuntista.
-> - **Popup Posteggio Assegnato (verde):** NUOVO — mini-popup fisso (280px) con icona CheckCircle, nome impresa, numero posteggio, importo addebitato e saldo residuo. Auto-chiusura 4s. Uguale al popup dell'app impresa.
-> - **Popup Spunta Finita (giallo/amber):** Trasformato da fullscreen a mini-popup fisso (280px). Pulsante CHIUDI.
-> - **Tutti i popup:** z-[9998], `rounded-2xl`, icone 14x14, testi lg/xl/3xl/4xl.
->
-> **SpuntaNotifier — Fix Race Condition (app impresa):**
-> - **Problema:** Lo SpuntaNotifier si montava PRIMA che il FirebaseAuthContext completasse il login asincrono. Leggeva `impresaId = undefined` dal localStorage e non si riattivava mai.
-> - **Fix:** Aggiunto meccanismo a 3 livelli: (1) tentativo immediato, (2) retry ogni 2s per max 30s, (3) listener `storage` event. Quando il login completa e salva `impresaId` nel localStorage, lo SpuntaNotifier si attiva automaticamente.
-> - **Fix type mismatch:** Aggiunto `Number()` a tutti i confronti `data.impresa_id === impresaId` nel handler SSE (backend manda numero, localStorage poteva avere stringa).
-> - **Fix vista PA:** Lo SpuntaNotifier fullscreen NON appare quando `sessionStorage` ha `miohub_impersonation` attiva (= utente sta usando la vista PA/GestioneMercati).
->
-> **FirebaseAuthContext — Fix impresaId per Citizen:**
-> - **Problema:** MIO TEST entra come citizen ma ha `impresa_id=38` nel backend. Il check `shouldSetImpresa = effectiveRole !== 'citizen'` impediva il salvataggio nel localStorage.
-> - **Fix:** Rimosso il check del ruolo: `shouldSetImpresa = !!legacyUser?.impresa_id`. Ora `impresaId` viene salvato SEMPRE se presente nel backend, indipendentemente dal ruolo scelto al login.
->
-> **SpuntaNotifier — 3 Strategie Risoluzione impresaId:**
-> - Strategia 1: `localStorage miohub_firebase_user.impresaId` (business)
-> - Strategia 2: `localStorage user.impresa_id` + collaboratorData (legacy bridge)
-> - Strategia 3: API `/api/imprese?user_id=X` (citizen con impresa associata)
->
-> **Crash Fix:**
-> - **Rinuncia crash** (`null is not an object 'la.saldo.toFixed'`): Tutti i `.toFixed()` protetti con `?? 0`. Valori forzati con `Number()` al set.
->
-> **REGISTRO ENDPOINT (MIO-hub/api/index.json → v43):**
-> - Aggiunti **31 endpoint** mancanti al registro Guardian/Integrazioni.
-> - Categorie: Presenze Live (22), Presenze Live - Spunta (8), Collaboratori (1), Test Mercato (2), Presenze (5).
-> - Totale endpoint registrati: da 998 a **1029** (inventario index.json).
->
-> ---
-> ### CHANGELOG v10.2.22 (06 Mag 2026)
-> **Fix critico: inversione presenze nello storico, duplicato graduatoria SUAP, fantasma SPUNTA residuo**
->
-> **Root cause (4 bug interconnessi):**
-> 1. **presenze.js chiudi-sessione riga 1118**: `UPDATE market_sessions SET updated_at = NOW()` — la colonna `updated_at` NON ESISTE nella tabella `market_sessions`. L'UPDATE falliva silenziosamente, impedendo la corretta chiusura della sessione e causando sessioni multiple.
-> 2. **presenze.js chiudi-sessione query details**: la query prendeva TUTTI i vendor_presences del giorno (inclusi record SPUNTA con stall_id=NULL creati dal checkin APP) senza escludere i fantasmi. Questo generava record session_details con presenze invertite.
-> 3. **presenze.js graduatoria riga 364-368**: la LEFT JOIN con vendor_presences per tipo SPUNTA usava `gp.stall_id IS NULL` che matchava TUTTI i vp SPUNTA della stessa impresa → duplicato nella vista Graduatoria Spuntisti (sezione SUAP).
-> 4. **test-mercato.js assegna-posteggio riga 686**: l'UPDATE senza LIMIT aggiornava potenzialmente TUTTI i record con stall_id IS NULL, causando UNIQUE violation quando esistevano duplicati (checkin APP + avvia-spunta).
->
-> **Fix applicati:**
-> 1. **presenze.js**: rimosso `updated_at = NOW()` dall'UPDATE market_sessions.
-> 2. **presenze.js chiudi-sessione**: aggiunta clausola `NOT EXISTS` per escludere record SPUNTA stall_id=NULL quando esiste un record SPUNTA con stall_id NOT NULL per la stessa impresa/giorno.
-> 3. **presenze.js graduatoria**: sostituita LEFT JOIN con `LEFT JOIN LATERAL` + `LIMIT 1` + `ORDER BY stall_id IS NOT NULL DESC` — prende solo il record più rilevante per ogni entry graduatoria.
-> 4. **test-mercato.js assegna-posteggio**: aggiunto subquery `WHERE id = (SELECT id ... ORDER BY id DESC LIMIT 1)` + DELETE dei record residui SPUNTA stall_id=NULL dopo l'assegnazione.
-> 5. **DB cleanup**: eliminati record fantasma sessioni 538/540, corretti valori presenze_totali nei session_details. Pulizia aggiuntiva sessione 542: eliminati 12 session_details triplicati (generati dal codice pre-v10.2.22), eliminato record fantasma 2917 (SPUNTA stall_id=NULL €0.00), rigenerati session_details corretti per sessioni 541 (2 CONCESSION) e 542 (1 SPUNTA posteggio 1008).
->
-> **Deploy confermato**: autodeploy da GitHub → version: '10.2.22'
->
-> **File modificati:**
-> - `routes/presenze.js`: fix chiudi-sessione (updated_at, NOT EXISTS), fix graduatoria (LATERAL JOIN)
-> - `routes/test-mercato.js`: fix assegna-posteggio (LIMIT 1 + DELETE residui)
-> - `index.js`: version bump a 10.2.22
->
-> ---
-> ### PROGETTO v10.3.0 — Presenze Dipendenti via App Cittadino (In attesa sviluppo)
-> **Obiettivo:** Consentire a **più dipendenti/soci** registrati nel TEAM dell'impresa di fare presenza dal tab Cittadino (app pubblica), senza accedere ai dati sensibili dell'app Impresa.
->
-> **Multi-collaboratore:** Ogni impresa può avere N collaboratori autorizzati. Ognuno fa login con la propria email e fa presenza per la stessa impresa.
->
-> **Meccanismo:** Il collaboratore fa login nell'app con la sua email → il sistema verifica in `collaboratori_impresa` → se autorizzato, inietta client-side SOLO `tab.view.presenze` → appare il bottone "Presenze" nella HomePage cittadino.
->
-> **Modifiche DB:**
-> - `ALTER TABLE collaboratori_impresa ADD COLUMN email VARCHAR(255)`
-> - `CREATE UNIQUE INDEX idx_collaboratori_email ON collaboratori_impresa (email) WHERE email IS NOT NULL`
-> - Nota: indice univoco globale (un'email = una sola impresa), ma N email diverse per stessa impresa
->
-> **Modifiche Backend (`routes/collaboratori.js`):**
-> - CRUD aggiornato per campo `email` (validazione unicità)
-> - Nuovo endpoint `GET /api/collaboratori/me` — verifica se l'utente loggato (email JWT) è collaboratore autorizzato
-> - Fallback in `presenze-live.js` checkin: se citizen senza impresa_id, cerca in collaboratori_impresa per email
->
-> **Modifiche Frontend Impresa (`AnagraficaPage.tsx`):**
-> - Campo email aggiunto nel form Team (sotto telefono, che resta)
-> - Supporto multi-collaboratore già presente (lista dinamica con map)
-> - Testo informativo aggiornato
->
-> **Modifiche Frontend Cittadino:**
-> - `FirebaseAuthContext.tsx`: dopo login citizen, chiama `/api/collaboratori/me` → salva `isCollaborator` + `collaboratorData` + `impresaId`
-> - `PermissionsContext.tsx`: se `user.isCollaborator` → inietta `tab.view.presenze` (SOLO quello)
-> - `HomePage.tsx`: bottone "Presenze" grande nella sezione cittadino (visibile solo se collaboratore)
-> - `PresenzePage.tsx`: aggiunto step risoluzione impresaId da `collaboratorData.impresa_id`
->
-> **Sicurezza:** Il collaboratore resta `citizen` (NO accesso a wallet, anagrafica, notifiche impresa). Revoca immediata disattivando "Autorizzato Presenze" nel Team.
->
-> **Documento completo:** `PROGETTO_PRESENZE_CITTADINO.md`
->
-> ---
-> ### CHANGELOG v10.2.21 (06 Mag 2026)
-> **Fix critico: presenze spuntisti azzerate + record fantasma CONCESSION con stall_id=NULL**
->
-> **Root cause (2 bug interconnessi):**
-> 1. **presenze-live.js riga 585**: l'INSERT in `vendor_presences` usava `'CONCESSION'` hardcoded come tipo_presenza. Quando MIO TEST (che ha sia concessioni che wallet SPUNTA) faceva checkin dall'APP come spuntista (tipo_presenza='SPUNTA', stall_id=null), la protezione anti-fantasma non bloccava (perché tipo='SPUNTA'), ma il record veniva scritto con tipo='CONCESSION' → creava il record fantasma €0.00.
-> 2. **test-mercato.js riga 702**: `assegna-posteggio-spunta` faceva `UPDATE graduatoria_presenze SET stall_id = posteggio_occupato`. Questo cambiava lo stall_id del record SPUNTA da NULL al posteggio temporaneo. Alla sessione successiva, `avvia-spunta` cercava `stall_id IS NULL` → non trovava il record → ne creava uno NUOVO con presenze=0, azzerando la graduatoria.
->
-> **Fix applicati:**
-> 1. **presenze-live.js**: `const tipoPresenzaEffettivo = stall_id ? 'CONCESSION' : (tipo_presenza || 'CONCESSION')` — ora usa il tipo dalla request se stall_id è null.
-> 2. **test-mercato.js**: rimosso `SET stall_id = $2` dall'UPDATE graduatoria_presenze in assegna-posteggio-spunta. Il record SPUNTA nella graduatoria mantiene SEMPRE stall_id=NULL.
-> 3. **DB cleanup**: eliminato record fantasma 2895 (CONCESSION, stall_id=NULL, €0.00); fixati stall_id graduatorie SPUNTA per imprese 39 e 41 (riportati a NULL).
->
-> **Deploy confermato**: autodeploy da GitHub → version: '10.2.21'
->
-> **File modificati:**
-> - `routes/presenze-live.js`: tipoPresenzaEffettivo dinamico nell'INSERT vendor_presences
-> - `routes/test-mercato.js`: rimosso SET stall_id dall'UPDATE graduatoria_presenze
-> - `index.js`: version bump a 10.2.21
->
-> ---
-> ### CHANGELOG v10.2.20 (06 Mag 2026)
-> **Fix critico: endpoint PA registra-presenza-concessionario creava record SPUNTA con stall_id non-NULL**
->
-> **Root cause:**
-> L'endpoint `registra-presenza-concessionario` in `presenze.js` usava `stall_id` del posteggio anche per tipo_presenza='SPUNTA'. Questo creava record graduatoria con stall_id specifico del posteggio, invece di stall_id=NULL come richiesto dalla logica SPUNTA (presenze legate all'impresa, non al posteggio).
->
-> **Fix applicati:**
-> 1. **presenze.js riga 213**: `const gradStallId = (tipo_presenza === 'SPUNTA') ? null : stall_id` — ora l'endpoint PA usa stall_id=NULL per SPUNTA e stall_id specifico per CONCESSION.
-> 2. **DB cleanup Bologna (mercato 14)**: eliminati record SPUNTA con stall_id non-NULL per imprese 39, 40, 41; creati record corretti con stall_id=NULL e presenze consolidate (68, 46, 62).
-> 3. **Eliminati 76 record fantasma €0.00**: tutti i record `market_session_details` con stall_id=NULL, tipo_presenza='CONCESSION', importo_addebitato=0.00 (residui del vecchio bug checkin senza posteggio).
-> 4. **Eliminati 390 duplicati session_details**: deduplicazione globale su (session_id, stall_id, impresa_id, tipo_presenza), mantenuto solo il record più recente.
-> 5. **Version bump**: endpoint /health mostra version '10.2.20'.
->
-> **Verifica post-fix:**
-> - Nessun altro mercato ha record SPUNTA con stall_id non-NULL (query globale = 0 risultati)
-> - Colonne `market_session_details` verificate: `importo_addebitato` (non `importo`)
->
-> **Deploy confermato**: autodeploy da GitHub → `curl https://api.mio-hub.me/health` → version: '10.2.20'
->
-> **File modificati:**
-> - `routes/presenze.js`: gradStallId = (tipo_presenza === 'SPUNTA') ? null : stall_id
-> - `index.js`: version bump a 10.2.20
->
-> ---
-> ### CHANGELOG v10.2.19 (06 Mag 2026)
-> **Fix graduatorie azzerate per concessionari multi-posteggio e spuntisti Bologna**
->
-> **Root cause:**
-> 1. La migrazione v10.2.16 creava UN SOLO record graduatoria per impresa (il primo stall_id trovato). Quando la PA registrava presenze su TUTTI i posteggi dell'impresa, i posteggi senza record graduatoria ne creavano uno nuovo con presenze=1 (azzerato).
-> 2. Per Bologna SPUNTA: il vecchio codice su Hetzner (pre-deploy) continuava a scrivere stall_id del posteggio assegnato nel record graduatoria, creando duplicati con presenze=1.
-> 3. Il deploy su Hetzner non era avvenuto per v10.2.17/v10.2.18 — ora confermato attivo (v10.2.19).
->
-> **Fix applicati:**
-> 1. **Consolidamento presenze Grosseto**: per ogni impresa con più posteggi, tutti i record graduatoria allineati al valore massimo (storico corretto).
-> 2. **Merge record SPUNTA Bologna**: eliminati 6 record con stall_id non-NULL, creati 3 record corretti con stall_id=NULL e presenze totali corrette.
-> 3. **Ricreati session_details**: sessione 524 (Grosseto) con 39 details corretti (eliminati 85 duplicati); sessione 520 (Bologna) con 5 details corretti.
-> 4. **Version bump**: endpoint /health mostra version '10.2.19' per verifica deploy.
->
-> **Deploy confermato**: `curl https://api.mio-hub.me/health` → version: '10.2.19'
->
-> **File modificati:**
-> - `index.js`: version bump a 10.2.19
->
-> ---
-> ### CHANGELOG v10.2.18 (05 Mag 2026)
-> **Fix record fantasma €0.00, protezione checkin senza posteggio, JOIN graduatoria SPUNTA corretto**
->
-> **Problemi risolti:**
-> 1. **BUG — Record fantasma €0.00 nella lista Concessionari**: Un checkin CONCESSION senza stall_id creava un record `vendor_presences` con tipo_presenza='CONCESSION', stall_id=NULL, importo=0.00. Questo appariva come riga fantasma nella lista concessionari del popup storico. **Fix**: aggiunta protezione 2c — se stall_id è NULL e tipo_presenza non è SPUNTA, il checkin viene bloccato (errore STALL_OBBLIGATORIO).
-> 2. **BUG — JOIN graduatoria SPUNTA in chiusura/dettaglio**: La query di chiusura mercato e l'endpoint /sessioni/:id/dettaglio usavano `COALESCE(gp.stall_id, 0) = COALESCE(vp.stall_id, 0)` che per SPUNTA non matchava correttamente (vp.stall_id = posteggio assegnato ≠ gp.stall_id = NULL). **Fix**: per tipo SPUNTA, il JOIN usa `gp.stall_id IS NULL`; per CONCESSION mantiene il COALESCE.
-> 3. **BUG — Duplicati session_details alla chiusura multipla**: Se il mercato veniva chiuso più volte, i details si accumulavano. **Fix**: aggiunto `DELETE FROM market_session_details WHERE session_id = $1` prima dell'INSERT.
->
-> **DB cleanup eseguito:**
-> - Eliminato record fantasma vendor_presences id=2800 (CONCESSION, stall_id=NULL, importo=0.00)
-> - Corretti 2 record graduatoria SPUNTA con stall_id non-NULL (ri-impostato a NULL)
-> - Ricreati 10 session_details corretti per sessione 520 (eliminati 17 duplicati/errati)
->
-> **File modificati:**
-> - `presenze-live.js`: protezione 2c checkin senza stall_id
-> - `presenze.js`: JOIN graduatoria SPUNTA corretto in chiusura e dettaglio, DELETE duplicati session_details
->
-> ---
-> ### CHANGELOG v10.2.17 (05 Mag 2026)
-> **Fix record duplicati SPUNTA nella graduatoria + logica corretta incremento presenze spunta**
->
-> **Problemi risolti:**
-> 1. **BUG — ON CONFLICT non matcha record SPUNTA esistenti**: Il vecchio record SPUNTA nella graduatoria aveva `stall_id` del posteggio assegnato dalla spunta (es. stall_id=1071). I nuovi checkin SPUNTA usano `stall_id=NULL`. `COALESCE(1071,0) ≠ COALESCE(NULL,0)` → creava record duplicato. **Fix**: per tipo SPUNTA, `stall_id` nella graduatoria è SEMPRE NULL (il posteggio assegnato dalla spunta è temporaneo e cambia ogni giorno).
-> 2. **BUG — Presenze spunta incrementavano al checkin**: `presenze_totali` veniva incrementato al momento del checkin SPUNTA, ma deve incrementare SOLO quando un posteggio viene effettivamente occupato (in `scegli-posteggio`). **Fix**: al checkin SPUNTA si crea/aggiorna il record graduatoria SENZA incrementare; l'incremento avviene solo in `scegli-posteggio` (occupazione) o a fine spunta per chi resta in coda (fine posteggi).
-> 3. **BUG — Query SPUNTA senza filtro stall_id IS NULL**: Le query che leggono la graduatoria SPUNTA potevano restituire record errati se esistevano vecchi record con stall_id non-NULL. **Fix**: aggiunto `AND stall_id IS NULL` in tutte le query graduatoria tipo SPUNTA.
->
-> **Logica presenze spunta corretta:**
-> - Checkin SPUNTA: crea record graduatoria con presenze=0 (niente punto)
-> - `scegli-posteggio` (posteggio occupato): incrementa presenze_totali +1 (punto)
-> - Fine spunta (resta in coda, posteggi finiti): incrementa presenze_totali +1 (punto)
-> - SALTATO (saldo negativo): niente punto
-> - SCADUTO (timeout turno): niente punto
-> - RINUNCIATO: niente punto
->
-> **DB cleanup eseguito:**
-> - Eliminato record duplicato id=2189 (SPUNTA, stall_id=NULL, presenze=1)
-> - Corretti 34 record SPUNTA con stall_id errato (impostato a NULL)
->
-> **File modificati:**
-> - `presenze-live.js`: checkin SPUNTA non incrementa, scegli-posteggio usa stall_id=NULL per ON CONFLICT, stall_id IS NULL in query graduatoria, logica fine spunta per chi resta in coda
-> - `presenze.js`: stall_id IS NULL in query graduatoria SPUNTA (3 query fixate)
-> - `test-mercato.js`: stall_id IS NULL in query graduatoria SPUNTA (3 query fixate)
->
-> ---
-> ### CHANGELOG v10.2.16 (05 Mag 2026)
-> **Presenze e assenze calcolate per posteggio (non per impresa), migrazione DB graduatoria**
->
-> **Problemi risolti:**
-> 1. **BUG — Presenze/Assenze uguali su tutti i posteggi dell'impresa**: Il constraint unique della tabella `graduatoria_presenze` era `(market_id, impresa_id, tipo, anno)` — un solo record per impresa. Se un'impresa aveva 2 posteggi, le presenze si accumulavano sullo stesso record. **Fix**: migrazione DB con nuovo indice unique `(market_id, impresa_id, tipo, anno, COALESCE(stall_id, 0))`. Ogni posteggio ha il suo record separato.
-> 2. **BUG — Riga fantasma €0.00 nello storico**: Presenza CONCESSION con stall_id=NULL creata da checkin senza posteggio. **Fix**: blocco STALL_OBBLIGATORIO (v10.2.14) + pulizia DB delle presenze orfane.
-> 3. **BUG — Incremento doppio graduatoria**: La logica `primoCheckinOggi` verificava qualsiasi posteggio dell'impresa. Con 2 posteggi, solo il primo incrementava. **Fix**: ora verifica solo lo stesso `stall_id`.
-> 4. **BUG — JOIN graduatoria/mercato senza filtro stall_id**: Il JOIN con `vendor_presences` poteva restituire la presenza di un altro posteggio. **Fix**: aggiunto `AND (gp.stall_id IS NULL OR vp.stall_id = gp.stall_id)`.
->
-> **Migrazione DB eseguita:**
-> - Rimosso vecchio constraint `graduatoria_presenze_market_id_impresa_id_tipo_anno_key`
-> - Creato nuovo indice unique `graduatoria_presenze_market_impresa_tipo_anno_stall_key`
-> - Redistribuite presenze per imprese con più posteggi (divise equamente)
-> - Eliminata presenza orfana id=2792 (CONCESSION senza stall_id)
->
-> **File modificati:**
-> - `presenze-live.js`: ON CONFLICT aggiornato, logica primoCheckinOggi per stall_id
-> - `presenze.js`: ON CONFLICT aggiornato, JOIN graduatoria con filtro tipo+stall_id (4 query fixate), endpoint /registra con cerca per stall_id
-> - `test-mercato.js`: ON CONFLICT aggiornato
-> - `GestioneMercati.tsx`: gradRecord cerca prima per stall_id specifico, fallback solo se 1 record per impresa
-> - `ControlliSanzioniPanel.tsx`: uniqueDetails usa chiave composita (stall_id + impresa_id + tipo_presenza) per non eliminare spuntisti
->
-> ---
-> ### CHANGELOG v10.2.15 (05 Mag 2026)
-> **Fix ATTESA SPUNTA persiste, saldo negativo spunta salta turno, sessione mercato mancante**
->
-> **Problemi risolti:**
-> 1. **BUG — ATTESA SPUNTA rimane durante MERCATO IN CORSO (Frontend App)**: Il card arancione "ATTESA SPUNTA" rimaneva visibile anche dopo la fine della spunta. **Fix**: aggiunto check su `session_fase` (MERCATO_ATTIVO/CHIUSO) e su `spunta_stato_coda` (SCADUTO/COMPLETATO) per nascondere il card.
-> 2. **BUG — Spuntista con saldo negativo blocca la coda (Backend)**: Quando uno spuntista con saldo negativo provava a scegliere un posteggio, il backend restituiva errore ma non cambiava lo stato. Lo spuntista rimaneva in TURNO_ATTIVO bloccando la coda. **Fix**: endpoint `scegli-posteggio` ora setta stato `SALTATO` e chiama `attivaProssimoTurno()` automaticamente.
-> 3. **BUG — App non mostra popup rosso saldo negativo (Frontend App)**: L'errore SALDO_NEGATIVO non veniva gestito con la schermata dedicata. **Fix**: aggiunta gestione errore con schermata fullscreen rossa "SALDO INSUFFICIENTE" e messaggio motivazionale.
-> 4. **BUG — Semaforo/fase non visibile (Backend)**: L'endpoint `inizia-mercato` non creava una nuova `market_session` e non inseriva la fase PRESENZE. **Fix**: ora crea sessione IN_CORSO + inserisce fase PRESENZE + pulisce spunta_coda.
-> 5. **BUG — mercati-oggi non trova sessioni CHIUSO (Backend)**: La query LATERAL cercava solo sessioni APERTO/IN_CORSO. **Fix**: aggiunto `OR (ms2.stato = 'CHIUSO' AND DATE(ms2.data_mercato) = $2)` per restituire sempre session_fase.
-> 6. **BUG — Bottone PRESENZE durante SPUNTA_IN_CORSO (Frontend App)**: Il check `presenzeChiuse` non includeva il valore `SPUNTA_IN_CORSO`. **Fix**: aggiunto al check.
->
-> **File modificati:**
-> - `PresenzePage.tsx`: gestione ATTESA SPUNTA, schermata saldo negativo, SPUNTA_IN_CORSO in presenzeChiuse
-> - `presenze-live.js`: fix inizia-mercato (crea sessione), fix scegli-posteggio (SALTATO + attivaProssimoTurno), fix mercati-oggi (sessioni CHIUSO), fix tipoGraduatoria per stall_id, fix STALL_OBBLIGATORIO esclude SPUNTA
-> - `presenze.js`: fix JOIN graduatoria con filtro tipo_presenza
->
-> ---
-> ### CHANGELOG v10.2.14 (05 Mag 2026)
-> **Blocco presenze dopo fase PRESENZE, fix conflitto concessionario/spuntista, badge ASSENTE in PA**
->
-> **Problemi risolti:**
-> 1. **BUG — Bottone PRESENZE visibile durante SPUNTA/MERCATO IN CORSO (Frontend App)**: Il bottone PRESENZE rimaneva visibile anche quando la fase del mercato era già SPUNTA o MERCATO_ATTIVO. **Fix**: aggiunta variabile `presenzeChiuse` che verifica `session_fase` e nasconde il bottone quando la fase è SPUNTA, MERCATO_ATTIVO, MERCATO, ATTIVO, CHIUSO, CHIUSA o CHIUSURA.
-> 2. **BUG — Backend accetta checkin dopo fase PRESENZE (Backend)**: L'endpoint `/checkin` non verificava la fase corrente della sessione. **Fix**: aggiunto check in `presenze-live.js` che interroga `sessioni_fasi` e rifiuta il checkin con errore `FASE_NON_CONSENTITA` se la fase è SPUNTA, MERCATO_ATTIVO o CHIUSO. Stesso blocco aggiunto a `registra-presenza-concessionario` in `test-mercato.js`.
-> 3. **BUG — Concessionario appare anche come spuntista (Backend)**: MIO TEST aveva sia wallet CONCESSION che wallet SPUNTA per lo stesso mercato. Quando faceva checkin, il codice poteva usare il wallet SPUNTA e inserirlo in `spunta_coda`. **Fix**: prima di inserire in `spunta_coda`, verifica se l'impresa ha una concessione ATTIVA per quel mercato — se sì, NON inserire.
-> 4. **BUG — Presenza fantasma €0.00 senza posteggio (Backend)**: Un concessionario poteva fare checkin senza specificare `stall_id`, generando una riga con importo €0.00 e senza numero posteggio. **Fix**: se l'impresa ha una concessione attiva e non ha passato `stall_id`, il backend rifiuta con errore `STALL_OBBLIGATORIO`.
-> 5. **Badge ASSENTE in rosso (Frontend PA)**: Nel popup dettaglio posteggio, se il concessionario non ha fatto la presenza oggi (posteggio LIBERO + nessuna presenza trovata), viene mostrato un badge "ASSENTE" in rosso accanto allo stato.
->
-> **Fix DB eseguiti:**
-> - Eliminata presenza fantasma id=2774 (stall_id NULL, €0.00, MIO TEST)
-> - Rimosso MIO TEST da spunta_coda sessione 511 (stato IN_ATTESA, non doveva essere lì)
->
-> **File modificati:**
-> - `PresenzePage.tsx` (Frontend/App): variabile `presenzeChiuse` per nascondere bottone PRESENZE dopo fase PRESENZE
-> - `GestioneMercati.tsx` (Frontend/PA): badge ASSENTE in rosso nel popup dettaglio posteggio
-> - `presenze-live.js` (Backend): blocco fase SPUNTA/MERCATO_ATTIVO/CHIUSO, blocco checkin senza stall_id per concessionari, impedisce inserimento concessionari in spunta_coda
-> - `test-mercato.js` (Backend): blocco fase per registra-presenza-concessionario
->
-> ---
-> ### CHANGELOG v10.2.13 (05 Mag 2026)
-> **Fix mappa PA vibra popup, saldo negativo concessionari, sessioni orfane, bottone PRESENZE**
->
-> **Problemi risolti:**
-> 1. **BUG — Mappa PA vibra quando popup aperto (Frontend PA)**: Il polling ogni 10s chiamava `setStalls()` causando re-render della mappa Leaflet anche con popup aperto, provocando vibrazione/chiusura popup. **Fix**: aggiunto `popupOpenRef` (useRef) che viene settato a `true` quando si seleziona un posteggio e a `false` quando si chiude il popup. In `fetchStallsAndPresenzeOnly`, `setStalls()` viene saltato se `popupOpenRef.current === true`.
-> 2. **BUG — PA fa presenza con saldo negativo (Backend)**: Il codice in `registra-presenza-concessionario` usava la variabile `spuntista` (non definita in quel contesto) per il check saldo negativo. **Fix**: sostituito con `stall.wallet_balance` che è il saldo corretto del concessionario associato al posteggio.
-> 3. **BUG — Sessioni orfane IN_CORSO (Backend)**: `inizia-mercato` non chiudeva le sessioni precedenti prima di crearne una nuova, causando sessioni orfane. **Fix**: aggiunto `UPDATE market_sessions SET stato='CHIUSO'` per tutte le sessioni IN_CORSO prima di creare la nuova. Anche `chiudi-mercato` ora chiude tutte le sessioni IN_CORSO orfane.
-> 4. **BUG — Semaforo non diventa CHIUSO (Backend)**: `chiudi-mercato` non inseriva la fase `CHIUSO` in `sessioni_fasi`. **Fix**: aggiunto `INSERT INTO sessioni_fasi (session_id, fase) VALUES ($1, 'CHIUSO')` dopo la chiusura della sessione.
-> 5. **BUG — Bottone PRESENZE visibile anche quando tutte presenze fatte (Frontend App)**: Il bottone PRESENZE nella home app rimaneva visibile anche dopo che tutti i concessionari avevano già fatto la presenza. **Fix**: aggiunta variabile `tuttePresenzeComplete` che verifica `concessions.every(c => c.gia_presente_oggi)` e nasconde il bottone con rendering condizionale.
-> 6. **BUG — Costo suolo popup non coincide con addebito (Frontend PA)**: Il valore `costPerSqm` passato al componente mappa non veniva parsato correttamente. **Fix**: aggiunto `parseFloat(String(...))` e fallback mapping con `cost_per_sqm` dal market.
->
-> **File modificati:**
-> - `GestioneMercati.tsx` (Frontend/PA): popupOpenRef per bloccare setStalls durante popup, fix costPerSqm con parseFloat
-> - `PresenzePage.tsx` (Frontend/App): bottone PRESENZE nascosto quando tuttePresenzeComplete
-> - `test-mercato.js` (Backend): fix registra-presenza-concessionario (stall.wallet_balance), fix inizia-mercato (chiude sessioni vecchie), fix chiudi-mercato (inserisce fase CHIUSO + chiude orfane)
->
-> ---
-> ### CHANGELOG v10.2.12 (05 Mag 2026)
-> **Fix definitivi: semaforo fase, mappa spunta, popup PA, pulizia DB**
->
-> **Problemi risolti:**
-> 1. **BUG — Semaforo sempre verde (Backend)**: La query `mercati-oggi` faceva un `LEFT JOIN` con `market_sessions` senza `ORDER BY`, prendendo sessioni vecchie senza fasi in `sessioni_fasi`. **Fix**: convertito in `LEFT JOIN LATERAL` con `ORDER BY created_at DESC LIMIT 1` per prendere sempre la sessione più recente. Inoltre pulite 9 sessioni vecchie rimaste `IN_CORSO` nel DB e aggiunta fase `PRESENZE` alla sessione 506 che ne era priva.
-> 2. **BUG — Popup SPUNTA FINITA appare ancora (Frontend PA)**: Il fix `turnoAttivoCount` nel backend era corretto ma il timing del polling PA causava un falso positivo nei primi secondi. **Fix**: aggiunto cooldown 10 secondi (`spuntaStartedAtRef`) nella PA — il popup non viene mostrato nei primi 10s dopo l'avvio della spunta.
-> 3. **BUG — Mappa spunta non fa animazione flyTo (Frontend App)**: Il `MarketMapComponent` React/Leaflet aveva problemi di timing con il flyTo. **Fix**: sostituito con **iframe** che punta a `market-map-viewer.html?marketId=X&stallNumber=Y` (lo stesso usato dalla scheda posteggi che funziona). Rimosso codice GIS inutilizzato da SpuntaNotifier.
-> 4. **BUG — Scelta posteggio da App non chiama prossimo**: L'endpoint `scegli-posteggio` in `presenze-live.js` GIÀ chiama `attivaProssimoTurno`. Il problema era il timing della PA (delay 500ms già aggiunto in v10.2.11).
->
-> **File modificati:**
-> - `SpuntaNotifier.tsx` (Frontend/App): mappa con iframe, rimosso MarketMapComponent/GIS code
-> - `GestioneMercati.tsx` (Frontend/PA): cooldown 10s per popup spunta_terminata
-> - `presenze-live.js` (Backend): query mercati-oggi con LEFT JOIN LATERAL
-> - `test-mercato.js` (Backend): attivaProssimoTurno con cambio fase MERCATO_ATTIVO
->
-> **Fix DB eseguiti:**
-> - Chiuse 9 sessioni vecchie IN_CORSO (di ieri)
-> - Aggiunta fase PRESENZE alla sessione 506 (La Piazzola oggi)
->
-> ---
-> ### CHANGELOG v10.2.11 (05 Mag 2026)
-> **Fix semaforo fasi mercato + popup spunta finita + barra turno + mappa spunta flyTo**
->
-> **Problemi risolti:**
-> 1. **BUG — Semaforo stato mercato sempre verde (Backend)**: L'endpoint `test-mercato/avvia-spunta` creava la sessione ma NON inseriva la fase in `sessioni_fasi`. Ora inserisce `PRESENZE` alla creazione. `avvia-spunta-live` inserisce `SPUNTA` quando la PA avvia la spunta. `attivaProssimoTurno` inserisce `MERCATO_ATTIVO` quando la spunta finisce. Frontend aggiornato per mappare `MERCATO_ATTIVO` → badge blu.
-> 2. **BUG — Popup SPUNTA FINITA appare appena parte la spunta (Backend)**: Il fix `turnoAttivoCount` era già nel codice ma non deployato. Inoltre `attivaProssimoTurno` in `test-mercato.js` ora rimette i posteggi riservati a libero e chiude i turni IN_ATTESA (allineato con la versione in `presenze-live.js`).
-> 3. **BUG — Barra gialla turno non cambia al prossimo spuntista (Frontend PA)**: Timing issue — dopo assegnazione/rinuncia, `fetchSpuntaLiveTurno()` veniva chiamato prima che il backend avesse completato `attivaProssimoTurno`. Aggiunto delay 500ms prima del refresh.
-> 4. **BUG — Mappa spunta non fa animazione flyTo (Frontend App)**: In `SpuntaNotifier`, il `MarketMapComponent` veniva renderizzato SENZA le props `selectedStallCenter`, `stallCenterTrigger` e `viewTrigger`. Aggiunto stato `stallCenterTrigger` e passate tutte le props necessarie per il flyTo animato.
->
-> **File modificati:**
-> - `PresenzePage.tsx` (Frontend/App): mapping MERCATO_ATTIVO/CHIUSURA nei badge fase
-> - `GestioneMercati.tsx` (Frontend/PA): delay 500ms prima di fetchSpuntaLiveTurno
-> - `SpuntaNotifier.tsx` (Frontend/App): stallCenterTrigger + props mappa per flyTo
-> - `presenze-live.js` (Backend): inserimento fasi SPUNTA/MERCATO_ATTIVO in sessioni_fasi
-> - `test-mercato.js` (Backend): inserimento fase PRESENZE + attivaProssimoTurno completo
->
-> ---
-> ### CHANGELOG v10.2.10 (05 Mag 2026)
-> **Card spunta con numero posteggio + Indicatore fase dinamico + Fix popup Spunta Terminata PA**
->
-> **Modifiche:**
-> 1. **Card Autorizzazione Spunta mostra numero posteggio (App)**: Quando lo spuntista ha un posteggio assegnato (`stall_number` presente e diverso da '-'), l'icona ticket viene sostituita dal **numero del posteggio** (come per le concessioni). Il titolo cambia da "Autorizzazione Spunta" a "Posteggio X" e il sottotitolo da "Spuntista" a "Spunta".
-> 2. **Indicatore fase mercato con colori dinamici (App)**: Il badge "Fase: IN_CORSO" nella card mercato ora mostra testi e colori diversi in base a `session_fase`:
->    - 🟢 Verde: **PRESENZA IN CORSO** (fase `IN_CORSO`)
->    - 🟡 Giallo: **SPUNTA IN CORSO** (fase `SPUNTA`)
->    - 🟦 Blu: **MERCATO IN CORSO** (fase `MERCATO` o `ATTIVO`)
->    - 🔴 Rosso: **MERCATO CHIUSO** (fase `CHIUSO`/`CHIUSA`)
-> 3. **Fix popup "Spunta Terminata" appare appena parte la spunta (Backend)**: Race condition nell'endpoint `spunta-turno-corrente`. La query principale non trovava `TURNO_ATTIVO` (timing) ma la condizione `spuntaTerminata = totaleCoda > 0 && inAttesa === 0` era `true` perché l'unico spuntista era appena passato da `IN_ATTESA` a `TURNO_ATTIVO`. **Fix**: aggiunto `turnoAttivoCount` nella query e nella condizione: `spuntaTerminata = totaleCoda > 0 && inAttesa === 0 && turnoAttivoCount === 0`.
->
-> **File modificati:**
-> - `PresenzePage.tsx` (Frontend/App): card spunta con numero posteggio + indicatore fase dinamico
-> - `presenze-live.js` (Backend): fix race condition spunta_terminata con check TURNO_ATTIVO
->
-> ---
-> ### CHANGELOG v10.2.9 (05 Mag 2026)
-> **Semplificazione UI App + Fix polling spunta**
->
-> **Problemi risolti:**
-> 1. **BUG 1 — Polling sovrascrive gia_presente_oggi dopo checkin spunta (App)**: Dopo il checkin spunta, il polling ogni 10s chiamava `cercaMercati()` che aggiornava `mercatoSelezionato` con i dati dal backend. Se il backend non aveva ancora deployato il fix OR EXISTS, `gia_presente_oggi` tornava `false` → la card tornava a "PRESENZA SPUNTA" invece di "ATTESA SPUNTA" dopo 5 secondi. **Fix**: nel `cercaMercati()` durante il refresh, se una concessione Spunta ha `gia_presente_oggi=true` localmente ma il backend ritorna `false`, preserva `true` (non sovrascrivere lo stato locale più aggiornato).
-> 2. **Semplificazione UI — Tab unico PRESENZE (App)**: Eliminata la schermata separata `presenza_spunta` (quella viola con "Registra Spunta" e "Come funziona"). Rinominato "PRESENZA POSTEGGIO" → "PRESENZE". Il bottone "PRESENZE" apre direttamente la schermata con le card dei posteggi + card Autorizzazione Spunta (con tab PRESENZA SPUNTA / ATTESA SPUNTA sotto). Rimossa la condizione che nascondeva il bottone durante la fase SPUNTA.
-> 3. **Polling attivo in presenza_posteggio (App)**: Il polling ora gira anche nella schermata `presenza_posteggio` (oltre a `scelta_tipo` e `vista_mappa`) per aggiornamenti real-time dei dati.
->
-> **File modificati:**
-> - `PresenzePage.tsx` (Frontend/App): fix polling preserva gia_presente_oggi, semplificazione UI, rimossa schermata presenza_spunta, rimossa funzione eseguiPresenzaSpunta, polling in presenza_posteggio
->
-> ---
-> ### CHANGELOG v10.2.8 (04 Mag 2026)
-> **Fix 4 Bug: Animazione mappa PA (Point geometry), Regressione sidebar dati impresa, Polling spuntisti PA, Polling App**
->
-> **Problemi risolti:**
-> 1. **BUG 1 — Animazione mappa PA non funziona dalla lista posteggi (Frontend)**: Il `handleRowClick` e `onStallClick` gestivano solo geometry di tipo `Polygon`, ma alcuni posteggi nel GeoJSON hanno geometry `Point` (posteggi senza poligono disegnato). Il centro non veniva calcolato → `flyTo` non partiva. **Fix**: aggiunto supporto per geometry `Point` (usa coordinate direttamente) e `MultiPolygon` oltre a `Polygon`.
-> 2. **BUG 2 — Regressione sidebar dati impresa si ricarica/scompare ogni 5-10 secondi (Frontend PA)**: Il `useEffect` che carica `loadCompanyData` aveva `[selectedStallId, stalls, concessionsByStallId]` come dependencies. Il polling ogni 10s creava un nuovo array `stalls` → React rilevava cambio → useEffect si ri-eseguiva → sidebar lampeggiava. **Fix**: rimosso `stalls` e `concessionsByStallId` dalle dependencies, mantenuto solo `selectedStallId`.
-> 3. **BUG 3 — Lista spuntisti PA non si aggiorna dopo presenza da App (Frontend PA)**: Il polling `fetchStallsAndPresenzeOnly` aggiornava solo `stalls` e `presenze`, NON `spuntisti`. Quando un'impresa faceva checkin dall'App, la lista spuntisti nella PA non si aggiornava fino al prossimo `fetchData()` completo. **Fix**: aggiunto fetch `/api/spuntisti/mercato/:id` nel polling leggero.
-> 4. **BUG 4 — App non si aggiorna senza uscire e rientrare (App)**: Non c'era polling automatico nell'App. Dopo un'azione dalla PA (deposito rifiuti, uscita), l'App non lo sapeva. **Fix**: aggiunto polling `cercaMercati()` ogni 15 secondi nelle schermate principali (`scelta_tipo`, `vista_mappa`).
->
-> **File modificati:**
-> - `GestioneMercati.tsx` (Frontend): handleRowClick/onStallClick supportano Point geometry + polling include spuntisti + sidebar dependency fix
-> - `PresenzePage.tsx` (Frontend/App): polling 15s per aggiornamento automatico
->
-> ---
-> ### CHANGELOG v10.2.7 (04 Mag 2026)
-> **Fix 4 Bug: Animazione mappa PA+App, Popup SPUNTA FINITA, Posteggi arancioni dopo spunta, Card Giornata completata per spuntisti**
->
-> **Problemi risolti:**
-> 1. **BUG 1 — Animazione mappa dalla lista posteggi PA (Frontend)**: Il `StallCenterController` usava un `lastCenterRef` che bloccava il `flyTo` se il centro era uguale al precedente. **Fix**: rimosso `lastCenterRef`, aggiunto `stallCenterTrigger` counter che viene incrementato ad ogni click e usato come dependency dell'useEffect per forzare il flyTo.
-> 2. **BUG 1b — Animazione mappa App (Backend)**: Il `map.once('moveend')` poteva non scattare se `fitBounds` non causava movimento. **Fix**: aggiunto fallback `setTimeout(1500ms)` con flag `stallSelected` per garantire che `selectStall` venga sempre chiamato.
-> 3. **BUG 2 — Popup SPUNTA FINITA non appare (Backend)**: L'endpoint `spunta-turno-corrente` usava `DATE(ms.data_mercato) = $2` senza fallback IN_CORSO in 4 query (righe 2189, 2200, 2201, 2234). La sessione non veniva trovata → `spunta_terminata = false` → popup mai triggerato. **Fix**: aggiunto `OR ms.stato = 'IN_CORSO'` a tutte e 4 le query.
-> 4. **BUG 3 — Posteggi arancioni non tornano verdi dopo fine spunta (Frontend PA)**: Il `fetchStallsAndPresenzeOnly()` veniva chiamato solo dentro il check del popup. Se il popup non appariva (BUG 2), i dati non si aggiornavano. **Fix**: spostato `fetchStallsAndPresenzeOnly()` fuori dal check popup, chiamato SEMPRE quando `spunta_terminata && isSpuntaMode`.
-> 5. **BUG 4 — Card "Giornata completata" mancante per spuntisti puri (App)**: `tuttiPresenti` richiedeva `haConcessioni` (concessioni.length > 0). Per imprese con solo wallet SPUNTA e nessuna concessione, la card non appariva mai. **Fix**: cambiato `tuttiPresenti = tuttiPosteggi.length > 0 && tuttiPosteggi.every(c => c.gia_presente_oggi)` per considerare sia concessioni che spuntisti con posteggio.
->
-> **File modificati:**
-> - `presenze-live.js` (Backend): `OR ms.stato = 'IN_CORSO'` in 4 query spunta-turno-corrente
-> - `market-map-viewer.html` (Backend): fallback timeout 1.5s per selectStall
-> - `GestioneMercati.tsx` (Frontend): stallCenterTrigger + fetchStallsAndPresenzeOnly fuori dal popup check
-> - `MarketMapComponent.tsx` (Frontend): StallCenterController con trigger prop
-> - `PresenzePage.tsx` (Frontend): tuttiPresenti usa tuttiPosteggi
->
-> ---
-> ### CHANGELOG v10.2.6 (04 Mag 2026)
-> **Fix 3 Bug Residui: Lista spuntisti PA, Popup SPUNTA FINITA, Animazione mappa App**
->
-> **Problemi risolti:**
-> 1. **BUG 1 — Lista Spuntisti PA mostra "IN ATTESA" invece di posteggio/costo (Backend)**: L'endpoint `GET /api/spuntisti/mercato/:id` usava `DATE(ms.data_mercato) = $3` senza fallback per sessioni IN_CORSO. Se la sessione era stata aperta a mezzanotte (data_mercato del giorno precedente), la spunta_coda non veniva trovata → stato NULL → mostrava "IN ATTESA". **Fix**: aggiunto `OR ms.stato = 'IN_CORSO'` al filtro data in presenze.js riga 833.
-> 2. **BUG 2 — Popup SPUNTA FINITA non appare dopo fine spunta (Frontend PA)**: Il `spuntaFinitaGiaVistaRef` veniva inizializzato a `false` ma MAI resettato quando si avviava una nuova spunta. Se l'utente aveva già visto il popup nella sessione precedente, il ref restava `true` e il popup non appariva più. **Fix**: aggiunto `spuntaFinitaGiaVistaRef.current = false` nel handler "Prepara Spunta" in GestioneMercati.tsx.
-> 3. **BUG 3 — Animazione mappa App non parte (flyTo non eseguito)**: In `market-map-viewer.html`, `fitBounds` veniva chiamato prima e poi `setTimeout(selectStall, 500)`. Su dispositivi lenti, `fitBounds` poteva non completarsi in 500ms e Leaflet ignorava il `flyTo`. **Fix**: sostituito `setTimeout` con `map.once('moveend', ...)` per aspettare il completamento del fitBounds prima di fare selectStall.
->
-> **File modificati:**
-> - `presenze.js` (Backend): aggiunto `OR ms.stato = 'IN_CORSO'` nella subquery spunta_coda
-> - `GestioneMercati.tsx` (Frontend): reset `spuntaFinitaGiaVistaRef.current = false` su Prepara Spunta
-> - `market-map-viewer.html` (Backend): `map.once('moveend')` invece di `setTimeout(500)`
->
-> ---
-> ### CHANGELOG v10.2.4 (04 Mag 2026)
-> **Fix 5 Bug Critici: Graduatoria doppia, Animazione mappa, Tab PRESENZA POSTEGGIO, Barra turno PA**
->
-> **Problemi risolti:**
-> 1. **BUG 5 (CRITICO) — Graduatoria +2 su entrambi i posteggi (Backend)**: Il checkin su un secondo posteggio della stessa impresa incrementava la graduatoria una seconda volta. La `graduatoria_presenze` ha constraint unico `(market_id, impresa_id, tipo, anno)` senza `stall_id`. **Fix**: aggiunta query `altrePresenzeOggi` che verifica se l'impresa ha già fatto checkin oggi su un altro posteggio. Se sì, `incrementaPresenze = false`.
-> 2. **BUG 3 — Tab PRESENZA POSTEGGIO visibile durante fase SPUNTA (App)**: Il tab restava visibile anche quando la spunta era in corso perché `session_fase` non si aggiornava in tempo reale. **Fix**: aggiunto check `spuntaInAttesa.length === 0 && spuntaConPosteggio.length === 0` — se ci sono spuntisti in attesa o con posteggio, il tab è nascosto.
-> 3. **BUG 1 — Animazione mappa non parte dalla lista spunta (PA)**: Il `onStallClick` settava solo `selectedStallId` ma NON `selectedStallCenter`. **Fix**: aggiunto calcolo centro poligono dal GeoJSON e `setSelectedStallCenter([lat, lng])` per triggerare `flyTo` in `MarketMapComponent`.
-> 4. **BUG 2 — Barra spunta PA non aggiorna dopo assegnazione**: Dopo il successo di `assegna-posteggio-spunta`, la barra turno non si aggiornava immediatamente. **Fix**: aggiunto `await fetchSpuntaLiveTurno()` dopo `fetchData()` nel successo dell'assegnazione.
-> 5. **BUG 4 — MIO TEST concessionario nello storico**: Collegato a BUG 5 — la graduatoria veniva incrementata erroneamente. Con il fix BUG 5, il conteggio sarà corretto per le prossime sessioni.
->
-> **File modificati:**
-> - `presenze-live.js` (Backend): query `altrePresenzeOggi` prima di incrementare graduatoria
-> - `PresenzePage.tsx`: check `spuntaInAttesa/spuntaConPosteggio` per nascondere tab PRESENZA POSTEGGIO
-> - `GestioneMercati.tsx`: calcolo centro poligono in `onStallClick` + `fetchSpuntaLiveTurno` dopo assegnazione
->
-> **Regola critica graduatoria (NUOVA):**
-> - La graduatoria si incrementa SOLO al PRIMO checkin del giorno per impresa/mercato/tipo
-> - Se l'impresa ha più posteggi, il secondo/terzo checkin NON incrementa
-> - Verifica: `SELECT COUNT(*) FROM vendor_presences WHERE impresa_id AND market_id AND giorno_mercato AND id != presenzaId`
->
-> ---
-> ### CHANGELOG v10.2.3 (03 Mag 2026)
-> **Fix Definitivo: Popup ripetitivi, SPUNTA FINITA bloccante, Tab PRESENZA SPUNTA dopo rinuncia, Race condition Prepara**
->
-> **Problemi risolti:**
-> 1. **Popup SPUNTA FINITA/TERMINATA ripetitivo (App)**: SpuntaNotifier mostrava overlay FINE_SPUNTA ad ogni ciclo di polling (10s). Dopo la chiusura, il polling ri-triggerava lo stesso overlay perché il backend continuava a restituire `in_coda: false`. **Fix**: aggiunto `dismissedSessionRef` che traccia la session_id dismissata — il polling non ri-mostra FINE_SPUNTA per la stessa sessione. Reset solo per nuove sessioni.
-> 2. **Popup SPUNTA FINITA ripetitivo (PA)**: Il polling PA ogni 2s riceveva `spunta_terminata: true` e ri-apriva il popup. **Fix**: aggiunta condizione `!showSpuntaFinitaPopup` + stop polling dopo SPUNTA FINITA + `setIsSpuntaMode(false)` alla chiusura.
-> 3. **Race condition "Prepara" → FINE_SPUNTA immediata**: Dopo Prepara, il polling trovava l'impresa non ancora in coda (DB non aggiornato) e mostrava FINE_SPUNTA. **Fix**: aggiunto cooldown `inAttesaSinceRef` — se in IN_ATTESA da meno di 30 secondi, il polling non transiziona a FINE_SPUNTA.
-> 4. **Tab PRESENZA SPUNTA visibile dopo rinuncia**: La logica `scelta_tipo` controllava `spuntaInAttesa` (basato su `gia_presente_oggi`) PRIMA di `spunta_stato_coda === 'RINUNCIATO'`. **Fix**: ordine invertito — RINUNCIATO/SALTATO ha priorità massima. Stato locale aggiornato dopo rinuncia in tutte e 3 le schermate (presenza_spunta, spunta_attesa, spunta_turno).
-> 5. **Listener storage `spunta_gestita`**: Ora aggiorna anche `spunta_stato_coda` e ricarica dati dal backend (`cercaMercati()`) per avere stato fresco.
-> 6. **Alert nativi rimossi**: Sostituiti `alert()` con `console.error()` in SpuntaNotifier per errori scelta posteggio.
->
-> **File modificati:**
-> - `SpuntaNotifier.tsx`: anti-ripetizione popup (dismissedSessionRef), cooldown race condition (inAttesaSinceRef), session_id preservato in FINE_SPUNTA
-> - `PresenzePage.tsx`: logica rinuncia, listener storage con refresh backend, stato locale aggiornato
-> - `GestioneMercati.tsx`: popup SPUNTA FINITA una sola volta, stop polling, reset isSpuntaMode
->
-> **Regole anti-ripetizione popup (NUOVA SEZIONE ARCHITETTURA):**
-> - Ogni overlay/popup deve essere mostrato UNA SOLA VOLTA per sessione
-> - `dismissedSessionRef` in SpuntaNotifier traccia la session_id chiusa dall'utente
-> - Il polling NON ri-mostra FINE_SPUNTA se `dismissedSessionRef === currentSessionId`
-> - Il dismiss si resetta SOLO quando viene trovata una NUOVA session_id diversa
-> - Cooldown 30s: se lo spuntista è in IN_ATTESA da meno di 30 secondi, il polling non transiziona a FINE_SPUNTA (protegge da race condition dopo Prepara)
->
-> ---
-> ### CHANGELOG v10.2.2 (03 Mag 2026)
-> **Fix UNION ALL mismatch colonne mercati-oggi + Fix rinuncia spunta stato locale**
->
-> 1. **UNION ALL mismatch**: La prima parte (concessionari) aveva 24 colonne, la seconda (spuntisti) 25 (campo `spunta_stato_coda` mancante). Aggiunto `NULL as spunta_stato_coda` alla prima parte.
-> 2. **Rinuncia spunta stato locale**: Dopo rinuncia, `gia_presente_oggi` e `spunta_stato_coda` non venivano aggiornati nello stato React locale. Aggiunto aggiornamento in tutte e 3 le schermate rinuncia.
-> 3. **Logica scelta_tipo riordinata**: RINUNCIATO/SALTATO controllato PRIMA di spuntaInAttesa.
-> 4. **Card singola spuntista**: Badge RINUNCIATO/SALDO NEGATIVO per spuntisti con stato coda terminale.
->
-> ---
-> ### CHANGELOG v10.2.1 (03 Mag 2026)
-> **Aggiunto campo spunta_stato_coda all'endpoint mercati-oggi**
->
-> 1. Aggiunto LEFT JOIN con `spunta_coda` nella seconda parte della UNION (spuntisti) per restituire `spunta_stato_coda`.
-> 2. Il frontend usa questo campo per distinguere RINUNCIATO/SALTATO/IN_ATTESA/TURNO_ATTIVO.
->
-> ---
-> ### CHANGELOG v10.2.0 (03 Mag 2026)
-> **FIX CRITICO: assegna-posteggio-spunta ora usa spunta_coda**
->
-> 1. **BUG CRITICO**: la route `assegna-posteggio-spunta` cercava lo spuntista dalla GRADUATORIA (primo senza posteggio) invece che dalla SPUNTA_CODA (chi è in TURNO_ATTIVO). Questo causava: a) assegnazione allo spuntista sbagliato, b) errore SALDO_NEGATIVO per spuntisti con saldo positivo
-> 2. **Auto-skip con attivaProssimoTurno**: quando uno spuntista ha saldo negativo, ora fa auto-skip (SALTATO nella coda), incrementa rinunce, e attiva il prossimo turno automaticamente
-> 3. **Evento SSE SALDO_NEGATIVO_SKIP**: inviato a tutti i client per aggiornare l'interfaccia
->
-> ---
-> ### CHANGELOG v10.1.9 (03 Mag 2026)
-> **Fix storico sessioni, rinunce, banner saldo negativo, semaforo SALDO NEG**
->
-> 1. **Storico sessioni ordinamento**: aggiunto `created_at DESC` per sessioni dello stesso giorno + container 600px
-> 2. **Rinunce incremento**: auto-skip (saldo negativo) e rinuncia manuale ora incrementano `assenze_non_giustificate` nella graduatoria
-> 3. **Banner spuntista dopo saldo negativo**: click sul popup rosso ora fa anche fetchSpuntaLiveTurno per aggiornare il banner
-> 4. **Semaforo SALDO NEG.**: nella lista spuntisti, chi ha wallet negativo mostra badge rosso "SALDO NEG."
-> 5. **Pulizia sessioni zombie**: chiusa sessione 482 IN_CORSO rimasta aperta
->
-> ---
-> ### CHANGELOG v10.1.8 (03 Mag 2026)
-> **Fix assenze lista posteggi, rinomina Ass->Rin per spuntisti, deposito/chiudi solo in spunta, auto-chiusura popup**
->
-> 1. **Assenze concessionari a zero**: il frontend cercava `assenze_totali` (sempre 0) invece di `assenze_non_giustificate`
-> 2. **Spuntisti "Ass." -> "Rin."**: colonna rinominata in "Rinunce" + usa `assenze_non_giustificate`
-> 3. **Backend spuntisti**: aggiunto campo `assenze_non_giustificate` e `assenze_totali` all'endpoint `/api/presenze/spuntisti/mercato`
-> 4. **Deposito/Chiudi visibili solo in Spunta**: rimessi dentro blocco `isSpuntaMode` senza bug reset
-> 5. **Auto-chiusura popup**: dopo conferma deposito rifiuti o chiudi mercato singolo, il popup Leaflet si chiude automaticamente
->
-> ---
-> ### CHANGELOG v10.1.7 (03 Mag 2026)
-> **Fix Critico Storico Sessioni: ogni "Prepara" ora crea una NUOVA sessione, "Chiudi" aggiorna quella esistente**
->
-> **Problema:** `avvia-spunta` riusava la sessione esistente per lo stesso giorno (SELECT + riuso).
-> Quindi Prepara→Chiudi→Prepara sovrascriveva sempre la stessa sessione.
-> `chiudi-mercato` creava SEMPRE una nuova sessione (INSERT) invece di aggiornare quella creata da Prepara.
->
-> **Fix applicati:**
-> - `avvia-spunta`: SEMPRE crea nuova sessione (INSERT diretto, mai SELECT+riuso)
-> - `chiudi-mercato`: AGGIORNA la sessione IN_CORSO esistente (UPDATE) invece di INSERT
-> - Tutte le query che cercavano sessione per `DATE(data_mercato)` ora cercano sessione `IN_CORSO` per `market_id`
-> - `presenze-live.js` checkin e attivaProssimoTurno: stessa logica
-> - `presenze.js` chiudi-mercato endpoint: stessa logica
-> - Pulite 5 sessioni zombie IN_CORSO nel DB
->
-> **File modificati:** `test-mercato.js`, `presenze-live.js`, `presenze.js`
-> **Commit backend:** e0e72b3
->
-> ---
-> ### CHANGELOG v10.1.4 (03 Mag 2026)
-> **Versione:** 10.1.4 (Fix Definitivi Modulo Spunta + Schema Tecnico Completo)
-> **Data:** 03 Maggio 2026
->
-> ---
-> ### CHANGELOG v10.1.4 (03 Mag 2026)
-> **Fix Definitivi Modulo Spunta: Popup Saldo Negativo, Wallet Spuntisti, Presenze Graduatoria, Blocco PA, Schema Tecnico**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `858e359` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `858e359` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `9d7b4b6` | Allineato |
-> | Vercel frontend | `9d7b4b6` | Autodeploy |
->
-> **BACKEND:**
-> - **Fix `markets.js` stalls wallet_balance:** `COALESCE(w.balance, w_spunta.balance)` per mostrare il saldo corretto anche per gli spuntisti (prima mostrava €0.00 perché il JOIN su concession_id falliva per wallet SPUNTA).
-> - **Fix `test-mercato.js` assegna-posteggio-spunta:** Aggiunto blocco saldo negativo (HTTP 403 SALDO_NEGATIVO) prima dell'assegnazione. La PA non può più assegnare posteggi a spuntisti con saldo < 0.
-> - **Fix `presenze-live.js` checkin graduatoria:** `tipoGrad = walletType === 'SPUNTA' ? 'SPUNTA' : 'CONCESSION'` per restituire posizione e presenze corrette (non mescolando CONCESSION e SPUNTA).
-> - **Fix `presenze-live.js` scegli-posteggio:** Aggiorna presenza esistente (UPDATE) invece di crearne una nuova (INSERT). Blocco saldo negativo con HTTP 403.
-> - **Fix `presenze-live.js` avvia-spunta-live:** Riusa turno TURNO_ATTIVO già creato dal bridge invece di chiuderlo.
-> - **Fix `presenze.js` spuntisti/mercato:** JOIN con spunta_coda per stato/stall_number. Timezone Europe/Rome.
-> - **Fix `presenze.js` storico/dettaglio:** Cerca in TUTTE le sessioni del giorno con `ANY($1)`.
->
-> **FRONTEND:**
-> - **Fix `PresenzePage.tsx` popup SALDO_NEGATIVO:** Gestione esplicita HTTP 403 con `if (!res.ok)` prima di `res.json()`. Mostra popup rosso fullscreen "ACCESSO NEGATO" (non più alert nativo bianco).
-> - **Fix `PresenzePage.tsx` card spunta rossa:** Rimosso `!isSpunta` dalla condizione colore → card con bordo/sfondo/testo rosso quando saldo negativo.
-> - **Fix `GestioneMercati.tsx` presenze graduatoria:** Filtro per `tipo` nella ricerca gradRecord: CONCESSION per concessionari, SPUNTA per spuntisti. Risolve presenze uguali per tutti e 81 presenze nel posteggio 1708.
-> - **Fix `GestioneMercati.tsx` blocco PA saldo negativo:** Gestione HTTP 403 nell'assegnazione posteggio spunta. Toast errore "SALDO NEGATIVO" e posteggio rimesso a "riservato".
->
-> **DOCUMENTAZIONE:**
-> - **Nuova sezione "ARCHITETTURA TECNICA — MODULO PRESENZE E SPUNTA"** nel blueprint: schema completo tabelle (wallets, stalls, vendor_presences, graduatoria_presenze, spunta_coda, market_sessions), relazioni, flussi end-to-end (checkin, spunta live, lista concessionari PA, lista spuntisti PA), regole di business critiche (timezone, tipo graduatoria, blocco saldo, aggiornamento presenza, riuso turno), riferimento rapido endpoint API.
->
-> ---
-> ### CHANGELOG v10.1.3 (03 Mag 2026)
-> **Fix Modulo Spunta, Graduatoria, Orari Timezone, Auto-Scadenza Turno, UI Presenze**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `b4d81df` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `b4d81df` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `04df75e` | Allineato |
-> | Vercel frontend | `04df75e` | Autodeploy |
->
-> **BACKEND (commit `5c986a4` → `b4d81df`):**
-> - **Fix `mercati-oggi` gia_presente_oggi:** Aggiunto filtro `stato IN ('IN_ATTESA', 'TURNO_ATTIVO', 'IN_CODA')` per gli spuntisti.
-> - **Fix `entra-coda` graduatoria:** Aggiunto `AND tipo = 'SPUNTA'` per prendere le presenze corrette.
-> - **Fix `mercati-oggi` spuntisti (UNION ALL):** Aggiunta JOIN con `vendor_presences` (tipo SPUNTA) e `stalls` per restituire il posteggio assegnato (stall_number), stato deposito e uscita.
-> - **Fix `markets.js` stalls endpoint:** Aggiunta JOIN con `imprese` e `wallets` per restituire `spuntista_impresa_nome` e `spuntista_wallet_balance`.
-> - **Fix Orari Timezone App:** Modificato `NOW()` in `NOW() AT TIME ZONE 'Europe/Rome'` in `deposito-rifiuti` e `uscita-mercato`.
-> - **Fix Orari Timezone PA:** Modificato `NOW()` in `NOW() AT TIME ZONE 'Europe/Rome'` in `deposito-rifiuti` e `uscita-mercato`.
-> - **Fix `scegli-posteggio`:** Aggiorna `stalls.spuntista_nome` e `stalls.spuntista_impresa_id` all'assegnazione.
-> - **Fix `uscita-mercato` (app + PA):** Resetta `spuntista_nome` e `spuntista_impresa_id` a NULL all'uscita.
-> - **Fix `spunta-turno-corrente` (Auto-scadenza):** Aggiunta auto-scadenza: se `secondi_rimanenti <= 0`, scade il turno e chiama `attivaProssimoTurno` automaticamente.
-> - **Fix `checkin` (concessione):** Preferisce wallet CONCESSION con `ORDER BY CASE WHEN type = 'CONCESSION' THEN 0 ELSE 1 END` per evitare presenza duplicata.
-> - **Fix `checkin` blocco auto-inserimento spunta_coda:** Aggiunto `AND tipo = 'SPUNTA'` nella query graduatoria.
-> - **Fix `storico/sessioni`:** Rimosso filtro `checkout_time IS NOT NULL` per sessioni di oggi, ora mostra anche presenze attive.
->
-> **FRONTEND (commit `840fb9f` → `04df75e`):**
-> - **Fix UI `PresenzePage.tsx` (Card posteggio spunta):** Dopo l'assegnazione (ha stall_number), mostra DEPOSITO/USCITA invece di ATTESA SPUNTA.
-> - **Fix UI `PresenzePage.tsx` (Tab ATTESA SPUNTA):** Distingue `spuntaInAttesa` (in coda senza posteggio) vs `spuntaConPosteggio`. Mostra ATTESA SPUNTA solo se in coda.
-> - **Fix UI `PresenzePage.tsx` (Deposito/Uscita):** I tab deposito e uscita ora includono anche i posteggi spunta con stall_number assegnato.
-> - **Fix UI `PresenzePage.tsx` (Semaforo Fase):** Mostra rosso/CHIUSA se `session_fase === 'CHIUSO'`, verde altrimenti.
-> - **Fix UI `GestioneMercati.tsx` (Emoji):** Corrette le emoji rotte usando le espressioni JSX `\u267b\ufe0f` e `\ud83c\udfea`.
->
-> ---
-> ---
-> ### CHANGELOG v10.1.2 (02 Mag 2026)
-> **Fix Critico Passaggio Turno, Deduplicazione Concessioni, Tab AVVIA Rimosso, Lista Spuntisti PA**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `ace16df` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `ace16df` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `ded45fe` | Allineato |
-> | Vercel frontend | `ded45fe` | Autodeploy |
->
-> **BACKEND (commit `f04edc8` → `ace16df`):**
-> - **Log broadcastSSE e attivaProssimoTurno:** Aggiunti log dettagliati per tracciare quanti client SSE ricevono gli eventi e il passaggio turno.
-> - **Deduplicazione concessioni mercati-oggi:** Le concessioni con stesso `(market_id, wallet_type)` vengono deduplicate per evitare schede doppie nell'app.
-> - **Lista spuntisti PA filtro data oggi:** L'endpoint `/api/spuntisti/mercato/:id` ora filtra `vendor_presences` per `giorno_mercato = oggi` (timezone Europe/Rome).
->
-> **FRONTEND (commit `de384af` → `ded45fe`):**
-> - **FIX CRITICO passaggio turno:** Il polling controllava `in_coda` PRIMA di `turno_attivo`. Quando `turno_attivo=true`, anche `in_coda=true`, quindi il ramo `turno_attivo` non veniva mai raggiunto per gli spuntisti in `IN_ATTESA`. Invertito l'ordine: ora `turno_attivo` viene controllato per primo.
-> - **Tab AVVIA rimosso:** Il bottone "▶ Avvia" è stato rimosso dalla PA. La spunta live viene avviata automaticamente dal bottone "🟠 Prepara" che ora chiama sia `avvia-spunta` che `avvia-spunta-live`.
-> - **Timer PA countdown fluido:** Il timer nella PA ora scala ogni secondo con countdown locale, sincronizzato dal polling ogni 5s.
->
-> ---
-> ### CHANGELOG v10.1.1 (02 Mag 2026)
-> **Fix Spunta: Regressione Graduatoria, Timer PA Countdown, Stato Rientro Presenze, Debug Polling**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `f04edc8` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `f04edc8` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `de384af` | Allineato |
-> | Vercel frontend | `de384af` | Autodeploy |
->
-> **BACKEND (commit `66dfec9` → `f04edc8`):**
-> - **Fix regressione graduatoria_presenze:** La query INSERT usava `comune_id` che non esiste nella tabella. Allineata alle colonne del checkin normale: `(impresa_id, market_id, wallet_id, stall_id, tipo, anno, presenze_totali, punteggio, data_prima_presenza)` con conflict key `(market_id, impresa_id, tipo, anno)`.
-> - **Fix `entra-coda` posizione_graduatoria:** L'endpoint ora calcola la posizione reale con `ROW_NUMBER() OVER (ORDER BY punteggio DESC)` e restituisce `presenze_totali` nella risposta.
-> - **Fix `mercati-oggi` gia_presente_oggi per spuntisti:** Prima era hardcoded `false`. Ora controlla se l'impresa è in `spunta_coda` per la sessione di oggi. Risolve il bug del rientro nella pagina Presenze che mostrava sempre "PRESENZA SPUNTA" invece di "ATTESA SPUNTA".
->
-> **FRONTEND (commit `c46216e` → `de384af`):**
-> - **Timer PA countdown locale:** Aggiunto `spuntaTimerLocal` con `useEffect` che scala ogni secondo. Il polling ogni 5s sincronizza il valore dal backend, ma tra un polling e l'altro il timer scende fluidamente.
-> - **Debug log polling:** Aggiunti console.log dettagliati nel polling per tracciare il passaggio turno (stato, scadenzaInCorso, readyState SSE).
->
-> ---
-> ### CHANGELOG v10.1.0 (02 Mag 2026)
-> **Fix Spunta: Lista Spuntisti PA, Orario Timezone, Graduatoria Presenze, Polling Robusto, No Reset App**
->
-> **BACKEND (commit `bb14d05` → `66dfec9`):**
-> - **Fix `scegli-posteggio` wallet_id:** Aggiunto `wallet_id` nella INSERT `vendor_presences`.
-> - **Fix orario timezone:** `checkin_time` ora usa `NOW() AT TIME ZONE 'Europe/Rome'`.
-> - **Fix graduatoria_presenze:** Aggiunto INSERT/UPDATE in `graduatoria_presenze` dopo l'assegnazione.
->
-> **FRONTEND (commit `ead2ef6` → `c46216e`):**
-> - **Polling robusto IN_ATTESA:** Riconnette SSE se disconnessa.
-> - **Polling scopre turno attivo da IN_ATTESA:** Fallback robusto.
-> - **Fine spunta non resetta l'app:** Solo reset stato locale.
->
-> ---
-> ### CHANGELOG v10.0.9 (02 Mag 2026)
-> **Fix Spunta: vendor_id null, Race Condition Passaggio Turno, Mappa Modale Responsive Smartphone**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `bb14d05` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `bb14d05` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `ead2ef6` | Allineato |
-> | Vercel frontend | `ead2ef6` | Autodeploy |
->
-> **BACKEND (commit `e0fb5f0` → `bb14d05`):**
-> - **Fix `scegli-posteggio` vendor_id null:** Aggiunto `vendor_id` (= `impresa_id`) nella INSERT `vendor_presences`. Prima mancava e causava l'errore "null value in column vendor_id of relation vendor_presences violates not-null constraint".
->
-> **FRONTEND (commit `bee8d43` → `ead2ef6`):**
-> - **Fix race condition passaggio turno:** Aggiunto `scadenzaInCorsoRef` che **blocca il polling per 15 secondi** dopo la scadenza del turno. Prima il polling (ogni 10s) trovava l'impresa con stato `SCADUTO` nel DB, rispondeva `in_coda: false`, e chiudeva la SSE prima che il backend potesse inviare `PROSSIMO_TURNO`. Ora il polling è sospeso durante il passaggio turno.
-> - **Fix timer PROSSIMO_TURNO:** Il `setTimerSecondi` ora forza sempre il reset a `data.timeout_secondi || 120` quando arriva un nuovo turno, invece di mantenere il valore precedente se > 0.
-> - **Mappa modale responsive smartphone:** Aggiunto `safe-area-inset-top/bottom`, `min-h-0` sul container mappa, `flex-shrink-0` su header e footer, testo ridotto per non tagliare i pulsanti. I pulsanti "TORNA ALLA LISTA" e "SCEGLI QUESTO" sono ora sempre visibili su iPhone.
-> - **`height="100%"`** passato a `MarketMapComponent` nel modale per riempire correttamente lo spazio disponibile.
->
-> ---
-> ### CHANGELOG v10.0.8 (02 Mag 2026)
-> **Fix Spunta: Passaggio Turno Automatico, Mappa Leaflet Interna, Wallet SPUNTA, Popup PA Assegnazione**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `e0fb5f0` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `e0fb5f0` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `bee8d43` | Allineato |
-> | Vercel frontend | `bee8d43` | Autodeploy |
->
-> **BACKEND (commit `4af6ca2` → `e0fb5f0`):**
-> - **Fix `scegli-posteggio` wallet SPUNTA:** La query wallet ora cerca prima il wallet di tipo `SPUNTA` per il `market_id` specifico del turno, poi fa fallback a qualsiasi wallet attivo. Il saldo può andare in negativo (come per i concessionari), eliminando il blocco `WALLET_INSUFFICIENTE` per gli spuntisti.
->
-> **FRONTEND (commit `283ffeb` → `bee8d43`):**
-> - **Fix passaggio turno automatico:** Quando il timer scade, il frontend chiama `scadenza-turno` ma **NON chiude più la SSE**. Torna in stato `IN_ATTESA` e resta in ascolto: il backend invierà `PROSSIMO_TURNO` (se c'è un altro spuntista) o `SPUNTA_TERMINATA` (se era l'ultimo). Risolve il bug dove il turno scadeva ma non passava al successivo.
-> - **Mappa Leaflet interna (no pagina esterna):** L'icona mappa nella lista posteggi ora apre un **modale full-screen con MarketMapComponent** (Leaflet) centrato sul posteggio selezionato, con evidenziazione fuxia. Non apre più una pagina esterna né il market-map-viewer.
-> - **Layout card posteggio:** Rimosso il quadratino verde con il numero del posteggio. Al suo posto c'è un'**icona mappa grande** (MapPin 14x14, sfondo teal) che apre la mappa interna. Il numero del posteggio resta nel testo della card.
-> - **Fix popup mappa PA (MarketMapComponent):** Quando `isSpuntaMode` e `isLiberaMode` sono entrambi attivi, i posteggi `riservato` ora mostrano il popup **"Conferma Assegnazione"** (spunta) invece di "Conferma Liberazione". La condizione `isLiberaMode` per i posteggi `riservato` è ora esclusa quando `isSpuntaMode` è attivo.
->
-> ---
-> ### CHANGELOG v10.0.7 (02 Mag 2026)
-> **Fix Spunta: Scadenza Turno, Mappa Interna, Reset Tab Attesa, Chiusura Spunta Reale**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `4af6ca2` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `4af6ca2` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `4c16916` | Allineato |
-> | Vercel frontend | `4c16916` | Autodeploy |
->
-> **BACKEND (commit `57a4e78` → `4af6ca2`):**
-> - **Fix `scegli-posteggio` auto-lookup `coda_id`:** Se il frontend non invia `coda_id` ma solo `impresa_id`, il backend cerca automaticamente il turno attivo (`TURNO_ATTIVO`) nella `spunta_coda` e recupera il `coda_id` e `session_id`. Risolve l'errore "coda_id, session_id e stall_id sono obbligatori".
-> - **Fix `scegli-posteggio` accetta posteggi `riservato`:** La query di verifica posteggio ora cerca `status IN ('libero', 'riservato')` invece di solo `libero`, permettendo la scelta di posteggi riservati alla spunta.
-> - **Fix `attivaProssimoTurno` chiude spunta davvero:** Quando non ci sono più spuntisti `IN_ATTESA`, la funzione ora: (1) rimette tutti i posteggi `riservato` a `libero`, (2) chiude tutti i turni rimasti `IN_ATTESA` settandoli a `COMPLETATO`, (3) invia evento SSE `SPUNTA_TERMINATA`.
-> - **Fix conteggio posteggi:** Tutte le query che contano posteggi disponibili ora usano `status IN ('libero', 'riservato')` invece di solo `libero`.
-> - **Endpoint `scadenza-turno`:** `POST /api/presenze-live/spunta/scadenza-turno` — chiamato dal frontend quando il timer scade. Chiude il turno corrente (`SCADUTO`) e chiama `attivaProssimoTurno` per attivare il prossimo spuntista.
-> - **Endpoint `avvia-spunta-live`:** `POST /api/presenze-live/avvia-spunta-live/:marketId` — per il tab "▶ Avvia" nella PA. Avvia la spunta live separatamente dall'automazione.
-> - **Endpoint `spunta-turno-corrente`:** `GET /api/presenze-live/spunta-turno-corrente/:marketId` — per il banner giallo PA che mostra l'impresa di turno corrente.
-> - **Endpoint `posteggi-liberi` fix:** Cerca `status IN ('riservato', 'libero')` invece di solo `libero`.
-> - **Impedisce doppia presenza spunta:** Se l'impresa è già in `spunta_coda` con stato finale (`ASSEGNATO`, `SCADUTO`, `COMPLETATO`, `SALTATO`, `RINUNCIATO`), non viene reinserita. Impedisce di rifare la presenza spunta dopo che la spunta è terminata.
->
-> **FRONTEND (commit `9d84617` → `4c16916`):**
-> - **SpuntaNotifier — Mappa interna (no Google Maps):** L'icona MapPin nella lista posteggi alla spunta ora apre il `market-map-viewer.html` interno centrato sul posteggio selezionato, invece di Google Maps. Il `market_id` viene recuperato dalla risposta del backend `posteggi-liberi`.
-> - **SpuntaNotifier — Timer scadenza:** Quando il timer raggiunge 0, il frontend chiama `POST /spunta/scadenza-turno` per notificare il backend, chiude la SSE e mostra l'overlay "Tempo scaduto".
-> - **SpuntaNotifier — Polling sicuro:** Il polling non sovrascrive stati terminali (`LISTA_POSTEGGI`, `ASSEGNATO`, `FINE_SPUNTA`). Flag `scadenzaChiamataRef` previene doppie chiamate scadenza.
-> - **PresenzePage — Reset tab ATTESA SPUNTA:** Aggiunto listener `storage` per l'evento `spunta_gestita` emesso da SpuntaNotifier quando l'overlay viene chiuso. Quando ricevuto: resetta `gia_presente_oggi` per le concessioni Spunta, resetta lo stato spunta locale, torna a `scelta_tipo` se in schermata spunta, e ricarica i dati mercato freschi dal backend.
-> - **GestioneMercati — Tab AVVIA e Banner:** Tab "▶ Avvia" per avviare la spunta live dalla PA. Banner giallo con polling ogni 5s mostra l'impresa di turno corrente. L'automazione si ferma quando finiscono gli spuntisti.
->
-> ---
-> ### CHANGELOG v10.0.6 (02 Mag 2026)
-> **Bridge SSE per Simulazione Mercato e SpuntaNotifier Globale**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `7eb82a0` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `7eb82a0` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `daeb9d8` | Allineato |
-> | Vercel frontend | `daeb9d8` | Autodeploy |
-> **BACKEND:**
-> - **Bridge SSE in Test Mercato (`routes/test-mercato.js`):** Aggiunto un "bridge" non bloccante agli endpoint legacy di simulazione mercato per farli comunicare con l'app impresa tramite SSE, **mantenendo intatto il flusso di simulazione per le demo**:
->   - `POST /avvia-spunta`: Dopo l'esecuzione legacy, crea/trova la `market_session` di oggi, popola la tabella `spunta_coda` con tutti gli spuntisti ordinati per graduatoria, attiva il turno del primo e invia gli eventi SSE `SPUNTA_INIZIATA` e `PROSSIMO_TURNO`.
->   - `POST /assegna-posteggio-spunta`: Dopo l'assegnazione legacy, aggiorna la `spunta_coda` a `ASSEGNATO`, invia l'evento SSE `POSTEGGIO_ASSEGNATO` all'impresa e chiama `attivaProssimoTurno` per far scattare la notifica allo spuntista successivo.
-> - **Endpoint Stato Impresa (`GET /api/presenze-live/spunta/stato-impresa/:impresaId`):** Creato nuovo endpoint per controllare se l'impresa è attualmente in coda spunta (stato `IN_ATTESA`, `TURNO_ATTIVO` o `IN_CODA`) in qualsiasi sessione. Restituisce i dettagli del turno per permettere al client di connettersi alla SSE corretta.
->
-> **FRONTEND:**
-> - **SpuntaNotifier Globale (`SpuntaNotifier.tsx`):** Creato e integrato in `App.tsx` un componente globale che gestisce la connessione SSE per la spunta. Effettua polling leggero sull'endpoint `stato-impresa` e, se in coda, si connette allo stream SSE mostrando gli overlay full-screen (giallo per attesa/turno, verde per assegnato) in **qualsiasi pagina dell'app**.
-> - **Fix UI Attesa Spunta (`PresenzePage.tsx`):**
->   - **Tab Autorizzazione Spunta:** Dopo aver registrato la presenza spunta, il tab dinamico sotto la card mostra "ATTESA SPUNTA" con icona orologio lampeggiante, invece dei pulsanti "DEPOSITO RIFIUTI" e "USCITA MERCATO".
->   - **Pulsante Scelta Tipo:** Il pulsante globale "PRESENZA SPUNTA" si trasforma in "ATTESA SPUNTA" se l'impresa ha già registrato la presenza.
->   - **Schermata Presenza Spunta:** Se la presenza è già stata registrata, la schermata mostra lo stato di attesa invece del pulsante "REGISTRA SPUNTA".
->
-> ---
-> ### CHANGELOG v10.0.4 (01 Mag 2026)
-> **Gestione Presenze App Impresa: Tab Dinamici, Orologio Real-Time e Fix Logica Spunta**
->
-> **Stato deploy:**
-> | Sistema | Commit | Stato |
-> |---|---|---|
-> | GitHub `mihub-backend-rest` master | `6998982` | Allineato |
-> | Hetzner backend (api.mio-hub.me) | `6998982` | Autodeploy |
-> | GitHub `dms-hub-app-new` master | `50ebe00` | Allineato |
-> | Vercel frontend | `50ebe00` | Autodeploy |
->
-> **BACKEND — 9 commit (da `ec2ba0e` a `6998982`):**
->
-> **Endpoint Gestione Presenze Live (`routes/presenze-live.js`):**
-> - **Nuovi Endpoint:** Creati `POST /deposito-rifiuti` e `POST /uscita-mercato` per completare il flusso di presenza. Aggiornano rispettivamente `orario_deposito_rifiuti` e `checkout_time` in `vendor_presences` per la sessione corrente, e liberano lo stallo in uscita.
-> - **Fix Query `mercati-oggi`:** 
->   - Corretto il nome della colonna da `rifiuti_time` a `orario_deposito_rifiuti` per il check dello stato deposito.
->   - Aggiunti i flag booleani `deposito_rifiuti_fatto` e `uscita_registrata` al payload di risposta.
->   - Aggiunte le colonne booleane fittizie al blocco `UNION ALL` per gli spuntisti per risolvere l'errore SQL.
->   - **Fix Logica Spunta:** Rimossa la clausola `NOT EXISTS` che impediva alle imprese di vedere i mercati spunta se possedevano già una concessione nello stesso mercato. Ora un'impresa può partecipare sia come concessionario che come spuntista.
-> - **Fix Checkin Saldo:** Rimosso il blocco `WALLET_INSUFFICIENTE` per i concessionari nell'endpoint checkin. La presenza passa sempre e il saldo va in negativo. Il blocco saldo resta solo per gli spuntisti alla scelta del posteggio.
-> - **Graduatoria in Risposta Checkin:** La risposta JSON del checkin ora include `posizione_graduatoria` e `presenze_totali` per il popup spunta.
->
-> **Lista Spuntisti PA (`routes/presenze.js`):**
-> - **Fix NOT EXISTS:** Rimossa la clausola `NOT EXISTS` in `GET /spuntisti/mercato/:id` che escludeva le imprese con concessione ATTIVA dalla lista spuntisti. Ora un'impresa con concessione appare anche nel tab Spunta di Gestione Mercati.
->
-> **FRONTEND — 9 commit (da `4832763` a `50ebe00`):**
->
-> **Flusso Operativo Presenze App Impresa (`PresenzePage.tsx`):**
-> - **Tab Dinamici (Posteggi):** I pulsanti sotto ogni posteggio cambiano stato dinamicamente in base alle azioni completate: `PRESENZA` (Verde) → `DEPOSITO RIFIUTI` (Giallo) → `USCITA MERCATO` (Rosso).
-> - **Pulsanti Contestuali (Scelta Tipo):** La schermata principale mostra dinamicamente i pulsanti di azione globale in base allo stato complessivo delle concessioni. Aggiunto messaggio di successo "Giornata completata!" quando tutte le operazioni sono concluse.
-> - **Nuove Schermate:** Aggiunte le viste `deposito_rifiuti` e `uscita_mercato` che mostrano solo i posteggi pertinenti alla fase specifica.
-> - **Fix UI e Truncate:** 
->   - Rimossi i `truncate` che tagliavano i testi dei pulsanti principali (PRESENZA POSTEGGIO, PRESENZA SPUNTA, DEPOSITO RIFIUTI, USCITA MERCATO).
->   - Risolto l'overflow del testo nel pulsante `CONFERMA PRESENZA` nella vista mappa, adattando il font per schermi piccoli.
-> - **Orologio Real-Time:** Aggiunto un orologio digitale in tempo reale (formato `HH:MM:SS`, timezone Europe/Rome) tra la card del mercato e i pulsanti di azione, aggiornato ogni secondo.
->
-> **Fix Wallet Impresa (`WalletImpresaPage.tsx`):**
-> - **Ripristinato Pulsante Ricarica Wallet SPUNTA:** La condizione del pulsante "+ Ricarica" era limitata a `wallet.type === "GENERICO"`. Estesa a `GENERICO || SPUNTA` per permettere la ricarica PagoPA anche sui wallet spunta.
-> - **Dialog Contestuale:** Il dialog di ricarica mostra titolo e descrizione differenziati: "Ricarica Wallet Spunta" con nome mercato per wallet SPUNTA, "Ricarica Wallet Generico" per wallet GENERICO.
-> - **Descrizione Transazione:** La descrizione PagoPA è differenziata per tipo wallet.
->
-> **Card Autorizzazione Spunta (`PresenzePage.tsx`):**
-> - **Card Differenziata:** La concessione spunta ora mostra "Autorizzazione Spunta" con icona Ticket arancione, invece di "Posteggio - / 0 mq / Canone €0.00".
-> - **Sottotitolo Contestuale:** Mostra il nome del mercato + "Spuntista" invece dei dati mq/canone.
-> - **Logica Saldo Frontend:** Il controllo saldo negativo (bordo rosso + blocco presenza) si applica solo alle concessioni (posteggi fisici), non alle spunte. La presenza spunta passa sempre anche con saldo €0.00.
->
-> **Popup Successo Spunta (`PresenzePage.tsx`):**
-> - **Popup Differenziato:** Il popup successo dopo la presenza spunta mostra "PRESENZA SPUNTA REGISTRATA" con nome mercato, posizione in graduatoria e presenze accumulate, invece del generico "Posteggio - — Canone: €0.00".
+> | Verifica Firma Digitale | FUNZIONANTE | CAdES/PAdES, test OK con certificato self-signed |
+> | Flusso SPID/ARPA | PRONTO (codice) | In attesa registrazione client su portale ARPA |
+> | Tab Riconciliazione Incassi | FUNZIONANTE | Integrato con endpoint PagoPA |
+> | PagoPA/E-FIL Gateway | SANDBOX | Endpoint pronti, in attesa credenziali E-FIL |
+> | Endpoint upload-firmato | FUNZIONANTE | Verifica crittografica reale integrata |
+> | ARPA trial.auth.toscana.it | RAGGIUNGIBILE | JWKS 200, OpenID Configuration OK |
+>
+> **VINCOLI NEGATIVI (cosa NON fare):**
+> - NON rimuovere il fallback graceful in upload-firmato (se firma-verifica.js non caricabile, accetta come v1)
+> - NON usare `tsc` standalone per verificare WalletPanel.tsx (manca contesto path aliases)
+> - NON tentare deploy via `/api/admin/deploy-backend` — lo script `/root/scripts/deploy-mihub.sh` non esiste su Hetzner (il deploy è via git pull + pm2 restart manuale o webhook)
+> - NON modificare la struttura ASN.1 del parsing CAdES senza test con file .p7m reali
 >
 > ---
 > ### CHANGELOG v10.0.3 (29-30 Apr 2026)
@@ -2195,73 +1451,6 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 ---
 
 ## 📝 CHANGELOG RECENTE
-### Sessione 10 Maggio 2026 — Fix Notifiche, Messaggi, Pagamento Corsi e Icone (v10.10.0)
-
-**Contesto:** Fix di 7 bug nel modulo Enti Formatori e App Impresa: notifiche di iscrizione corso con routing errato, messaggi inviati da Enti Formatori che finivano in Associazioni & Bandi, attestati di formazione che non comparivano nelle scadenze, icona occhio mancante per PDF, messaggi non apribili nella dashboard, e bug pagamento corso dopo ricarica wallet.
-
-**Stato:** ✅ COMPLETATO
-
-**Backend (mihub-backend-rest) — Bug Fix:**
-- ✅ **Fix `routes/pagamenti.js` (notifica iscrizione):** La notifica di iscrizione a un corso ora va SEMPRE a `target_tipo='ENTE_FORMATORE'` con `target_id=corso.ente_id`. Prima usava `corso.associazione_id ? 'ASSOCIAZIONE' : 'ENTE_FORMATORE'` che causava routing errato.
-- ✅ **Fix `routes/pagamenti.js` (pagato/transazione_id):** Dopo pagamento corso riuscito, l'iscrizione viene aggiornata con `pagato=true` e `transazione_id=tx.id`.
-- ✅ **Fix `routes/associazioni-v9.js` (rilascia-attestato):** Aggiunto fallback diretto per inserire/aggiornare la qualificazione nella tabella `qualificazioni` anche se la chiamata HTTP interna fallisce. Fix notifica: `target_tipo='IMPRESA'` e `mittente_tipo='ENTE_FORMATORE'`.
-- ✅ **Fix `routes/associazioni-v9.js` (notifiche-corso):** L'endpoint `POST /api/associazioni/:id/notifiche-corso` ora salva con `mittente_tipo='ENTE_FORMATORE'` invece di `'ASSOCIAZIONE'`. Questo era il bug principale per cui i messaggi inviati dal tab Enti Formatori finivano nel tab Associazioni & Bandi.
-- ✅ **Fix `routes/qualificazioni.js`:** L'endpoint `GET /api/qualificazioni/impresa/:id` ora include un `LEFT JOIN LATERAL` con `attestati_pdf` per restituire `attestato_pdf_id` e `attestato_pdf_url`.
-- ✅ **Fix `routes/formazione.js` (auto-migration):** Aggiunta auto-migration all'avvio per colonne `pagato BOOLEAN DEFAULT false` e `transazione_id INTEGER` su `formazione_iscrizioni`. Backfill automatico: iscrizioni COMPLETATE segnate come pagate.
-- ✅ **Fix `routes/formazione.js` (GET iscrizioni):** La query GET ora restituisce anche `COALESCE(fi.pagato, false) as pagato` e `fi.transazione_id`.
-
-**Frontend (dms-hub-app-new) — Bug Fix:**
-- ✅ **DashboardPA.tsx (messaggi espandibili):** Aggiunta icona Eye e toggle expand/collapse per tutti i messaggi inviati e ricevuti, sia in Enti Formatori che in Associazioni & Bandi. Cliccando l'icona Eye si espande il messaggio completo con titolo, contenuto e data.
-- ✅ **DashboardPA.tsx (stato expandedMsgId):** Nuovo stato `expandedMsgId` per gestire l'espansione dei messaggi.
-- ✅ **AnagraficaPage.tsx (bottone Paga):** Nei "Corsi Disponibili", quando un'iscrizione esiste ma `pagato=false` e il corso ha prezzo > 0, viene mostrato un bottone "Paga" (amber) sotto il badge "Iscritto" per completare il pagamento.
-- ✅ **AnagraficaPage.tsx (Le Mie Iscrizioni):** Aggiunto bottone "Paga" anche nel sub-tab "Le Mie Iscrizioni" per le iscrizioni non pagate.
-
-**Problemi Risolti:**
-1. **Notifiche iscrizione invertite:** Le notifiche automatiche di iscrizione ai corsi finivano nel tab "Associazioni & Bandi" — fix in `pagamenti.js`.
-2. **Messaggi manuali invertiti:** I messaggi inviati dal form "Invia Notifica alle Imprese" nel tab Enti Formatori finivano in Associazioni & Bandi — fix in `associazioni-v9.js` (endpoint `notifiche-corso`).
-3. **Scadenze attestati mancanti:** Gli attestati rilasciati non comparivano nella lista scadenze — fix fallback in `associazioni-v9.js`.
-4. **Icona occhio mancante:** I PDF degli attestati non erano apribili dall'app impresa — fix LEFT JOIN in `qualificazioni.js`.
-5. **Messaggi non apribili:** I messaggi nella dashboard non erano cliccabili — aggiunta icona Eye + espansione.
-6. **Bug pagamento corso:** Dopo iscrizione con wallet a zero, tornando in "Corsi Disponibili" il corso risultava "Iscritto" senza possibilità di pagare — aggiunto campo `pagato` e bottone "Paga".
-
-**Note Tecniche:**
-- La tabella `formazione_iscrizioni` ha ora 2 nuove colonne: `pagato` (BOOLEAN DEFAULT false) e `transazione_id` (INTEGER).
-- L'auto-migration in `formazione.js` esegue il backfill all'avvio: tutte le iscrizioni COMPLETATE vengono segnate come `pagato=true`.
-- Lo script `migrations/041_iscrizioni_pagato.js` è disponibile per un backfill più completo che collega anche le transazioni wallet.
-
----
-
-### Sessione 08 Maggio 2026 — Modulo TEAM e Formazione Obbligatoria (v9.1.0)
-
-**Contesto:** Implementazione del sistema completo di gestione della formazione obbligatoria per i collaboratori delle imprese (Modulo TEAM), generazione automatica degli attestati PDF conformi all'Accordo Stato-Regioni 59/2025 e integrazione dei controlli nella Dashboard PA.
-
-**Stato:** ✅ COMPLETATO
-
-**Database (mihub-backend-rest) — Aggiornamenti Schema:**
-- ✅ **Nuova tabella `attestati_pdf`:** Archiviazione e storicizzazione dei PDF generati, con riferimenti a collaboratore, corso, impresa e codice univoco.
-- ✅ **Nuova sequenza `seq_codice_attestato`:** Generazione automatica dei codici univoci (es. `ATT-SIC-2026-00001`).
-- ✅ **Aggiornamento `formazione_corsi`:** Normalizzazione dei `tipo_attestato` e adeguamento di `prezzo` e `durata_ore` secondo i valori di mercato.
-- ✅ **Aggiornamento `adempimenti_tipo_impresa`:** Aggiunti 6 nuovi adempimenti formativi obbligatori (Sicurezza Lavoratori, Antincendio, Primo Soccorso, RSPP, SAB, HACCP).
-
-**Backend (mihub-backend-rest) — Nuovi Endpoint:**
-- ✅ `GET /api/collaboratori/team/matrice` — Genera la matrice incrociata collaboratori/attestati, calcola la `% di conformità` e restituisce gli adempimenti mancanti per l'impresa.
-- ✅ `POST /api/attestati/genera` — Generazione dinamica PDF tramite `pdfkit`, inclusione di tutti i 6 dati obbligatori di legge (normative D.Lgs. 81/08, D.M. 388/03, ecc.) e salvataggio nel DB.
-- ✅ `PUT /api/formazione/corsi/:id/prezzo` — Modifica inline del prezzo dei corsi.
-- ✅ `PUT /api/formazione/corsi/:id` — Modifica completa dei dati del corso.
-- ✅ `DELETE /api/formazione/corsi/:id` — Eliminazione corso con aggiornamento contatori ente.
-- ✅ Aggiornamento `POST /api/associazioni/:id/rilascia-attestato` per includere la generazione e l'archiviazione del PDF al momento del rilascio.
-
-**Frontend (dms-hub-app-new) — Nuovi Componenti e UI:**
-- ✅ **`FormazioneTeamSection`:** Nuovo sotto-tab nel pannello Qualificazioni della Dashboard PA (per PM e Ispettorato del Lavoro) che mostra la matrice di conformità formativa del team aziendale.
-- ✅ **`TeamFormazionePanel`:** Cruscotto TEAM integrato nell'App Impresa (sezione Anagrafica -> Collaboratori) per visualizzare lo stato formativo dei propri dipendenti.
-- ✅ **`GestioneCorsiAssociazionePanel`:** Aggiunto il download diretto del PDF dell'attestato dopo il rilascio.
-- ✅ **`DashboardPA`:** Aggiunti pulsanti inline per la modifica del prezzo e l'eliminazione dei corsi nella vista "Corsi Disponibili".
-
-**Flusso Operativo Implementato:**
-1. L'impresa iscrive il collaboratore a un corso obbligatorio.
-2. L'Ente/Associazione segna il corso come completato e clicca su "Rilascia Attestato".
-3. Il sistema genera il PDF conforme alla normativa, lo salva in `attestati_pdf` e genera un codice univoco.
-4. L'attestato diventa immediatamente scaricabile dall'Ente, dall'Impresa e visibile alla PA/PM nel tab "Formazione Team" con stato di validità calcolato dinamicamente.
 
 ### Sessione 25 Febbraio 2026 — v9.0.2 — Migrazione Completa API URL a Backend Unico
 
@@ -2772,304 +1961,6 @@ Questa tabella traccia la timeline completa di ogni posteggio, registrando ogni 
 │  └────────────────────────────────────────────────────────────────────┘  │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
-
----
-
-## 🏛️ ARCHITETTURA TECNICA — MODULO PRESENZE E SPUNTA
-
-> **Versione:** 1.0.0 — 03 Maggio 2026
-> **Scopo:** Documentazione tecnica completa del sistema presenze (concessionari e spuntisti), graduatoria, e spunta live. Questo documento serve come riferimento definitivo per debug, manutenzione e sviluppo futuro.
-
-### 1. Schema Database — Tabelle Chiave
-
-#### 1.1 `wallets`
-
-Gestisce i saldi prepagati delle imprese per ogni mercato.
-
-| Colonna | Tipo | Descrizione |
-|---|---|---|
-| `id` | SERIAL PK | ID univoco wallet |
-| `company_id` | INTEGER FK → imprese.id | **ATTENZIONE: NON si chiama `impresa_id`!** Collegamento all'impresa |
-| `concession_id` | INTEGER FK → concessions.id | Solo per wallet CONCESSION — collega alla concessione specifica |
-| `market_id` | INTEGER FK → markets.id | Mercato di riferimento |
-| `type` | VARCHAR | `CONCESSION` oppure `SPUNTA` |
-| `balance` | DECIMAL | Saldo corrente (può essere negativo) |
-| `status` | VARCHAR | `ACTIVE`, `SUSPENDED`, etc. |
-
-**Regole critiche:**
-- Un'impresa ha **un wallet CONCESSION per ogni concessione** (collegato via `concession_id`)
-- Un'impresa ha **un solo wallet SPUNTA per mercato** (senza `concession_id`)
-- Il campo si chiama `company_id`, **MAI** `impresa_id` — errore frequente nelle query
-
-#### 1.2 `stalls`
-
-Posteggi fisici del mercato.
-
-| Colonna | Tipo | Descrizione |
-|---|---|---|
-| `id` | SERIAL PK | ID univoco posteggio |
-| `market_id` | INTEGER FK | Mercato di appartenenza |
-| `number` | VARCHAR | **Numero del posteggio (es. "1708", "116"). ATTENZIONE: si chiama `number`, NON `stall_number`!** |
-| `area_mq` | DECIMAL | Superficie in mq |
-| `status` | VARCHAR | `libero`, `occupato`, `riservato` |
-| `spuntista_impresa_id` | INTEGER | ID impresa dello spuntista assegnato (NULL se non assegnato) |
-| `spuntista_nome` | VARCHAR | Nome dello spuntista assegnato (NULL se non assegnato) |
-| `geometry_geojson` | JSONB | Poligono GIS per la mappa |
-| `is_active` | BOOLEAN | Se il posteggio è attivo |
-
-**Regole critiche:**
-- `spuntista_impresa_id` e `spuntista_nome` vengono popolati da `scegli-posteggio` e resettati a NULL da `uscita-mercato`
-- Il campo numero si chiama `number`, **MAI** `stall_number` (che esiste solo in `spunta_coda`)
-
-#### 1.3 `vendor_presences`
-
-Registro presenze giornaliere.
-
-| Colonna | Tipo | Descrizione |
-|---|---|---|
-| `id` | SERIAL PK | ID univoco presenza |
-| `vendor_id` | INTEGER FK | ID vendor (legacy) |
-| `stall_id` | INTEGER FK | Posteggio assegnato (NULL per spuntisti prima della scelta) |
-| `wallet_id` | INTEGER FK | Wallet utilizzato per il pagamento |
-| `market_id` | INTEGER FK | Mercato |
-| `impresa_id` | INTEGER FK | ID impresa |
-| `tipo_presenza` | VARCHAR | `CONCESSION` o `SPUNTA` |
-| `giorno_mercato` | DATE | Data della presenza (timezone Europe/Rome) |
-| `checkin_time` | TIMESTAMP | Orario di ingresso |
-| `checkout_time` | TIMESTAMP | Orario di uscita |
-| `orario_deposito_rifiuti` | TIMESTAMP | Orario deposito rifiuti |
-| `importo_addebitato` | DECIMAL | Importo addebitato al wallet |
-| `session_id` | INTEGER FK | Sessione mercato |
-
-**Regole critiche:**
-- Per gli spuntisti, la presenza viene creata dal bridge `avvia-spunta` con `stall_id=NULL` e `importo=0`
-- Quando lo spuntista sceglie il posteggio, `scegli-posteggio` **aggiorna** la presenza esistente (non ne crea una nuova)
-
-#### 1.4 `graduatoria_presenze`
-
-Classifica annuale per mercato — usata per ordinare la coda spunta.
-
-| Colonna | Tipo | Descrizione |
-|---|---|---|
-| `id` | SERIAL PK | ID univoco |
-| `market_id` | INTEGER FK | Mercato |
-| `impresa_id` | INTEGER FK | Impresa |
-| `wallet_id` | INTEGER FK | Wallet di riferimento |
-| `stall_id` | INTEGER FK | Posteggio (solo per CONCESSION) |
-| `tipo` | VARCHAR | **`CONCESSION` o `SPUNTA` — MAI mescolare!** |
-| `anno` | INTEGER | Anno di riferimento |
-| `presenze_totali` | INTEGER | Numero presenze accumulate |
-| `punteggio` | INTEGER | Punteggio graduatoria |
-| `posizione` | INTEGER | Posizione in classifica |
-| `data_prima_presenza` | DATE | Data della prima presenza (per spareggio) |
-| `assenze_totali` | INTEGER | Numero assenze |
-
-**Regole critiche:**
-- Constraint UNIQUE su `(market_id, impresa_id, tipo, anno)` — un record per tipo per impresa per anno
-- Un'impresa con concessione + spunta ha **DUE record**: uno CONCESSION (per stall) e uno SPUNTA
-- Le query devono **SEMPRE** filtrare per `tipo` — mai usare `tipo IN ('CONCESSION','SPUNTA')`
-- La posizione SPUNTA si calcola con `ROW_NUMBER() OVER (ORDER BY presenze_totali DESC, data_prima_presenza ASC)`
-
-#### 1.5 `spunta_coda`
-
-Coda di attesa per l'assegnazione posteggi durante la spunta live.
-
-| Colonna | Tipo | Descrizione |
-|---|---|---|
-| `id` | SERIAL PK | ID univoco |
-| `session_id` | INTEGER FK | Sessione mercato |
-| `impresa_id` | INTEGER FK | Impresa in coda |
-| `market_id` | INTEGER FK | Mercato |
-| `posizione` | INTEGER | Posizione nella coda |
-| `stato` | VARCHAR | `IN_ATTESA`, `TURNO_ATTIVO`, `ASSEGNATO`, `COMPLETATO`, `SCADUTO`, `RINUNCIATO` |
-| `stall_id` | INTEGER | Posteggio assegnato (dopo la scelta) |
-| `stall_number` | VARCHAR | Numero posteggio assegnato |
-| `punteggio_graduatoria` | INTEGER | Punteggio per l'ordinamento |
-| `presenze_annuali` | INTEGER | Presenze annuali al momento del checkin |
-| `turno_iniziato_at` | TIMESTAMP | Inizio del turno attivo |
-| `turno_scadenza_at` | TIMESTAMP | Scadenza del turno (auto-scadenza) |
-
-#### 1.6 `market_sessions`
-
-Sessioni giornaliere dei mercati.
-
-| Colonna | Tipo | Descrizione |
-|---|---|---|
-| `id` | SERIAL PK | ID univoco |
-| `market_id` | INTEGER FK | Mercato |
-| `data_mercato` | DATE | Data della sessione |
-| `stato` | VARCHAR | `APERTO`, `IN_CORSO`, `CHIUSO` |
-| `totale_presenze` | INTEGER | Contatore presenze |
-| `totale_incassato` | DECIMAL | Totale incassato |
-
-### 2. Relazioni tra Tabelle
-
-```
-imprese (id)
-  ├── wallets.company_id (1:N) — un wallet CONCESSION per concessione + un wallet SPUNTA per mercato
-  ├── vendor_presences.impresa_id (1:N) — presenze giornaliere
-  ├── graduatoria_presenze.impresa_id (1:N) — un record CONCESSION + un record SPUNTA per anno
-  ├── spunta_coda.impresa_id (1:N) — coda spunta per sessione
-  └── concessions.impresa_id (1:N) — concessioni attive
-
-stalls (id)
-  ├── concessions.stall_id (1:1) — concessione attiva sul posteggio
-  ├── vendor_presences.stall_id (N:1) — presenze su questo posteggio
-  └── spuntista_impresa_id → imprese.id — spuntista assegnato temporaneamente
-
-wallets (id)
-  ├── concession_id → concessions.id (solo tipo CONCESSION)
-  ├── company_id → imprese.id
-  └── market_id → markets.id
-
-market_sessions (id)
-  ├── spunta_coda.session_id (1:N)
-  └── vendor_presences.session_id (1:N)
-```
-
-### 3. Flussi End-to-End
-
-#### 3.1 Flusso Checkin Concessionario (App Impresa)
-
-1. L'impresa apre l'app → chiama `GET /api/presenze-live/mercati-oggi`
-2. Il backend restituisce i mercati con le concessioni dell'impresa (wallet, saldo, posteggio)
-3. L'impresa preme "PRESENZA" su un posteggio → chiama `POST /api/presenze-live/checkin`
-4. Il backend:
-   - Verifica sessione attiva (o ne crea una)
-   - Verifica non già presente oggi
-   - Calcola tariffa (area_mq * cost_per_sqm)
-   - Seleziona il wallet corretto (preferisce CONCESSION, fallback SPUNTA)
-   - Decurta il saldo dal wallet
-   - Crea `vendor_presences` con tipo = wallet.type
-   - Aggiorna `graduatoria_presenze` con tipo = wallet.type (CONCESSION o SPUNTA)
-   - Se wallet.type = SPUNTA e non c'è stall_id → inserisce in `spunta_coda`
-   - Restituisce posizione_graduatoria e presenze_totali **filtrate per tipo corretto**
-
-#### 3.2 Flusso Spunta Live (Bridge PA → App)
-
-**Fase 1: Preparazione (PA preme "Prepara")**
-1. PA chiama `POST /api/test-mercato/avvia-spunta` (bridge)
-2. Il bridge:
-   - Mette i posteggi liberi in stato `riservato`
-   - Per ogni spuntista: crea `vendor_presences` (stall_id=NULL, importo=0)
-   - Per ogni spuntista: incrementa `graduatoria_presenze` tipo=SPUNTA
-   - Popola `spunta_coda` (primo = TURNO_ATTIVO, altri = IN_ATTESA)
-   - Invia SSE SPUNTA_INIZIATA + PROSSIMO_TURNO
-3. PA chiama `POST /api/presenze-live/avvia-spunta-live/:marketId`
-4. Il backend riusa il turno TURNO_ATTIVO già creato dal bridge
-
-**Fase 2: Turno Attivo (App Spuntista)**
-1. Lo spuntista riceve SSE `PROSSIMO_TURNO` → l'app mostra "È IL TUO TURNO"
-2. Lo spuntista vede i posteggi liberi (`GET /api/presenze-live/spunta/posteggi-liberi/:sessionId`)
-3. Lo spuntista sceglie un posteggio → `POST /api/presenze-live/spunta/scegli-posteggio`
-4. Il backend:
-   - Verifica che il wallet SPUNTA abbia saldo >= 0 (altrimenti errore 403 SALDO_NEGATIVO)
-   - **Aggiorna** la vendor_presence esistente (stall_id + importo) — non ne crea una nuova
-   - Occupa lo stall (status=occupato, spuntista_nome, spuntista_impresa_id)
-   - Aggiorna spunta_coda (stato=ASSEGNATO, stall_id, stall_number)
-   - Decurta il wallet SPUNTA
-   - Chiama `attivaProssimoTurno()` per il prossimo spuntista
-
-**Fase 3: Auto-scadenza**
-- Se lo spuntista non sceglie entro il timeout, `spunta-turno-corrente` auto-scade il turno
-- Lo stato passa a SCADUTO e viene attivato il prossimo turno
-
-#### 3.3 Flusso Lista Concessionari PA (GestioneMercati)
-
-1. PA apre la scheda mercato → chiama in parallelo:
-   - `GET /api/markets/:id/stalls` → posteggi con wallet_balance e spuntista_nome
-   - `GET /api/presenze/mercato/:id` → presenze del giorno
-   - `GET /api/graduatoria/mercato/:id` → graduatoria completa (CONCESSION + SPUNTA)
-2. Il frontend mostra ogni posteggio con:
-   - Nome impresa (concessionario o spuntista)
-   - Wallet balance (dal campo `wallet_balance` della query stalls)
-   - Presenze totali (dal record graduatoria corrispondente)
-
-#### 3.4 Flusso Lista Spuntisti PA
-
-1. PA apre il tab "Spunta" → chiama `GET /api/presenze/spuntisti/mercato/:id`
-2. Il backend restituisce gli spuntisti con:
-   - Dati dalla `vendor_presences` del giorno (tipo SPUNTA)
-   - JOIN con `spunta_coda` per stato e stall_number
-   - JOIN con `wallets` (tipo SPUNTA) per il saldo
-
-### 4. Regole di Business Critiche
-
-#### 4.1 Timezone
-
-Tutte le date e gli orari devono usare il timezone `Europe/Rome`:
-
-- **SQL:** `NOW() AT TIME ZONE 'Europe/Rome'` per timestamp, `(NOW() AT TIME ZONE 'Europe/Rome')::date` per date
-- **JavaScript:** `new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' })` per date YYYY-MM-DD
-- **MAI usare:** `new Date().toISOString().split('T')[0]` (è UTC, sbaglia dopo mezzanotte)
-
-#### 4.2 Tipo Graduatoria
-
-- Le query sulla `graduatoria_presenze` devono **SEMPRE** filtrare per `tipo`
-- Per i concessionari: `tipo = 'CONCESSION'`
-- Per gli spuntisti: `tipo = 'SPUNTA'`
-- **MAI** usare `tipo IN ('CONCESSION', 'SPUNTA')` — mescola i dati e causa bug gravi
-
-#### 4.3 Blocco Saldo Negativo
-
-- Il backend `scegli-posteggio` verifica `wallet.balance < 0` **PRIMA** di procedere
-- Se il saldo è negativo → restituisce HTTP 403 con `{ errore: 'SALDO_NEGATIVO' }`
-- Il frontend deve gestire HTTP 403 leggendo il body JSON e mostrando un popup rosso fullscreen
-
-#### 4.4 Aggiornamento Presenza (Non Duplicazione)
-
-- Quando lo spuntista sceglie il posteggio, il backend **aggiorna** la presenza esistente (creata dal bridge)
-- La query usa `UPDATE vendor_presences SET stall_id = $1, importo_addebitato = $2 WHERE impresa_id = $3 AND market_id = $4 AND giorno_mercato = $5 AND stall_id IS NULL`
-- Questo evita presenze duplicate per lo stesso spuntista nello stesso giorno
-
-#### 4.5 Riuso Turno Attivo
-
-- `avvia-spunta-live` verifica se esiste già un turno TURNO_ATTIVO nella spunta_coda
-- Se esiste (creato dal bridge `avvia-spunta`) → lo riusa invece di chiuderlo e crearne uno nuovo
-- Questo evita di perdere il turno dello spuntista corrente
-
-### 5. Endpoint API — Riferimento Rapido
-
-| Endpoint | Metodo | File | Descrizione |
-|---|---|---|---|
-| `/api/presenze-live/mercati-oggi` | GET | presenze-live.js | Mercati del giorno con concessioni e stato spunta |
-| `/api/presenze-live/checkin` | POST | presenze-live.js | Registra presenza concessionario/spuntista |
-| `/api/presenze-live/spunta/entra-coda` | POST | presenze-live.js | Spuntista entra in coda spunta |
-| `/api/presenze-live/spunta/scegli-posteggio` | POST | presenze-live.js | Spuntista sceglie posteggio (con blocco saldo negativo) |
-| `/api/presenze-live/spunta/stato/:sessionId` | GET | presenze-live.js | Stato corrente spuntista nella coda |
-| `/api/presenze-live/spunta/posteggi-liberi/:sessionId` | GET | presenze-live.js | Lista posteggi disponibili |
-| `/api/presenze-live/spunta/rinuncia` | POST | presenze-live.js | Spuntista rinuncia al turno |
-| `/api/presenze-live/avvia-spunta-live/:marketId` | POST | presenze-live.js | PA avvia spunta live (riusa turno attivo) |
-| `/api/presenze-live/spunta-turno-corrente/:marketId` | GET | presenze-live.js | PA polling turno corrente (con auto-scadenza) |
-| `/api/presenze-live/deposito-rifiuti` | POST | presenze-live.js | Registra deposito rifiuti |
-| `/api/presenze-live/uscita-mercato` | POST | presenze-live.js | Registra uscita (resetta spuntista su stall) |
-| `/api/presenze/spuntisti/mercato/:id` | GET | presenze.js | Lista spuntisti PA con stato coda e wallet |
-| `/api/presenze/storico/sessioni` | GET | presenze.js | Storico sessioni mercato |
-| `/api/presenze/storico/dettaglio` | GET | presenze.js | Dettaglio presenze per sessione |
-| `/api/presenze/mercato/:id/chiudi` | POST | presenze.js | Chiudi sessione mercato |
-| `/api/graduatoria/mercato/:id` | GET | presenze.js | Graduatoria presenze per mercato e tipo |
-| `/api/markets/:id/stalls` | GET | markets.js | Posteggi con wallet, concessioni e spuntisti |
-| `/api/presenze-live/spunta/scadenza-turno` | POST | presenze-live.js | Notifica scadenza turno dal frontend |
-| `/api/presenze-live/spunta/stato-impresa/:impresaId` | GET | presenze-live.js | Stato impresa nella coda spunta (polling SpuntaNotifier) |
-| `/api/presenze-live/spunta/sse/:sessionId` | GET | presenze-live.js | Stream SSE eventi spunta (PROSSIMO_TURNO, POSTEGGIO_ASSEGNATO, FINE_SPUNTA) |
-| `/api/presenze-live/conferma-assegnazione` | POST | presenze-live.js | PA conferma assegnazione posteggi batch |
-| `/api/presenze-live/termina-sessione/:sessionId` | POST | presenze-live.js | PA termina sessione mercato |
-| `/api/collaboratori/me` | GET | collaboratori.js | Dati collaboratore corrente (per risoluzione impresaId) |
-| `/api/test-mercato/avvia-spunta` | POST | test-mercato.js | Bridge: prepara spunta (NON MODIFICARE) |
-| `/api/test-mercato/assegna-posteggio-spunta` | POST | test-mercato.js | Bridge: assegna posteggio (NON MODIFICARE) |
-
-### 6. Bug Risolti in Sessione v10.1.4 (03 Maggio 2026)
-
-| Bug | Descrizione | Causa Radice | Fix |
-|---|---|---|---|
-| Posizione 1° e 79 presenze | App mostrava dati CONCESSION invece di SPUNTA | Query checkin usava `tipo IN('CONCESSION','SPUNTA')` | `tipoGrad = walletType === 'SPUNTA' ? 'SPUNTA' : 'CONCESSION'` |
-| Popup saldo negativo bianco | Alert nativo invece di popup rosso fullscreen | Frontend non gestiva HTTP 403 come JSON | Aggiunto `if (!res.ok)` con lettura body JSON prima di `res.json()` |
-| Card spunta verde con saldo negativo | Card non diventava rossa | Condizione `!isSpunta` impediva il colore rosso | Rimosso `!isSpunta` dalla condizione |
-| Presenze duplicate spuntisti | Nuova presenza creata invece di aggiornare | `scegli-posteggio` faceva INSERT invece di UPDATE | Cambiato in UPDATE della presenza esistente (stall_id IS NULL) |
-| Turno perso all'avvio spunta | `avvia-spunta-live` chiudeva il turno del bridge | Non verificava turno TURNO_ATTIVO esistente | Aggiunto check e riuso del turno attivo |
-| Wallet €0.00 nella lista concessionari | Spuntisti mostravano saldo 0 | JOIN wallet solo su concession_id (spuntisti non hanno concession_id) | Aggiunto `COALESCE(w.balance, w_spunta.balance)` con JOIN separato |
-| Presenze uguali per tutti | Stessa cifra per tutti i posteggi | Frontend cercava graduatoria per impresa_id senza filtrare per tipo | Aggiunto filtro tipo nella ricerca gradRecord |
-| Giorno sbagliato (sab vs dom) | Data UTC invece di Europe/Rome | `toISOString().split('T')[0]` è UTC | Cambiato in `toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' })` |
 
 ---
 
@@ -3780,7 +2671,7 @@ Includono: `agent_brain`, `agent_context`, `agent_projects`, `agent_tasks`, `api
 
 ## 🔌 API ENDPOINTS
 
-### Endpoint Index (1029 endpoint totali)
+### Endpoint Index (998 endpoint totali)
 
 Gli endpoint sono documentati in:
 
@@ -6519,6 +5410,12 @@ Per ora, se aggiungi endpoint critici, aggiungili in entrambi i file.
 
 | Repository         | Tag                    | Data       | Descrizione                                                  |
 | ------------------ | ---------------------- | ---------- | ------------------------------------------------------------ |
+| mihub-backend-rest | **v10.18.0-a99x-fase2** | 14/05/2026 | A99X Fase 1+2 complete, SMTP, Jitsi, follow-up (191 tabelle) |
+| dms-hub-app-new    | **v10.18.0-a99x-fase2** | 14/05/2026 | Tab A99X operativo, corsi A99X/Esterno (da taggare)          |
+| mihub-backend-rest | v10.19.0-a99x-fase3a     | 14/05/2026 | A99X Fase 3A completata, scheduling nativo, inviti riunione |
+| dms-hub-app-new    | v10.19.0-a99x-fase3a     | 14/05/2026 | A99X Fase 3A completata, scheduling nativo, inviti riunione |
+| mihub-backend-rest | STABLE-v10.15.0-20260513 | 13/05/2026 | Pre-A99X, dominio miohub.it, 184 tabelle                    |
+| dms-hub-app-new    | STABLE-v10.15.0-20260513 | 13/05/2026 | Pre-A99X, dominio miohub.it, 184 tabelle                    |
 | dms-hub-app-new    | **v9.9.5-stable**      | 24/04/2026 | Fatturazione + PDF + Bugfix billing/SCIA/SUAP (173 tabelle)  |
 | mihub-backend-rest | **v9.9.5-stable**      | 24/04/2026 | Fatturazione + PDF + Bugfix billing/SCIA/SUAP (173 tabelle)  |
 | dms-hub-app-new    | v9.8.5-stable          | 11/03/2026 | Pre-fatturazione, pulizia produzione, 156 tabelle            |
@@ -14386,91 +13283,184 @@ Il flusso completo è stato testato con successo:
 [4] DPR 28 dicembre 2000, n. 445 - Testo Unico Documentazione Amministrativa. https://www.normattiva.it/atto/caricaDettaglioAtto?atto.dataPubblicazioneGazzetta=2001-02-20&atto.codiceRedazionale=001G0049
 [5] Regolamento (UE) n. 910/2014 (eIDAS) - Validità firma elettronica. https://geometri.mi.it/la-firma-elettronica-avanzata/
 
+## Aggiornamento operativo 2026-05-09 — Corsi associazione: wallet, notifiche corso e attestati
 
-### 14. SCHEMA IMPLEMENTAZIONI FUTURE
+Questo aggiornamento corregge il flusso di pagamento dei corsi acquistati dall’app impresa e potenzia il pannello associazione senza riscrivere i moduli esistenti. L’intervento è stato effettuato in modo chirurgico sui file `routes/pagamenti.js` e `routes/associazioni-v9.js`, preservando i flussi già funzionanti per servizi, quote associative, iscrizioni e generazione attestati.
 
-Per evitare regressioni (fixare da una parte e rompere dall'altra), ogni nuova implementazione nel modulo Presenze/Spunta deve seguire questo schema:
+| Area | Modifica | Endpoint / file | Effetto operativo |
+|---|---|---|---|
+| Wallet associazione | Il pagamento corso ora accredita anche `wallet_associazione` e registra una riga nello storico `transazioni_wallet_associazione` con tipo `CORSO`. | `POST /api/pagamenti/corso` | La transazione corso pagata da impresa diventa visibile nel wallet associazione, analogamente a servizi e quote. |
+| Notifiche corso | Aggiunto invio notifica alle sole imprese iscritte a uno specifico corso. Il messaggio può includere link video corso oppure dettagli sede. | `POST /api/associazioni/:id/notifiche-corso` | L’associazione può comunicare istruzioni operative mirate alle imprese iscritte al corso selezionato. |
+| Iscrizione corso | Aggiunto endpoint per segnare un’iscrizione come completata senza generare subito l’attestato. | `POST /api/associazioni/:id/corsi/:cid/iscrizioni/:iscrizioneId/completa` | Il record visuale può distinguere tra corso fatto e attestato generato/inviato. |
 
-1. **Gestione Wallet (Il cuore del sistema)**
-   - Regola d'oro: Un'impresa può avere DUE wallet attivi (CONCESSION e SPUNTA).
-   - Quando si fa checkin, BISOGNA specificare il `tipo_presenza` per usare il wallet corretto.
-   - Il saldo negativo blocca l'occupazione MA DEVE far avanzare la coda automaticamente.
+> Nota di compatibilità: l’associazione proprietaria del corso viene risolta tramite il collegamento già presente tra `formazione_corsi`, `formazione_enti` e `associazioni.nome`, mantenendo lo stesso criterio usato nel pannello corsi associazione.
 
-2. **Gestione Graduatoria**
-   - La tabella `graduatoria_presenze` ha due record per la stessa impresa se fa sia concessionario che spuntista.
-   - Le query devono SEMPRE filtrare per `tipo` ('CONCESSION' o 'SPUNTA').
-   - Le presenze SPUNTA aumentano di +1 per TUTTI gli spuntisti in coda quando si preme "Prepara" (questo è by-design).
+### Changelog v10.14.0 — 12 maggio 2026
 
-3. **Gestione Storico e Sessioni**
-   - Più sessioni possono esistere nello stesso giorno (se si preme "Prepara" più volte).
-   - Lo storico deve leggere `market_session_details` di TUTTE le sessioni del giorno, non solo dell'ultima.
-   - L'uscita mercato resetta `stalls.spuntista_nome` ma NON deve toccare `vendors.business_name`.
+**Integrazione completa Piattaforme PA nel tab Connessioni + Guardian:**
 
-4. **Flusso Eventi SSE (Server-Sent Events)**
-   - Ogni azione sulla coda (assegnazione, rinuncia, skip per saldo) DEVE chiamare `attivaProssimoTurno(sessionId)`.
-   - Il frontend deve reagire agli eventi SSE aggiornando lo stato senza ricaricare l'intera pagina.
+- **apiLogger.js**: aggiunti 14 service ID (anpr.api, appio.api, pagopa.api, pdnd.api, ssu.api, auth.sso, firma.api, cie.api, notifiche.api, gaming.api, tcc.api, presenze.api, civic.api) — il Guardian ora classifica correttamente tutte le chiamate API per servizio
+- **realEndpoints.ts**: aggiunte 5 nuove connessioni nel sottotab Connessioni (ANPR, App IO, SSO ARPA, Firma Digitale + PagoPA aggiornato)
+- **ConnessioniV2.tsx**: health check personalizzati per ogni servizio (ANPR status, App IO status, PagoPA status, PDND status, SSU status, SSO config, Firma SUAP health)
+- **api/index.json (MIO-hub)**: aggiunti 22 endpoint al catalogo (ANPR 5, App IO 6, PagoPA 6, Firma 1, SSU 4) — versione 44, totale 619 endpoint
+- **Tutti i servizi ora visibili, testabili e monitorati** nel sottotab Connessioni della sezione Integrazioni
+
+**Test produzione:**
+| Servizio | Stato | Modalità |
+|----------|-------|----------|
+| ANPR | OK | sandbox |
+| App IO | OK | sandbox |
+| PagoPA | OK | sandbox |
+| PDND | OK | collaudo |
+| SSU | OK | in configurazione |
+| Auth/SSO | OK | trial |
+
+### Changelog v10.16.0 — 12 maggio 2026
+
+**Documentazione Registrazioni e Go-Live:**
+
+- Creata la guida completa `GUIDA_REGISTRAZIONI_MIOHUB.md` con tutte le procedure di accreditamento per PDND, SSU, App IO, PagoPA e SSO ARPA.
+- La guida include i passaggi esatti da eseguire sui portali istituzionali e le credenziali che si ottengono alla fine di ogni processo.
+- Aggiunti i vincoli negativi espliciti per la fase di go-live.
+
+**Vincoli e Attenzioni (Cosa NON fare):**
+- **NON** modificare manualmente il file PDF dell'Accordo di Adesione PDND prima di firmarlo.
+- **NON** condividere chiavi private RSA o Client Secret via email/chat.
+- **NON** attivare l'ambiente di produzione SSU prima di aver completato i test in collaudo.
+- **NON** disabilitare il sistema di ruoli: gli endpoint SSU e PDND devono rimanere protetti.
+
+### v10.16.0 — Report Interattivo Investitori (12 Maggio 2026)
+- **Report Interattivo riscritto** — NativeReportComponent.tsx (1389→1389 righe, 733 nuove)
+- **Tab Architettura**: 6 moduli core con stats reali, highlights e immagini blueprint
+- **Tab Metriche & Codice**: 270.391 LOC, 1.051 endpoint, 551 file, 3.868 commit
+  - Top 15 moduli backend per complessità (LOC + endpoint)
+  - Top 10 componenti frontend per righe di codice
+  - Breakdown backend/frontend con numeri reali
+- **Tab Database & Infra**: 21 tabelle MySQL in 7 domini, hosting Hetzner+Vercel+GitHub
+- **Tab Componenti**: 173 React in 12 gruppi funzionali, stack 24 tecnologie
+- **Tab Dossier Investitori** (rinominato):
+  - Conformità normativa 25/27 (era 20/27) — score bar interattive
+  - Valutazione economica: 540K-810K EUR asset, 2-8M EUR potenziale commerciale
+  - Metodologia COCOMO II: 270K LOC × 2-3 EUR/LOC
+  - Target: 8.000 mercati italiani, ARR 250-1.000 EUR/mercato/anno
+  - 12 integrazioni PA con stato operativo/sandbox/da fare
+  - 27 voci conformità normativa dettagliate
+- **Versione report allineata a v10.14** del blueprint
+
+### Changelog v10.16.0 — 12 Maggio 2026 (Dossier Investitori Completo)
+- **Report Interattivo → Dossier Investitori**: riscritto completamente con 5 sotto-tab
+  - **Ecosistema**: visione "Gemello Digitale del Commercio Italiano", 3 app (PA/Impresa/Cittadino), numeri mercato reali
+  - **Revenue Model**: 11 flussi di revenue con calcoli reali — scenario conservativo 9.7M EUR/anno, ottimistico 84M EUR/anno
+  - **Servizi Premium**: AVA AI, Gaming/Carbon Credits, Hub Urbani, Route Etico, Segnalatore Civico, Paghe & Contabilità
+  - **Conformità**: 25/27 voci con score bar, Guardian monitoring (285K+ log, 94.3% success rate)
+  - **Integrazioni PA**: 12 piattaforme con stato operativo/sandbox/da fare
+- **Modello di business**: 1 EUR/posteggio/giorno, 10% riscossione canone unico, SCIA automatizzate, pagamenti diretti, AVA premium, gaming, hub urbani, paghe/contabilità, business dati
+- **billing.js**: 15 linee di fatturazione già implementate (mercati, hub, ava, verbali, suap, giornate, wallet, civic, notifiche, qualificazioni, mio_agent, mobilità, gaming, carbon)
+
+### Changelog v10.17.0 — 14 Maggio 2026 (A99X Fase 1 — Implementazione)
+
+**Avvio implementazione Fase 1 del progetto A99X:**
+
+**Fix completato (commit `9e07104` su `dms-hub-app-new`):**
+- Pulsanti "Visita Vetrina" in `MarketMapComponent.tsx` ora aprono in nuova tab (`window.open`) invece di navigare nella stessa tab (`Link` wouter)
+- Risolto bug: il Back del browser non perde più lo stato della dashboard
+
+**Progetto Operativo A99X aggiornato a v1.2:**
+- Aggiunta sezione 1E: Integrazione Cal.com per Corsi di Formazione e Relatori
+- Significato A99X: Assistente che ottimizza i compiti 99 volte più velocemente — il problema delle lungaggini della PA
+- Modello relatori/istruttori: 2 nuove tabelle (`formazione_relatori`, `formazione_corso_relatori`)
+- Nuove colonne su `formazione_corsi`: `link_a99x`, `link_esterno`, `piattaforma_corso`
+- 7 nuovi endpoint REST per gestione relatori
+- Flusso notifica corso aggiornato: scelta piattaforma A99X/Esterno + invio a relatori
+- Frontend: form invio notifica con tab A99X (link precompilato) e tab Link Esterno
+- Tabelle totali da creare: da 10 a 12
+
+**Implementazioni Fase 1 in corso:**
+
+| Azione | Stato | File |
+|---|---|---|
+| Dismissione tab MIO Agent | IN CORSO | `DashboardPA.tsx` |
+| Settore TRANSIZIONE_DIGITALE (RTD) | IN CORSO | `routes/comuni.js` |
+| Modulo email SMTP Aruba (nodemailer) | IN CORSO | `src/services/email-service.js` |
+| Tabelle relatori su Neon | IN CORSO | migrazione SQL |
+| Endpoint relatori | IN CORSO | `routes/formazione.js` |
+| Aggiornamento notifiche-corso | IN CORSO | `routes/associazioni-v9.js` |
+| Frontend form notifica A99X | IN CORSO | `GestioneCorsiAssociazionePanel.tsx` |
+
+**Vincoli negativi aggiunti:**
+- NON modificare il flusso di prenotazione/pagamento corsi esistente
+- NON rendere obbligatorio il link A99X — l'ente deve poter scegliere link esterno
+- NON inviare notifiche ai relatori senza consenso esplicito dell'ente (checkbox)
+- NON esporre email dei relatori alle imprese
+
 
 ---
 
-## 15. PROGETTO SSO SUAP (FRONT OFFICE)
+## Changelog v10.18.0 — A99X Fase 2: Agenda Intelligente + Jitsi Meet (13 maggio 2026)
 
-MIO HUB è in fase di evoluzione per diventare un **Front Office SUAP accreditato** nel nuovo Sistema Informatico degli Sportelli Unici (SSU) gestito da AgID/MIMIT, ai sensi dell'art. 5 dell'Allegato al DPR 160/2010.
+**Stato Fase 1 → COMPLETATA:**
 
-### 15.1 Stato Attuale dell'Infrastruttura (Aggiornato 12 Maggio 2026)
+| Azione | Stato | File |
+|---|---|---|
+| Dismissione tab MIO Agent | ✅ COMPLETATO | `DashboardPA.tsx` |
+| Tab A99X Agenda Intelligente (operativo) | ✅ COMPLETATO | `DashboardPA.tsx` |
+| Settore TRANSIZIONE_DIGITALE (RTD) | ✅ COMPLETATO | `routes/comuni.js` |
+| Modulo email SMTP Aruba (info@miohub.it) | ✅ COMPLETATO | `src/services/email-service.js` |
+| Tabelle relatori su Neon | ✅ COMPLETATO | auto-migration in `routes/formazione.js` |
+| Endpoint CRUD relatori | ✅ COMPLETATO | `routes/formazione.js` |
+| Aggiornamento notifiche-corso con A99X | ✅ COMPLETATO | `routes/associazioni-v9.js` |
+| Frontend form notifica A99X | ✅ COMPLETATO | `GestioneCorsiAssociazionePanel.tsx` |
+| Dialog "Dettagli accesso corso" con scelta A99X | ✅ COMPLETATO | `DashboardPA.tsx`, `NotificheAssociazionePanel.tsx` |
 
-L'infrastruttura è stata completamente aggiornata e allineata per il collaudo SSU/PDND. Ecco lo stato dei moduli:
+**Fase 2 — Nuovi componenti deployati:**
 
-1. **Flusso SUAP Base (🟢 Reale & Testato):** Il backend gestisce le pratiche, la generazione PDF, l'upload firmato e il motore di validazione `runEvaluation`.
-   - *Firma Digitale:* Il sistema accetta file PAdES (.pdf) e CAdES (.p7m), calcola l'hash SHA-256 e lo confronta con l'originale. Il flusso di download/upload firmato è live (`/api/suap/pratiche/:id/download-firmato` e `/upload-firmato`).
-2. **SSO Utenti (🟢 Reale & Testato):** Il backend implementa OAuth2/OIDC con ARPA Toscana per SPID/CIE/CNS. L'endpoint `/api/auth/login` genera correttamente l'URL di redirect verso `trial.auth.toscana.it`. Manca solo la registrazione del client sul portale ARPA.
-3. **Connettori PDND (🟢 Reale & Testato):** Il modulo `routes/pdnd.js` implementa il flusso OAuth2 client_credentials con client_assertion JWT (RFC 7521).
-   - *DURC INPS:* Allineato alle specifiche reali PDD INPS (`/get_durc/{force}/{cf}/{encrKey}`). Restituisce esito istantaneo (SI/NO) e PDF Base64.
-   - *Registro Imprese:* Implementato per visure camerali.
-   - *Feature Flag:* Il sistema è protetto e risponde 503 se mancano le chiavi di accreditamento.
-4. **Connettori SSU AgID (🟢 Reale & Testato):** Il modulo `routes/ssu-connector.js` implementa il Client API (invio istanze) e il Webhook Server (ricezione notifiche dal Back Office).
-5. **Dashboard Piattaforme PA (🟢 Reale):** Il componente `PiattaformePA.tsx` è collegato ai dati live del backend per PDND, SSU e Audit Trail.
-6. **PagoPA / E-FIL (🟢 Reale & Testato):** Il sistema gestisce i wallet TCC e integra il gateway PagoPA tramite il partner tecnologico E-FIL (Comune di Grosseto). Il modulo `routes/pagopa-efil.js` gestisce la generazione IUV, la callback server-to-server (RT) e il return URL. Attualmente in modalità Sandbox.
+| Componente | Descrizione | File |
+|---|---|---|
+| Servizio Jitsi | Generazione link meet.jit.si automatici | `src/services/jitsi-service.js` |
+| Servizio Follow-up | Algoritmo P=U×I×D×S + reminder email | `src/services/a99x-followup-service.js` |
+| Router A99X Agenda | 15+ endpoint CRUD completi | `routes/a99x-agenda.js` |
+| Auto-migration tabelle | 5 tabelle + indici creati all'avvio | `routes/a99x-agenda.js` |
+| Tab A99X operativo | Calendario, riunioni, task, link Jitsi | `DashboardPA.tsx` |
+| Notifiche SMTP | Sistema email funzionante via info@miohub.it | `routes/notifications-smtp.js` |
 
-### 15.2 Architettura Target (SSU Connector)
+**Tabelle A99X create su Neon:**
 
-Per operare come Front Office, MIO HUB dovrà implementare un nuovo modulo `ssu-connector` nel backend:
+- `a99x_assessori` — Assessori/funzionari del comune
+- `a99x_slot_disponibilita` — Slot disponibilità assessori
+- `a99x_riunioni` — Riunioni/appuntamenti con priorità P=U×I×D×S
+- `a99x_partecipanti` — Partecipanti alle riunioni
+- `a99x_task_followup` — Task generati post-riunione
 
-* **Client API SSU:** Per chiamare `POST /request_cui` (Catalogo SSU) e `POST /send_instance` (Back Office).
-* **Server API SSU:** Per esporre `POST /request_correction`, `POST /request_integration`, `POST /notify` e `GET /instance/{cui_uuid}/document/{resource_id}` al Back Office.
-* **Autenticazione PDND:** Gestione dei voucher JWT e firma `Agid-JWT-Signature` (ModI `integrity_rest_01`).
-* **Generatore XML:** Per produrre l'XML della pratica validato con gli XSD ufficiali.
+**Endpoint A99X disponibili:**
 
-### 15.3 Integrazione UI e Monitoraggio (Guardian)
+```
+GET    /api/a99x/assessori              — Lista assessori
+POST   /api/a99x/assessori              — Crea assessore
+PUT    /api/a99x/assessori/:id          — Aggiorna assessore
+DELETE /api/a99x/assessori/:id          — Disattiva assessore
+GET    /api/a99x/assessori/:id/slot     — Slot disponibilità
+POST   /api/a99x/assessori/:id/slot     — Crea slot
+DELETE /api/a99x/slot/:id               — Rimuovi slot
+GET    /api/a99x/riunioni               — Lista riunioni (filtri)
+GET    /api/a99x/riunioni/:id           — Dettaglio riunione
+POST   /api/a99x/riunioni               — Crea riunione (genera link Jitsi)
+PUT    /api/a99x/riunioni/:id           — Aggiorna riunione
+PUT    /api/a99x/riunioni/:id/stato     — Cambia stato
+GET    /api/a99x/task                   — Lista task follow-up
+POST   /api/a99x/riunioni/:id/task      — Crea task da riunione
+PUT    /api/a99x/task/:id               — Aggiorna task
+PUT    /api/a99x/task/:id/stato         — Cambia stato task
+GET    /api/a99x/dashboard              — Statistiche e prossimi eventi
+GET    /api/a99x/calendario             — Vista calendario
+POST   /api/a99x/jitsi/genera-link      — Genera link Jitsi standalone
+```
 
-Tutti i nuovi endpoint di integrazione (SSU, PDND) sono stati registrati nel catalogo centralizzato del frontend (`client/src/config/realEndpoints.ts`) e sono visibili, testabili e monitorati dal sistema Guardian nella sezione **Integrazioni e API**.
+**Vincoli negativi confermati:**
 
-* La card "PDND" e la card "SSU" sono presenti in `ConnessioniV2.tsx` con stato "In Preparazione" (in attesa di accreditamento).
-* L'API Dashboard e l'API Playground mostrano i nuovi endpoint, permettendo test manuali e monitoraggio del success rate.
-
-### 15.4 Checklist per il Collaudo Finale
-
-Per rendere il sistema 100% operativo in produzione, mancano i seguenti passaggi burocratici e di integrazione esterna:
-
-1. **Accreditamento PDND Interop:**
-   - Registrazione ente su selfcare.pagopa.it
-   - Generazione keypair RSA e caricamento chiave pubblica
-   - Richiesta fruizione e-service (INPS DURC, Registro Imprese, ANPR)
-   - Inserimento env var (`PDND_CLIENT_ID`, `PDND_PRIVATE_KEY`, `PDND_INPS_ENCR_KEY`, ecc.)
-2. **Accreditamento SSU (Front Office):**
-   - Registrazione componente FO sul portale InfoCamere
-   - Configurazione URL Back Office del Comune
-3. **Attivazione SPID/CIE (ARPA Toscana):**
-   - Registrazione del `client_id` (miohub-client) sul portale ARPA
-   - Configurazione del `redirect_uri` di produzione
-4. **Integrazione PagoPA (E-FIL):**
-   - Inserimento env var (`EFIL_BASE_URL`, `EFIL_API_KEY`, `EFIL_CODICE_ENTE`) per passare dalla modalità Sandbox alla modalità Live
-   - Test di pagamento spontaneo (1€) e verifica quietanza
-   - Test di pagamento differito con WSFeed e fuori nodo
-   - Test importazione flusso N001 per riconciliazione incassi
-
-### 15.3 Vincoli e Regole di Sviluppo (NON FARE)
-
-* **NON** usare CieSign per la firma digitale delle pratiche SUAP: genera solo FEA (Firma Elettronica Avanzata), mentre il SUAP richiede obbligatoriamente FEQ (Firma Elettronica Qualificata) in formato PAdES o CAdES.
-* **NON** modificare il formato del campo `documenti_allegati` nella tabella `richieste_servizi`: deve rimanere un array JSON di URL.
-* **NON** confondere il login SSO degli utenti (già funzionante via ARPA) con l'interoperabilità SSO/PDND tra piattaforme (da sviluppare).
-* **NON** considerare `routes/migratePDND.js` come un connettore PDND: è solo una migration SQL per il database.
+- NON modificare il flusso di prenotazione/pagamento corsi esistente
+- NON rendere obbligatorio il link A99X — l'ente deve poter scegliere link esterno
+- NON inviare notifiche ai relatori senza consenso esplicito dell'ente (checkbox)
+- NON esporre email dei relatori alle imprese
+- NON usare Cal.com self-hosted (troppo pesante per Hetzner 2vCPU/4GB)
+- NON mettere credenziali SMTP in .env (hardcoded come fallback nel codice)
+- NON usare porta 465 per SMTP da Hetzner (bloccata), usare porta 587 STARTTLS
