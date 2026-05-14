@@ -110,6 +110,7 @@ import {
   Users2,
   Loader2,
   Phone,
+  UserPlus,
 } from "lucide-react";
 import {
   Card,
@@ -1855,15 +1856,87 @@ export default function DashboardPA() {
   const [a99xCalendarioData, setA99xCalendarioData] = useState(new Date());
   const [a99xNuovaDisp, setA99xNuovaDisp] = useState(false);
   const [a99xNuovoAssessore, setA99xNuovoAssessore] = useState(false);
-  const [a99xDispForm, setA99xDispForm] = useState({ proprietario_nome: '', giorno_settimana: '1', ora_inizio: '09:00', ora_fine: '13:00', durata_slot_minuti: '30', max_prenotazioni_slot: '1', modalita: 'PRESENZA', sede_indirizzo: '' });
+  const [a99xDispForm, setA99xDispForm] = useState({ proprietario_id: '', proprietario_nome: '', giorni_settimana: [] as number[], ora_inizio: '09:00', ora_fine: '13:00', durata_slot_minuti: '30', max_prenotazioni_slot: '1', modalita: 'PRESENZA', sede_indirizzo: '' });
   const [a99xAssForm, setA99xAssForm] = useState({ nome: '', cognome: '', ruolo: '', email: '', telefono: '', settore: '' });
   const [a99xDettaglioRiunione, setA99xDettaglioRiunione] = useState<any>(null);
+  const [a99xAddPartRiunioneId, setA99xAddPartRiunioneId] = useState<number | null>(null);
+  const [a99xAddPartQuery, setA99xAddPartQuery] = useState('');
+  const [a99xAddPartResults, setA99xAddPartResults] = useState<any[]>([]);
+  const [a99xAddPartLoading, setA99xAddPartLoading] = useState(false);
+
+  // Ricerca contatti per aggiungere partecipante
+  const searchContactsForAdd = async (q: string) => {
+    if (q.length < 2) { setA99xAddPartResults([]); return; }
+    setA99xAddPartLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      const resp = await fetch(`${apiUrl}/api/a99x/ricerca-contatti?q=${encodeURIComponent(q)}${comuneIdFromUrl ? `&comune_id=${comuneIdFromUrl}` : ''}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setA99xAddPartResults(data.data || []);
+      }
+    } catch (err) { console.error('Errore ricerca contatti:', err); }
+    setA99xAddPartLoading(false);
+  };
+
+  // Aggiungi partecipante a riunione esistente e invia invito
+  const addPartecipanteToRiunione = async (riunioneId: number, contact: any) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      // 1. Aggiungi partecipante
+      const resp = await authenticatedFetch(`${apiUrl}/api/a99x/riunioni/${riunioneId}/partecipanti`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: contact.tipo,
+          riferimento_id: contact.id || null,
+          nome: contact.nome,
+          email: contact.email || null,
+          telefono: contact.telefono || null
+        })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        // 2. Invia invito email se ha email
+        if (contact.email) {
+          const riunione = a99xRiunioni.find((r: any) => r.id === riunioneId);
+          if (riunione) {
+            try {
+              await authenticatedFetch(`${apiUrl}/api/a99x/invita-riunione-singolo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  riunione_id: riunioneId,
+                  partecipante_id: data.data.id,
+                  email: contact.email,
+                  nome: contact.nome,
+                  tipo: contact.tipo,
+                  riferimento_id: contact.id || null,
+                  comune_id: comuneIdFromUrl
+                })
+              });
+            } catch (e) { console.warn('Invito email non inviato:', e); }
+          }
+        }
+        setA99xAddPartRiunioneId(null);
+        setA99xAddPartQuery('');
+        setA99xAddPartResults([]);
+        fetchA99xData();
+      } else {
+        alert(data.error || 'Errore aggiunta partecipante');
+      }
+    } catch (err) {
+      console.error('Errore aggiunta partecipante:', err);
+      alert('Errore di rete');
+    }
+  };
 
   // Fetch inviti ricevuti
   const fetchA99xInviti = async () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const cId = comuneIdFromUrl || '1';
+      const cId = comuneIdFromUrl;
+      if (!cId) { setA99xInvitiRicevuti([]); return; }
       const resp = await fetch(`${apiUrl}/api/a99x/inviti-ricevuti?comune_id=${cId}`);
       if (resp.ok) {
         const data = await resp.json();
@@ -2018,7 +2091,7 @@ export default function DashboardPA() {
         importanza: parseInt(a99xInvitaForm.importanza) || 3,
         dipendenze: parseInt(a99xInvitaForm.dipendenze) || 1,
         stakeholder: parseInt(a99xInvitaForm.stakeholder) || 1,
-        creato_da_nome: 'PA',
+        creato_da_nome: comuneNomeFromUrl || 'MIO HUB',
         creato_da_tipo: 'PA',
         invitati: a99xInvitaSelezionati.map((s: any) => ({ tipo: s.tipo, id: s.id, nome: s.nome, email: s.email, telefono: s.telefono }))
       };
@@ -2056,7 +2129,31 @@ export default function DashboardPA() {
   const fetchA99xData = async () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const cId = comuneIdFromUrl || '1';
+      const cId = comuneIdFromUrl;
+      const assocId = new URLSearchParams(window.location.search).get('associazione_id');
+      const isAssoc = isAssociazioneImpersonation();
+
+      if (isAssoc && assocId) {
+        // ASSOCIAZIONE: carica solo le riunioni dove l'associazione è invitata
+        const riunioniRes = await fetch(`${apiUrl}/api/a99x/le-mie-riunioni?riferimento_id=${assocId}&tipo=ASSOCIAZIONE`);
+        const riunioniData = await riunioniRes.json();
+        if (riunioniData.success) setA99xRiunioni(riunioniData.data || []);
+        setA99xTask([]);
+        return;
+      }
+
+      if (!cId) {
+        // Super admin senza impersonificazione: mostra tutte le riunioni
+        const riunioniRes = await fetch(`${apiUrl}/api/a99x/riunioni`);
+        const taskRes = await fetch(`${apiUrl}/api/a99x/task`);
+        const riunioniData = await riunioniRes.json();
+        const taskData = await taskRes.json();
+        if (riunioniData.success) setA99xRiunioni(riunioniData.data || []);
+        if (taskData.success) setA99xTask(taskData.data || []);
+        return;
+      }
+
+      // COMUNE: carica solo le riunioni di quel comune
       const [riunioniRes, taskRes, prenRes, dispRes, assRes] = await Promise.all([
         fetch(`${apiUrl}/api/a99x/riunioni?comune_id=${cId}`),
         fetch(`${apiUrl}/api/a99x/task?comune_id=${cId}`),
@@ -10124,7 +10221,13 @@ export default function DashboardPA() {
                                 <span className="text-lg">{'\ud83d\udcc5'}</span>
                                 <div className="min-w-0">
                                   <h4 className="text-[#e8fbff] font-semibold text-sm truncate">{riunione.titolo || 'Riunione senza titolo'}</h4>
-                                  <p className="text-[#e8fbff]/40 text-[10px]">{dataRiunione}</p>
+                                  <p className="text-[#e8fbff]/40 text-[10px]">{dataRiunione} {riunione.durata_minuti ? `\u2022 ${riunione.durata_minuti} min` : ''}</p>
+                                  {riunione.creato_da_nome && (
+                                    <p className="text-[#8b5cf6] text-[10px] mt-0.5">Creata da: <strong>{riunione.creato_da_nome}</strong>{riunione.creato_da_tipo ? ` (${riunione.creato_da_tipo})` : ''}</p>
+                                  )}
+                                  {riunione.descrizione && (
+                                    <p className="text-[#e8fbff]/30 text-[10px] mt-0.5 truncate max-w-[250px]">{riunione.descrizione}</p>
+                                  )}
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
@@ -10183,6 +10286,70 @@ export default function DashboardPA() {
                               </div>
                             ) : (
                               <p className="text-[#e8fbff]/30 text-xs text-center py-2">Nessun invitato per questa riunione</p>
+                            )}
+                            {/* Pulsante Aggiungi Partecipante - solo per il creatore */}
+                            {String(riunione.comune_id) === String(comuneIdFromUrl) && (
+                              <div className="mt-3 pt-3 border-t border-[#8b5cf6]/10">
+                                {a99xAddPartRiunioneId === riunione.id ? (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="text"
+                                        value={a99xAddPartQuery}
+                                        onChange={(e) => { setA99xAddPartQuery(e.target.value); searchContactsForAdd(e.target.value); }}
+                                        placeholder="Cerca impresa, associazione, ente..."
+                                        className="flex-1 bg-[#1a2332] border border-[#8b5cf6]/30 rounded-lg px-3 py-2 text-[#e8fbff] text-xs placeholder-[#e8fbff]/30"
+                                        autoFocus
+                                      />
+                                      <button onClick={() => { setA99xAddPartRiunioneId(null); setA99xAddPartQuery(''); setA99xAddPartResults([]); }} className="px-2 py-2 text-[#e8fbff]/40 hover:text-red-400 text-sm">&times;</button>
+                                    </div>
+                                    {a99xAddPartLoading && <p className="text-[#8b5cf6] text-[10px] animate-pulse">Ricerca in corso...</p>}
+                                    {a99xAddPartResults.length > 0 && (
+                                      <div className="max-h-40 overflow-y-auto space-y-1 bg-[#1a2332] border border-[#8b5cf6]/20 rounded-lg p-2">
+                                        {a99xAddPartResults.map((c: any, ci: number) => {
+                                          const alreadyAdded = partecipanti.some((p: any) => p.email === c.email && p.tipo === c.tipo);
+                                          return (
+                                            <button
+                                              key={ci}
+                                              disabled={alreadyAdded}
+                                              onClick={() => addPartecipanteToRiunione(riunione.id, c)}
+                                              className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${
+                                                alreadyAdded
+                                                  ? 'bg-[#0b1220]/50 text-[#e8fbff]/20 cursor-not-allowed'
+                                                  : 'bg-[#0b1220] hover:bg-[#8b5cf6]/20 text-[#e8fbff]'
+                                              }`}
+                                            >
+                                              <div className="flex items-center justify-between">
+                                                <div>
+                                                  <span className="font-medium">{c.nome}</span>
+                                                  {c.ruolo && <span className="text-[#e8fbff]/40 ml-1">({c.ruolo})</span>}
+                                                </div>
+                                                <Badge className={`text-[8px] ${
+                                                  c.tipo === 'IMPRESA' ? 'text-[#14b8a6]' :
+                                                  c.tipo === 'ASSOCIAZIONE' ? 'text-[#f59e0b]' :
+                                                  'text-[#8b5cf6]'
+                                                } bg-transparent border-current/30`}>{c.tipo}</Badge>
+                                              </div>
+                                              {c.email && <p className="text-[#e8fbff]/30 text-[10px] mt-0.5">{c.email}</p>}
+                                              {alreadyAdded && <p className="text-amber-400 text-[10px]">Gi\u00e0 invitato</p>}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                    {a99xAddPartQuery.length >= 2 && !a99xAddPartLoading && a99xAddPartResults.length === 0 && (
+                                      <p className="text-[#e8fbff]/30 text-[10px] text-center">Nessun risultato per "{a99xAddPartQuery}"</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => setA99xAddPartRiunioneId(riunione.id)}
+                                    className="w-full py-2 border border-dashed border-[#8b5cf6]/30 rounded-lg text-[#8b5cf6] text-xs font-medium hover:bg-[#8b5cf6]/10 hover:border-[#8b5cf6]/50 transition-all flex items-center justify-center gap-1.5"
+                                  >
+                                    <UserPlus className="h-3.5 w-3.5" /> Aggiungi Partecipante
+                                  </button>
+                                )}
+                              </div>
                             )}
                           </div>
                         );
@@ -10755,95 +10922,200 @@ export default function DashboardPA() {
                       <CalendarDays className="h-5 w-5 text-[#8b5cf6]" />
                       Nuova Disponibilità
                     </h3>
-                    <button onClick={() => setA99xNuovaDisp(false)} className="text-[#e8fbff]/50 hover:text-[#e8fbff]">&times;</button>
+                    <button onClick={() => setA99xNuovaDisp(false)} className="text-[#e8fbff]/50 hover:text-[#e8fbff] text-xl">&times;</button>
                   </div>
                   <div className="space-y-4">
+                    {/* Selezione Assessore/Funzionario */}
                     <div>
-                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Nome Ufficio / Assessore *</label>
-                      <input value={a99xDispForm.proprietario_nome} onChange={(e) => setA99xDispForm({...a99xDispForm, proprietario_nome: e.target.value})} placeholder="Es: Ufficio SUAP, Ass. Rossi" className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Giorno Settimana *</label>
-                        <select value={a99xDispForm.giorno_settimana} onChange={(e) => setA99xDispForm({...a99xDispForm, giorno_settimana: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm">
-                          <option value="1">Lunedì</option>
-                          <option value="2">Martedì</option>
-                          <option value="3">Mercoledì</option>
-                          <option value="4">Giovedì</option>
-                          <option value="5">Venerdì</option>
-                          <option value="6">Sabato</option>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Assessore / Funzionario *</label>
+                      {a99xAssessori.length > 0 ? (
+                        <select
+                          value={a99xDispForm.proprietario_id}
+                          onChange={(e) => {
+                            const sel = a99xAssessori.find((a: any) => String(a.id) === e.target.value);
+                            setA99xDispForm({...a99xDispForm, proprietario_id: e.target.value, proprietario_nome: sel ? `${sel.nome} ${sel.cognome} - ${sel.ruolo}` : ''});
+                          }}
+                          className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm"
+                        >
+                          <option value="">-- Seleziona --</option>
+                          {a99xAssessori.map((a: any) => (
+                            <option key={a.id} value={a.id}>{a.nome} {a.cognome} — {a.ruolo}</option>
+                          ))}
                         </select>
+                      ) : (
+                        <div className="bg-[#0b1220] border border-amber-500/30 rounded-lg p-3">
+                          <p className="text-amber-400 text-sm">Nessun assessore/funzionario registrato.</p>
+                          <p className="text-[#e8fbff]/50 text-xs mt-1">Vai al tab "Assessori" per aggiungerne uno prima.</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Giorni della Settimana - Selezione Multipla */}
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-2">Giorni della Settimana *</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[{v:1,l:'Lunedì'},{v:2,l:'Martedì'},{v:3,l:'Mercoledì'},{v:4,l:'Giovedì'},{v:5,l:'Venerdì'},{v:6,l:'Sabato'}].map(g => {
+                          const isSelected = a99xDispForm.giorni_settimana.includes(g.v);
+                          return (
+                            <button
+                              key={g.v}
+                              type="button"
+                              onClick={() => {
+                                const newGiorni = isSelected
+                                  ? a99xDispForm.giorni_settimana.filter((d: number) => d !== g.v)
+                                  : [...a99xDispForm.giorni_settimana, g.v];
+                                setA99xDispForm({...a99xDispForm, giorni_settimana: newGiorni});
+                              }}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                                isSelected
+                                  ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white shadow-lg shadow-purple-500/25'
+                                  : 'bg-[#0b1220] border-[#8b5cf6]/20 text-[#e8fbff]/60 hover:border-[#8b5cf6]/50'
+                              }`}
+                            >
+                              {g.l}
+                            </button>
+                          );
+                        })}
                       </div>
-                      <div>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Modalità</label>
-                        <select value={a99xDispForm.modalita} onChange={(e) => setA99xDispForm({...a99xDispForm, modalita: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm">
-                          <option value="PRESENZA">In Sede</option>
-                          <option value="ONLINE">Online (Jitsi)</option>
-                          <option value="MISTA">Mista</option>
-                        </select>
+                      {a99xDispForm.giorni_settimana.length > 0 && (
+                        <p className="text-[#8b5cf6] text-xs mt-1">{a99xDispForm.giorni_settimana.length} giorn{a99xDispForm.giorni_settimana.length === 1 ? 'o' : 'i'} selezionat{a99xDispForm.giorni_settimana.length === 1 ? 'o' : 'i'}</p>
+                      )}
+                    </div>
+
+                    {/* Fascia Oraria */}
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-2">Fascia Oraria Disponibile *</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] text-[#e8fbff]/40 uppercase mb-1">Dalle</label>
+                          <input type="time" value={a99xDispForm.ora_inizio} onChange={(e) => setA99xDispForm({...a99xDispForm, ora_inizio: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-[#e8fbff]/40 uppercase mb-1">Alle</label>
+                          <input type="time" value={a99xDispForm.ora_fine} onChange={(e) => setA99xDispForm({...a99xDispForm, ora_fine: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                        </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Ora Inizio *</label>
-                        <input type="time" value={a99xDispForm.ora_inizio} onChange={(e) => setA99xDispForm({...a99xDispForm, ora_inizio: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-sm text-[#e8fbff]/70 mb-1">Ora Fine *</label>
-                        <input type="time" value={a99xDispForm.ora_fine} onChange={(e) => setA99xDispForm({...a99xDispForm, ora_fine: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
-                      </div>
-                    </div>
+
+                    {/* Configurazione Slot */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-sm text-[#e8fbff]/70 mb-1">Durata Slot (min)</label>
-                        <input type="number" value={a99xDispForm.durata_slot_minuti} onChange={(e) => setA99xDispForm({...a99xDispForm, durata_slot_minuti: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                        <select value={a99xDispForm.durata_slot_minuti} onChange={(e) => setA99xDispForm({...a99xDispForm, durata_slot_minuti: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm">
+                          <option value="15">15 min</option>
+                          <option value="30">30 min</option>
+                          <option value="45">45 min</option>
+                          <option value="60">1 ora</option>
+                          <option value="90">1h 30min</option>
+                          <option value="120">2 ore</option>
+                        </select>
                       </div>
                       <div>
                         <label className="block text-sm text-[#e8fbff]/70 mb-1">Max Prenotazioni/Slot</label>
-                        <input type="number" value={a99xDispForm.max_prenotazioni_slot} onChange={(e) => setA99xDispForm({...a99xDispForm, max_prenotazioni_slot: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
+                        <select value={a99xDispForm.max_prenotazioni_slot} onChange={(e) => setA99xDispForm({...a99xDispForm, max_prenotazioni_slot: e.target.value})} className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm">
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
+                          <option value="5">5</option>
+                          <option value="10">10</option>
+                        </select>
                       </div>
                     </div>
+
+                    {/* Modalità */}
+                    <div>
+                      <label className="block text-sm text-[#e8fbff]/70 mb-1">Modalità</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[{v:'PRESENZA',l:'In Sede',icon:'🏢'},{v:'ONLINE',l:'Online',icon:'💻'},{v:'MISTA',l:'Mista',icon:'🔄'}].map(m => (
+                          <button
+                            key={m.v}
+                            type="button"
+                            onClick={() => setA99xDispForm({...a99xDispForm, modalita: m.v})}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border text-center ${
+                              a99xDispForm.modalita === m.v
+                                ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white'
+                                : 'bg-[#0b1220] border-[#8b5cf6]/20 text-[#e8fbff]/60 hover:border-[#8b5cf6]/50'
+                            }`}
+                          >
+                            {m.icon} {m.l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Indirizzo Sede */}
                     {(a99xDispForm.modalita === 'PRESENZA' || a99xDispForm.modalita === 'MISTA') && (
                       <div>
                         <label className="block text-sm text-[#e8fbff]/70 mb-1">Indirizzo Sede</label>
                         <input value={a99xDispForm.sede_indirizzo} onChange={(e) => setA99xDispForm({...a99xDispForm, sede_indirizzo: e.target.value})} placeholder="Via Roma 1, Bologna" className="w-full bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg p-2.5 text-[#e8fbff] text-sm" />
                       </div>
                     )}
+
+                    {/* Riepilogo */}
+                    {a99xDispForm.proprietario_id && a99xDispForm.giorni_settimana.length > 0 && (
+                      <div className="bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 rounded-lg p-3">
+                        <p className="text-[#8b5cf6] text-xs font-bold uppercase mb-1">Riepilogo</p>
+                        <p className="text-[#e8fbff] text-sm">
+                          <strong>{a99xDispForm.proprietario_nome}</strong> sarà disponibile
+                          {' '}{a99xDispForm.giorni_settimana.sort((a: number, b: number) => a - b).map((d: number) => ['','Lun','Mar','Mer','Gio','Ven','Sab'][d]).join(', ')}
+                          {' '}dalle <strong>{a99xDispForm.ora_inizio}</strong> alle <strong>{a99xDispForm.ora_fine}</strong>
+                          {' '}({a99xDispForm.modalita === 'PRESENZA' ? 'in sede' : a99xDispForm.modalita === 'ONLINE' ? 'online' : 'mista'})
+                        </p>
+                        <p className="text-[#e8fbff]/50 text-xs mt-1">Verranno creati {a99xDispForm.giorni_settimana.length} slot di disponibilità settimanale</p>
+                      </div>
+                    )}
+
+                    {/* Pulsante Crea */}
                     <button
                       onClick={async () => {
                         try {
                           const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                          const res = await authenticatedFetch(`${apiUrl}/api/a99x/disponibilita`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              comune_id: comuneIdFromUrl || '1',
-                              proprietario_nome: a99xDispForm.proprietario_nome,
-                              giorno_settimana: parseInt(a99xDispForm.giorno_settimana),
-                              ora_inizio: a99xDispForm.ora_inizio,
-                              ora_fine: a99xDispForm.ora_fine,
-                              durata_slot_minuti: parseInt(a99xDispForm.durata_slot_minuti) || 30,
-                              max_prenotazioni_slot: parseInt(a99xDispForm.max_prenotazioni_slot) || 1,
-                              modalita: a99xDispForm.modalita,
-                              sede_indirizzo: a99xDispForm.sede_indirizzo || null
-                            })
-                          });
-                          const data = await res.json();
-                          if (data.success) {
+                          const cId = comuneIdFromUrl;
+                          if (!cId) { alert('Errore: comune non identificato'); return; }
+                          let successCount = 0;
+                          let errorMsg = '';
+                          // Crea uno slot per ogni giorno selezionato
+                          for (const giorno of a99xDispForm.giorni_settimana) {
+                            const res = await authenticatedFetch(`${apiUrl}/api/a99x/disponibilita`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                comune_id: cId,
+                                proprietario_id: parseInt(a99xDispForm.proprietario_id),
+                                proprietario_nome: a99xDispForm.proprietario_nome,
+                                giorno_settimana: giorno,
+                                ora_inizio: a99xDispForm.ora_inizio,
+                                ora_fine: a99xDispForm.ora_fine,
+                                durata_slot_minuti: parseInt(a99xDispForm.durata_slot_minuti) || 30,
+                                max_prenotazioni_slot: parseInt(a99xDispForm.max_prenotazioni_slot) || 1,
+                                modalita: a99xDispForm.modalita,
+                                sede_indirizzo: a99xDispForm.sede_indirizzo || null
+                              })
+                            });
+                            const data = await res.json();
+                            if (data.success) successCount++;
+                            else errorMsg = data.error || 'Errore';
+                          }
+                          if (successCount > 0) {
                             setA99xNuovaDisp(false);
-                            setA99xDispForm({ proprietario_nome: '', giorno_settimana: '1', ora_inizio: '09:00', ora_fine: '13:00', durata_slot_minuti: '30', max_prenotazioni_slot: '1', modalita: 'PRESENZA', sede_indirizzo: '' });
+                            setA99xDispForm({ proprietario_id: '', proprietario_nome: '', giorni_settimana: [] as number[], ora_inizio: '09:00', ora_fine: '13:00', durata_slot_minuti: '30', max_prenotazioni_slot: '1', modalita: 'PRESENZA', sede_indirizzo: '' });
                             fetchA99xData();
+                            if (successCount < a99xDispForm.giorni_settimana.length) {
+                              alert(`${successCount}/${a99xDispForm.giorni_settimana.length} slot creati. Errore: ${errorMsg}`);
+                            }
                           } else {
-                            alert(data.error || 'Errore nella creazione');
+                            alert(errorMsg || 'Errore nella creazione');
                           }
                         } catch (err) {
                           console.error('Errore creazione disponibilità:', err);
+                          alert('Errore di rete nella creazione');
                         }
                       }}
-                      disabled={!a99xDispForm.proprietario_nome}
-                      className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!a99xDispForm.proprietario_id || a99xDispForm.giorni_settimana.length === 0}
+                      className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Crea Disponibilità
+                      <CalendarDays className="h-4 w-4" />
+                      Crea {a99xDispForm.giorni_settimana.length > 0 ? `${a99xDispForm.giorni_settimana.length} Disponibilità` : 'Disponibilità'}
                     </button>
                   </div>
                 </div>

@@ -129,7 +129,7 @@ export default function AppImpresaNotifiche() {
             ? "&stato=LETTO"
             : "";
       const response = await fetch(
-        `${API_BASE_URL}/notifiche/impresa/${IMPRESA_ID}?limit=50${statoParam}`
+        `${API_BASE_URL}/notifiche/impresa/${IMPRESA_ID}?limit=200${statoParam}`
       );
       const data = await response.json();
 
