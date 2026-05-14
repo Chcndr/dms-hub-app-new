@@ -6,7 +6,12 @@
  * nell'angolo alto-destra che lampeggia e NON sparisce finché
  * l'utente non accetta o rifiuta.
  * 
- * Stile ispirato a SpuntaNotifier ma come card flottante, non full-screen.
+ * v10.22.0: Supporta COMUNI, IMPRESE e ASSOCIAZIONI.
+ * Cerca l'identità dell'utente da:
+ * 1. sessionStorage "miohub_impersonation" (comuni e associazioni in impersonificazione)
+ * 2. localStorage "user" (imprese loggati)
+ * 3. localStorage "miohub_firebase_user" (utenti Firebase)
+ * 4. URL params (comune_id, associazione_id)
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { CalendarDays, Clock, Users, X, Check, XCircle, MapPin, Video, AlertTriangle } from "lucide-react";
@@ -28,9 +33,18 @@ interface InvitoData {
   importanza: number;
   organizzatore_nome?: string;
   organizzatore_email?: string;
+  creato_da_nome?: string;
   partecipante_stato: string;
   token: string;
   partecipanti_count?: number;
+}
+
+interface UserIdentity {
+  tipo: 'COMUNE' | 'IMPRESA' | 'ASSOCIAZIONE' | 'SUPERADMIN';
+  email?: string;
+  id?: number | string;
+  nome?: string;
+  comuneId?: number | string;
 }
 
 export default function InvitoNotifier() {
@@ -41,51 +55,173 @@ export default function InvitoNotifier() {
   const [dismissedTokens, setDismissedTokens] = useState<Set<string>>(new Set());
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Risolvi comune_id dall'utente loggato
-  const getComuneId = useCallback((): number | null => {
+  // Risolvi identità utente da tutte le fonti possibili
+  const getUserIdentity = useCallback((): UserIdentity | null => {
     try {
-      // Prova impersonation (vista PA)
+      // 1. Impersonificazione (sessionStorage) - comuni e associazioni
       const imp = sessionStorage.getItem("miohub_impersonation");
       if (imp) {
         const parsed = JSON.parse(imp);
-        if (parsed.isImpersonating && parsed.comuneId) return parsed.comuneId;
+        if (parsed.isImpersonating) {
+          // Associazione
+          if (parsed.role === 'associazione' && parsed.associazioneId) {
+            return {
+              tipo: 'ASSOCIAZIONE',
+              id: parsed.associazioneId,
+              nome: parsed.associazioneNome || 'Associazione',
+              email: parsed.userEmail || parsed.email,
+            };
+          }
+          // Comune
+          if (parsed.comuneId) {
+            return {
+              tipo: 'COMUNE',
+              comuneId: parsed.comuneId,
+              nome: parsed.comuneNome || 'Comune',
+              email: parsed.userEmail || parsed.email,
+            };
+          }
+        }
       }
-      // Prova firebase user
+
+      // 2. Utente impresa (localStorage "user")
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.impresa_id) {
+          return {
+            tipo: 'IMPRESA',
+            id: user.impresa_id,
+            nome: user.impresa_nome || user.name || 'Impresa',
+            email: user.email || user.impresa_email || user.username,
+          };
+        }
+        // Super admin
+        if (user.email === 'chcndr@gmail.com' || user.role === 'admin') {
+          return {
+            tipo: 'SUPERADMIN',
+            comuneId: 0,
+            nome: 'MIO HUB',
+            email: user.email,
+          };
+        }
+      }
+
+      // 3. Firebase user
       const fbStr = localStorage.getItem("miohub_firebase_user");
       if (fbStr) {
         const fb = JSON.parse(fbStr);
-        if (fb.comune_id) return fb.comune_id;
+        if (fb.comune_id) {
+          return {
+            tipo: 'COMUNE',
+            comuneId: fb.comune_id,
+            nome: fb.comune_nome || 'Comune',
+            email: fb.email,
+          };
+        }
+        if (fb.email === 'chcndr@gmail.com') {
+          return {
+            tipo: 'SUPERADMIN',
+            comuneId: 0,
+            nome: 'MIO HUB',
+            email: fb.email,
+          };
+        }
       }
-      // Prova URL
+
+      // 4. URL params
       const params = new URLSearchParams(window.location.search);
       const cid = params.get("comune_id");
-      if (cid) return parseInt(cid);
+      if (cid) {
+        return {
+          tipo: 'COMUNE',
+          comuneId: parseInt(cid),
+          email: params.get("user_email") || undefined,
+        };
+      }
+      const aid = params.get("associazione_id");
+      if (aid) {
+        return {
+          tipo: 'ASSOCIAZIONE',
+          id: parseInt(aid),
+          nome: params.get("associazione_nome") || 'Associazione',
+          email: params.get("user_email") || undefined,
+        };
+      }
     } catch { /* ignore */ }
     return null;
   }, []);
 
   // Polling inviti pendenti
   const fetchInviti = useCallback(async () => {
-    const comuneId = getComuneId();
-    if (!comuneId) return;
+    const identity = getUserIdentity();
+    if (!identity) return;
+
     try {
-      const res = await fetch(`${API_BASE}/api/a99x/inviti-ricevuti?comune_id=${comuneId}`);
+      let url = '';
+
+      if (identity.tipo === 'COMUNE' || identity.tipo === 'SUPERADMIN') {
+        // Per comuni e super admin: usa inviti-ricevuti con comune_id
+        url = `${API_BASE}/api/a99x/inviti-ricevuti?comune_id=${identity.comuneId}`;
+      } else if (identity.tipo === 'IMPRESA' || identity.tipo === 'ASSOCIAZIONE') {
+        // Per imprese e associazioni: usa le-mie-riunioni con riferimento_id e tipo
+        url = `${API_BASE}/api/a99x/le-mie-riunioni?riferimento_id=${identity.id}&tipo=${identity.tipo}`;
+      }
+
+      if (!url) return;
+
+      const res = await fetch(url);
       if (!res.ok) return;
       const data = await res.json();
-      if (data.success && Array.isArray(data.inviti)) {
-        // Filtra solo quelli INVITATO (pendenti) e non dismissati
-        const pendenti = data.inviti.filter((inv: InvitoData) => 
-          inv.partecipante_stato === 'INVITATO' && !dismissedTokens.has(inv.token)
-        );
-        setInviti(pendenti);
-      }
-    } catch { /* ignore */ }
-  }, [getComuneId, dismissedTokens]);
 
-  // Avvia polling ogni 30 secondi
+      let pendenti: InvitoData[] = [];
+
+      if (identity.tipo === 'COMUNE' || identity.tipo === 'SUPERADMIN') {
+        // Formato inviti-ricevuti
+        if (data.success && Array.isArray(data.data)) {
+          pendenti = data.data
+            .filter((inv: any) => inv.partecipante_stato === 'INVITATO' && inv.token && !dismissedTokens.has(inv.token))
+            .map((inv: any) => ({
+              ...inv,
+              urgenza: inv.urgenza || 3,
+              importanza: inv.importanza || 3,
+            }));
+        }
+      } else {
+        // Formato le-mie-riunioni
+        if (data.success && Array.isArray(data.data)) {
+          pendenti = data.data
+            .filter((r: any) => r.partecipante_stato === 'INVITATO' && r.token && !dismissedTokens.has(r.token))
+            .map((r: any) => ({
+              id: r.partecipante_id || r.id,
+              riunione_id: r.id,
+              titolo: r.titolo,
+              data_inizio: r.data_inizio,
+              durata_minuti: r.durata_minuti || 30,
+              modalita: r.modalita || 'ONLINE',
+              jitsi_link: r.jitsi_link,
+              sede_indirizzo: r.sede_indirizzo,
+              temi: r.temi,
+              descrizione: r.descrizione,
+              urgenza: r.urgenza || 3,
+              importanza: r.importanza || 3,
+              organizzatore_nome: r.creato_da_nome,
+              creato_da_nome: r.creato_da_nome,
+              partecipante_stato: r.partecipante_stato,
+              token: r.token,
+              partecipanti_count: r.partecipanti?.length || 0,
+            }));
+        }
+      }
+
+      setInviti(pendenti);
+    } catch { /* ignore */ }
+  }, [getUserIdentity, dismissedTokens]);
+
+  // Avvia polling ogni 20 secondi
   useEffect(() => {
     fetchInviti();
-    pollRef.current = setInterval(fetchInviti, 30000);
+    pollRef.current = setInterval(fetchInviti, 20000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [fetchInviti]);
 
@@ -148,20 +284,32 @@ export default function InvitoNotifier() {
               </div>
             </div>
             {/* Navigazione se multipli */}
-            {inviti.length > 1 && (
-              <div className="flex gap-1">
-                <button 
-                  onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))}
-                  disabled={currentIdx === 0}
-                  className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs disabled:opacity-30"
-                >&larr;</button>
-                <button 
-                  onClick={() => setCurrentIdx(Math.min(inviti.length - 1, currentIdx + 1))}
-                  disabled={currentIdx === inviti.length - 1}
-                  className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs disabled:opacity-30"
-                >&rarr;</button>
-              </div>
-            )}
+            <div className="flex gap-1">
+              {inviti.length > 1 && (
+                <>
+                  <button 
+                    onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))}
+                    disabled={currentIdx === 0}
+                    className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs disabled:opacity-30"
+                  >&larr;</button>
+                  <button 
+                    onClick={() => setCurrentIdx(Math.min(inviti.length - 1, currentIdx + 1))}
+                    disabled={currentIdx === inviti.length - 1}
+                    className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs disabled:opacity-30"
+                  >&rarr;</button>
+                </>
+              )}
+              <button
+                onClick={() => {
+                  setDismissedTokens(prev => new Set([...prev, inv.token]));
+                  setInviti(prev => prev.filter(i => i.token !== inv.token));
+                }}
+                className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs hover:bg-white/40"
+                title="Chiudi (riapparirà al prossimo polling)"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -188,10 +336,10 @@ export default function InvitoNotifier() {
               <span>{inv.modalita === 'ONLINE' ? 'Online (Jitsi)' : inv.modalita === 'IBRIDO' ? 'Ibrido' : 'In Presenza'}</span>
               {inv.sede_indirizzo && <span className="text-[#e8fbff]/40 truncate">— {inv.sede_indirizzo}</span>}
             </div>
-            {inv.organizzatore_nome && (
+            {(inv.organizzatore_nome || inv.creato_da_nome) && (
               <div className="flex items-center gap-2 text-[#e8fbff]/70 text-xs">
                 <Users className="h-3.5 w-3.5 text-[#f59e0b] flex-shrink-0" />
-                <span>Da: <strong className="text-[#e8fbff]">{inv.organizzatore_nome}</strong></span>
+                <span>Da: <strong className="text-[#e8fbff]">{inv.organizzatore_nome || inv.creato_da_nome}</strong></span>
               </div>
             )}
           </div>
@@ -248,6 +396,18 @@ export default function InvitoNotifier() {
               RIFIUTA
             </button>
           </div>
+
+          {/* Link Jitsi se disponibile */}
+          {inv.jitsi_link && (
+            <a
+              href={inv.jitsi_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center py-1.5 bg-[#8b5cf6]/20 text-[#8b5cf6] text-xs font-medium rounded-lg border border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/30 transition-all"
+            >
+              🎥 Apri Videoconferenza Jitsi
+            </a>
+          )}
         </div>
       </div>
 
