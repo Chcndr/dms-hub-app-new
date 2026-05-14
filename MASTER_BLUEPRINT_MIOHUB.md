@@ -1,19 +1,19 @@
 # MASTER BLUEPRINT — MIOHUB
 
-> **Versione:** 10.12.0 — STABILE (Fix Attestati Qualifiche + SCIA Atto Notarile + Cleanup Adempimenti)
-> **Data:** 11 Maggio 2026
+> **Versione:** 10.13.0 — STABILE (A99X Agenda Intelligente — Conferme Inviti, Disponibilità, Filtro Riunioni)
+> **Data:** 14 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (11 Mag 2026 — Snapshot stabile)
+> ### STATO SISTEMA (14 Mag 2026 — Snapshot stabile)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `f6ec9e2` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `703a31b` (master) — dms-hub-app-new |
-> | **Hetzner (API)** | Online | `https://api.mio-hub.me/health` — da aggiornare con PM2 restart da `f6ec9e2` |
-> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `703a31b` (autodeploy) |
-> | **Neon (DB)** | Integro | Wallet TCC per impresa, totale_associati=14, documents con atto notarile SCIA |
+> | **GitHub Backend** | Allineato | `cefb272` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `208a298` (master) — dms-hub-app-new |
+> | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy da `cefb272` |
+> | **Vercel (Frontend)** | Deployato | `dms-hub-app-new.vercel.app` — SHA `208a298` (autodeploy) |
+> | **Neon (DB)** | Integro | Wallet TCC per impresa, totale_associati=14, documents con atto notarile SCIA, tabella a99x_riunioni con colonna creato_da_nome |
 >
 > **Sicurezza — Anti-Scanner Middleware v1.0.0:**
 > - Middleware `antiScanner.js` montato PRIMA dell'apiLogger
@@ -36,6 +36,82 @@
 > - Un operatore può gestire più imprese con wallet separati
 > - Il settlement chiude il wallet e ne crea uno nuovo per la stessa impresa
 > - Backward compatibility: se impresa_id non è passato, fallback a operator_id
+>
+> ---
+> ### CHANGELOG v10.13.0 (14 Mag 2026)
+> **A99X Agenda Intelligente — Conferme Inviti, Disponibilità, Filtro Riunioni, Aggiungi Partecipanti**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Stato |
+> |---|---|---|
+> | GitHub `mihub-backend-rest` master | `cefb272` | Allineato |
+> | Hetzner backend (api.miohub.it) | `cefb272` | Autodeploy |
+> | GitHub `dms-hub-app-new` master | `208a298` | Allineato |
+> | Vercel frontend | `208a298` | Autodeploy completato |
+>
+> **FEATURE #1: Tab "Conferme Inviti" in DashboardPA (ex "Prenotazioni")**
+>
+> - Tab rinominato da "Prenotazioni" a "Conferme Inviti" con icona checkmark verde.
+> - Mostra tutte le riunioni del comune con barra di progresso conferme (verde/rosso).
+> - Contatori: X confermati, Y rifiutati, Z in attesa con percentuale.
+> - Lista completa partecipanti con badge colorati per stato (CONFERMATO=verde, RIFIUTATO=rosso, INVITATO=giallo) e tipo (Impresa=teal, Associazione=amber, Assessore=viola).
+> - Pulsante "Aggiorna" per refresh manuale.
+> - **Mostra nome riunione e chi l'ha creata** (`creato_da_nome`).
+>
+> **FEATURE #2: Sezione "Le Mie Riunioni PA" per Imprese e Associazioni**
+>
+> - `AppImpresaNotifiche.tsx`: nuova sezione che mostra le riunioni a cui l'impresa è invitata con tutti i partecipanti e il loro stato.
+> - `NotificheAssociazionePanel.tsx`: stessa visualizzazione per le associazioni invitate.
+> - Aggiornamento automatico ogni 20 secondi (tempo reale).
+> - Link Jitsi per accedere alla videoconferenza.
+> - Badge "Accettato/Rifiutato/In attesa" per il proprio stato.
+>
+> **FEATURE #3: Form "Nuova Disponibilità" rifatto con giorni/orari settimanali**
+>
+> - Selezione assessore/funzionario dalla lista degli assessori registrati (fornisce `proprietario_id` e `proprietario_nome`).
+> - Selezione multipla dei giorni della settimana con bottoni toggle (Lun-Dom).
+> - Fascia oraria con campi "Dalle" e "Alle".
+> - Durata slot, max prenotazioni, modalità (Presenza/Online/Mista), sede indirizzo.
+> - Crea uno slot per ogni giorno selezionato.
+>
+> **FEATURE #4: Aggiungi Partecipanti dopo creazione riunione (solo creatore)**
+>
+> - Pulsante "Aggiungi Partecipante" visibile SOLO per il creatore della riunione (`comune_id` match).
+> - Ricerca contatti inline (imprese, associazioni, enti) con endpoint `/api/a99x/ricerca-contatti`.
+> - Aggiunta partecipante + invio automatico invito email con link accettazione/rifiuto.
+> - Nuovo endpoint backend `POST /api/a99x/invita-riunione-singolo` con generazione token, notifica in-app, email HTML.
+>
+> **BUG FIX #1: Riunioni visibili a tutti i comuni/associazioni (CRITICO)**
+>
+> - **Root cause:** Il fallback `cId = comuneIdFromUrl || '1'` faceva sì che quando un'associazione (senza comune_id nell'URL) accedeva al tab A99X, vedeva le riunioni del comune_id=1 (Grosseto). Anche i comuni diversi vedevano riunioni non loro.
+> - **Fix frontend:** Rimosso fallback `|| '1'` in `fetchA99xData` e `fetchA99xInviti`. Se `comuneIdFromUrl` è null/undefined, i dati A99X non vengono caricati (array vuoti).
+> - **Fix frontend:** Le riunioni nella DashboardPA ora sono filtrate per il `comune_id` dell'utente loggato.
+>
+> **BUG FIX #2: Limite messaggi app imprese troppo basso**
+>
+> - **Root cause:** Il limite era hardcoded a 50 sia nel backend (`routes/notifiche.js`) che nel frontend (`AppImpresaNotifiche.tsx`).
+> - **Fix:** Aumentato da 50 a 200 in entrambi i punti.
+>
+> **BUG FIX #3: Migration colonna `creato_da_nome` in tabella `a99x_riunioni`**
+>
+> - Aggiunta auto-migration che crea la colonna `creato_da_nome VARCHAR(255)` se non esiste.
+> - L'INSERT della riunione ora salva anche `creato_da_nome` (nome del comune che crea la riunione).
+>
+> **Nuovo endpoint backend: `GET /api/a99x/le-mie-riunioni`**
+>
+> - Accetta `email` o `riferimento_id` + `tipo` come parametri.
+> - Restituisce le riunioni dell'invitato con tutti i partecipanti e il loro stato.
+> - Usato sia dalla dashboard imprese che associazioni.
+>
+> **Vincoli negativi (NON FARE):**
+> - NON usare fallback `|| '1'` per `comuneIdFromUrl` — causa visualizzazione riunioni di altri comuni
+> - NON mostrare riunioni A99X a utenti che non hanno un `comune_id` valido nell'URL (es. associazioni in impersonificazione senza comune_id)
+> - NON permettere l'aggiunta di partecipanti a utenti che non sono il creatore della riunione (check `comune_id` match)
+> - Il campo `creato_da_nome` nella tabella `a99x_riunioni` è VARCHAR(255) — NON cambiare tipo
+>
+> **File modificati:**
+> - Frontend: `DashboardPA.tsx` (tab Conferme Inviti, form Disponibilità, filtro riunioni, aggiungi partecipanti), `AppImpresaNotifiche.tsx` (sezione Le Mie Riunioni PA, limite 200), `NotificheAssociazionePanel.tsx` (sezione Le Mie Riunioni PA)
+> - Backend: `routes/a99x-agenda.js` (endpoint le-mie-riunioni, invita-riunione-singolo, migration creato_da_nome), `routes/notifiche.js` (limite 200)
 >
 > ---
 > ### CHANGELOG v10.12.0 (11 Mag 2026)
