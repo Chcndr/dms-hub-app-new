@@ -263,20 +263,27 @@ export default function NotificheAssociazionePanel({
   };
 
   // Filtra
-  const messaggiFiltrati = notifiche.filter(n => {
+  // Escludi notifiche riunione (INVITO_RIUNIONE, RIUNIONE_ANNULLATA, RIUNIONE_RIMANDATA) - vanno nei sotto-tab Enti/Bandi
+  const TIPI_RIUNIONE = ['INVITO_RIUNIONE', 'RIUNIONE_ANNULLATA', 'RIUNIONE_RIMANDATA', 'RIUNIONE'];
+  const notificheSenzaRiunioni = notifiche.filter(n => {
+    const tipo = (n.tipo_messaggio || n.tipo || '').toUpperCase();
+    return !TIPI_RIUNIONE.includes(tipo);
+  });
+
+  const messaggiFiltrati = notificheSenzaRiunioni.filter(n => {
     const dir = getDirezione(n);
     if (filtro === "inviati") return dir === "INVIATO";
     if (filtro === "ricevuti") return dir === "RICEVUTO";
     return true;
   });
 
-  const countInviati = notifiche.filter(
+  const countInviati = notificheSenzaRiunioni.filter(
     n => getDirezione(n) === "INVIATO"
   ).length;
-  const countRicevuti = notifiche.filter(
+  const countRicevuti = notificheSenzaRiunioni.filter(
     n => getDirezione(n) === "RICEVUTO"
   ).length;
-  const nonLetti = notifiche.filter(n => !n.letta && getDirezione(n) === "RICEVUTO").length;
+  const nonLetti = notificheSenzaRiunioni.filter(n => !n.letta && getDirezione(n) === "RICEVUTO").length;
 
   if (!associazioneId) {
     return (
@@ -290,7 +297,7 @@ export default function NotificheAssociazionePanel({
 
   return (
     <div className="space-y-6">
-      {/* NOTA: La sezione Le Mie Riunioni PA è stata spostata nei sotto-tab Enti Formatori e Associazioni & Bandi della DashboardPA (v10.25.0) */}
+      {/* NOTA: Notifiche riunione (INVITO_RIUNIONE, RIUNIONE_ANNULLATA) filtrate via - vanno nei sotto-tab Enti Formatori e Associazioni & Bandi (v10.26.0) */}
 
       {/* Invio notifiche corso */}
       <Card className="bg-[#1a2332] border-[#8b5cf6]/20">

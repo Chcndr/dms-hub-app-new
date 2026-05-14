@@ -303,16 +303,7 @@ export default function InvitoNotifier() {
                   >&rarr;</button>
                 </>
               )}
-              <button
-                onClick={() => {
-                  setDismissedTokens(prev => new Set([...prev, inv.token]));
-                  setInviti(prev => prev.filter(i => i.token !== inv.token));
-                }}
-                className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white text-xs hover:bg-white/40"
-                title="Chiudi (riapparirà al prossimo polling)"
-              >
-                <X className="h-3 w-3" />
-              </button>
+              {/* X rimossa v10.26.0: il popup resta visibile finché l'utente non accetta o rifiuta */}
             </div>
           </div>
         </div>

@@ -1809,6 +1809,8 @@ export default function DashboardPA() {
   >("tutti");
   const [messaggiInviatiEnti, setMessaggiInviatiEnti] = useState<any[]>([]);
   const [messaggiInviatiAssoc, setMessaggiInviatiAssoc] = useState<any[]>([]);
+  // Notifiche riunione (INVITO_RIUNIONE, RIUNIONE_ANNULLATA) per sotto-tab Enti/Bandi
+  const [notificheRiunioniAssoc, setNotificheRiunioniAssoc] = useState<any[]>([]);
 
   // A99X Agenda Intelligente - State
   const [a99xRiunioni, setA99xRiunioni] = useState<any[]>([]);
@@ -1869,9 +1871,6 @@ export default function DashboardPA() {
   const [a99xEliminaRiunioneId, setA99xEliminaRiunioneId] = useState<number | null>(null);
   const [a99xEliminaLoading, setA99xEliminaLoading] = useState(false);
 
-  // === Riunioni associazione per sezione Enti & Associazioni ===
-  const [entiAssocRiunioni, setEntiAssocRiunioni] = useState<any[]>([]);
-  const [entiAssocRiunioniLoading, setEntiAssocRiunioniLoading] = useState(false);
 
   // Ricerca contatti per aggiungere partecipante
   const searchContactsForAdd = async (q: string) => {
@@ -2239,26 +2238,6 @@ export default function DashboardPA() {
     fetchA99xInviti();
   }, [comuneIdFromUrl]);
 
-  // === Fetch riunioni per sezione Enti & Associazioni ===
-  const fetchEntiAssocRiunioni = async () => {
-    const imp = getImpersonationParams();
-    const assocId = imp.associazioneId || new URLSearchParams(window.location.search).get('associazione_id');
-    if (!assocId) { setEntiAssocRiunioni([]); return; }
-    setEntiAssocRiunioniLoading(true);
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const res = await fetch(`${apiUrl}/api/a99x/le-mie-riunioni?riferimento_id=${assocId}&tipo=ASSOCIAZIONE`);
-      const data = await res.json();
-      if (data.success) setEntiAssocRiunioni(data.data || []);
-    } catch (err) { console.error('Errore fetch riunioni enti/assoc:', err); }
-    finally { setEntiAssocRiunioniLoading(false); }
-  };
-
-  React.useEffect(() => {
-    fetchEntiAssocRiunioni();
-    const interval = setInterval(fetchEntiAssocRiunioni, 20000);
-    return () => clearInterval(interval);
-  }, []);
 
   const espandiMessaggiInviatiPerImpresaa = (messaggi: any[] = []) =>
     messaggi.flatMap((m: any) => {
@@ -2383,6 +2362,29 @@ export default function DashboardPA() {
       })
       .catch(err => console.error("Messaggi inviati Assoc fetch error:", err));
 
+    // Fetch notifiche riunione associazione (INVITO_RIUNIONE, RIUNIONE_ANNULLATA) per sotto-tab Enti/Bandi
+    const fetchRiunioniNotifiche = () => {
+      const imp = getImpersonationParams();
+      const assocId = imp.associazioneId || new URLSearchParams(window.location.search).get('associazione_id');
+      if (assocId) {
+        const apiBase = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+        fetch(`${apiBase}/api/associazioni/${assocId}/notifiche`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.success && Array.isArray(data.data)) {
+              const TIPI_RIUNIONE = ['INVITO_RIUNIONE', 'RIUNIONE_ANNULLATA', 'RIUNIONE_RIMANDATA', 'RIUNIONE'];
+              const riunioniOnly = data.data.filter((n: any) => {
+                const tipo = (n.tipo_messaggio || n.tipo || '').toUpperCase();
+                return TIPI_RIUNIONE.includes(tipo);
+              });
+              setNotificheRiunioniAssoc(riunioniOnly);
+            }
+          })
+          .catch(err => console.error('Notifiche riunioni assoc fetch error:', err));
+      }
+    };
+    fetchRiunioniNotifiche();
+
     // Fetch lista mercati
     fetch(`${MIHUB_API}/stats/overview`)
       .then(res => res.json())
@@ -2447,6 +2449,8 @@ export default function DashboardPA() {
           }
         })
         .catch(err => console.error("Notifiche risposte poll error:", err));
+      // Aggiorna anche notifiche riunione associazione
+      fetchRiunioniNotifiche();
     }, 30000);
 
     return () => clearInterval(interval);
@@ -8397,133 +8401,76 @@ export default function DashboardPA() {
                     </div>
                   </CardContent>
                 </Card>
-                {/* === Le Mie Riunioni PA (inviti ricevuti dall'associazione) === */}
-                {entiAssocRiunioni.length > 0 && (
-                  <Card className="bg-[#1a2332] border-[#8b5cf6]/20">
+
+                {/* Notifiche PUS Riunioni (INVITO_RIUNIONE, RIUNIONE_ANNULLATA) */}
+                {notificheRiunioniAssoc.length > 0 && (
+                  <Card className="bg-[#1a2332] border-[#f59e0b]/20">
                     <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                          <Users className="h-5 w-5 text-[#8b5cf6]" />
-                          Le Mie Riunioni PA
-                          <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-[10px]">{entiAssocRiunioni.length}</Badge>
-                        </CardTitle>
-                        <button onClick={fetchEntiAssocRiunioni} className="px-3 py-1.5 border border-[#8b5cf6]/30 text-[#8b5cf6] rounded-lg text-xs hover:bg-[#8b5cf6]/10 transition-all flex items-center gap-1">
-                          <RefreshCw className={`w-3 h-3 ${entiAssocRiunioniLoading ? 'animate-spin' : ''}`} /> Aggiorna
-                        </button>
-                      </div>
+                      <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                        <Bell className="h-5 w-5 text-[#f59e0b]" />
+                        Notifiche Riunioni
+                        {notificheRiunioniAssoc.filter((n: any) => !n.letta && (n.direzione || '').toUpperCase() === 'RICEVUTO').length > 0 && (
+                          <Badge className="bg-red-500 text-white ml-2">
+                            {notificheRiunioniAssoc.filter((n: any) => !n.letta && (n.direzione || '').toUpperCase() === 'RICEVUTO').length} nuove
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription className="text-[#e8fbff]/50">
+                        Inviti riunione e aggiornamenti ricevuti
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      {entiAssocRiunioni.map((r: any) => {
-                        const partecipanti = r.partecipanti || [];
-                        const confermati = partecipanti.filter((p: any) => p.stato === 'CONFERMATO').length;
-                        const rifiutati = partecipanti.filter((p: any) => p.stato === 'RIFIUTATO').length;
-                        const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
-                        const totale = partecipanti.length;
-                        const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
-                        const dataR = r.data_inizio ? new Date(r.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
-                        const mioStatoColors: Record<string, string> = {
-                          'CONFERMATO': 'bg-green-500/20 text-green-400 border-green-500/30',
-                          'RIFIUTATO': 'bg-red-500/20 text-red-400 border-red-500/30',
-                          'INVITATO': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-                        };
-                        const now = new Date();
-                        const riunioneDate = r.data_inizio ? new Date(r.data_inizio) : null;
-                        const durata = r.durata_minuti || 60;
-                        const fineRiunione = riunioneDate ? new Date(riunioneDate.getTime() + durata * 60000) : null;
-                        const isScaduta = fineRiunione ? fineRiunione < now : false;
-                        return (
-                          <div key={r.id} className={`bg-[#0b1220] border rounded-lg p-4 ${isScaduta ? 'border-[#e8fbff]/10 opacity-60' : 'border-[#8b5cf6]/20'}`}>
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <span className="text-lg">{isScaduta ? '\u23F0' : '\uD83D\uDCC5'}</span>
-                                <div className="min-w-0">
-                                  <h4 className="text-[#e8fbff] font-semibold text-sm truncate">{r.titolo || 'Riunione'}</h4>
-                                  <p className="text-[#e8fbff]/40 text-[10px]">{dataR}{isScaduta ? ' (conclusa)' : ''}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge className={`text-[9px] ${mioStatoColors[r.mio_stato] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
-                                  {r.mio_stato === 'CONFERMATO' ? 'Accettato' : r.mio_stato === 'RIFIUTATO' ? 'Rifiutato' : 'In attesa'}
-                                </Badge>
-                                {r.jitsi_link && !isScaduta && (
-                                  <a href={r.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">\uD83C\uDF10 Jitsi</a>
-                                )}
-                              </div>
-                            </div>
-                            {/* Pulsanti ACCETTA / RIFIUTA se stato è INVITATO e c'è il token */}
-                            {!isScaduta && (r.mio_stato === 'INVITATO' || r.partecipante_stato === 'INVITATO') && r.token && (
-                              <div className="flex gap-2 mb-3">
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                      const res = await fetch(`${apiUrl}/api/a99x/invito/${r.token}/accetta`);
-                                      if (res.ok) fetchEntiAssocRiunioni();
-                                    } catch {}
-                                  }}
-                                  className="flex-1 py-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-xs rounded-lg shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-green-700 active:scale-95 transition-all flex items-center justify-center gap-1"
-                                >
-                                  \u2705 ACCETTA
-                                </button>
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                      const res = await fetch(`${apiUrl}/api/a99x/invito/${r.token}/rifiuta`);
-                                      if (res.ok) fetchEntiAssocRiunioni();
-                                    } catch {}
-                                  }}
-                                  className="flex-1 py-2 bg-gradient-to-r from-red-500 to-red-700 text-white font-bold text-xs rounded-lg shadow-lg shadow-red-500/30 hover:from-red-600 hover:to-red-800 active:scale-95 transition-all flex items-center justify-center gap-1"
-                                >
-                                  \u274C RIFIUTA
-                                </button>
-                              </div>
-                            )}
-                            <div className="mb-3">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-[#e8fbff]/50 text-[10px]">Conferme: {confermati}/{totale}</span>
-                                <span className="text-[#e8fbff]/50 text-[10px]">{percentuale}%</span>
-                              </div>
-                              <div className="w-full bg-[#1a2332] rounded-full h-2 overflow-hidden">
-                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${totale > 0 ? ((confermati + rifiutati) / totale) * 100 : 0}%`, background: `linear-gradient(to right, #22c55e ${totale > 0 ? (confermati / (confermati + rifiutati || 1)) * 100 : 0}%, #ef4444 0%)` }}></div>
-                              </div>
-                              <div className="flex items-center gap-3 mt-1.5">
-                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span><span className="text-green-400">{confermati} confermati</span></span>
-                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span><span className="text-red-400">{rifiutati} rifiutati</span></span>
-                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span><span className="text-yellow-400">{inAttesa} in attesa</span></span>
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              {partecipanti.map((p: any, idx: number) => {
-                                const statoConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
-                                  'CONFERMATO': { bg: 'bg-green-500/15 border-green-500/30', text: 'text-green-400', icon: '\u2705', label: 'Confermato' },
-                                  'RIFIUTATO': { bg: 'bg-red-500/15 border-red-500/30', text: 'text-red-400', icon: '\u274C', label: 'Rifiutato' },
-                                  'INVITATO': { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', icon: '\u23F3', label: 'In attesa' },
-                                };
-                                const cfg = statoConfig[p.stato] || statoConfig['INVITATO'];
-                                const tipoConfig: Record<string, { color: string; label: string }> = {
-                                  'IMPRESA': { color: 'text-[#14b8a6]', label: 'Impresa' },
-                                  'ASSOCIAZIONE': { color: 'text-[#f59e0b]', label: 'Associazione' },
-                                  'ASSESSORE': { color: 'text-[#8b5cf6]', label: 'Assessore' },
-                                  'SETTORE': { color: 'text-[#3b82f6]', label: 'Settore' },
-                                  'COMUNE': { color: 'text-[#06b6d4]', label: 'Comune' },
-                                };
-                                const tipoCfg = tipoConfig[p.tipo] || { color: 'text-[#e8fbff]/50', label: p.tipo };
-                                return (
-                                  <div key={idx} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${cfg.bg} transition-all`}>
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <span className="text-sm">{cfg.icon}</span>
-                                      <span className="text-[#e8fbff] text-xs font-medium truncate">{p.nome}</span>
-                                      <Badge className={`text-[8px] ${tipoCfg.color} bg-transparent border-current/30`}>{tipoCfg.label}</Badge>
-                                    </div>
-                                    <span className={`text-[10px] font-semibold ${cfg.text}`}>{cfg.label}</span>
+                    <CardContent>
+                      <div className="max-h-[300px] overflow-y-auto space-y-3">
+                        {notificheRiunioniAssoc.map((notif: any, idx: number) => {
+                          const tipo = (notif.tipo_messaggio || notif.tipo || 'RIUNIONE').toUpperCase();
+                          const isRicevuto = (notif.direzione || '').toUpperCase() === 'RICEVUTO';
+                          const tipoColor = tipo === 'INVITO_RIUNIONE' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                            : tipo === 'RIUNIONE_ANNULLATA' ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                            : tipo === 'RIUNIONE_RIMANDATA' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                            : 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+                          return (
+                            <div
+                              key={`riunione-enti-${notif.id || idx}`}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all hover:bg-[#0b1220]/50 ${
+                                isRicevuto && !notif.letta
+                                  ? 'bg-[#f59e0b]/10 border-[#f59e0b]/30'
+                                  : 'bg-[#0b1220]/30 border-[#f59e0b]/10'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-3 flex-1">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                    isRicevuto ? 'bg-amber-500/20' : 'bg-emerald-500/20'
+                                  }`}>
+                                    {isRicevuto ? <Mail className="w-4 h-4 text-amber-400" /> : <Send className="w-4 h-4 text-emerald-400" />}
                                   </div>
-                                );
-                              })}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-sm font-medium text-[#e8fbff]">
+                                        {isRicevuto ? `Da: ${notif.mittente_nome || 'MIO HUB'}` : `A: ${notif.target_nome || ''}`}
+                                      </span>
+                                      <Badge className={`text-xs border ${tipoColor}`}>
+                                        {tipo.replace(/_/g, ' ')}
+                                      </Badge>
+                                      {isRicevuto && !notif.letta && (
+                                        <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-[#e8fbff]/80 font-medium">{notif.titolo || notif.oggetto || 'Notifica riunione'}</p>
+                                    <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{notif.messaggio}</p>
+                                  </div>
+                                </div>
+                                <span className="text-xs text-[#e8fbff]/50 flex-shrink-0">
+                                  {notif.data_invio ? new Date(notif.data_invio).toLocaleDateString('it-IT', {
+                                    timeZone: 'Europe/Rome', day: '2-digit', month: '2-digit', year: 'numeric',
+                                    hour: '2-digit', minute: '2-digit'
+                                  }) : ''}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -9890,132 +9837,76 @@ export default function DashboardPA() {
                     </div>
                   </CardContent>
                 </Card>
-                {/* === Le Mie Riunioni PA (inviti ricevuti dall'associazione) === */}
-                {entiAssocRiunioni.length > 0 && (
-                  <Card className="bg-[#1a2332] border-[#8b5cf6]/20">
+
+                {/* Notifiche PUS Riunioni (INVITO_RIUNIONE, RIUNIONE_ANNULLATA) */}
+                {notificheRiunioniAssoc.length > 0 && (
+                  <Card className="bg-[#1a2332] border-[#f59e0b]/20">
                     <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-[#e8fbff] flex items-center gap-2">
-                          <Users className="h-5 w-5 text-[#8b5cf6]" />
-                          Le Mie Riunioni PA
-                          <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-[10px]">{entiAssocRiunioni.length}</Badge>
-                        </CardTitle>
-                        <button onClick={fetchEntiAssocRiunioni} className="px-3 py-1.5 border border-[#8b5cf6]/30 text-[#8b5cf6] rounded-lg text-xs hover:bg-[#8b5cf6]/10 transition-all flex items-center gap-1">
-                          <RefreshCw className={`w-3 h-3 ${entiAssocRiunioniLoading ? 'animate-spin' : ''}`} /> Aggiorna
-                        </button>
-                      </div>
+                      <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                        <Bell className="h-5 w-5 text-[#f59e0b]" />
+                        Notifiche Riunioni
+                        {notificheRiunioniAssoc.filter((n: any) => !n.letta && (n.direzione || '').toUpperCase() === 'RICEVUTO').length > 0 && (
+                          <Badge className="bg-red-500 text-white ml-2">
+                            {notificheRiunioniAssoc.filter((n: any) => !n.letta && (n.direzione || '').toUpperCase() === 'RICEVUTO').length} nuove
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription className="text-[#e8fbff]/50">
+                        Inviti riunione e aggiornamenti ricevuti
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      {entiAssocRiunioni.map((r: any) => {
-                        const partecipanti = r.partecipanti || [];
-                        const confermati = partecipanti.filter((p: any) => p.stato === 'CONFERMATO').length;
-                        const rifiutati = partecipanti.filter((p: any) => p.stato === 'RIFIUTATO').length;
-                        const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
-                        const totale = partecipanti.length;
-                        const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
-                        const dataR = r.data_inizio ? new Date(r.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
-                        const mioStatoColors: Record<string, string> = {
-                          'CONFERMATO': 'bg-green-500/20 text-green-400 border-green-500/30',
-                          'RIFIUTATO': 'bg-red-500/20 text-red-400 border-red-500/30',
-                          'INVITATO': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-                        };
-                        const now = new Date();
-                        const riunioneDate = r.data_inizio ? new Date(r.data_inizio) : null;
-                        const durata = r.durata_minuti || 60;
-                        const fineRiunione = riunioneDate ? new Date(riunioneDate.getTime() + durata * 60000) : null;
-                        const isScaduta = fineRiunione ? fineRiunione < now : false;
-                        return (
-                          <div key={r.id} className={`bg-[#0b1220] border rounded-lg p-4 ${isScaduta ? 'border-[#e8fbff]/10 opacity-60' : 'border-[#8b5cf6]/20'}`}>
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <span className="text-lg">{isScaduta ? '\u23F0' : '\uD83D\uDCC5'}</span>
-                                <div className="min-w-0">
-                                  <h4 className="text-[#e8fbff] font-semibold text-sm truncate">{r.titolo || 'Riunione'}</h4>
-                                  <p className="text-[#e8fbff]/40 text-[10px]">{dataR}{isScaduta ? ' (conclusa)' : ''}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge className={`text-[9px] ${mioStatoColors[r.mio_stato] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
-                                  {r.mio_stato === 'CONFERMATO' ? 'Accettato' : r.mio_stato === 'RIFIUTATO' ? 'Rifiutato' : 'In attesa'}
-                                </Badge>
-                                {r.jitsi_link && !isScaduta && (
-                                  <a href={r.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">\uD83C\uDF10 Jitsi</a>
-                                )}
-                              </div>
-                            </div>
-                            {!isScaduta && (r.mio_stato === 'INVITATO' || r.partecipante_stato === 'INVITATO') && r.token && (
-                              <div className="flex gap-2 mb-3">
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                      const res = await fetch(`${apiUrl}/api/a99x/invito/${r.token}/accetta`);
-                                      if (res.ok) fetchEntiAssocRiunioni();
-                                    } catch {}
-                                  }}
-                                  className="flex-1 py-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-xs rounded-lg shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-green-700 active:scale-95 transition-all flex items-center justify-center gap-1"
-                                >
-                                  \u2705 ACCETTA
-                                </button>
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                      const res = await fetch(`${apiUrl}/api/a99x/invito/${r.token}/rifiuta`);
-                                      if (res.ok) fetchEntiAssocRiunioni();
-                                    } catch {}
-                                  }}
-                                  className="flex-1 py-2 bg-gradient-to-r from-red-500 to-red-700 text-white font-bold text-xs rounded-lg shadow-lg shadow-red-500/30 hover:from-red-600 hover:to-red-800 active:scale-95 transition-all flex items-center justify-center gap-1"
-                                >
-                                  \u274C RIFIUTA
-                                </button>
-                              </div>
-                            )}
-                            <div className="mb-3">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-[#e8fbff]/50 text-[10px]">Conferme: {confermati}/{totale}</span>
-                                <span className="text-[#e8fbff]/50 text-[10px]">{percentuale}%</span>
-                              </div>
-                              <div className="w-full bg-[#1a2332] rounded-full h-2 overflow-hidden">
-                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${totale > 0 ? ((confermati + rifiutati) / totale) * 100 : 0}%`, background: `linear-gradient(to right, #22c55e ${totale > 0 ? (confermati / (confermati + rifiutati || 1)) * 100 : 0}%, #ef4444 0%)` }}></div>
-                              </div>
-                              <div className="flex items-center gap-3 mt-1.5">
-                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span><span className="text-green-400">{confermati} confermati</span></span>
-                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span><span className="text-red-400">{rifiutati} rifiutati</span></span>
-                                <span className="text-[10px] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span><span className="text-yellow-400">{inAttesa} in attesa</span></span>
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              {partecipanti.map((p: any, idx: number) => {
-                                const statoConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
-                                  'CONFERMATO': { bg: 'bg-green-500/15 border-green-500/30', text: 'text-green-400', icon: '\u2705', label: 'Confermato' },
-                                  'RIFIUTATO': { bg: 'bg-red-500/15 border-red-500/30', text: 'text-red-400', icon: '\u274C', label: 'Rifiutato' },
-                                  'INVITATO': { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', icon: '\u23F3', label: 'In attesa' },
-                                };
-                                const cfg = statoConfig[p.stato] || statoConfig['INVITATO'];
-                                const tipoConfig: Record<string, { color: string; label: string }> = {
-                                  'IMPRESA': { color: 'text-[#14b8a6]', label: 'Impresa' },
-                                  'ASSOCIAZIONE': { color: 'text-[#f59e0b]', label: 'Associazione' },
-                                  'ASSESSORE': { color: 'text-[#8b5cf6]', label: 'Assessore' },
-                                  'SETTORE': { color: 'text-[#3b82f6]', label: 'Settore' },
-                                  'COMUNE': { color: 'text-[#06b6d4]', label: 'Comune' },
-                                };
-                                const tipoCfg = tipoConfig[p.tipo] || { color: 'text-[#e8fbff]/50', label: p.tipo };
-                                return (
-                                  <div key={idx} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${cfg.bg} transition-all`}>
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <span className="text-sm">{cfg.icon}</span>
-                                      <span className="text-[#e8fbff] text-xs font-medium truncate">{p.nome}</span>
-                                      <Badge className={`text-[8px] ${tipoCfg.color} bg-transparent border-current/30`}>{tipoCfg.label}</Badge>
-                                    </div>
-                                    <span className={`text-[10px] font-semibold ${cfg.text}`}>{cfg.label}</span>
+                    <CardContent>
+                      <div className="max-h-[300px] overflow-y-auto space-y-3">
+                        {notificheRiunioniAssoc.map((notif: any, idx: number) => {
+                          const tipo = (notif.tipo_messaggio || notif.tipo || 'RIUNIONE').toUpperCase();
+                          const isRicevuto = (notif.direzione || '').toUpperCase() === 'RICEVUTO';
+                          const tipoColor = tipo === 'INVITO_RIUNIONE' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                            : tipo === 'RIUNIONE_ANNULLATA' ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                            : tipo === 'RIUNIONE_RIMANDATA' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                            : 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+                          return (
+                            <div
+                              key={`riunione-bandi-${notif.id || idx}`}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all hover:bg-[#0b1220]/50 ${
+                                isRicevuto && !notif.letta
+                                  ? 'bg-[#f59e0b]/10 border-[#f59e0b]/30'
+                                  : 'bg-[#0b1220]/30 border-[#f59e0b]/10'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-3 flex-1">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                    isRicevuto ? 'bg-amber-500/20' : 'bg-emerald-500/20'
+                                  }`}>
+                                    {isRicevuto ? <Mail className="w-4 h-4 text-amber-400" /> : <Send className="w-4 h-4 text-emerald-400" />}
                                   </div>
-                                );
-                              })}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-sm font-medium text-[#e8fbff]">
+                                        {isRicevuto ? `Da: ${notif.mittente_nome || 'MIO HUB'}` : `A: ${notif.target_nome || ''}`}
+                                      </span>
+                                      <Badge className={`text-xs border ${tipoColor}`}>
+                                        {tipo.replace(/_/g, ' ')}
+                                      </Badge>
+                                      {isRicevuto && !notif.letta && (
+                                        <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-[#e8fbff]/80 font-medium">{notif.titolo || notif.oggetto || 'Notifica riunione'}</p>
+                                    <p className="text-xs text-[#e8fbff]/60 mt-1 line-clamp-2">{notif.messaggio}</p>
+                                  </div>
+                                </div>
+                                <span className="text-xs text-[#e8fbff]/50 flex-shrink-0">
+                                  {notif.data_invio ? new Date(notif.data_invio).toLocaleDateString('it-IT', {
+                                    timeZone: 'Europe/Rome', day: '2-digit', month: '2-digit', year: 'numeric',
+                                    hour: '2-digit', minute: '2-digit'
+                                  }) : ''}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -10569,7 +10460,7 @@ export default function DashboardPA() {
                               </div>
                               <div className="flex items-center gap-2">
                                 {riunione.jitsi_link && (
-                                  <a href={riunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all">🌐 Jitsi</a>
+                                  <a href={riunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all flex items-center gap-1"><Video className="h-3 w-3" /> Jitsi</a>
                                 )}
                                 <Badge className={`text-[9px] ${
                                   riunione.stato === 'COMPLETATA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :

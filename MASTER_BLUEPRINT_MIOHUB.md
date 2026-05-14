@@ -1,22 +1,41 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.25.0 (Notifiche Riunioni in Enti & Associazioni + Responsabili Admin + Partecipante con Notifica)
-> **Data:** 14 Maggio 2026
+> **Versione:** 10.26.0 (Riordino Notifiche Riunioni + Popup Persistente + App Impresa Fix)
+> **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (14 Mag 2026 — Snapshot stabile)
+> ### STATO SISTEMA (15 Mag 2026 — Snapshot stabile)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | (pending push) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | (pending push) — dms-hub-app-new |
+> | **GitHub Backend** | Allineato | mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
 >
 > ---
+>
+> ### VINCOLI NEGATIVI (NON FARE)
+> - **NON mettere "Le Mie Riunioni PA" nei sotto-tab Enti Formatori o Associazioni & Bandi** — Le riunioni con invitati/conferme devono stare SOLO in A99X
+> - **NON mettere notifiche INVITO_RIUNIONE nel sotto-tab Notifiche di SCIA & Pratiche** — Le notifiche PUS riunione vanno nei moduli "Notifiche Riunioni" dei sotto-tab Enti Formatori e Associazioni & Bandi
+> - **NON aggiungere X di chiusura al popup InvitoNotifier** — Il popup deve restare visibile finché l'utente non accetta o rifiuta
+> - **Tab A99X usa tabId="mio" nei permessi** — NON rinominare, corrisponde al vecchio "MIO AGENT" nella sezione Permessi
+>
 > ---
+> ---
+### CHANGELOG v10.26.0 (15 Mag 2026)
+**Riordino Notifiche Riunioni (solo A99X), Notifiche PUS nei sotto-tab Enti/Bandi, Popup senza X, App Impresa Fix, Emoji Fix**
+
+**Fix implementati:**
+1. **Rimosso "Le Mie Riunioni PA" dai sotto-tab Enti Formatori e Associazioni & Bandi** — Le riunioni con invitati/conferme/barra progresso ora stanno SOLO nel tab A99X. Rimossi state `entiAssocRiunioni`, fetch `fetchEntiAssocRiunioni` e relativi useEffect dalla DashboardPA.
+2. **Notifiche PUS riunione spostate da SCIA a Enti/Bandi** — Nel NotificheAssociazionePanel (sotto-tab SCIA Notifiche) le notifiche tipo INVITO_RIUNIONE, RIUNIONE_ANNULLATA, RIUNIONE_RIMANDATA vengono ora filtrate via. Aggiunti nuovi moduli "Notifiche Riunioni" (Card con icona Bell ambra) nei sotto-tab Enti Formatori e Associazioni & Bandi che mostrano solo queste notifiche riunione.
+3. **Popup InvitoNotifier senza X** — Rimosso il pulsante X di chiusura dal popup InvitoNotifier nella dashboard associazione impersonata. Il popup resta visibile finché l'utente non accetta o rifiuta.
+4. **App Impresa: stato persistente dopo accettazione** — Quando l'utente apre una notifica INVITO_RIUNIONE già accettata, ora mostra il pulsante viola "Partecipa alla Videoconferenza" invece di rimostrare CONFERMA/RINUNCIA. Aggiunto stato LOADING con spinner durante il fetch. Match migliorato con fallback fuzzy per titolo riunione.
+5. **Emoji rotte nel badge Jitsi** — Sostituita emoji `🌐` con icona `<Video>` di lucide-react nel badge Jitsi della sezione A99X per evitare problemi di rendering su dispositivi mobili.
+
+---
 ### CHANGELOG v10.25.0 (14 Mag 2026)
 **Notifiche Riunioni in Enti & Associazioni, Aggiungi Partecipante con Notifica, Responsabili in Admin e Ricerca-Contatti, App Impresa Stato Persistente Migliorato, Riunioni Scadute**
 

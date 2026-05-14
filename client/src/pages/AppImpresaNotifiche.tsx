@@ -722,7 +722,7 @@ export default function AppImpresaNotifiche() {
                             key={`ric-${notifica.id}`}
                             onClick={() => {
                               setNotificaSelezionata(notifica);
-                              setInvRiunioneStato(null);
+                              setInvRiunioneStato('LOADING');
                               setInvRiunioneLink('');
                               segnaComeLetta(notifica);
                               // Se INVITO_RIUNIONE, carica lo stato reale dal backend
@@ -730,16 +730,36 @@ export default function AppImpresaNotifiche() {
                                 fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL)}`)
                                   .then(r => r.json())
                                   .then(data => {
-                                    if (data.success) {
-                                      const riunione = data.data?.find((r: any) => notifica.messaggio?.includes(r.titolo));
+                                    if (data.success && data.data) {
+                                      // Match migliorato: cerca per titolo nel messaggio, con fallback fuzzy
+                                      const msg = (notifica.messaggio || '').toLowerCase();
+                                      const titolo = (notifica.titolo || '').toLowerCase();
+                                      let riunione = data.data.find((r: any) => {
+                                        const rTitolo = (r.titolo || '').toLowerCase();
+                                        return msg.includes(rTitolo) || titolo.includes(rTitolo);
+                                      });
+                                      // Fallback: cerca per titolo nella notifica (es. "Invito Riunione: TITOLO")
+                                      if (!riunione) {
+                                        const match = (notifica.titolo || '').match(/Invito Riunione:\s*(.+)/i);
+                                        if (match) {
+                                          const titoloRiunione = match[1].trim().toLowerCase();
+                                          riunione = data.data.find((r: any) => (r.titolo || '').toLowerCase() === titoloRiunione);
+                                        }
+                                      }
                                       if (riunione) {
                                         setInvRiunioneStato(riunione.mio_stato || 'INVITATO');
                                         if (riunione.mio_stato === 'CONFERMATO') {
                                           setInvRiunioneLink(riunione.jitsi_link || '');
                                         }
+                                      } else {
+                                        setInvRiunioneStato('INVITATO');
                                       }
+                                    } else {
+                                      setInvRiunioneStato('INVITATO');
                                     }
-                                  }).catch(() => {});
+                                  }).catch(() => setInvRiunioneStato('INVITATO'));
+                              } else {
+                                setInvRiunioneStato(null);
                               }
                             }}
                             className={`p-3 rounded-lg cursor-pointer transition-all ${
@@ -1070,8 +1090,15 @@ export default function AppImpresaNotifiche() {
                           <p className="text-[#e8fbff]/50 text-xs sm:text-sm">Conferma o rifiuta la tua partecipazione</p>
                         </div>
                       </div>
+                      {/* Loading stato */}
+                      {invRiunioneStato === 'LOADING' && (
+                        <div className="flex items-center justify-center py-3">
+                          <Loader2 className="w-5 h-5 text-[#8b5cf6] animate-spin" />
+                          <span className="text-[#e8fbff]/50 text-xs ml-2">Caricamento stato...</span>
+                        </div>
+                      )}
                       {/* Pulsanti Conferma / Rinuncia */}
-                      {(!invRiunioneStato || invRiunioneStato === 'INVITATO') && (
+                      {(invRiunioneStato === 'INVITATO') && (
                         <div className="flex gap-2 mb-3">
                           <button
                             onClick={async () => {
