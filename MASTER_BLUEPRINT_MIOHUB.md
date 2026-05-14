@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.26.0 (Riordino Notifiche Riunioni + Popup Persistente + App Impresa Fix)
+> **Versione:** 10.27.0 (Riordino Lista Riunioni A99X + Conferme Inviti + Toast Conferma)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -22,9 +22,21 @@
 > - **NON mettere notifiche INVITO_RIUNIONE nel sotto-tab Notifiche di SCIA & Pratiche** — Le notifiche PUS riunione vanno nei moduli "Notifiche Riunioni" dei sotto-tab Enti Formatori e Associazioni & Bandi
 > - **NON aggiungere X di chiusura al popup InvitoNotifier** — Il popup deve restare visibile finché l'utente non accetta o rifiuta
 > - **Tab A99X usa tabId="mio" nei permessi** — NON rinominare, corrisponde al vecchio "MIO AGENT" nella sezione Permessi
+> - **NON mostrare pulsanti Rimanda/Elimina/Aggiungi su riunioni concluse** — Solo riunioni attive (PROGRAMMATA/IN_CORSO con data futura) possono avere azioni
+> - **NON usare alert() per messaggi di conferma** — Usare toast (sonner) per feedback utente
 >
 > ---
 > ---
+### CHANGELOG v10.27.0 (15 Mag 2026)
+**Riordino Lista Riunioni A99X: Prossime vs Concluse, Conferme Inviti attive/concluse, Toast conferma azioni**
+
+1. **Prossime Riunioni vs Riunioni Concluse** — Dashboard A99X ora separa riunioni attive (PROGRAMMATA/IN_CORSO con data futura) da riunioni concluse (ANNULLATA/COMPLETATA/RIPROGRAMMATA/scadute). Le concluse appaiono sotto con opacity ridotta, line-through e badge stato
+2. **Conferme Inviti attive vs concluse** — Stessa logica: Card "Conferme Inviti" mostra solo attive con badge conteggio, Card "Riunioni Concluse" sotto per le finite
+3. **Pulsanti azione nascosti su riunioni concluse** — Rimanda Riunione, Elimina Evento e Aggiungi Partecipante visibili SOLO su riunioni attive (parametro `isAttiva`)
+4. **Toast di conferma (sonner)** — Aggiungi Partecipante: `toast.success("Partecipante aggiunto...")`, Rimanda: `toast.success("Riunione rimandata al...")`, Elimina: `toast.success("Riunione eliminata...")`. Errori con `toast.error()` invece di `alert()`
+5. **Contatore aggiornato** — Badge "Riunioni Programmate" nella dashboard conta solo le riunioni attive
+
+---
 ### CHANGELOG v10.26.0 (15 Mag 2026)
 **Riordino Notifiche Riunioni (solo A99X), Notifiche PUS nei sotto-tab Enti/Bandi, Popup senza X, App Impresa Fix, Emoji Fix**
 

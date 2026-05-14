@@ -1930,12 +1930,13 @@ export default function DashboardPA() {
         setA99xAddPartQuery('');
         setA99xAddPartResults([]);
         fetchA99xData();
+        toast.success(`Partecipante "${contact.nome}" aggiunto con successo${contact.email ? ' e invito inviato' : ''}`);
       } else {
-        alert(data.error || 'Errore aggiunta partecipante');
+        toast.error(data.error || 'Errore aggiunta partecipante');
       }
     } catch (err) {
       console.error('Errore aggiunta partecipante:', err);
-      alert('Errore di rete');
+      toast.error('Errore di rete durante l\'aggiunta del partecipante');
     }
   };
 
@@ -2149,10 +2150,15 @@ export default function DashboardPA() {
       if (data.success) {
         setA99xRimandaRiunioneId(null);
         fetchA99xData();
+        const dataFormattata = new Date(nuovaData).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        toast.success(`Riunione rimandata al ${dataFormattata}. Tutti i partecipanti sono stati notificati.`);
       } else {
-        console.warn('Errore rimanda riunione:', data.error);
+        toast.error(data.error || 'Errore nel rimandare la riunione');
       }
-    } catch (err) { console.warn('Errore rimanda riunione:', err); }
+    } catch (err) {
+      console.warn('Errore rimanda riunione:', err);
+      toast.error('Errore di rete nel rimandare la riunione');
+    }
     setA99xRimandaLoading(false);
   };
 
@@ -2170,10 +2176,14 @@ export default function DashboardPA() {
       if (data.success) {
         setA99xEliminaRiunioneId(null);
         fetchA99xData();
+        toast.success('Riunione eliminata. Tutti i partecipanti sono stati notificati dell\'annullamento.');
       } else {
-        console.warn('Errore elimina riunione:', data.error);
+        toast.error(data.error || 'Errore nell\'eliminazione della riunione');
       }
-    } catch (err) { console.warn('Errore elimina riunione:', err); }
+    } catch (err) {
+      console.warn('Errore elimina riunione:', err);
+      toast.error('Errore di rete nell\'eliminazione della riunione');
+    }
     setA99xEliminaLoading(false);
   };
 
@@ -10051,65 +10061,120 @@ export default function DashboardPA() {
               </Card>
             </div>
 
-            {/* Prossime Riunioni */}
-            <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4 text-[#8b5cf6]" />
-                  Prossime Riunioni
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {a99xRiunioni.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Video className="h-10 w-10 text-[#8b5cf6]/30 mx-auto mb-3" />
-                    <p className="text-[#e8fbff]/50 text-sm">Nessuna riunione programmata</p>
-                    <p className="text-[#e8fbff]/30 text-xs mt-1">Clicca "Nuova Riunione" per crearne una</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {a99xRiunioni.slice(0, 5).map((riunione: any) => (
-                      <div key={riunione.id} className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4 flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="text-[#e8fbff] font-medium text-sm">{riunione.titolo}</h4>
-                            <Badge className={`text-[9px] ${
-                              riunione.priorita_livello === 'CRITICA' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                              riunione.priorita_livello === 'ALTA' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
-                              riunione.priorita_livello === 'MEDIA' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
-                              'bg-green-500/20 text-green-400 border-green-500/30'
-                            }`}>{riunione.priorita_livello || 'NORMALE'}</Badge>
-                          </div>
-                          <p className="text-[#e8fbff]/50 text-xs">
-                            {new Date(riunione.data_inizio).toLocaleString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                            {' • '}{riunione.durata_minuti} min
-                            {riunione.tipo && ` • ${riunione.tipo}`}
-                          </p>
+            {/* Prossime Riunioni (solo PROGRAMMATA / IN_CORSO con data futura) */}
+            {(() => {
+              const now = new Date();
+              const riunioniAttive = a99xRiunioni.filter((r: any) => {
+                const isStatoAttivo = r.stato === 'PROGRAMMATA' || r.stato === 'IN_CORSO';
+                const dataFine = r.data_fine ? new Date(r.data_fine) : new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
+                return isStatoAttivo && dataFine > now;
+              });
+              const riunioniConcluse = a99xRiunioni.filter((r: any) => {
+                const isStatoNonAttivo = r.stato === 'ANNULLATA' || r.stato === 'COMPLETATA' || r.stato === 'RIPROGRAMMATA';
+                const dataFine = r.data_fine ? new Date(r.data_fine) : new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
+                const isScaduta = (r.stato === 'PROGRAMMATA' || r.stato === 'IN_CORSO') && dataFine <= now;
+                return isStatoNonAttivo || isScaduta;
+              });
+              return (
+                <>
+                  <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 text-[#8b5cf6]" />
+                        Prossime Riunioni
+                        {riunioniAttive.length > 0 && <Badge className="bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30 text-[10px]">{riunioniAttive.length}</Badge>}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {riunioniAttive.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Video className="h-10 w-10 text-[#8b5cf6]/30 mx-auto mb-3" />
+                          <p className="text-[#e8fbff]/50 text-sm">Nessuna riunione programmata</p>
+                          <p className="text-[#e8fbff]/30 text-xs mt-1">Clicca "Nuova Riunione" per crearne una</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {riunione.jitsi_link && (
-                            <a
-                              href={riunione.jitsi_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1.5 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded-lg text-xs font-medium hover:bg-[#14b8a6]/30 transition-all flex items-center gap-1"
-                            >
-                              <Video className="h-3 w-3" />
-                              Jitsi
-                            </a>
-                          )}
-                          <Badge className={`text-[9px] ${
-                            riunione.stato === 'PROGRAMMATA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                            riunione.stato === 'IN_CORSO' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                            'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                          }`}>{riunione.stato}</Badge>
+                      ) : (
+                        <div className="space-y-3">
+                          {riunioniAttive.slice(0, 5).map((riunione: any) => (
+                            <div key={riunione.id} className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4 flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="text-[#e8fbff] font-medium text-sm">{riunione.titolo}</h4>
+                                  <Badge className={`text-[9px] ${
+                                    riunione.priorita_livello === 'CRITICA' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                    riunione.priorita_livello === 'ALTA' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
+                                    riunione.priorita_livello === 'MEDIA' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                                    'bg-green-500/20 text-green-400 border-green-500/30'
+                                  }`}>{riunione.priorita_livello || 'NORMALE'}</Badge>
+                                </div>
+                                <p className="text-[#e8fbff]/50 text-xs">
+                                  {new Date(riunione.data_inizio).toLocaleString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  {' \u2022 '}{riunione.durata_minuti} min
+                                  {riunione.tipo && ` \u2022 ${riunione.tipo}`}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {riunione.jitsi_link && (
+                                  <a
+                                    href={riunione.jitsi_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-3 py-1.5 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded-lg text-xs font-medium hover:bg-[#14b8a6]/30 transition-all flex items-center gap-1"
+                                  >
+                                    <Video className="h-3 w-3" />
+                                    Jitsi
+                                  </a>
+                                )}
+                                <Badge className={`text-[9px] ${
+                                  riunione.stato === 'PROGRAMMATA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                                  riunione.stato === 'IN_CORSO' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                                  'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                                }`}>{riunione.stato}</Badge>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Riunioni Concluse (ANNULLATA, COMPLETATA, scadute) */}
+                  {riunioniConcluse.length > 0 && (
+                    <Card className="bg-[#1a2332] border-[#ef4444]/20 opacity-80">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-[#e8fbff]/70 text-base flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-[#ef4444]/60" />
+                          Riunioni Concluse
+                          <Badge className="bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30 text-[10px]">{riunioniConcluse.length}</Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {riunioniConcluse.map((riunione: any) => (
+                            <div key={riunione.id} className="bg-[#0b1220]/60 border border-[#ef4444]/10 rounded-lg p-3 flex items-center justify-between opacity-70">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="text-[#e8fbff]/60 font-medium text-sm line-through">{riunione.titolo}</h4>
+                                </div>
+                                <p className="text-[#e8fbff]/30 text-xs">
+                                  {new Date(riunione.data_inizio).toLocaleString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  {' \u2022 '}{riunione.durata_minuti} min
+                                </p>
+                              </div>
+                              <Badge className={`text-[9px] ${
+                                riunione.stato === 'ANNULLATA' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                riunione.stato === 'COMPLETATA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                                riunione.stato === 'RIPROGRAMMATA' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                                'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                              }`}>{riunione.stato === 'PROGRAMMATA' || riunione.stato === 'IN_CORSO' ? 'SCADUTA' : riunione.stato}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              );
+            })()}
 
             {/* Task Follow-up */}
             <Card className="bg-[#1a2332] border-[#3b82f6]/30">
@@ -10410,38 +10475,28 @@ export default function DashboardPA() {
             )}
 
             {/* ===== SUB-TAB: CONFERME INVITI ===== */}
-            {a99xSubTab === 'prenotazioni' && (
-              <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
-                      <Users className="h-4 w-4 text-[#14b8a6]" />
-                      Conferme Inviti
-                      <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-[10px]">{a99xRiunioni.length} riunioni</Badge>
-                    </CardTitle>
-                    <button onClick={() => fetchA99xData()} className="px-3 py-1.5 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded-lg text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3" /> Aggiorna
-                    </button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {a99xRiunioni.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Users className="h-10 w-10 text-[#14b8a6]/30 mx-auto mb-3" />
-                      <p className="text-[#e8fbff]/50 text-sm">Nessuna riunione creata</p>
-                      <p className="text-[#e8fbff]/30 text-xs mt-1">Crea una riunione dal tab "Invita Riunione" per vedere le conferme qui</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {a99xRiunioni.map((riunione: any) => {
-                        const partecipanti = riunione.partecipanti || [];
-                        const confermati = partecipanti.filter((p: any) => p.stato === 'CONFERMATO').length;
-                        const rifiutati = partecipanti.filter((p: any) => p.stato === 'RIFIUTATO').length;
-                        const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
-                        const totale = partecipanti.length;
-                        const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
-                        const dataRiunione = riunione.data_inizio ? new Date(riunione.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
-                        return (
+            {a99xSubTab === 'prenotazioni' && (() => {
+              const now = new Date();
+              const confermeAttive = a99xRiunioni.filter((r: any) => {
+                const isStatoAttivo = r.stato === 'PROGRAMMATA' || r.stato === 'IN_CORSO';
+                const dataFine = r.data_fine ? new Date(r.data_fine) : new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
+                return isStatoAttivo && dataFine > now;
+              });
+              const confermeConcluse = a99xRiunioni.filter((r: any) => {
+                const isStatoNonAttivo = r.stato === 'ANNULLATA' || r.stato === 'COMPLETATA' || r.stato === 'RIPROGRAMMATA';
+                const dataFine = r.data_fine ? new Date(r.data_fine) : new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
+                const isScaduta = (r.stato === 'PROGRAMMATA' || r.stato === 'IN_CORSO') && dataFine <= now;
+                return isStatoNonAttivo || isScaduta;
+              });
+              const renderRiunioneCard = (riunione: any, isAttiva: boolean) => {
+                const partecipanti = riunione.partecipanti || [];
+                const confermati = partecipanti.filter((p: any) => p.stato === 'CONFERMATO').length;
+                const rifiutati = partecipanti.filter((p: any) => p.stato === 'RIFIUTATO').length;
+                const inAttesa = partecipanti.filter((p: any) => p.stato === 'INVITATO').length;
+                const totale = partecipanti.length;
+                const percentuale = totale > 0 ? Math.round((confermati / totale) * 100) : 0;
+                const dataRiunione = riunione.data_inizio ? new Date(riunione.data_inizio).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/D';
+                return (
                           <div key={riunione.id} className="bg-[#0b1220] border border-[#8b5cf6]/20 rounded-lg p-4">
                             {/* Header riunione */}
                             <div className="flex items-center justify-between mb-3">
@@ -10562,8 +10617,8 @@ export default function DashboardPA() {
                                 </div>
                               </div>
                             )}
-                            {/* Pulsanti Rimanda/Elimina + Aggiungi Partecipante - visibile per creatore o super admin */}
-                            {(!comuneIdFromUrl || String(riunione.comune_id) === String(comuneIdFromUrl)) && !isAssociazioneImpersonation() && (
+                            {/* Pulsanti Rimanda/Elimina + Aggiungi Partecipante - visibile per creatore o super admin, solo riunioni attive */}
+                            {isAttiva && (!comuneIdFromUrl || String(riunione.comune_id) === String(comuneIdFromUrl)) && !isAssociazioneImpersonation() && (
                               <div className="mt-3 pt-3 border-t border-[#8b5cf6]/10">
                                 {a99xAddPartRiunioneId === riunione.id ? (
                                   <div className="space-y-2">
@@ -10693,12 +10748,58 @@ export default function DashboardPA() {
                             )}
                           </div>
                         );
-                      })}
-                    </div>
+                      };
+              return (
+                <div className="space-y-4">
+                  {/* Conferme Inviti - Riunioni Attive */}
+                  <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-[#e8fbff] text-base flex items-center gap-2">
+                          <Users className="h-4 w-4 text-[#14b8a6]" />
+                          Conferme Inviti
+                          <Badge className="bg-[#14b8a6]/20 text-[#14b8a6] border-[#14b8a6]/30 text-[10px]">{confermeAttive.length} attive</Badge>
+                        </CardTitle>
+                        <button onClick={() => fetchA99xData()} className="px-3 py-1.5 bg-[#14b8a6]/20 border border-[#14b8a6]/30 text-[#14b8a6] rounded-lg text-[10px] font-medium hover:bg-[#14b8a6]/30 transition-all flex items-center gap-1">
+                          <RefreshCw className="h-3 w-3" /> Aggiorna
+                        </button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {confermeAttive.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Users className="h-10 w-10 text-[#14b8a6]/30 mx-auto mb-3" />
+                          <p className="text-[#e8fbff]/50 text-sm">Nessuna riunione attiva</p>
+                          <p className="text-[#e8fbff]/30 text-xs mt-1">Crea una riunione dal tab "Invita Riunione" per vedere le conferme qui</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {confermeAttive.map((riunione: any) => renderRiunioneCard(riunione, true))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Conferme Inviti - Riunioni Concluse */}
+                  {confermeConcluse.length > 0 && (
+                    <Card className="bg-[#1a2332] border-[#ef4444]/20 opacity-80">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-[#e8fbff]/70 text-base flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-[#ef4444]/60" />
+                          Riunioni Concluse
+                          <Badge className="bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30 text-[10px]">{confermeConcluse.length}</Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {confermeConcluse.map((riunione: any) => renderRiunioneCard(riunione, false))}
+                        </div>
+                      </CardContent>
+                    </Card>
                   )}
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              );
+            })()}
 
             {/* ===== SUB-TAB: ASSESSORI ===== */}
             {a99xSubTab === 'assessori' && (
