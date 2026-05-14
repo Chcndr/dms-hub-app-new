@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.21.0 (Identità MIO HUB Super Admin + Fix Jitsi Lobby + Fix Middleware comune_id=0)
+> **Versione:** 10.22.0 (Fix Globale comune_id + InvitoNotifier + Calendario + Accetta/Rifiuta)
 > **Data:** 14 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,14 +9,65 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | `cabfebf` (master) — mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | `c0029b9` (master) — dms-hub-app-new |
+> | **GitHub Backend** | Allineato | `dc458c8` (master) — mihub-backend-rest |
+> | **GitHub Frontend** | Allineato | `7894bf9` (master) — dms-hub-app-new |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
 >
 > ---
-> ### CHANGELOG v10.21.0 (14 Mag 2026)
+> ---
+### CHANGELOG v10.22.0 (14 Mag 2026)
+**Fix Globale comune_id, InvitoNotifier Universale, Calendario Aggiornato, Pulsanti Accetta/Rifiuta**
+
+**Stato deploy:**
+| Sistema | Commit | Stato |
+|---|---|---|
+| GitHub `mihub-backend-rest` master | `dc458c8` | Allineato |
+| Hetzner backend (api.miohub.it) | `dc458c8` | Autodeploy |
+| GitHub `dms-hub-app-new` master | `7894bf9` | Allineato |
+| Vercel frontend (miohub.it) | `7894bf9` | Autodeploy completato |
+
+**FIX #1: Validazione globale `!comune_id` rimossa (CRITICO)**
+
+- **Root cause:** In tutto il backend (oltre 30 occorrenze), la validazione `if (!comune_id)` bloccava il valore `0` (MIO HUB) perché in JavaScript `0` è falsy.
+- **Fix:** Sostituito ovunque con `if (comune_id === undefined || comune_id === null || comune_id === '')`.
+- Ora la creazione di riunioni, assessori, disponibilità e task funziona correttamente per il super admin (MIO HUB).
+
+**FEATURE #1: InvitoNotifier Universale**
+
+- Il componente `InvitoNotifier.tsx` è stato riscritto per supportare non solo i comuni, ma anche imprese e associazioni.
+- Mostra un popup in basso a destra quando si riceve un nuovo invito a una riunione.
+- Include i pulsanti "Accetta" e "Rifiuta" direttamente nel popup.
+
+**FEATURE #2: Pulsanti Accetta/Rifiuta in Dashboard Invitati**
+
+- Aggiunti i pulsanti "Accetta" e "Rifiuta" nella sezione "Le Mie Riunioni PA" per le imprese (`AppImpresaNotifiche.tsx`) e le associazioni (`NotificheAssociazionePanel.tsx`).
+- L'utente può ora rispondere agli inviti direttamente dalla propria dashboard.
+
+**FEATURE #3: Calendario Settimanale Aggiornato**
+
+- Il calendario ora mostra SOLO le card viola (riunioni confermate/create).
+- Rimosse le card degli inviti duplicati per evitare confusione.
+- Aggiunta la visualizzazione con fasce orarie per una migliore leggibilità.
+- Le card mostrano chiaramente il nome del creatore della riunione.
+
+**FIX #2: Endpoint `le-mie-riunioni` arricchito**
+
+- L'endpoint ora restituisce anche `token`, `invito_stato`, `partecipante_stato`, `creato_da_nome` e `importanza`.
+- Necessario per far funzionare i pulsanti Accetta/Rifiuta nel frontend.
+
+**FIX #3: Middleware `validateImpersonation` skipPaths**
+
+- Aggiunto `/api/a99x/invita-riunione-singolo` alla lista `skipPaths` del middleware.
+- Risolve il problema delle notifiche push bloccate quando si invitavano imprese/associazioni.
+
+**Vincoli negativi (NON FARE):**
+- NON usare `!comune_id` come validazione in JavaScript — blocca il valore `0` (MIO HUB). Usare sempre controlli espliciti per null/undefined/stringa vuota.
+- NON usare Drizzle ORM.
+
+---
+### CHANGELOG v10.21.0 (14 Mag 2026)
 > **Identità MIO HUB per Super Admin, Fix Jitsi Lobby, Fix Middleware comune_id=0, Eliminazione Duplicati**
 >
 > **Stato deploy:**
