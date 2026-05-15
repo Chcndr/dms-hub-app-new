@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.1 (Collegamento Notifica Corso → Tab Sessioni Automatico)
-> **Data:** 15 Maggio 2026
+> **Versione:** 10.31.2 (Sessioni Corso — Partecipanti Visibili Stile A99X)
+> **Data:** 16 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
@@ -9,8 +9,8 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `38dc6e5` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `37f5d63` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `8bad37e` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `865facb` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -47,6 +47,8 @@
 > - **NON duplicare il sistema notifica nel tab Sessioni** — Il tab Sessioni NON deve avere un proprio pulsante "Invia notifica". Le sessioni vengono create AUTOMATICAMENTE dal modulo "Invia Notifica alle Imprese" esistente (sezione Enti Formatori). Il tab Sessioni serve solo per visualizzare e gestire le sessioni create.
 > - **Invio notifica corso DEVE creare sessione automatica** — Quando si invia una notifica corso tramite il modulo "Invia Notifica alle Imprese" (qualsiasi piattaforma: A99X, Zoom, Teams, link manuale), il backend DEVE creare automaticamente una riga in `formazione_sessioni_corso` con titolo, link, modalità, sede, relatore e partecipanti (imprese iscritte).
 > - **NON usare campo 'corpo' nella tabella notifiche** — Il campo corretto è `messaggio`. L'errore `column "corpo" of relation "notifiche" does not exist` si verifica se si usa il nome sbagliato.
+> - **GET lista sessioni DEVE includere presenze con JOIN imprese** — La route `GET /api/associazioni/:id/corsi/:cid/sessioni` DEVE ritornare per ogni sessione anche l'array `presenze` con `impresa_nome` (JOIN su `imprese.denominazione`). NON ritornare solo i dati sessione senza presenze.
+> - **Partecipanti sessione DEVONO essere sempre visibili nella card** — NON nascondere i partecipanti dietro un click/expand. Le righe partecipanti (con avatar iniziale, nome impresa, stato) devono essere visibili direttamente nella card sessione, stile A99X riunioni.
 >
 > ---
 >
@@ -55,6 +57,16 @@
 > - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
 > - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+
+---
+### CHANGELOG v10.31.2 (16 Mag 2026)
+**Sessioni Corso — Partecipanti Sempre Visibili Stile A99X con Nomi Imprese dal DB**
+
+1. **Backend: GET lista sessioni con presenze** — La route `GET /api/associazioni/:id/corsi/:cid/sessioni` ora ritorna per ogni sessione anche l'array `presenze` con JOIN su `imprese.denominazione AS impresa_nome`. Prima le presenze venivano caricate solo al click (dettaglio singola sessione).
+2. **Backend: Conteggio partecipanti** — Aggiunta subquery `num_partecipanti` nella query lista sessioni.
+3. **Frontend: Partecipanti sempre visibili** — Le righe dei partecipanti (imprese iscritte) sono ora visibili direttamente nella card sessione senza bisogno di espandere. Ogni riga mostra: avatar con iniziale, nome impresa (dal DB), badge stato (INVITATO/CONFERMATO/PRESENTE/ASSENTE).
+4. **Frontend: Relatore/Istruttore visibili** — Badge relatore (viola) e istruttore (blu) mostrati sopra la lista partecipanti.
+5. **Frontend: Contatore partecipanti nell'header** — L'header della card mostra il numero di partecipanti accanto alle altre info (data, durata, sede).
 
 ---
 ### CHANGELOG v10.31.1 (15 Mag 2026)
