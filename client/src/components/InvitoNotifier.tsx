@@ -53,7 +53,21 @@ export default function InvitoNotifier() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [dismissedTokens, setDismissedTokens] = useState<Set<string>>(new Set());
+  // Persistere dismissedTokens in localStorage per sopravvivere ai reload
+  const [dismissedTokens, setDismissedTokens] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('miohub_dismissed_inviti');
+      if (saved) return new Set(JSON.parse(saved));
+    } catch { /* ignore */ }
+    return new Set();
+  });
+
+  // Salva dismissedTokens in localStorage quando cambia
+  useEffect(() => {
+    try {
+      localStorage.setItem('miohub_dismissed_inviti', JSON.stringify([...dismissedTokens]));
+    } catch { /* ignore */ }
+  }, [dismissedTokens]);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   // Risolvi identità utente da tutte le fonti possibili
@@ -182,8 +196,19 @@ export default function InvitoNotifier() {
       if (identity.tipo === 'COMUNE' || identity.tipo === 'SUPERADMIN') {
         // Formato inviti-ricevuti
         if (data.success && Array.isArray(data.data)) {
+          const now = new Date();
           pendenti = data.data
-            .filter((inv: any) => inv.partecipante_stato === 'INVITATO' && inv.token && !dismissedTokens.has(inv.token))
+            .filter((inv: any) => {
+              if (inv.partecipante_stato !== 'INVITATO' || !inv.token || dismissedTokens.has(inv.token)) return false;
+              // Escludi riunioni passate (data_fine <= now)
+              if (inv.data_inizio) {
+                const dataFine = new Date(new Date(inv.data_inizio).getTime() + (inv.durata_minuti || 30) * 60000);
+                if (dataFine <= now) return false;
+              }
+              // Escludi riunioni annullate/riprogrammate
+              if (['ANNULLATA', 'RIPROGRAMMATA'].includes(inv.stato_riunione || inv.stato)) return false;
+              return true;
+            })
             .map((inv: any) => ({
               ...inv,
               urgenza: inv.urgenza || 3,
@@ -193,8 +218,19 @@ export default function InvitoNotifier() {
       } else {
         // Formato le-mie-riunioni
         if (data.success && Array.isArray(data.data)) {
+          const nowMs = new Date();
           pendenti = data.data
-            .filter((r: any) => r.partecipante_stato === 'INVITATO' && r.token && !dismissedTokens.has(r.token))
+            .filter((r: any) => {
+              if (r.partecipante_stato !== 'INVITATO' || !r.token || dismissedTokens.has(r.token)) return false;
+              // Escludi riunioni passate (data_fine <= now)
+              if (r.data_inizio) {
+                const dataFine = new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
+                if (dataFine <= nowMs) return false;
+              }
+              // Escludi riunioni annullate/riprogrammate
+              if (['ANNULLATA', 'RIPROGRAMMATA'].includes(r.stato)) return false;
+              return true;
+            })
             .map((r: any) => ({
               id: r.partecipante_id || r.id,
               riunione_id: r.id,

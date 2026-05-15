@@ -94,6 +94,7 @@ export default function AppImpresaNotifiche() {
   const [firmatoSuccess, setFirmatoSuccess] = useState(false);
   const [invRiunioneStato, setInvRiunioneStato] = useState<string | null>(null);
   const [invRiunioneLink, setInvRiunioneLink] = useState<string>('');
+  const [invRiunioneScaduta, setInvRiunioneScaduta] = useState(false);
   const firmatoFileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -451,6 +452,21 @@ export default function AppImpresaNotifiche() {
   const MieRiunioniSection = ({ email, nascosta }: { email: string; nascosta: boolean }) => {
     const [riunioni, setRiunioni] = useState<any[]>([]);
     const [loadingR, setLoadingR] = useState(true);
+    // v10.30.3: Dismissal persistente in localStorage per riunioni ignorate
+    const [dismissedIds, setDismissedIds] = useState<Set<number>>(() => {
+      try {
+        const saved = localStorage.getItem('a99x_dismissed_riunioni_impresa');
+        if (saved) return new Set(JSON.parse(saved));
+      } catch { /* ignore */ }
+      return new Set();
+    });
+
+    // Salva dismissedIds in localStorage quando cambia
+    useEffect(() => {
+      try {
+        localStorage.setItem('a99x_dismissed_riunioni_impresa', JSON.stringify([...dismissedIds]));
+      } catch { /* ignore */ }
+    }, [dismissedIds]);
 
     const fetchRiunioni = async () => {
       if (!email) { setLoadingR(false); return; }
@@ -468,7 +484,26 @@ export default function AppImpresaNotifiche() {
       return () => clearInterval(interval);
     }, [email]);
 
-    if (!email || (riunioni.length === 0 && !loadingR)) return null;
+    // v10.30.3: Helper per calcolo isScaduta robusto
+    const isRiunioneScaduta = (r: any): boolean => {
+      // Check stato non attivo
+      if (['ANNULLATA', 'COMPLETATA', 'RIPROGRAMMATA'].includes(r.stato)) return true;
+      // Check data fine
+      const now = Date.now();
+      if (r.data_fine) {
+        return new Date(r.data_fine).getTime() <= now;
+      }
+      if (r.data_inizio) {
+        const dataFine = new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
+        return dataFine.getTime() <= now;
+      }
+      return false;
+    };
+
+    // Filtra riunioni: escludi dismissate e riunioni scadute dalla lista attiva
+    const riunioniVisibili = riunioni.filter(r => !dismissedIds.has(r.id));
+
+    if (!email || (riunioniVisibili.length === 0 && !loadingR)) return null;
 
     return (
       <div className={`mt-4 sm:mt-6 ${nascosta ? 'hidden sm:block' : ''}`}>
@@ -485,7 +520,7 @@ export default function AppImpresaNotifiche() {
           <div className="text-center py-6"><Loader2 className="h-6 w-6 animate-spin text-[#8b5cf6] mx-auto" /></div>
         ) : (
           <div className="space-y-4">
-            {riunioni.map((r: any) => {
+            {riunioniVisibili.map((r: any) => {
               const partecipanti = r.partecipanti || [];
               const confermati = partecipanti.filter((p: any) => p.stato === 'CONFERMATO').length;
               const rifiutati = partecipanti.filter((p: any) => p.stato === 'RIFIUTATO').length;
@@ -498,15 +533,21 @@ export default function AppImpresaNotifiche() {
                 'RIFIUTATO': 'bg-red-500/20 text-red-400 border-red-500/30',
                 'INVITATO': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
               };
-              // v10.25.0: Riunioni scadute + fuso orario
-              const now = new Date();
-              const riunioneDate = r.data_inizio ? new Date(r.data_inizio) : null;
-              const durata = r.durata_minuti || 60;
-              const fineRiunione = riunioneDate ? new Date(riunioneDate.getTime() + durata * 60000) : null;
-              const isScaduta = fineRiunione ? fineRiunione < now : false;
+              // v10.30.3: Calcolo isScaduta robusto (usa data_fine, fallback data_inizio + durata, check stato)
+              const isScaduta = isRiunioneScaduta(r);
               return (
-                <Card key={r.id} className={`bg-[#1a2332] ${isScaduta ? 'border-[#e8fbff]/10 opacity-60' : 'border-[#8b5cf6]/20'}`}>
+                <Card key={r.id} className={`bg-[#1a2332] ${isScaduta ? 'border-[#e8fbff]/10 opacity-60' : 'border-[#8b5cf6]/20'} relative`}>
                   <CardContent className="p-4">
+                    {/* v10.30.3: Pulsante dismiss per nascondere la riunione */}
+                    {isScaduta && (
+                      <button
+                        onClick={() => setDismissedIds(prev => new Set([...prev, r.id]))}
+                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#e8fbff]/10 hover:bg-[#e8fbff]/20 flex items-center justify-center text-[#e8fbff]/40 hover:text-[#e8fbff]/70 transition-all"
+                        title="Nascondi riunione conclusa"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     {/* Header riunione */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -724,6 +765,7 @@ export default function AppImpresaNotifiche() {
                               setNotificaSelezionata(notifica);
                               setInvRiunioneStato('LOADING');
                               setInvRiunioneLink('');
+                              setInvRiunioneScaduta(false);
                               segnaComeLetta(notifica);
                               // Se INVITO_RIUNIONE, carica lo stato reale dal backend
                               if (notifica.tipo_messaggio === 'INVITO_RIUNIONE' && IMPRESA_EMAIL) {
@@ -747,7 +789,19 @@ export default function AppImpresaNotifiche() {
                                         }
                                       }
                                       if (riunione) {
-                                        setInvRiunioneStato(riunione.mio_stato || 'INVITATO');
+                                        // v10.30.3: Check se riunione è scaduta/annullata
+                                        const nowMs = Date.now();
+                                        const dataFine = riunione.data_fine
+                                          ? new Date(riunione.data_fine)
+                                          : new Date(new Date(riunione.data_inizio).getTime() + (riunione.durata_minuti || 30) * 60000);
+                                        const isStatoNonAttivo = ['ANNULLATA', 'COMPLETATA', 'RIPROGRAMMATA'].includes(riunione.stato);
+                                        if (isStatoNonAttivo || dataFine.getTime() <= nowMs) {
+                                          setInvRiunioneScaduta(true);
+                                          setInvRiunioneStato(riunione.mio_stato || 'INVITATO');
+                                        } else {
+                                          setInvRiunioneScaduta(false);
+                                          setInvRiunioneStato(riunione.mio_stato || 'INVITATO');
+                                        }
                                         if (riunione.mio_stato === 'CONFERMATO') {
                                           setInvRiunioneLink(riunione.jitsi_link || '');
                                         }
@@ -1087,7 +1141,7 @@ export default function AppImpresaNotifiche() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-[#e8fbff] font-medium text-sm sm:text-base">Invito Riunione</p>
-                          <p className="text-[#e8fbff]/50 text-xs sm:text-sm">Conferma o rifiuta la tua partecipazione</p>
+                          <p className="text-[#e8fbff]/50 text-xs sm:text-sm">{invRiunioneScaduta ? 'Questa riunione è conclusa' : 'Conferma o rifiuta la tua partecipazione'}</p>
                         </div>
                       </div>
                       {/* Loading stato */}
@@ -1097,8 +1151,15 @@ export default function AppImpresaNotifiche() {
                           <span className="text-[#e8fbff]/50 text-xs ml-2">Caricamento stato...</span>
                         </div>
                       )}
+                      {/* v10.30.3: Messaggio riunione scaduta */}
+                      {invRiunioneScaduta && (
+                        <div className="flex items-center gap-2 bg-gray-500/10 border border-gray-500/30 rounded-lg p-2 mb-3">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-400 text-xs font-semibold">Riunione conclusa — non è più possibile confermare o rifiutare</span>
+                        </div>
+                      )}
                       {/* Pulsanti Conferma / Rinuncia */}
-                      {(invRiunioneStato === 'INVITATO') && (
+                      {(invRiunioneStato === 'INVITATO' && !invRiunioneScaduta) && (
                         <div className="flex gap-2 mb-3">
                           <button
                             onClick={async () => {
@@ -1148,7 +1209,7 @@ export default function AppImpresaNotifiche() {
                         </div>
                       )}
                       {/* Stato confermato + Pulsante Partecipa Video */}
-                      {invRiunioneStato === 'CONFERMATO' && (
+                      {invRiunioneStato === 'CONFERMATO' && !invRiunioneScaduta && (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg p-2">
                             <CheckCircle2 className="w-4 h-4 text-green-400" />
@@ -1164,6 +1225,12 @@ export default function AppImpresaNotifiche() {
                               🎥 Partecipa alla Videoconferenza
                             </a>
                           )}
+                        </div>
+                      )}
+                      {invRiunioneStato === 'CONFERMATO' && invRiunioneScaduta && (
+                        <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg p-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-400" />
+                          <span className="text-green-400 text-xs font-semibold">Avevi confermato la partecipazione</span>
                         </div>
                       )}
                       {invRiunioneStato === 'RIFIUTATO' && (
