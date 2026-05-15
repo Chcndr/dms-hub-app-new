@@ -10051,7 +10051,11 @@ export default function DashboardPA() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card className="bg-[#1a2332] border-[#8b5cf6]/30">
                 <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold text-[#8b5cf6]">{a99xRiunioni.filter((r: any) => r.stato === 'PROGRAMMATA').length}</p>
+                  <p className="text-2xl font-bold text-[#8b5cf6]">{a99xRiunioni.filter((r: any) => {
+                    const isStatoAttivo = r.stato === 'PROGRAMMATA' || r.stato === 'IN_CORSO';
+                    const dataFine = r.data_fine ? new Date(r.data_fine) : new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
+                    return isStatoAttivo && dataFine > new Date();
+                  }).length}</p>
                   <p className="text-xs text-[#e8fbff]/60">Riunioni Programmate</p>
                 </CardContent>
               </Card>
@@ -10640,7 +10644,7 @@ export default function DashboardPA() {
                                   // Usa riferimento_id (preciso) con fallback a matching nome (solo se riferimento_id non disponibile)
                                   const impParams = getImpersonationParams();
                                   const assocIdFromUrl = new URLSearchParams(window.location.search).get('associazione_id');
-                                  const isMyRow = isAssociazioneImpersonation() && (
+                                  const isMyRow = isAssociazioneImpersonation() && p.tipo === 'ASSOCIAZIONE' && (
                                     // Match preciso per riferimento_id
                                     (assocIdFromUrl && p.riferimento_id && String(p.riferimento_id) === String(assocIdFromUrl)) ||
                                     // Fallback: match per nome solo se riferimento_id non presente nel partecipante
@@ -10794,6 +10798,12 @@ export default function DashboardPA() {
                                   >
                                     <UserPlus className="h-3.5 w-3.5" /> Aggiungi Partecipante
                                   </button>
+                                )}
+                                {/* Pulsante Partecipa alla Videoconferenza per PA/creatore (relatore) */}
+                                {riunione.jitsi_link && (
+                                  <a href={riunione.jitsi_link} target="_blank" rel="noopener noreferrer" className="w-full mt-2 px-3 py-2 bg-gradient-to-r from-[#8b5cf6] to-[#6366f1] text-white rounded-lg text-xs font-bold hover:from-[#7c3aed] hover:to-[#4f46e5] transition-all shadow-md shadow-purple-500/20 flex items-center justify-center gap-1.5">
+                                    <Video className="h-4 w-4" /> Partecipa alla Videoconferenza (Relatore)
+                                  </a>
                                 )}
                                 {/* Pulsanti Rimanda e Elimina Evento */}
                                 <div className="flex items-center gap-2 mt-2">
