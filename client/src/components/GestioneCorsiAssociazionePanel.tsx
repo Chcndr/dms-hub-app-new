@@ -65,6 +65,8 @@ interface Corso {
   posti_occupati: number;
   sede: string;
   attivo: boolean;
+  orario?: string;
+  modalita?: string;
 }
 
 interface IscrizioneCorso {
@@ -685,6 +687,22 @@ const GestioneCorsiAssociazionePanel = memo(
                             onClick={() => {
                               setNotificaCorsoId(c.id);
                               setNotificaCorsoTitolo(c.titolo);
+                              // v10.31.4: Autocompilazione messaggio con data/orario del corso
+                              const dataCorso = c.data_inizio ? new Date(c.data_inizio).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : '';
+                              const orarioCorso = c.orario || '';
+                              const modalitaCorso = c.modalita || 'ONLINE';
+                              const sedeCorso = c.sede || '';
+                              let msgAuto = `Gentile impresa, vi informiamo che il corso "${c.titolo}" è programmato`;
+                              if (dataCorso) msgAuto += ` per il giorno ${dataCorso}`;
+                              if (orarioCorso) msgAuto += ` alle ore ${orarioCorso}`;
+                              msgAuto += `.`;
+                              if (modalitaCorso === 'ONLINE') {
+                                msgAuto += `\nModalità: Online. Il link per accedere al corso verrà allegato a questa notifica.`;
+                              } else if (sedeCorso) {
+                                msgAuto += `\nModalità: In presenza. Sede: ${sedeCorso}.`;
+                              }
+                              msgAuto += `\n\nVi preghiamo di collegarvi puntualmente. Grazie.`;
+                              setNotificaMessaggio(msgAuto);
                               setShowNotificaDialog(true);
                             }}
                             className="text-[#8b5cf6] h-8 w-8"

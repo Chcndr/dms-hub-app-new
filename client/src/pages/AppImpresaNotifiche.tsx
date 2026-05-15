@@ -438,6 +438,7 @@ export default function AppImpresaNotifiche() {
     return (
       notifica.target_tipo === "CORSO" ||
       notifica.tipo_messaggio === "ISCRIZIONE_CORSO" ||
+      notifica.tipo_messaggio === "AVVISO_CORSO" ||
       notifica.mittente_tipo === "ENTE_FORMATORE" ||
       /corso/i.test(notifica.titolo || "")
     );

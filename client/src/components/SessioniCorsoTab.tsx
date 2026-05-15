@@ -307,12 +307,24 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
 
   const formatData = (d?: string) => {
     if (!d) return "-";
+    // v10.31.4: Fix fuso orario — se la data è solo una data (senza ora), non mostrare l'ora
+    const isDateOnly = /^\d{4}-\d{2}-\d{2}(T00:00:00)?/.test(d);
+    if (isDateOnly) {
+      const parts = d.split('T')[0].split('-');
+      const localDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      return localDate.toLocaleDateString("it-IT", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    }
     return new Date(d).toLocaleDateString("it-IT", {
       day: "2-digit",
       month: "short",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Europe/Rome",
     });
   };
 
