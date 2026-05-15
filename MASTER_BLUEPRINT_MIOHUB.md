@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.29.1 (Fix Calendario Rifiutate/Scadute + isMyRow riferimento_id + Unicode Escape)
+> **Versione:** 10.30.0 (A99X Per-Persona — Responsabili Associazione, Campi Persona Partecipanti, Anti-Duplicato)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,8 +9,8 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `81b3edf` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `5939528` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `a561df5` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `ff9cf26` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -28,6 +28,9 @@
 > - **NON mostrare riunioni RIFIUTATE nel calendario per associazione impersonata** — Se mio_stato === 'RIFIUTATO', la riunione non deve apparire nel calendario
 > - **NON mostrare riunioni SCADUTE nel calendario** — Se data_fine <= now, la riunione non deve apparire nel calendario (va nelle Concluse)
 > - **NON usare escape Unicode letterale in JSX** — `<span>\u2713</span>` renderizza il testo letterale. Usare `{'\u2713'}` come espressione JS o il carattere diretto
+> - **NON invitare associazione generica se ha responsabili** — Quando un'associazione ha responsabili registrati, si deve invitare il responsabile specifico (persona), non l'associazione generica. Il dropdown mostra i responsabili come righe selezionabili sotto l'header associazione.
+> - **NON creare partecipanti duplicati nella stessa riunione** — Il backend ha check anti-duplicato: stesso `riferimento_id + tipo` nella stessa riunione viene rifiutato con errore 409.
+> - **Campi persona DEVONO essere salvati in a99x_partecipanti** — `persona_nome`, `persona_ruolo`, `persona_settore`, `responsabile_id` identificano la persona fisica invitata. La riga partecipante nel frontend mostra: Associazione/Ente + Settore + Nome Persona + Email.
 >
 > ---
 
@@ -37,6 +40,20 @@
 > - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
 > - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+
+---
+### CHANGELOG v10.30.0 (15 Mag 2026)
+**A99X Per-Persona — Responsabili Associazione nel Dropdown, Campi Persona nei Partecipanti, Anti-Duplicato**
+
+1. **DB: nuovi campi a99x_partecipanti** — Aggiunti `persona_nome`, `persona_ruolo`, `persona_settore`, `responsabile_id` alla tabella `a99x_partecipanti`. Questi campi identificano la persona fisica (responsabile/funzionario) invitata alla riunione.
+2. **DB: eliminato duplicato** — Rimosso il partecipante duplicato "Confcommercio Bologna (CONFCOMMERCIO BO)" (ID=21) dalla riunione "teat". Causa: aggiunto manualmente con "Aggiungi Partecipante" senza check anti-duplicato.
+3. **Backend: check anti-duplicato** — `POST /riunioni/:id/partecipanti` ora verifica se esiste già un partecipante con stesso `riferimento_id + tipo` nella riunione. Se duplicato, ritorna errore 409.
+4. **Backend: salvataggio campi persona** — `POST /riunioni/:id/partecipanti` e `POST /invita-riunione-singolo` salvano `persona_nome`, `persona_ruolo`, `persona_settore`, `responsabile_id` dal contatto selezionato.
+5. **Backend: responsabili in GET /api/associazioni** — L'endpoint ora restituisce un array `responsabili` per ogni associazione, caricato da `responsabili_associazione`.
+6. **Backend: campi persona negli endpoint** — `GET /riunioni`, `GET /le-mie-riunioni`, `GET /invito/:token` restituiscono i nuovi campi persona per ogni partecipante.
+7. **Frontend: dropdown associazioni con responsabili** — Il tab "Associazioni" in "Invita Riunione" mostra l'header dell'associazione con sotto i responsabili come righe selezionabili (nome, ruolo, settore, email). Se l'associazione non ha responsabili, è selezionabile come generica.
+8. **Frontend: riga partecipante con dettagli persona** — Nelle sezioni Conferme Inviti e Prossime Riunioni, la riga partecipante mostra sotto il nome: Settore + Nome Persona + Email (quando disponibili).
+9. **Frontend: addPartecipanteToRiunione passa campi persona** — La funzione ora invia `persona_nome`, `persona_ruolo`, `persona_settore`, `responsabile_id` al backend.
 
 ---
 ### CHANGELOG v10.29.1 (15 Mag 2026)
