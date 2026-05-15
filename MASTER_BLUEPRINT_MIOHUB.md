@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.27.0 (Riordino Lista Riunioni A99X + Conferme Inviti + Toast Conferma)
+> **Versione:** 10.28.0 (Calendario Fix + Accetta/Rifiuta inline + Dedup Riunioni)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -26,8 +26,23 @@
 > - **NON usare alert() per messaggi di conferma** — Usare toast (sonner) per feedback utente
 >
 > ---
-> ---
-### CHANGELOG v10.27.0 (15 Mag 2026)
+
+### VINCOLI NEGATIVI AGGIUNTIVI (v10.28.0)
+> - **NON mostrare riunioni ANNULLATE/COMPLETATE nel Calendario A99X** — Filtrare sia in vista settimana che mese
+> - **NON mostrare pulsanti ACCETTA/RIFIUTA separati sotto la lista partecipanti** — I pulsanti devono essere INLINE sulla riga del partecipante (associazione impersonata)
+> - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
+
+---
+### CHANGELOG v10.28.0 (15 Mag 2026)
+**Calendario Fix, Pulsanti Accetta/Rifiuta inline su riga partecipante, Deduplicazione riunioni**
+
+1. **Calendario: filtro ANNULLATE/COMPLETATE** — Le riunioni con stato ANNULLATA o COMPLETATA non appaiono più nel calendario A99X (sia vista settimana che mese)
+2. **Pulsanti ACCETTA/RIFIUTA inline sulla riga partecipante** — In Conferme Inviti, la riga dell'associazione impersonata ha bordo viola e badge "Tu". Se stato "In attesa" → pulsanti ACCETTA/RIFIUTA inline. Se "Confermato" → pulsante viola "Partecipa alla Videoconferenza". Se "Rifiutato" → nessun pulsante. Rimossi i vecchi blocchi separati sotto la lista.
+3. **Deduplicazione riunioni (backend)** — Endpoint `/api/a99x/le-mie-riunioni` ora usa `DISTINCT ON (r.id)` con subquery per evitare duplicati quando ci sono più inviti per lo stesso partecipante (es. dopo rimanda). Prende sempre l'invito più recente.
+
+---
+---
+### CHANGELOG v10.27.0.0 (15 Mag 2026)
 **Riordino Lista Riunioni A99X: Prossime vs Concluse, Conferme Inviti attive/concluse, Toast conferma azioni**
 
 1. **Prossime Riunioni vs Riunioni Concluse** — Dashboard A99X ora separa riunioni attive (PROGRAMMATA/IN_CORSO con data futura) da riunioni concluse (ANNULLATA/COMPLETATA/RIPROGRAMMATA/scadute). Le concluse appaiono sotto con opacity ridotta, line-through e badge stato
