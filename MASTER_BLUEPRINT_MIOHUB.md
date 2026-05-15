@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.30.3 (Fix Notifiche Push Riunioni Passate App Impresa)
+> **Versione:** 10.30.3b (Fix Notifiche Push App Impresa — Dismissal Persistente + Riunioni Scadute)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -10,7 +10,7 @@
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
 > | **GitHub Backend** | Allineato | mihub-backend-rest `a561df5` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `ba381c4` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `63f2a02` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -39,6 +39,8 @@
 > - **Contatore Riunioni Programmate DEVE escludere anche riunioni RIFIUTATE** — Per associazione impersonata, il contatore filtra per `mio_stato !== 'RIFIUTATO'` oltre a `data_fine > now`.
 > - **NON mostrare pulsanti ACCETTA/RIFIUTA per riunioni passate nell'App Impresa** — Le notifiche push e la sezione "Le Mie Riunioni" devono nascondere i pulsanti se la riunione è scaduta (data_fine < now) o annullata/completata.
 > - **NON ricaricare notifiche riunioni dismissate al polling** — Usare localStorage (`a99x_dismissed_riunioni_impresa`) per persistere la chiusura (X) delle riunioni concluse nella sezione "Le Mie Riunioni" dell'App Impresa.
+> - **NON mostrare CONFERMA/RINUNCIA quando riunione non trovata nel backend** — Se il match per titolo fallisce o il backend non restituisce la riunione, settare stato `NON_TROVATA` e `invRiunioneScaduta=true`. NON lasciare stato `INVITATO` come fallback.
+> - **NON ricaricare notifiche push dismissate al polling nell'App Impresa** — Usare localStorage (`a99x_dismissed_notifiche_impresa`) per persistere la chiusura delle notifiche. Il filtro `dismissedNotifIds` deve essere applicato alla lista notifiche ricevute.
 >
 > ---
 >
@@ -49,8 +51,21 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
+### CHANGELOG v10.30.3b (15 Mag 2026)
+**Fix Notifiche Push App Impresa — Dismissal Persistente + Riunioni Scadute**
+
+**Root cause v10.30.3**: Il fix precedente era in produzione ma non funzionava perché il fallback quando la riunione non veniva trovata nel backend (match per titolo fallito) settava `invRiunioneStato = 'INVITATO'` senza settare `invRiunioneScaduta = true`. La condizione `INVITATO && !scaduta` era true → pulsanti CONFERMA/RINUNCIA visibili.
+
+1. **Fix fallback riunione non trovata** — Quando il match per titolo fallisce (riunione non trovata nel backend), lo stato viene ora settato a `NON_TROVATA` e `invRiunioneScaduta = true`. Stesso comportamento per errori di rete e IMPRESA_EMAIL vuota.
+2. **Dismissal persistente notifiche push** — Aggiunto stato `dismissedNotifIds` (Set) con persistenza in localStorage (`a99x_dismissed_notifiche_impresa`). Le notifiche dismissate non riappaiono dopo il polling ogni 30 secondi.
+3. **Pulsante X su ogni notifica nella lista** — Ogni notifica nella lista ricevuti ha un pulsante X (XCircle) per rimuoverla. Il click salva l'ID in localStorage.
+4. **Pulsante "Rimuovi questa notifica" nel dettaglio** — Quando si apre una notifica INVITO_RIUNIONE scaduta, oltre al messaggio "Riunione conclusa", appare un pulsante per rimuovere la notifica dalla lista.
+5. **Contatore Ricevuti aggiornato** — Il badge "Ricevuti (N)" esclude le notifiche dismissate dal conteggio.
+6. **Sezione MieRiunioniSection** — Mantiene il calcolo isScaduta robusto e dismissal separato per le riunioni nella sezione dedicata.
+
+---
 ### CHANGELOG v10.30.3 (15 Mag 2026)
-**Fix Notifiche Push Riunioni Passate App Impresa**
+**Fix Notifiche Push Riunioni Passate App Impresa (SUPERATO da v10.30.3b)**
 
 1. **Frontend: Calcolo isScaduta robusto** — In `AppImpresaNotifiche.tsx` (sezione "Le Mie Riunioni"), il calcolo di `isScaduta` ora usa `data_fine` se disponibile, con fallback a `data_inizio + durata_minuti`, e verifica anche se lo stato è `ANNULLATA`, `COMPLETATA` o `RIPROGRAMMATA`.
 2. **Frontend: Persistenza dismissal riunioni** — Aggiunto un pulsante "X" per nascondere le riunioni concluse nella sezione "Le Mie Riunioni". Gli ID delle riunioni dismissate vengono salvati in `localStorage` (`a99x_dismissed_riunioni_impresa`) per non ricaricarle al successivo polling.
