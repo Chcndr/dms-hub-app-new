@@ -10323,13 +10323,34 @@ export default function DashboardPA() {
                             });
                             return (
                               <div key={i} className={`border-t border-l border-[#8b5cf6]/5 min-h-[40px] p-0.5 ${isToday ? 'bg-[#8b5cf6]/5' : ''}`}>
-                                {hourRiunioni.map((r: any) => (
-                                  <div key={r.id} onClick={() => setA99xDettaglioRiunione(r)} className="bg-[#8b5cf6]/20 border border-[#8b5cf6]/40 rounded px-1.5 py-1 cursor-pointer hover:bg-[#8b5cf6]/30 transition-all mb-0.5">
-                                    <p className="text-[9px] text-[#8b5cf6] font-bold truncate">{r.titolo}</p>
+                                {hourRiunioni.map((r: any) => {
+                                  // Determinare colore card: arancione se associazione impersonata non ha accettato, viola se accettata
+                                  const impP = getImpersonationParams();
+                                  const isAssocImp = isAssociazioneImpersonation();
+                                  let cardAccettata = true; // default viola (PA o nessuna impersonazione)
+                                  if (isAssocImp && impP.associazioneNome) {
+                                    const mioStato = r.mio_stato || r.partecipante_stato;
+                                    if (mioStato) {
+                                      cardAccettata = mioStato === 'CONFERMATO';
+                                    } else {
+                                      // Cerca nei partecipanti
+                                      const mioP = (r.partecipanti || []).find((pp: any) => 
+                                        pp.nome?.toLowerCase().includes(impP.associazioneNome.toLowerCase()) ||
+                                        impP.associazioneNome.toLowerCase().includes(pp.nome?.toLowerCase() || '')
+                                      );
+                                      cardAccettata = mioP ? mioP.stato === 'CONFERMATO' : true;
+                                    }
+                                  }
+                                  const cardBg = cardAccettata ? 'bg-[#8b5cf6]/20 border-[#8b5cf6]/40 hover:bg-[#8b5cf6]/30' : 'bg-orange-500/20 border-orange-500/40 hover:bg-orange-500/30';
+                                  const cardText = cardAccettata ? 'text-[#8b5cf6]' : 'text-orange-400';
+                                  return (
+                                  <div key={r.id} onClick={() => setA99xDettaglioRiunione(r)} className={`${cardBg} border rounded px-1.5 py-1 cursor-pointer transition-all mb-0.5`}>
+                                    <p className={`text-[9px] ${cardText} font-bold truncate`}>{r.titolo}</p>
                                     <p className="text-[8px] text-[#e8fbff]/50">{new Date(r.data_inizio).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit' })} · {r.durata_minuti || 30}min</p>
                                     <p className="text-[7px] text-[#e8fbff]/30 truncate">{r.creato_da_nome || 'MIO HUB'}</p>
                                   </div>
-                                ))}
+                                  );
+                                })}
                                 {hourPren.map((p: any) => (
                                   <div key={p.id} className="bg-[#14b8a6]/15 border border-[#14b8a6]/30 rounded px-1.5 py-1 mb-0.5">
                                     <p className="text-[9px] text-[#14b8a6] font-medium truncate">{p.nome} {p.cognome}</p>
@@ -10358,14 +10379,32 @@ export default function DashboardPA() {
                         for (let d = 1; d <= daysInMonth; d++) {
                           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                           const isToday = dateStr === new Date().toISOString().split('T')[0];
-                          const hasRiunioni = a99xRiunioni.some((r: any) => r.data_inizio && r.data_inizio.startsWith(dateStr) && r.stato !== 'ANNULLATA' && r.stato !== 'COMPLETATA');
+                          const riunioniDelGiorno = a99xRiunioni.filter((r: any) => r.data_inizio && r.data_inizio.startsWith(dateStr) && r.stato !== 'ANNULLATA' && r.stato !== 'COMPLETATA');
                           const hasPren = a99xPrenotazioni.some((p: any) => p.data_appuntamento === dateStr);
-                          // Inviti rimossi dal calendario mese - solo riunioni e prenotazioni
+                          // Determinare colore pallino riunioni: arancione se non accettata, viola se accettata
+                          let meseRiunioneAccettata = true;
+                          if (riunioniDelGiorno.length > 0 && isAssociazioneImpersonation()) {
+                            const impPM = getImpersonationParams();
+                            if (impPM.associazioneNome) {
+                              // Controlla se almeno una riunione del giorno non è accettata
+                              const nonAccettata = riunioniDelGiorno.some((r: any) => {
+                                const mioSt = r.mio_stato || r.partecipante_stato;
+                                if (mioSt) return mioSt !== 'CONFERMATO';
+                                const mioP2 = (r.partecipanti || []).find((pp: any) => 
+                                  pp.nome?.toLowerCase().includes(impPM.associazioneNome.toLowerCase()) ||
+                                  impPM.associazioneNome.toLowerCase().includes(pp.nome?.toLowerCase() || '')
+                                );
+                                return mioP2 ? mioP2.stato !== 'CONFERMATO' : false;
+                              });
+                              if (nonAccettata) meseRiunioneAccettata = false;
+                            }
+                          }
+                          const mesePallinoColor = meseRiunioneAccettata ? 'bg-[#8b5cf6]' : 'bg-orange-500';
                           cells.push(
                             <div key={d} className={`text-center py-2 rounded-lg cursor-pointer transition-all hover:bg-[#1a2332] ${isToday ? 'bg-[#8b5cf6]/20 border border-[#8b5cf6]/40' : ''}`}>
                               <span className={`text-xs ${isToday ? 'text-[#8b5cf6] font-bold' : 'text-[#e8fbff]/70'}`}>{d}</span>
                               <div className="flex justify-center gap-0.5 mt-1">
-                                {hasRiunioni && <div className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]"></div>}
+                                {riunioniDelGiorno.length > 0 && <div className={`w-1.5 h-1.5 rounded-full ${mesePallinoColor}`}></div>}
 
                                 {hasPren && <div className="w-1.5 h-1.5 rounded-full bg-[#14b8a6]"></div>}
                               </div>
@@ -10376,8 +10415,9 @@ export default function DashboardPA() {
                       })()}
                     </div>
                   )}
-                  <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#8b5cf6]/10">
+                  <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#8b5cf6]/10 flex-wrap">
                     <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]"></div><span className="text-[10px] text-[#e8fbff]/50">Riunioni</span></div>
+                    {isAssociazioneImpersonation() && <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div><span className="text-[10px] text-[#e8fbff]/50">Non accettate</span></div>}
                     <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#14b8a6]"></div><span className="text-[10px] text-[#e8fbff]/50">Prenotazioni</span></div>
                   </div>
                 </CardContent>
@@ -10574,16 +10614,16 @@ export default function DashboardPA() {
                                         <span className={`text-[10px] font-semibold ${cfg.text}`}>{cfg.label}</span>
                                       </div>
                                       {/* Pulsanti ACCETTA/RIFIUTA inline sulla riga dell'associazione invitata */}
-                                      {isMyRow && p.stato === 'INVITATO' && riunione.token && isAttiva && (
+                                      {isMyRow && (p.stato === 'INVITATO' || p.stato === 'In attesa') && (riunione.token || riunione.invito_token) && isAttiva && (
                                         <div className="px-3 pb-2 flex items-center gap-2">
                                           <button
-                                            onClick={() => rispondiA99xInvito(riunione.token, 'accetta')}
+                                            onClick={() => rispondiA99xInvito(riunione.token || riunione.invito_token, 'accetta')}
                                             className="flex-1 px-3 py-1.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-md text-[10px] font-bold hover:from-green-500 hover:to-green-400 transition-all shadow-md shadow-green-500/20 flex items-center justify-center gap-1"
                                           >
                                             <span>\u2713</span> ACCETTA
                                           </button>
                                           <button
-                                            onClick={() => rispondiA99xInvito(riunione.token, 'rifiuta')}
+                                            onClick={() => rispondiA99xInvito(riunione.token || riunione.invito_token, 'rifiuta')}
                                             className="flex-1 px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-md text-[10px] font-bold hover:from-red-500 hover:to-red-400 transition-all shadow-md shadow-red-500/20 flex items-center justify-center gap-1"
                                           >
                                             <span>\u2718</span> RIFIUTA

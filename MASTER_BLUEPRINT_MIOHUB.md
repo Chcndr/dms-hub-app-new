@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.28.0 (Calendario Fix + Accetta/Rifiuta inline + Dedup Riunioni)
+> **Versione:** 10.29.0 (Fix Pulsanti ACCETTA/RIFIUTA + Calendario Colori Arancione/Viola)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -27,10 +27,22 @@
 >
 > ---
 
-### VINCOLI NEGATIVI AGGIUNTIVI (v10.28.0)
+### VINCOLI NEGATIVI AGGIUNTIVI (v10.28.0+)
 > - **NON mostrare riunioni ANNULLATE/COMPLETATE nel Calendario A99X** — Filtrare sia in vista settimana che mese
 > - **NON mostrare pulsanti ACCETTA/RIFIUTA separati sotto la lista partecipanti** — I pulsanti devono essere INLINE sulla riga del partecipante (associazione impersonata)
-> - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
+> - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
+> - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
+> - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+
+---
+### CHANGELOG v10.29.0 (15 Mag 2026)
+**Fix Pulsanti ACCETTA/RIFIUTA mancanti + Calendario Colori Arancione/Viola**
+
+1. **Fix backend LEFT JOIN a99x_inviti** — Aggiunto `AND i.riunione_id = r.id` al LEFT JOIN in `/le-mie-riunioni` e `/inviti-ricevuti` per evitare match con inviti di altre riunioni. Senza questa condizione, il token poteva risultare null quando un partecipante aveva inviti per riunioni diverse.
+2. **Fix frontend pulsanti ACCETTA/RIFIUTA** — La condizione ora accetta sia `p.stato === 'INVITATO'` che `p.stato === 'In attesa'` e usa fallback `riunione.token || riunione.invito_token` per robustezza.
+3. **Calendario vista settimana: card arancione/viola** — Le card riunioni nel calendario settimanale sono ora arancioni (`bg-orange-500/20`) se l'associazione impersonata non ha ancora accettato (stato INVITATO), viola (`bg-[#8b5cf6]/20`) se accettata (stato CONFERMATO). Per la PA (non impersonazione) restano sempre viola.
+4. **Calendario vista mese: pallino arancione/viola** — Il pallino indicatore riunioni nella vista mese segue la stessa logica: arancione se almeno una riunione del giorno non è accettata dall'associazione impersonata.
+5. **Legenda calendario aggiornata** — Aggiunto indicatore "Non accettate" arancione nella legenda, visibile solo in modalità impersonazione associazione.
 
 ---
 ### CHANGELOG v10.28.0 (15 Mag 2026)
