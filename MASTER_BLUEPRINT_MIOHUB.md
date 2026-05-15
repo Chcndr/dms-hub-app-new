@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.30.0 (A99X Per-Persona — Responsabili Associazione, Campi Persona Partecipanti, Anti-Duplicato)
+> **Versione:** 10.30.1 (Fix isMyRow tipo, Contatore Riunioni, Partecipa Relatore)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -10,7 +10,7 @@
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
 > | **GitHub Backend** | Allineato | mihub-backend-rest `a561df5` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `ff9cf26` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `c60e0e4` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -31,6 +31,9 @@
 > - **NON invitare associazione generica se ha responsabili** — Quando un'associazione ha responsabili registrati, si deve invitare il responsabile specifico (persona), non l'associazione generica. Il dropdown mostra i responsabili come righe selezionabili sotto l'header associazione.
 > - **NON creare partecipanti duplicati nella stessa riunione** — Il backend ha check anti-duplicato: stesso `riferimento_id + tipo` nella stessa riunione viene rifiutato con errore 409.
 > - **Campi persona DEVONO essere salvati in a99x_partecipanti** — `persona_nome`, `persona_ruolo`, `persona_settore`, `responsabile_id` identificano la persona fisica invitata. La riga partecipante nel frontend mostra: Associazione/Ente + Settore + Nome Persona + Email.
+> - **isMyRow DEVE controllare anche p.tipo === 'ASSOCIAZIONE'** — In vista associazione impersonata, solo partecipanti di tipo ASSOCIAZIONE possono essere "Tu". Un'impresa con lo stesso riferimento_id non deve matchare.
+> - **Contatore Riunioni Programmate DEVE escludere riunioni scadute** — Filtrare per data_fine > now, non solo per stato PROGRAMMATA.
+> - **PA/creatore DEVE avere pulsante Partecipa alla Videoconferenza** — Il creatore della riunione è il relatore e deve poter entrare nella call per far entrare i partecipanti.
 >
 > ---
 
@@ -40,6 +43,14 @@
 > - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
 > - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+
+---
+### CHANGELOG v10.30.1 (15 Mag 2026)
+**Fix isMyRow tipo ASSOCIAZIONE, Contatore Riunioni Attive, Pulsante Partecipa per PA/Relatore**
+
+1. **isMyRow controlla tipo partecipante** — In vista associazione impersonata, `isMyRow` ora richiede `p.tipo === 'ASSOCIAZIONE'` oltre al match `riferimento_id`. Risolve il bug dove "Alimentari Rossi & C." (tipo IMPRESA) appariva con badge "Tu" e pulsante "Partecipa" nella vista Confesercenti perché aveva lo stesso `riferimento_id`.
+2. **Contatore riunioni attive** — Il contatore "Riunioni Programmate" nella dashboard ora filtra per `stato PROGRAMMATA/IN_CORSO` E `data_fine > now`. Prima contava anche riunioni scadute (es. "prova" del 15 mag 18:56).
+3. **Pulsante Partecipa per PA/relatore** — Nella sezione Prossime Riunioni (vista PA/admin), ogni riunione con `jitsi_link` mostra ora un pulsante viola "Partecipa alla Videoconferenza (Relatore)" prima dei pulsanti Rimanda/Elimina. Il creatore è il relatore che fa entrare i partecipanti nella call.
 
 ---
 ### CHANGELOG v10.30.0 (15 Mag 2026)
