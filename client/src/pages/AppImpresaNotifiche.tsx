@@ -445,8 +445,27 @@ export default function AppImpresaNotifiche() {
 
   const normalizzaLinkCorso = (link: string | null) => {
     if (!link) return null;
-    const raw = link.trim();
+    let raw = link.trim();
     if (!raw) return null;
+    // Fix v10.30.4: gestire il caso in cui link_riferimento sia un oggetto JSON stringificato
+    // (bug pre-fix dove generaLinkCorso ritornava l'intero oggetto)
+    if (raw === '[object Object]') return null;
+    if (raw.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.link) raw = parsed.link;
+        else return null;
+      } catch { /* non è JSON, procedi normalmente */ }
+    }
+    // Rimuovere eventuale prefisso "https://{" che indica un oggetto serializzato male
+    if (raw.startsWith('https://{') || raw.startsWith('http://{')) {
+      try {
+        const jsonPart = raw.replace(/^https?:\/\//, '');
+        const parsed = JSON.parse(jsonPart);
+        if (parsed && parsed.link) raw = parsed.link;
+        else return null;
+      } catch { /* non è JSON, procedi normalmente */ }
+    }
     const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
     try {
       const url = new URL(withProtocol);
