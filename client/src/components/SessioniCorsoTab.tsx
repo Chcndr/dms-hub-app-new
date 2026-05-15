@@ -57,6 +57,7 @@ interface Sessione {
   relatore_nome?: string;
   note?: string;
   presenze?: Presenza[];
+  num_partecipanti?: number;
 }
 
 interface Presenza {
@@ -599,6 +600,12 @@ export default function SessioniCorsoTab({ corsi }: SessioniCorsoTabProps) {
                             {s.sede}
                           </span>
                         )}
+                        {(s.num_partecipanti || (s.presenze && s.presenze.length > 0)) && (
+                          <span>
+                            <Users className="h-3 w-3 inline mr-1" />
+                            {s.num_partecipanti || s.presenze?.length || 0} partecipanti
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -667,9 +674,72 @@ export default function SessioniCorsoTab({ corsi }: SessioniCorsoTabProps) {
                     </div>
                   )}
 
-                  {/* Dettaglio espanso: presenze + link */}
+                  {/* Partecipanti — sempre visibili stile A99X */}
+                  {s.presenze && s.presenze.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-[#e8fbff]/10">
+                      {/* Istruttore/Relatore row */}
+                      {(s.istruttore_nome || s.relatore_nome) && (
+                        <div className="flex gap-2 mb-2 flex-wrap">
+                          {s.relatore_nome && (
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-[#8b5cf6]/10 rounded border border-[#8b5cf6]/20 text-xs">
+                              <UserCheck className="h-3 w-3 text-[#8b5cf6]" />
+                              <span className="text-[#e8fbff]/50">Relatore:</span>
+                              <span className="text-[#e8fbff] font-medium">{s.relatore_nome}</span>
+                            </div>
+                          )}
+                          {s.istruttore_nome && (
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-[#3b82f6]/10 rounded border border-[#3b82f6]/20 text-xs">
+                              <UserCheck className="h-3 w-3 text-[#3b82f6]" />
+                              <span className="text-[#e8fbff]/50">Istruttore:</span>
+                              <span className="text-[#e8fbff] font-medium">{s.istruttore_nome}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Lista partecipanti (imprese iscritte) */}
+                      <h5 className="text-xs font-medium text-[#e8fbff]/70 mb-2 flex items-center gap-1">
+                        <Users className="h-3 w-3" /> Partecipanti iscritti
+                        <Badge variant="outline" className="text-[9px] ml-1 text-[#e8fbff]/50">
+                          {s.presenze.length}
+                        </Badge>
+                      </h5>
+                      <div className="space-y-1">
+                        {s.presenze.map((p) => (
+                          <div
+                            key={p.id}
+                            className="flex items-center justify-between p-2 bg-[#0b1220] rounded text-xs border border-[#e8fbff]/5"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-[#8b5cf6]/20 flex items-center justify-center text-[#8b5cf6] text-[10px] font-bold">
+                                {(p.impresa_nome || p.utente_nome || "P").charAt(0).toUpperCase()}
+                              </div>
+                              <span className="text-[#e8fbff]">
+                                {p.impresa_nome || p.utente_nome || p.utente_email || "Partecipante"}
+                              </span>
+                            </div>
+                            <Badge
+                              className={`text-[9px] ${
+                                p.stato === "PRESENTE"
+                                  ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30"
+                                  : p.stato === "CONFERMATO"
+                                  ? "bg-[#3b82f6]/20 text-[#3b82f6] border-[#3b82f6]/30"
+                                  : p.stato === "ASSENTE"
+                                  ? "bg-[#ef4444]/20 text-[#ef4444] border-[#ef4444]/30"
+                                  : "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/30"
+                              } border`}
+                            >
+                              {p.stato}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dettaglio espanso: link Jitsi + note */}
                   {expanded && (
-                    <div className="mt-4 pt-3 border-t border-[#e8fbff]/10 space-y-3">
+                    <div className="mt-3 pt-3 border-t border-[#e8fbff]/10 space-y-3">
                       {/* Link Jitsi */}
                       {s.jitsi_link && (
                         <div className="flex items-center gap-2 p-2 bg-[#8b5cf6]/10 rounded-lg border border-[#8b5cf6]/20">
@@ -695,67 +765,6 @@ export default function SessioniCorsoTab({ corsi }: SessioniCorsoTabProps) {
                           </Button>
                         </div>
                       )}
-
-                      {/* Info istruttore/relatore */}
-                      {(s.istruttore_nome || s.relatore_nome) && (
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          {s.istruttore_nome && (
-                            <div className="p-2 bg-[#0b1220] rounded border border-[#3b82f6]/10">
-                              <span className="text-[#e8fbff]/40">Istruttore:</span>{" "}
-                              <span className="text-[#e8fbff]">{s.istruttore_nome}</span>
-                            </div>
-                          )}
-                          {s.relatore_nome && (
-                            <div className="p-2 bg-[#0b1220] rounded border border-[#3b82f6]/10">
-                              <span className="text-[#e8fbff]/40">Relatore:</span>{" "}
-                              <span className="text-[#e8fbff]">{s.relatore_nome}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Presenze */}
-                      <div>
-                        <h5 className="text-xs font-medium text-[#e8fbff]/70 mb-2 flex items-center gap-1">
-                          <Users className="h-3 w-3" /> Partecipanti
-                          {s.presenze && (
-                            <Badge variant="outline" className="text-[9px] ml-1 text-[#e8fbff]/50">
-                              {s.presenze.length}
-                            </Badge>
-                          )}
-                        </h5>
-                        {!s.presenze ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-[#8b5cf6]" />
-                        ) : s.presenze.length === 0 ? (
-                          <p className="text-xs text-[#e8fbff]/40">Nessun partecipante invitato</p>
-                        ) : (
-                          <div className="space-y-1">
-                            {s.presenze.map((p) => (
-                              <div
-                                key={p.id}
-                                className="flex items-center justify-between p-2 bg-[#0b1220] rounded text-xs"
-                              >
-                                <span className="text-[#e8fbff]">
-                                  {p.impresa_nome || p.utente_nome || p.utente_email || "Partecipante"}
-                                </span>
-                                <Badge
-                                  className={`text-[9px] ${
-                                    p.stato === "PRESENTE"
-                                      ? "bg-[#10b981]/20 text-[#10b981]"
-                                      : p.stato === "CONFERMATO"
-                                      ? "bg-[#3b82f6]/20 text-[#3b82f6]"
-                                      : p.stato === "ASSENTE"
-                                      ? "bg-[#ef4444]/20 text-[#ef4444]"
-                                      : "bg-[#e8fbff]/10 text-[#e8fbff]/50"
-                                  }`}
-                                >
-                                  {p.stato}
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
 
                       {/* Note */}
                       {s.note && (
