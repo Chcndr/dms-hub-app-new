@@ -95,6 +95,14 @@ export default function AppImpresaNotifiche() {
   const [invRiunioneStato, setInvRiunioneStato] = useState<string | null>(null);
   const [invRiunioneLink, setInvRiunioneLink] = useState<string>('');
   const [invRiunioneScaduta, setInvRiunioneScaduta] = useState(false);
+  // v10.30.3b: Dismissal persistente per notifiche — le notifiche dismissate non riappaiono dopo polling
+  const [dismissedNotifIds, setDismissedNotifIds] = useState<Set<number>>(() => {
+    try {
+      const saved = localStorage.getItem('a99x_dismissed_notifiche_impresa');
+      if (saved) return new Set(JSON.parse(saved));
+    } catch { /* ignore */ }
+    return new Set();
+  });
   const firmatoFileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -181,6 +189,22 @@ export default function AppImpresaNotifiche() {
       console.error("Errore caricamento notifiche:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // v10.30.3b: Persistenza dismissal notifiche in localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('a99x_dismissed_notifiche_impresa', JSON.stringify([...dismissedNotifIds]));
+    } catch { /* ignore */ }
+  }, [dismissedNotifIds]);
+
+  // v10.30.3b: Helper per dismissare una notifica (non riapparirà dopo polling)
+  const dismissNotifica = (notificaId: number) => {
+    setDismissedNotifIds(prev => new Set([...prev, notificaId]));
+    // Se la notifica dismissata è quella selezionata, deselezionala
+    if (notificaSelezionata?.id === notificaId) {
+      setNotificaSelezionata(null);
     }
   };
 
@@ -739,7 +763,7 @@ export default function AppImpresaNotifiche() {
                     onClick={() => setFiltroTipo("ricevuti")}
                     className={`px-3 py-1 rounded-full text-sm ${filtroTipo === "ricevuti" ? "bg-blue-500 text-white" : "bg-[#0b1220] text-[#e8fbff]/70 hover:bg-blue-500/20"}`}
                   >
-                    Ricevuti ({notifiche.length})
+                    Ricevuti ({notifiche.filter(n => !dismissedNotifIds.has(n.id)).length})
                   </button>
                   <button
                     onClick={() => setFiltroTipo("inviati")}
@@ -756,9 +780,9 @@ export default function AppImpresaNotifiche() {
                     </div>
                   ) : (
                     <>
-                      {/* Messaggi Ricevuti */}
+                      {/* Messaggi Ricevuti — v10.30.3b: filtra notifiche dismissate */}
                       {(filtroTipo === "tutti" || filtroTipo === "ricevuti") &&
-                        notifiche.map(notifica => (
+                        notifiche.filter(n => !dismissedNotifIds.has(n.id)).map(notifica => (
                           <div
                             key={`ric-${notifica.id}`}
                             onClick={() => {
@@ -806,12 +830,25 @@ export default function AppImpresaNotifiche() {
                                           setInvRiunioneLink(riunione.jitsi_link || '');
                                         }
                                       } else {
-                                        setInvRiunioneStato('INVITATO');
+                                        // v10.30.3b: Riunione non trovata nel backend → trattare come scaduta
+                                        // (la riunione potrebbe essere stata cancellata o il titolo non matcha)
+                                        setInvRiunioneScaduta(true);
+                                        setInvRiunioneStato('NON_TROVATA');
                                       }
                                     } else {
-                                      setInvRiunioneStato('INVITATO');
+                                      // v10.30.3b: Backend non ha dati → trattare come scaduta
+                                      setInvRiunioneScaduta(true);
+                                      setInvRiunioneStato('NON_TROVATA');
                                     }
-                                  }).catch(() => setInvRiunioneStato('INVITATO'));
+                                  }).catch(() => {
+                                    // v10.30.3b: Errore fetch → trattare come scaduta per sicurezza
+                                    setInvRiunioneScaduta(true);
+                                    setInvRiunioneStato('NON_TROVATA');
+                                  });
+                              } else if (notifica.tipo_messaggio === 'INVITO_RIUNIONE') {
+                                // v10.30.3b: IMPRESA_EMAIL vuota ma è un invito riunione → trattare come scaduta
+                                setInvRiunioneScaduta(true);
+                                setInvRiunioneStato('NON_TROVATA');
                               } else {
                                 setInvRiunioneStato(null);
                               }
@@ -857,7 +894,20 @@ export default function AppImpresaNotifiche() {
                                   </span>
                                 </div>
                               </div>
-                              <ChevronRight className="w-4 h-4 text-[#e8fbff]/30 flex-shrink-0" />
+                              {/* v10.30.3b: Pulsante dismiss per rimuovere notifica dalla lista */}
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <ChevronRight className="w-4 h-4 text-[#e8fbff]/30" />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    dismissNotifica(notifica.id);
+                                  }}
+                                  className="w-5 h-5 rounded-full bg-[#e8fbff]/5 hover:bg-red-500/20 flex items-center justify-center text-[#e8fbff]/20 hover:text-red-400 transition-all ml-1"
+                                  title="Rimuovi notifica"
+                                >
+                                  <XCircle className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -1151,11 +1201,19 @@ export default function AppImpresaNotifiche() {
                           <span className="text-[#e8fbff]/50 text-xs ml-2">Caricamento stato...</span>
                         </div>
                       )}
-                      {/* v10.30.3: Messaggio riunione scaduta */}
+                      {/* v10.30.3b: Messaggio riunione scaduta + pulsante dismiss */}
                       {invRiunioneScaduta && (
-                        <div className="flex items-center gap-2 bg-gray-500/10 border border-gray-500/30 rounded-lg p-2 mb-3">
-                          <Clock className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-400 text-xs font-semibold">Riunione conclusa — non è più possibile confermare o rifiutare</span>
+                        <div className="space-y-2 mb-3">
+                          <div className="flex items-center gap-2 bg-gray-500/10 border border-gray-500/30 rounded-lg p-2">
+                            <Clock className="w-4 h-4 text-gray-400" />
+                            <span className="text-gray-400 text-xs font-semibold">Riunione conclusa — non è più possibile confermare o rifiutare</span>
+                          </div>
+                          <button
+                            onClick={() => dismissNotifica(notificaSelezionata.id)}
+                            className="w-full py-2 bg-[#e8fbff]/5 hover:bg-red-500/10 border border-[#e8fbff]/10 hover:border-red-500/30 text-[#e8fbff]/40 hover:text-red-400 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1"
+                          >
+                            <XCircle className="w-3.5 h-3.5" /> Rimuovi questa notifica
+                          </button>
                         </div>
                       )}
                       {/* Pulsanti Conferma / Rinuncia */}
