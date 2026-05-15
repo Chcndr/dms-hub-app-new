@@ -1,16 +1,16 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.2 (Sessioni Corso — Partecipanti Visibili Stile A99X)
+> **Versione:** 10.31.3 (Sessioni Corso — Data Corso Corretta + Contatore Tab)
 > **Data:** 16 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (15 Mag 2026 — Snapshot stabile)
+> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `8bad37e` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `865facb` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `1ed88eb` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `b573106` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -49,6 +49,9 @@
 > - **NON usare campo 'corpo' nella tabella notifiche** — Il campo corretto è `messaggio`. L'errore `column "corpo" of relation "notifiche" does not exist` si verifica se si usa il nome sbagliato.
 > - **GET lista sessioni DEVE includere presenze con JOIN imprese** — La route `GET /api/associazioni/:id/corsi/:cid/sessioni` DEVE ritornare per ogni sessione anche l'array `presenze` con `impresa_nome` (JOIN su `imprese.denominazione`). NON ritornare solo i dati sessione senza presenze.
 > - **Partecipanti sessione DEVONO essere sempre visibili nella card** — NON nascondere i partecipanti dietro un click/expand. Le righe partecipanti (con avatar iniziale, nome impresa, stato) devono essere visibili direttamente nella card sessione, stile A99X riunioni.
+> - **Sessione automatica DEVE usare data_inizio del corso** — Quando si crea la sessione automatica (invio notifica), il campo `data_inizio` DEVE essere preso da `formazione_corsi.data_inizio`, NON da `NOW()`. Anche `data_fine` e `durata_minuti` (= durata_ore * 60) devono venire dal corso.
+> - **Tab Sessioni DEVE mostrare contatore (N)** — Come gli altri tab (Corsi (9), Iscrizioni (8)), il tab Sessioni deve mostrare il numero di sessioni caricate: "Sessioni (N)". Il conteggio viene esposto dal componente SessioniCorsoTab tramite callback `onSessioniCount`.
+> - **Link Jitsi sessione e notifica DEVONO essere identici** — Il link salvato in `formazione_sessioni_corso.jitsi_link` deve essere lo stesso salvato in `notifiche.link_riferimento`. Entrambi vengono generati dalla stessa chiamata a `jitsiService.generaLinkCorso()`.
 >
 > ---
 >
@@ -57,6 +60,16 @@
 > - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
 > - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+
+---
+### CHANGELOG v10.31.3 (16 Mag 2026)
+**Sessioni Corso — Data Corso Corretta + Contatore Tab + Verifica Link**
+
+1. **Backend: Sessione usa data_inizio del corso** — La creazione automatica della sessione (invio notifica) ora usa `corso.data_inizio` e `corso.data_fine` dalla tabella `formazione_corsi` invece di `NOW()`. La durata è calcolata come `corso.durata_ore * 60` minuti.
+2. **Backend: SELECT corso include campi data** — La query che carica il corso nella route notifica ora seleziona anche `data_inizio, data_fine, durata_ore, orario, modalita`.
+3. **Frontend: Contatore tab Sessioni (N)** — Il tab "Sessioni" ora mostra il numero di sessioni caricate (es. "Sessioni (2)"), come gli altri tab "Corsi (9)" e "Iscrizioni (8)". Implementato tramite callback `onSessioniCount` dal componente SessioniCorsoTab al parent.
+4. **DB: Fix sessione esistente** — Aggiornata manualmente la sessione RSPP datore di lavoro nel DB con data_inizio=2026-05-18, data_fine=2026-05-19, durata_minuti=960 (16 ore).
+5. **Verifica link Jitsi** — Confermato che il link nella sessione e nella notifica sono identici (stesso URL meet.jit.si generato da `generaLinkCorso`).
 
 ---
 ### CHANGELOG v10.31.2 (16 Mag 2026)
