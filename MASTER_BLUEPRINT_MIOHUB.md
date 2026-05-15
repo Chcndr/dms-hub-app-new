@@ -1,16 +1,16 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.3 (Sessioni Corso — Data Corso Corretta + Contatore Tab)
+> **Versione:** 10.31.4 (Autocompilazione Notifica + Fix Link Duplicato + Notifiche Inviate + Fuso Orario)
 > **Data:** 16 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile)
+> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.4)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `1ed88eb` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `b573106` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `02b08d8` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `9030bd9` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -52,6 +52,11 @@
 > - **Sessione automatica DEVE usare data_inizio del corso** — Quando si crea la sessione automatica (invio notifica), il campo `data_inizio` DEVE essere preso da `formazione_corsi.data_inizio`, NON da `NOW()`. Anche `data_fine` e `durata_minuti` (= durata_ore * 60) devono venire dal corso.
 > - **Tab Sessioni DEVE mostrare contatore (N)** — Come gli altri tab (Corsi (9), Iscrizioni (8)), il tab Sessioni deve mostrare il numero di sessioni caricate: "Sessioni (N)". Il conteggio viene esposto dal componente SessioniCorsoTab tramite callback `onSessioniCount`.
 > - **Link Jitsi sessione e notifica DEVONO essere identici** — Il link salvato in `formazione_sessioni_corso.jitsi_link` deve essere lo stesso salvato in `notifiche.link_riferimento`. Entrambi vengono generati dalla stessa chiamata a `jitsiService.generaLinkCorso()`.
+> - **NON aggiungere link corso nel campo messaggio della notifica** — Il link viene già salvato in `link_riferimento` e mostrato nel box "Accesso al corso" del frontend. Aggiungere il link anche nel testo del messaggio causa duplicazione visiva. (Fix v10.31.4)
+> - **Notifica corso DEVE usare mittente_tipo='ASSOCIAZIONE'** — NON usare 'ENTE_FORMATORE'. La query del tab Inviati filtra per `UPPER(mittente_tipo) = 'ASSOCIAZIONE'`. Se si usa un altro tipo, le notifiche inviate non appaiono nel contatore. (Fix v10.31.4)
+> - **Query sessioni-tutte DEVE fare JOIN tramite formazione_enti** — `formazione_corsi` NON ha `associazione_id`. Il collegamento è `formazione_corsi.ente_id → formazione_enti.id` dove `formazione_enti.associazione_id = :id`. (Fix v10.31.4)
+> - **Date solo-data DEVONO essere parsate come locali** — Se `data_inizio` è `2026-05-20T00:00:00`, parsarla con `new Date()` la interpreta come UTC e mostra il giorno prima in fuso orario positivo. Usare split manuale per date senza ora. (Fix v10.31.4)
+> - **Modulo notifica corso DEVE autocompilare il messaggio** — Quando si clicca Bell su un corso, il messaggio deve essere precompilato con data, orario, modalità e sede del corso. L'utente può modificarlo prima dell'invio. (Fix v10.31.4)
 >
 > ---
 >
