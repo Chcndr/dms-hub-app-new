@@ -23,7 +23,6 @@ import {
   Edit3,
   ExternalLink,
   UserCheck,
-  Send,
   Play,
   CheckCircle2,
   XCircle,
@@ -300,26 +299,6 @@ export default function SessioniCorsoTab({ corsi }: SessioniCorsoTabProps) {
     }
   };
 
-  const inviaNotificaSessione = async (sid: number) => {
-    try {
-      const res = await authenticatedFetch(
-        `${API_BASE}/api/associazioni/${associazioneId}/corsi/${selectedCorsoId}/sessioni/${sid}/notifica`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        }
-      );
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message || "Notifica inviata");
-      } else {
-        toast.error(data.error || "Errore invio");
-      }
-    } catch (err) {
-      toast.error("Errore di rete");
-    }
-  };
 
   const formatData = (d?: string) => {
     if (!d) return "-";
@@ -635,15 +614,6 @@ export default function SessioniCorsoTab({ corsi }: SessioniCorsoTabProps) {
                           <Video className="h-3 w-3" /> Partecipa
                         </a>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => inviaNotificaSessione(s.id)}
-                        className="text-[#3b82f6] h-7 w-7"
-                        title="Invia notifica sessione"
-                      >
-                        <Send className="h-3.5 w-3.5" />
-                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
