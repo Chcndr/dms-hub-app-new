@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.30.3b (Fix Notifiche Push App Impresa — Dismissal Persistente + Riunioni Scadute)
+> **Versione:** 10.31.0 (Tab Sessioni Corso + Fix Link [object Object] Notifica Corso)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -41,6 +41,9 @@
 > - **NON ricaricare notifiche riunioni dismissate al polling** — Usare localStorage (`a99x_dismissed_riunioni_impresa`) per persistere la chiusura (X) delle riunioni concluse nella sezione "Le Mie Riunioni" dell'App Impresa.
 > - **NON mostrare CONFERMA/RINUNCIA quando riunione non trovata nel backend** — Se il match per titolo fallisce o il backend non restituisce la riunione, settare stato `NON_TROVATA` e `invRiunioneScaduta=true`. NON lasciare stato `INVITATO` come fallback.
 > - **NON ricaricare notifiche push dismissate al polling nell'App Impresa** — Usare localStorage (`a99x_dismissed_notifiche_impresa`) per persistere la chiusura delle notifiche. Il filtro `dismissedNotifIds` deve essere applicato alla lista notifiche ricevute.
+> - **NON passare oggetto intero da generaLinkCorso() come linkRiferimento** — `jitsiService.generaLinkCorso()` ritorna un oggetto `{roomId, link, embedLink, baseUrl, password}`. DEVE essere estratto `.link` prima di salvarlo nella notifica. Altrimenti si ottiene `[object Object]`.
+> - **Tab Sessioni Corso DEVE generare link Jitsi automaticamente** — Quando si crea una sessione con modalità ONLINE o IBRIDA, il backend genera automaticamente il link Jitsi tramite `jitsiService.generaLinkCorso()`. NON richiedere inserimento manuale del link.
+> - **Tabella formazione_sessioni_corso DEVE avere auto_invita_iscritti** — Alla creazione sessione, se `auto_invita_iscritti=true`, il backend inserisce automaticamente tutti gli iscritti al corso come presenze nella sessione.
 >
 > ---
 >
