@@ -1900,7 +1900,11 @@ export default function DashboardPA() {
           riferimento_id: contact.id || null,
           nome: contact.nome,
           email: contact.email || null,
-          telefono: contact.telefono || null
+          telefono: contact.telefono || null,
+          persona_nome: contact.persona_nome || contact.responsabile_nome || null,
+          persona_ruolo: contact.persona_ruolo || contact.responsabile_ruolo || null,
+          persona_settore: contact.persona_settore || contact.settore || null,
+          responsabile_id: contact.responsabile_id || null
         })
       });
       const data = await resp.json();
@@ -2057,7 +2061,8 @@ export default function DashboardPA() {
   const a99xFilteredAssociazioni = a99xAssociazioni.filter((a: any) => {
     if (!a99xInvitaSearch || a99xInvitaSearch.length < 2) return false;
     const q = a99xInvitaSearch.toLowerCase();
-    return (a.nome || '').toLowerCase().includes(q) ||
+    // Cerca nel nome associazione, sigla, tipo, email, citta, presidente, referente
+    const matchAssoc = (a.nome || '').toLowerCase().includes(q) ||
       (a.sigla || '').toLowerCase().includes(q) ||
       (a.tipo || '').toLowerCase().includes(q) ||
       (a.email || '').toLowerCase().includes(q) ||
@@ -2065,6 +2070,15 @@ export default function DashboardPA() {
       (a.citta || '').toLowerCase().includes(q) ||
       (a.presidente_cognome || '').toLowerCase().includes(q) ||
       (a.referente_cognome || '').toLowerCase().includes(q);
+    // Cerca anche nei responsabili dell'associazione
+    const matchResp = (a.responsabili || []).some((r: any) =>
+      (r.nome || '').toLowerCase().includes(q) ||
+      (r.cognome || '').toLowerCase().includes(q) ||
+      (r.ruolo || '').toLowerCase().includes(q) ||
+      (r.email || '').toLowerCase().includes(q) ||
+      (r.settore || '').toLowerCase().includes(q)
+    );
+    return matchAssoc || matchResp;
   });
 
   // Seleziona contatto per invito (aggiunge alla lista, non sostituisce)
@@ -10638,13 +10652,28 @@ export default function DashboardPA() {
                                   return (
                                     <div key={idx} className={`rounded-lg border ${cfg.bg} transition-all ${isMyRow ? 'ring-2 ring-[#8b5cf6]/40' : ''}`}>
                                       <div className="flex items-center justify-between px-3 py-2">
-                                        <div className="flex items-center gap-2 min-w-0">
+                                        <div className="flex items-center gap-2 min-w-0 flex-1">
                                           <span className="text-sm">{cfg.icon}</span>
-                                          <span className="text-[#e8fbff] text-xs font-medium truncate">{p.nome}</span>
-                                          <Badge className={`text-[8px] ${tipoCfg.color} bg-transparent border-current/30`}>{tipoCfg.label}</Badge>
-                                          {isMyRow && <Badge className="text-[7px] bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">Tu</Badge>}
+                                          <div className="flex flex-col min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="text-[#e8fbff] text-xs font-medium truncate">{p.nome}</span>
+                                              <Badge className={`text-[8px] ${tipoCfg.color} bg-transparent border-current/30`}>{tipoCfg.label}</Badge>
+                                              {isMyRow && <Badge className="text-[7px] bg-[#8b5cf6]/20 text-[#8b5cf6] border-[#8b5cf6]/30">Tu</Badge>}
+                                            </div>
+                                            {/* Dettagli persona: settore + nome dirigente/funzionario + email */}
+                                            {(p.persona_nome || p.persona_settore || p.persona_ruolo || p.email) && (
+                                              <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                                {p.persona_settore && <span className="text-[9px] text-[#f59e0b]/70">{p.persona_settore}</span>}
+                                                {p.persona_settore && (p.persona_nome || p.persona_ruolo) && <span className="text-[9px] text-[#e8fbff]/20">&middot;</span>}
+                                                {p.persona_nome && <span className="text-[9px] text-[#e8fbff]/60 font-medium">{p.persona_nome}</span>}
+                                                {p.persona_ruolo && !p.persona_nome && <span className="text-[9px] text-[#e8fbff]/50">{p.persona_ruolo}</span>}
+                                                {p.persona_nome && p.persona_ruolo && <span className="text-[9px] text-[#e8fbff]/40">({p.persona_ruolo})</span>}
+                                                {p.email && <span className="text-[9px] text-[#8b5cf6]/60">&middot; {p.email}</span>}
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
-                                        <span className={`text-[10px] font-semibold ${cfg.text}`}>{cfg.label}</span>
+                                        <span className={`text-[10px] font-semibold ${cfg.text} shrink-0`}>{cfg.label}</span>
                                       </div>
                                       {/* Pulsanti ACCETTA/RIFIUTA inline sulla riga dell'associazione invitata */}
                                       {isMyRow && (p.stato === 'INVITATO' || p.stato === 'In attesa') && isAttiva && (
@@ -11128,20 +11157,70 @@ export default function DashboardPA() {
                             <div className="p-4 text-center text-[#e8fbff]/50">Nessuna associazione/ente trovato</div>
                           ) : (
                             a99xFilteredAssociazioni.slice(0, 10).map((assoc: any) => {
-                              const isSelected = a99xInvitaSelezionati.some((s: any) => s.tipo === 'ASSOCIAZIONE' && s.id === assoc.id);
+                              const hasResponsabili = assoc.responsabili && assoc.responsabili.length > 0;
                               return (
-                                <div key={assoc.id} onClick={() => { if (!isSelected) a99xSelectContact({ tipo: 'ASSOCIAZIONE', id: assoc.id, nome: assoc.nome, email: assoc.email, telefono: assoc.telefono }); }} className={`p-3 hover:bg-[#ec4899]/20 cursor-pointer border-b border-[#ec4899]/10 last:border-b-0 ${isSelected ? 'opacity-30 cursor-not-allowed' : ''}`}>
-                                  <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4 text-[#ec4899]" />
-                                    <span className="text-[#e8fbff] font-semibold">{assoc.nome}</span>
-                                    {assoc.tipo_ente && <span className="text-[#ec4899] text-xs">({assoc.tipo_ente})</span>}
-                                    {isSelected && <span className="text-[#10b981] text-[9px] ml-auto">Selezionato</span>}
+                                <div key={assoc.id} className="border-b border-[#ec4899]/10 last:border-b-0">
+                                  {/* Header associazione */}
+                                  <div className="p-3 bg-[#ec4899]/5">
+                                    <div className="flex items-center gap-2">
+                                      <Users className="h-4 w-4 text-[#ec4899]" />
+                                      <span className="text-[#e8fbff] font-semibold">{assoc.nome}</span>
+                                      {assoc.sigla && <span className="text-[#ec4899] text-xs">({assoc.sigla})</span>}
+                                      {hasResponsabili && <span className="text-[#ec4899]/60 text-[9px] ml-auto">{assoc.responsabili.length} responsabil{assoc.responsabili.length === 1 ? 'e' : 'i'}</span>}
+                                    </div>
+                                    {assoc.email && <div className="text-[#e8fbff]/40 text-[10px] ml-6 mt-0.5">{assoc.email}</div>}
                                   </div>
-                                  <div className="text-[#e8fbff]/60 text-sm flex items-center gap-4 mt-1 ml-6">
-                                    {assoc.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {assoc.email}</span>}
-                                    {assoc.telefono && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {assoc.telefono}</span>}
-                                    {assoc.indirizzo && <span>{assoc.indirizzo}</span>}
-                                  </div>
+                                  {/* Lista responsabili selezionabili */}
+                                  {hasResponsabili ? (
+                                    assoc.responsabili.map((resp: any) => {
+                                      const isRespSelected = a99xInvitaSelezionati.some((s: any) => s.tipo === 'ASSOCIAZIONE' && s.id === assoc.id && s.responsabile_id === resp.id);
+                                      return (
+                                        <div
+                                          key={`${assoc.id}-resp-${resp.id}`}
+                                          onClick={() => { if (!isRespSelected) a99xSelectContact({
+                                            tipo: 'ASSOCIAZIONE',
+                                            id: assoc.id,
+                                            nome: assoc.nome + (assoc.sigla ? ` (${assoc.sigla})` : ''),
+                                            email: resp.email || assoc.email,
+                                            telefono: resp.telefono || assoc.telefono,
+                                            persona_nome: `${resp.nome} ${resp.cognome || ''}`.trim(),
+                                            persona_ruolo: resp.ruolo || 'Responsabile',
+                                            persona_settore: resp.settore || null,
+                                            responsabile_id: resp.id
+                                          }); }}
+                                          className={`pl-10 pr-3 py-2 hover:bg-[#ec4899]/20 cursor-pointer ${isRespSelected ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[#e8fbff] text-sm font-medium">{resp.nome} {resp.cognome || ''}</span>
+                                            {resp.ruolo && <span className="text-[#ec4899]/70 text-[10px] px-1.5 py-0.5 rounded bg-[#ec4899]/10">{resp.ruolo}</span>}
+                                            {resp.settore && <span className="text-[#f59e0b]/70 text-[10px]">{resp.settore}</span>}
+                                            {isRespSelected && <span className="text-[#10b981] text-[9px] ml-auto">Selezionato</span>}
+                                          </div>
+                                          <div className="text-[#e8fbff]/40 text-[10px] flex items-center gap-3 mt-0.5">
+                                            {resp.email && <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" /> {resp.email}</span>}
+                                            {resp.telefono && <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" /> {resp.telefono}</span>}
+                                          </div>
+                                        </div>
+                                      );
+                                    })
+                                  ) : (
+                                    /* Se non ha responsabili, l'associazione stessa è selezionabile */
+                                    (() => {
+                                      const isSelected = a99xInvitaSelezionati.some((s: any) => s.tipo === 'ASSOCIAZIONE' && s.id === assoc.id);
+                                      return (
+                                        <div
+                                          onClick={() => { if (!isSelected) a99xSelectContact({ tipo: 'ASSOCIAZIONE', id: assoc.id, nome: assoc.nome + (assoc.sigla ? ` (${assoc.sigla})` : ''), email: assoc.email || assoc.pec, telefono: assoc.telefono }); }}
+                                          className={`pl-10 pr-3 py-2 hover:bg-[#ec4899]/20 cursor-pointer ${isSelected ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[#e8fbff]/60 text-xs">Invita associazione generica</span>
+                                            {isSelected && <span className="text-[#10b981] text-[9px] ml-auto">Selezionato</span>}
+                                          </div>
+                                          {assoc.email && <div className="text-[#e8fbff]/40 text-[10px] mt-0.5">{assoc.email}</div>}
+                                        </div>
+                                      );
+                                    })()
+                                  )}
                                 </div>
                               );
                             })
@@ -11693,11 +11772,22 @@ export default function DashboardPA() {
                         <div className="space-y-1.5">
                           {a99xDettaglioRiunione.partecipanti.map((p: any, i: number) => (
                             <div key={i} className="flex items-center justify-between bg-[#1a2332] rounded px-2 py-1.5">
-                              <div className="flex items-center gap-2">
-                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-medium ${p.tipo === 'IMPRESA' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : p.tipo === 'COMUNE' ? 'bg-[#3b82f6]/20 text-[#3b82f6]' : 'bg-[#ec4899]/20 text-[#ec4899]'}`}>{p.tipo}</span>
-                                <span className="text-[#e8fbff] text-xs">{p.nome}</span>
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-medium shrink-0 ${p.tipo === 'IMPRESA' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : p.tipo === 'COMUNE' ? 'bg-[#3b82f6]/20 text-[#3b82f6]' : 'bg-[#ec4899]/20 text-[#ec4899]'}`}>{p.tipo}</span>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-[#e8fbff] text-xs truncate">{p.nome}</span>
+                                  {(p.persona_nome || p.persona_settore || p.persona_ruolo || p.email) && (
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      {p.persona_settore && <span className="text-[8px] text-[#f59e0b]/60">{p.persona_settore}</span>}
+                                      {p.persona_settore && p.persona_nome && <span className="text-[8px] text-[#e8fbff]/20">&middot;</span>}
+                                      {p.persona_nome && <span className="text-[8px] text-[#e8fbff]/50 font-medium">{p.persona_nome}</span>}
+                                      {p.persona_ruolo && <span className="text-[8px] text-[#e8fbff]/35">({p.persona_ruolo})</span>}
+                                      {p.email && <span className="text-[8px] text-[#8b5cf6]/50">&middot; {p.email}</span>}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <span className={`text-[8px] px-1.5 py-0.5 rounded font-medium ${p.stato === 'CONFERMATO' ? 'bg-[#10b981]/20 text-[#10b981]' : p.stato === 'RIFIUTATO' ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'bg-[#f59e0b]/20 text-[#f59e0b]'}`}>{p.stato}</span>
+                              <span className={`text-[8px] px-1.5 py-0.5 rounded font-medium shrink-0 ${p.stato === 'CONFERMATO' ? 'bg-[#10b981]/20 text-[#10b981]' : p.stato === 'RIFIUTATO' ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'bg-[#f59e0b]/20 text-[#f59e0b]'}`}>{p.stato}</span>
                             </div>
                           ))}
                         </div>
