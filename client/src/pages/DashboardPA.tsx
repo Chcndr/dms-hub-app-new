@@ -10311,7 +10311,15 @@ export default function DashboardPA() {
                             // Riunioni in questa fascia oraria
                             const hourRiunioni = a99xRiunioni.filter((r: any) => {
                               if (!r.data_inizio || !r.data_inizio.startsWith(dateStr)) return false;
-                              if (r.stato === 'ANNULLATA' || r.stato === 'COMPLETATA') return false;
+                              if (r.stato === 'ANNULLATA' || r.stato === 'COMPLETATA' || r.stato === 'RIPROGRAMMATA') return false;
+                              // Filtrare riunioni scadute (data_fine passata)
+                              const dataFineR = r.data_fine ? new Date(r.data_fine) : new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
+                              if (dataFineR <= new Date()) return false;
+                              // Filtrare riunioni RIFIUTATE per associazione impersonata
+                              if (isAssociazioneImpersonation()) {
+                                const mioSt = r.mio_stato || r.partecipante_stato;
+                                if (mioSt === 'RIFIUTATO') return false;
+                              }
                               const rHour = new Date(r.data_inizio).getHours();
                               return rHour === hour;
                             });
@@ -10328,15 +10336,19 @@ export default function DashboardPA() {
                                   const impP = getImpersonationParams();
                                   const isAssocImp = isAssociazioneImpersonation();
                                   let cardAccettata = true; // default viola (PA o nessuna impersonazione)
-                                  if (isAssocImp && impP.associazioneNome) {
+                                  if (isAssocImp) {
                                     const mioStato = r.mio_stato || r.partecipante_stato;
                                     if (mioStato) {
                                       cardAccettata = mioStato === 'CONFERMATO';
                                     } else {
-                                      // Cerca nei partecipanti
+                                      // Cerca nei partecipanti usando riferimento_id
+                                      const calAssocId = new URLSearchParams(window.location.search).get('associazione_id');
                                       const mioP = (r.partecipanti || []).find((pp: any) => 
-                                        pp.nome?.toLowerCase().includes(impP.associazioneNome.toLowerCase()) ||
-                                        impP.associazioneNome.toLowerCase().includes(pp.nome?.toLowerCase() || '')
+                                        (calAssocId && pp.riferimento_id && String(pp.riferimento_id) === String(calAssocId)) ||
+                                        (!pp.riferimento_id && impP.associazioneNome && (
+                                          pp.nome?.toLowerCase().includes(impP.associazioneNome.toLowerCase()) ||
+                                          impP.associazioneNome.toLowerCase().includes(pp.nome?.toLowerCase() || '')
+                                        ))
                                       );
                                       cardAccettata = mioP ? mioP.stato === 'CONFERMATO' : true;
                                     }
@@ -10379,25 +10391,39 @@ export default function DashboardPA() {
                         for (let d = 1; d <= daysInMonth; d++) {
                           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                           const isToday = dateStr === new Date().toISOString().split('T')[0];
-                          const riunioniDelGiorno = a99xRiunioni.filter((r: any) => r.data_inizio && r.data_inizio.startsWith(dateStr) && r.stato !== 'ANNULLATA' && r.stato !== 'COMPLETATA');
+                          const riunioniDelGiorno = a99xRiunioni.filter((r: any) => {
+                            if (!r.data_inizio || !r.data_inizio.startsWith(dateStr)) return false;
+                            if (r.stato === 'ANNULLATA' || r.stato === 'COMPLETATA' || r.stato === 'RIPROGRAMMATA') return false;
+                            // Filtrare riunioni scadute (data_fine passata)
+                            const dataFineR = r.data_fine ? new Date(r.data_fine) : new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
+                            if (dataFineR <= new Date()) return false;
+                            // Filtrare riunioni RIFIUTATE per associazione impersonata
+                            if (isAssociazioneImpersonation()) {
+                              const mioSt = r.mio_stato || r.partecipante_stato;
+                              if (mioSt === 'RIFIUTATO') return false;
+                            }
+                            return true;
+                          });
                           const hasPren = a99xPrenotazioni.some((p: any) => p.data_appuntamento === dateStr);
                           // Determinare colore pallino riunioni: arancione se non accettata, viola se accettata
                           let meseRiunioneAccettata = true;
                           if (riunioniDelGiorno.length > 0 && isAssociazioneImpersonation()) {
                             const impPM = getImpersonationParams();
-                            if (impPM.associazioneNome) {
-                              // Controlla se almeno una riunione del giorno non è accettata
-                              const nonAccettata = riunioniDelGiorno.some((r: any) => {
-                                const mioSt = r.mio_stato || r.partecipante_stato;
-                                if (mioSt) return mioSt !== 'CONFERMATO';
-                                const mioP2 = (r.partecipanti || []).find((pp: any) => 
+                            const meseAssocId = new URLSearchParams(window.location.search).get('associazione_id');
+                            // Controlla se almeno una riunione del giorno non è accettata
+                            const nonAccettata = riunioniDelGiorno.some((r: any) => {
+                              const mioSt = r.mio_stato || r.partecipante_stato;
+                              if (mioSt) return mioSt !== 'CONFERMATO';
+                              const mioP2 = (r.partecipanti || []).find((pp: any) => 
+                                (meseAssocId && pp.riferimento_id && String(pp.riferimento_id) === String(meseAssocId)) ||
+                                (!pp.riferimento_id && impPM.associazioneNome && (
                                   pp.nome?.toLowerCase().includes(impPM.associazioneNome.toLowerCase()) ||
                                   impPM.associazioneNome.toLowerCase().includes(pp.nome?.toLowerCase() || '')
-                                );
-                                return mioP2 ? mioP2.stato !== 'CONFERMATO' : false;
-                              });
-                              if (nonAccettata) meseRiunioneAccettata = false;
-                            }
+                                ))
+                              );
+                              return mioP2 ? mioP2.stato !== 'CONFERMATO' : false;
+                            });
+                            if (nonAccettata) meseRiunioneAccettata = false;
                           }
                           const mesePallinoColor = meseRiunioneAccettata ? 'bg-[#8b5cf6]' : 'bg-orange-500';
                           cells.push(
@@ -10597,10 +10623,17 @@ export default function DashboardPA() {
                                   };
                                   const tipoCfg = tipoConfig[p.tipo] || { color: 'text-[#e8fbff]/50', label: p.tipo };
                                   // Identificare se questa riga è l'associazione impersonata corrente
+                                  // Usa riferimento_id (preciso) con fallback a matching nome (solo se riferimento_id non disponibile)
                                   const impParams = getImpersonationParams();
-                                  const isMyRow = isAssociazioneImpersonation() && impParams.associazioneNome && (
-                                    p.nome?.toLowerCase().includes(impParams.associazioneNome.toLowerCase()) ||
-                                    impParams.associazioneNome.toLowerCase().includes(p.nome?.toLowerCase() || '')
+                                  const assocIdFromUrl = new URLSearchParams(window.location.search).get('associazione_id');
+                                  const isMyRow = isAssociazioneImpersonation() && (
+                                    // Match preciso per riferimento_id
+                                    (assocIdFromUrl && p.riferimento_id && String(p.riferimento_id) === String(assocIdFromUrl)) ||
+                                    // Fallback: match per nome solo se riferimento_id non presente nel partecipante
+                                    (!p.riferimento_id && impParams.associazioneNome && (
+                                      p.nome?.toLowerCase().includes(impParams.associazioneNome.toLowerCase()) ||
+                                      impParams.associazioneNome.toLowerCase().includes(p.nome?.toLowerCase() || '')
+                                    ))
                                   );
                                   return (
                                     <div key={idx} className={`rounded-lg border ${cfg.bg} transition-all ${isMyRow ? 'ring-2 ring-[#8b5cf6]/40' : ''}`}>
@@ -10614,19 +10647,44 @@ export default function DashboardPA() {
                                         <span className={`text-[10px] font-semibold ${cfg.text}`}>{cfg.label}</span>
                                       </div>
                                       {/* Pulsanti ACCETTA/RIFIUTA inline sulla riga dell'associazione invitata */}
-                                      {isMyRow && (p.stato === 'INVITATO' || p.stato === 'In attesa') && (riunione.token || riunione.invito_token) && isAttiva && (
+                                      {isMyRow && (p.stato === 'INVITATO' || p.stato === 'In attesa') && isAttiva && (
                                         <div className="px-3 pb-2 flex items-center gap-2">
                                           <button
-                                            onClick={() => rispondiA99xInvito(riunione.token || riunione.invito_token, 'accetta')}
+                                            onClick={() => {
+                                              const tkn = riunione.token || riunione.invito_token;
+                                              if (tkn) {
+                                                rispondiA99xInvito(tkn, 'accetta');
+                                              } else {
+                                                // Fallback: aggiorna stato partecipante direttamente
+                                                const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                                fetch(`${apiUrl}/api/a99x/partecipanti/${riunione.mio_partecipante_id || p.id}/stato`, {
+                                                  method: 'PUT',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({ stato: 'CONFERMATO' })
+                                                }).then(() => { fetchA99xInviti(); fetchA99xData(); }).catch(err => console.warn('Errore accetta:', err));
+                                              }
+                                            }}
                                             className="flex-1 px-3 py-1.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-md text-[10px] font-bold hover:from-green-500 hover:to-green-400 transition-all shadow-md shadow-green-500/20 flex items-center justify-center gap-1"
                                           >
-                                            <span>\u2713</span> ACCETTA
+                                            {'\u2713'} ACCETTA
                                           </button>
                                           <button
-                                            onClick={() => rispondiA99xInvito(riunione.token || riunione.invito_token, 'rifiuta')}
+                                            onClick={() => {
+                                              const tkn = riunione.token || riunione.invito_token;
+                                              if (tkn) {
+                                                rispondiA99xInvito(tkn, 'rifiuta');
+                                              } else {
+                                                const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+                                                fetch(`${apiUrl}/api/a99x/partecipanti/${riunione.mio_partecipante_id || p.id}/stato`, {
+                                                  method: 'PUT',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({ stato: 'RIFIUTATO' })
+                                                }).then(() => { fetchA99xInviti(); fetchA99xData(); }).catch(err => console.warn('Errore rifiuta:', err));
+                                              }
+                                            }}
                                             className="flex-1 px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-md text-[10px] font-bold hover:from-red-500 hover:to-red-400 transition-all shadow-md shadow-red-500/20 flex items-center justify-center gap-1"
                                           >
-                                            <span>\u2718</span> RIFIUTA
+                                            {'\u2718'} RIFIUTA
                                           </button>
                                         </div>
                                       )}
