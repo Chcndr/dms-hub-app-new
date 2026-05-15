@@ -10054,7 +10054,13 @@ export default function DashboardPA() {
                   <p className="text-2xl font-bold text-[#8b5cf6]">{a99xRiunioni.filter((r: any) => {
                     const isStatoAttivo = r.stato === 'PROGRAMMATA' || r.stato === 'IN_CORSO';
                     const dataFine = r.data_fine ? new Date(r.data_fine) : new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
-                    return isStatoAttivo && dataFine > new Date();
+                    if (!isStatoAttivo || dataFine <= new Date()) return false;
+                    // Per associazione impersonata: escludere riunioni RIFIUTATE dal contatore
+                    if (isAssociazioneImpersonation()) {
+                      const mioSt = r.mio_stato || r.partecipante_stato;
+                      if (mioSt === 'RIFIUTATO') return false;
+                    }
+                    return true;
                   }).length}</p>
                   <p className="text-xs text-[#e8fbff]/60">Riunioni Programmate</p>
                 </CardContent>
@@ -10085,7 +10091,13 @@ export default function DashboardPA() {
               const riunioniAttive = a99xRiunioni.filter((r: any) => {
                 const isStatoAttivo = r.stato === 'PROGRAMMATA' || r.stato === 'IN_CORSO';
                 const dataFine = r.data_fine ? new Date(r.data_fine) : new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
-                return isStatoAttivo && dataFine > now;
+                if (!isStatoAttivo || dataFine <= now) return false;
+                // Per associazione impersonata: nascondere riunioni RIFIUTATE
+                if (isAssociazioneImpersonation()) {
+                  const mioSt = r.mio_stato || r.partecipante_stato;
+                  if (mioSt === 'RIFIUTATO') return false;
+                }
+                return true;
               });
               const riunioniConcluse = a99xRiunioni.filter((r: any) => {
                 const isStatoNonAttivo = r.stato === 'ANNULLATA' || r.stato === 'COMPLETATA' || r.stato === 'RIPROGRAMMATA';
@@ -10565,7 +10577,13 @@ export default function DashboardPA() {
               const confermeAttive = a99xRiunioni.filter((r: any) => {
                 const isStatoAttivo = r.stato === 'PROGRAMMATA' || r.stato === 'IN_CORSO';
                 const dataFine = r.data_fine ? new Date(r.data_fine) : new Date(new Date(r.data_inizio).getTime() + (r.durata_minuti || 30) * 60000);
-                return isStatoAttivo && dataFine > now;
+                if (!isStatoAttivo || dataFine <= now) return false;
+                // Per associazione impersonata: nascondere riunioni RIFIUTATE dalle conferme attive
+                if (isAssociazioneImpersonation()) {
+                  const mioSt = r.mio_stato || r.partecipante_stato;
+                  if (mioSt === 'RIFIUTATO') return false;
+                }
+                return true;
               });
               const confermeConcluse = a99xRiunioni.filter((r: any) => {
                 const isStatoNonAttivo = r.stato === 'ANNULLATA' || r.stato === 'COMPLETATA' || r.stato === 'RIPROGRAMMATA';
