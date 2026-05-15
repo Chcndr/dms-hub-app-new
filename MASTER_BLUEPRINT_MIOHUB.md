@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.30.2 (Filtra Riunioni RIFIUTATE, Fix Inviti Mancanti DB)
+> **Versione:** 10.30.3 (Fix Notifiche Push Riunioni Passate App Impresa)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -37,15 +37,24 @@
 > - **Riunioni RIFIUTATE NON devono apparire in Prossime Riunioni e Conferme Inviti per associazione** — Se `mio_stato === 'RIFIUTATO'`, la riunione non deve apparire in Prossime Riunioni, Conferme Inviti attive, né nel contatore.
 > - **Ogni partecipante DEVE avere un invito con token in a99x_inviti** — Quando si aggiunge un partecipante con `POST /riunioni/:id/partecipanti`, il backend DEVE creare anche il record in `a99x_inviti` con token. Senza token, InvitoNotifier non mostra il popup e i pulsanti ACCETTA/RIFIUTA non funzionano.
 > - **Contatore Riunioni Programmate DEVE escludere anche riunioni RIFIUTATE** — Per associazione impersonata, il contatore filtra per `mio_stato !== 'RIFIUTATO'` oltre a `data_fine > now`.
+> - **NON mostrare pulsanti ACCETTA/RIFIUTA per riunioni passate nell'App Impresa** — Le notifiche push e la sezione "Le Mie Riunioni" devono nascondere i pulsanti se la riunione è scaduta (data_fine < now) o annullata/completata.
+> - **NON ricaricare notifiche riunioni dismissate al polling** — Usare localStorage (`a99x_dismissed_riunioni_impresa`) per persistere la chiusura (X) delle riunioni concluse nella sezione "Le Mie Riunioni" dell'App Impresa.
 >
 > ---
-
-### VINCOLI NEGATIVI AGGIUNTIVI (v10.28.0+)
-> - **NON mostrare riunioni ANNULLATE/COMPLETATE nel Calendario A99X** — Filtrare sia in vista settimana che mese
+>
+### VINCOLI NEGATIVI AGGIUNTIVI (v10.28.0+)> - **NON mostrare riunioni ANNULLATE/COMPLETATE nel Calendario A99X** — Filtrare sia in vista settimana che mese
 > - **NON mostrare pulsanti ACCETTA/RIFIUTA separati sotto la lista partecipanti** — I pulsanti devono essere INLINE sulla riga del partecipante (associazione impersonata)
 > - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
 > - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+
+---
+### CHANGELOG v10.30.3 (15 Mag 2026)
+**Fix Notifiche Push Riunioni Passate App Impresa**
+
+1. **Frontend: Calcolo isScaduta robusto** — In `AppImpresaNotifiche.tsx` (sezione "Le Mie Riunioni"), il calcolo di `isScaduta` ora usa `data_fine` se disponibile, con fallback a `data_inizio + durata_minuti`, e verifica anche se lo stato è `ANNULLATA`, `COMPLETATA` o `RIPROGRAMMATA`.
+2. **Frontend: Persistenza dismissal riunioni** — Aggiunto un pulsante "X" per nascondere le riunioni concluse nella sezione "Le Mie Riunioni". Gli ID delle riunioni dismissate vengono salvati in `localStorage` (`a99x_dismissed_riunioni_impresa`) per non ricaricarle al successivo polling.
+3. **Frontend: Dettaglio notifica INVITO_RIUNIONE** — Quando si apre una notifica push di tipo `INVITO_RIUNIONE`, il sistema ora verifica se la riunione è scaduta. Se lo è, nasconde i pulsanti CONFERMA/RINUNCIA, mostra il messaggio "Riunione conclusa — non è più possibile confermare o rifiutare" e nasconde il link Jitsi.
 
 ---
 ### CHANGELOG v10.30.2 (15 Mag 2026)
