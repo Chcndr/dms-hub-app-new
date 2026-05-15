@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.29.0 (Fix Pulsanti ACCETTA/RIFIUTA + Calendario Colori Arancione/Viola)
+> **Versione:** 10.29.1 (Fix Calendario Rifiutate/Scadute + isMyRow riferimento_id + Unicode Escape)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,8 +9,8 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `81b3edf` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `5939528` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -24,6 +24,10 @@
 > - **Tab A99X usa tabId="mio" nei permessi** — NON rinominare, corrisponde al vecchio "MIO AGENT" nella sezione Permessi
 > - **NON mostrare pulsanti Rimanda/Elimina/Aggiungi su riunioni concluse** — Solo riunioni attive (PROGRAMMATA/IN_CORSO con data futura) possono avere azioni
 > - **NON usare alert() per messaggi di conferma** — Usare toast (sonner) per feedback utente
+> - **NON usare matching fuzzy per nome per identificare isMyRow** — Usare `riferimento_id` dal backend per match preciso. Fallback nome solo se riferimento_id non presente.
+> - **NON mostrare riunioni RIFIUTATE nel calendario per associazione impersonata** — Se mio_stato === 'RIFIUTATO', la riunione non deve apparire nel calendario
+> - **NON mostrare riunioni SCADUTE nel calendario** — Se data_fine <= now, la riunione non deve apparire nel calendario (va nelle Concluse)
+> - **NON usare escape Unicode letterale in JSX** — `<span>\u2713</span>` renderizza il testo letterale. Usare `{'\u2713'}` come espressione JS o il carattere diretto
 >
 > ---
 
@@ -33,6 +37,17 @@
 > - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
 > - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+
+---
+### CHANGELOG v10.29.1 (15 Mag 2026)
+**Fix Calendario Rifiutate/Scadute, isMyRow con riferimento_id, Unicode Escape Pulsanti, Token Fallback**
+
+1. **Backend: riferimento_id nei partecipanti** — Gli endpoint `GET /riunioni` e `GET /le-mie-riunioni` ora restituiscono `id` e `riferimento_id` per ogni partecipante nella lista. Questo permette al frontend di identificare precisamente quale riga appartiene all'associazione impersonata.
+2. **Frontend: isMyRow con riferimento_id** — Il matching della riga "Tu" ora usa `p.riferimento_id === associazioneId` (match preciso) con fallback a matching per nome solo se `riferimento_id` non presente. Risolve il bug dei duplicati (es. "Confcommercio Bologna" e "Confcommercio Bologna (CONFCOMMERCIO BO)" entrambi matchati come "Tu").
+3. **Calendario: filtra riunioni RIFIUTATE** — Per associazione impersonata, le riunioni con `mio_stato === 'RIFIUTATO'` non appaiono più nel calendario (sia vista settimana che mese).
+4. **Calendario: filtra riunioni SCADUTE** — Le riunioni con `data_fine <= now` non appaiono più nel calendario. Vanno nelle "Riunioni Concluse". Risolve il bug della riunione "prova" (15 mag 18:56) che appariva nel calendario pur essendo conclusa.
+5. **Unicode escape fixato** — I pulsanti ACCETTA/RIFIUTA ora usano `{'\u2713'}` e `{'\u2718'}` come espressioni JS invece di `<span>\u2713</span>` che renderizzava il testo letterale.
+6. **Token fallback** — I pulsanti ACCETTA/RIFIUTA non richiedono più il token come condizione. Se il token è presente, usano l'endpoint `/invito/:token/:azione`. Se mancante, usano il fallback `PUT /partecipanti/:id/stato` direttamente.
 
 ---
 ### CHANGELOG v10.29.0 (15 Mag 2026)
