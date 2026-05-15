@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.30.1 (Fix isMyRow tipo, Contatore Riunioni, Partecipa Relatore)
+> **Versione:** 10.30.2 (Filtra Riunioni RIFIUTATE, Fix Inviti Mancanti DB)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -10,7 +10,7 @@
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
 > | **GitHub Backend** | Allineato | mihub-backend-rest `a561df5` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `c60e0e4` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `ba381c4` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -34,6 +34,9 @@
 > - **isMyRow DEVE controllare anche p.tipo === 'ASSOCIAZIONE'** — In vista associazione impersonata, solo partecipanti di tipo ASSOCIAZIONE possono essere "Tu". Un'impresa con lo stesso riferimento_id non deve matchare.
 > - **Contatore Riunioni Programmate DEVE escludere riunioni scadute** — Filtrare per data_fine > now, non solo per stato PROGRAMMATA.
 > - **PA/creatore DEVE avere pulsante Partecipa alla Videoconferenza** — Il creatore della riunione è il relatore e deve poter entrare nella call per far entrare i partecipanti.
+> - **Riunioni RIFIUTATE NON devono apparire in Prossime Riunioni e Conferme Inviti per associazione** — Se `mio_stato === 'RIFIUTATO'`, la riunione non deve apparire in Prossime Riunioni, Conferme Inviti attive, né nel contatore.
+> - **Ogni partecipante DEVE avere un invito con token in a99x_inviti** — Quando si aggiunge un partecipante con `POST /riunioni/:id/partecipanti`, il backend DEVE creare anche il record in `a99x_inviti` con token. Senza token, InvitoNotifier non mostra il popup e i pulsanti ACCETTA/RIFIUTA non funzionano.
+> - **Contatore Riunioni Programmate DEVE escludere anche riunioni RIFIUTATE** — Per associazione impersonata, il contatore filtra per `mio_stato !== 'RIFIUTATO'` oltre a `data_fine > now`.
 >
 > ---
 
@@ -43,6 +46,15 @@
 > - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
 > - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+
+---
+### CHANGELOG v10.30.2 (15 Mag 2026)
+**Filtra Riunioni RIFIUTATE da Prossime Riunioni/Conferme/Contatore + Fix Inviti Mancanti DB**
+
+1. **Frontend: Prossime Riunioni filtra RIFIUTATE** — Per associazione impersonata, le riunioni dove `mio_stato === 'RIFIUTATO'` non appaiono più nella lista Prossime Riunioni. Risolve il bug dove Confesercenti vedeva "sicurezza test 14/05" (rifiutata) nella lista.
+2. **Frontend: Contatore filtra RIFIUTATE** — Il contatore "Riunioni Programmate" ora esclude anche le riunioni rifiutate per associazione impersonata. Confesercenti ora mostra "1" (solo "teat") invece di "2".
+3. **Frontend: Conferme Inviti filtra RIFIUTATE** — La sezione Conferme Inviti attive non mostra più riunioni dove l'associazione ha rifiutato.
+4. **DB: creati inviti mancanti** — Creati record `a99x_inviti` con token per 5 partecipanti che ne erano privi (aggiunti prima del fix v10.30.0 che ora crea sempre l'invito). Include Intim8 nella riunione "teat" che non poteva accettare/rifiutare perché senza token.
 
 ---
 ### CHANGELOG v10.30.1 (15 Mag 2026)
