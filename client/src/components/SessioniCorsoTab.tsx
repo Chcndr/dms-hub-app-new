@@ -86,6 +86,7 @@ interface Corso {
 
 interface SessioniCorsoTabProps {
   corsi: Corso[];
+  onSessioniCount?: (count: number) => void;
 }
 
 const STATI_SESSIONE: Record<string, { label: string; color: string }> = {
@@ -101,7 +102,7 @@ const MODALITA_OPTIONS = [
   { value: "IBRIDA", label: "Ibrida" },
 ];
 
-export default function SessioniCorsoTab({ corsi }: SessioniCorsoTabProps) {
+export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCorsoTabProps) {
   const [sessioni, setSessioni] = useState<Sessione[]>([]);
   const [relatori, setRelatori] = useState<Relatore[]>([]);
   const [loading, setLoading] = useState(false);
@@ -141,7 +142,10 @@ export default function SessioniCorsoTab({ corsi }: SessioniCorsoTabProps) {
         `${API_BASE}/api/associazioni/${associazioneId}/corsi/${selectedCorsoId}/sessioni`
       );
       const data = await res.json();
-      if (data.success) setSessioni(data.data || []);
+      if (data.success) {
+        setSessioni(data.data || []);
+        onSessioniCount?.(data.data?.length || 0);
+      }
     } catch (err) {
       console.error("Errore caricamento sessioni:", err);
     } finally {

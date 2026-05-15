@@ -140,6 +140,7 @@ const GestioneCorsiAssociazionePanel = memo(
     const [notificaLinkEsterno, setNotificaLinkEsterno] = useState("");
     const [notificaInviaRelatori, setNotificaInviaRelatori] = useState(true);
     const [sendingNotifica, setSendingNotifica] = useState(false);
+    const [sessioniCount, setSessioniCount] = useState(0);
 
     const impState = getImpersonationParams();
     const associazioneId = impState.associazioneId;
@@ -430,7 +431,7 @@ const GestioneCorsiAssociazionePanel = memo(
               value="sessioni"
               className="data-[state=active]:bg-[#8b5cf6]/20 data-[state=active]:text-[#8b5cf6]"
             >
-              <Video className="h-4 w-4 mr-1" /> Sessioni
+              <Video className="h-4 w-4 mr-1" /> Sessioni{sessioniCount > 0 ? ` (${sessioniCount})` : ''}
             </TabsTrigger>
           </TabsList>
 
@@ -839,7 +840,7 @@ const GestioneCorsiAssociazionePanel = memo(
           </TabsContent>
           {/* Sessioni */}
           <TabsContent value="sessioni">
-            <SessioniCorsoTab corsi={corsi} />
+            <SessioniCorsoTab corsi={corsi} onSessioniCount={setSessioniCount} />
           </TabsContent>
         </Tabs>
 
