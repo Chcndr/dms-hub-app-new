@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.0 (Tab Sessioni Corso + Fix Link [object Object] Notifica Corso)
+> **Versione:** 10.31.1 (Collegamento Notifica Corso → Tab Sessioni Automatico)
 > **Data:** 15 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -9,8 +9,8 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `a561df5` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `63f2a02` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `38dc6e5` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `37f5d63` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -44,6 +44,9 @@
 > - **NON passare oggetto intero da generaLinkCorso() come linkRiferimento** — `jitsiService.generaLinkCorso()` ritorna un oggetto `{roomId, link, embedLink, baseUrl, password}`. DEVE essere estratto `.link` prima di salvarlo nella notifica. Altrimenti si ottiene `[object Object]`.
 > - **Tab Sessioni Corso DEVE generare link Jitsi automaticamente** — Quando si crea una sessione con modalità ONLINE o IBRIDA, il backend genera automaticamente il link Jitsi tramite `jitsiService.generaLinkCorso()`. NON richiedere inserimento manuale del link.
 > - **Tabella formazione_sessioni_corso DEVE avere auto_invita_iscritti** — Alla creazione sessione, se `auto_invita_iscritti=true`, il backend inserisce automaticamente tutti gli iscritti al corso come presenze nella sessione.
+> - **NON duplicare il sistema notifica nel tab Sessioni** — Il tab Sessioni NON deve avere un proprio pulsante "Invia notifica". Le sessioni vengono create AUTOMATICAMENTE dal modulo "Invia Notifica alle Imprese" esistente (sezione Enti Formatori). Il tab Sessioni serve solo per visualizzare e gestire le sessioni create.
+> - **Invio notifica corso DEVE creare sessione automatica** — Quando si invia una notifica corso tramite il modulo "Invia Notifica alle Imprese" (qualsiasi piattaforma: A99X, Zoom, Teams, link manuale), il backend DEVE creare automaticamente una riga in `formazione_sessioni_corso` con titolo, link, modalità, sede, relatore e partecipanti (imprese iscritte).
+> - **NON usare campo 'corpo' nella tabella notifiche** — Il campo corretto è `messaggio`. L'errore `column "corpo" of relation "notifiche" does not exist` si verifica se si usa il nome sbagliato.
 >
 > ---
 >
@@ -52,6 +55,26 @@
 > - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
 > - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+
+---
+### CHANGELOG v10.31.1 (15 Mag 2026)
+**Collegamento Notifica Corso → Tab Sessioni Automatico + Fix campo DB**
+
+1. **Backend: Creazione sessione automatica** — Quando si invia una notifica corso tramite `POST /api/associazioni/:id/notifiche-corso`, il backend ora crea automaticamente una riga in `formazione_sessioni_corso` con: titolo notifica, link video (qualsiasi piattaforma), modalità, sede, relatore del corso, e tutti i partecipanti (imprese iscritte) in `formazione_sessioni_presenze`.
+2. **Backend: Fix campo `corpo` → `messaggio`** — La route notifica sessione usava il campo inesistente `corpo` nella INSERT. Corretto a `messaggio` + aggiunto `impresa_id` mancante.
+3. **Frontend: Rimosso pulsante notifica duplicato dal tab Sessioni** — Il tab Sessioni non ha più il proprio sistema di invio notifica. Le sessioni vengono create automaticamente dal modulo "Invia Notifica alle Imprese" esistente.
+4. **Frontend: Fix `normalizzaLinkCorso`** — Gestisce anche il caso in cui `link_riferimento` sia `[object Object]` (notifiche vecchie) o un JSON stringificato, estraendo il campo `link`.
+5. **Flusso corretto**: Enti Formatori → "Invia Notifica alle Imprese" → seleziona corso → configura link → invia → notifica + sessione creata automaticamente nel tab Sessioni.
+
+---
+### CHANGELOG v10.31.0 (15 Mag 2026)
+**Tab Sessioni Corso + Fix Link [object Object] Notifica Corso**
+
+1. **DB: Tabella `formazione_sessioni_corso`** — Nuova tabella con: corso_id, titolo, descrizione, data_inizio, data_fine, durata_minuti, modalita, sede, jitsi_room_id, jitsi_link, jitsi_embed_link, stato, istruttore_id, relatore_id, note.
+2. **DB: Tabella `formazione_sessioni_presenze`** — Traccia presenze: sessione_id, impresa_id, utente_nome, utente_email, stato, data_conferma.
+3. **Backend: API CRUD sessioni** — GET/POST/PUT/DELETE `/api/associazioni/:id/corsi/:corsoId/sessioni` + GET presenze.
+4. **Frontend: Tab "Sessioni"** — Nuovo tab in GestioneCorsiAssociazionePanel con card stile A99X riunioni (titolo, data/ora, durata, stato, link video, partecipanti, istruttore/relatore).
+5. **Backend: Fix link [object Object]** — `generaLinkCorso()` ritorna oggetto; ora si estrae `.link` prima di salvare in `link_riferimento`.
 
 ---
 ### CHANGELOG v10.30.3b (15 Mag 2026)
