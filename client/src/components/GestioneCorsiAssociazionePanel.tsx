@@ -40,12 +40,14 @@ import {
   Send,
   Zap,
   ExternalLink,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getImpersonationParams,
   authenticatedFetch,
 } from "@/hooks/useImpersonation";
+import SessioniCorsoTab from "./SessioniCorsoTab";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 
 const API_BASE = MIHUB_API_BASE_URL;
@@ -423,6 +425,12 @@ const GestioneCorsiAssociazionePanel = memo(
             >
               <Users className="h-4 w-4 mr-1" /> Iscrizioni ({iscrizioni.length}
               )
+            </TabsTrigger>
+            <TabsTrigger
+              value="sessioni"
+              className="data-[state=active]:bg-[#8b5cf6]/20 data-[state=active]:text-[#8b5cf6]"
+            >
+              <Video className="h-4 w-4 mr-1" /> Sessioni
             </TabsTrigger>
           </TabsList>
 
@@ -828,6 +836,10 @@ const GestioneCorsiAssociazionePanel = memo(
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          {/* Sessioni */}
+          <TabsContent value="sessioni">
+            <SessioniCorsoTab corsi={corsi} />
           </TabsContent>
         </Tabs>
 
