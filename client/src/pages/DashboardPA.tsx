@@ -1910,8 +1910,7 @@ export default function DashboardPA() {
     setA99xGruppiLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const cid = comuneIdFromUrl || assocIdFromUrl || '0';
-      const resp = await fetch(`${apiUrl}/api/a99x/gruppi-imprese?comune_id=${cid}`);
+      const resp = await fetch(`${apiUrl}/api/a99x/gruppi-imprese`);
       if (resp.ok) {
         const data = await resp.json();
         if (data.success) setA99xGruppiImprese(data.data);
@@ -11362,21 +11361,7 @@ export default function DashboardPA() {
                                 </div>
                               </div>
                             ))}
-                            {/* Fuori Hub */}
-                            {a99xGruppiImprese.fuori_hub && a99xGruppiImprese.fuori_hub.count > 0 && (
-                              <div onClick={() => selectGruppoImprese(a99xGruppiImprese.fuori_hub.imprese)} className="p-3 hover:bg-[#8b5cf6]/20 cursor-pointer border-b border-[#8b5cf6]/10 transition-colors">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-lg">🏢</span>
-                                    <div>
-                                      <p className="text-[#e8fbff] text-sm font-medium">Tutte le imprese SEDE FISSA fuori dall'Hub Urbano di {a99xGruppiImprese.fuori_hub.comune_nome}</p>
-                                      <p className="text-[#e8fbff]/40 text-[10px]">Imprese del comune non registrate in un Hub Urbano</p>
-                                    </div>
-                                  </div>
-                                  <span className="text-[#8b5cf6] font-bold text-sm bg-[#8b5cf6]/10 px-2 py-0.5 rounded">{a99xGruppiImprese.fuori_hub.count}</span>
-                                </div>
-                              </div>
-                            )}
+
                             {/* Mercati con Hub TCC */}
                             {a99xGruppiImprese.mercati_hub_tcc && a99xGruppiImprese.mercati_hub_tcc.length > 0 && a99xGruppiImprese.mercati_hub_tcc.map((mkt: any) => (
                               <div key={`mkt-hub-${mkt.market_id}`} onClick={() => selectGruppoImprese(mkt.imprese)} className="p-3 hover:bg-[#f59e0b]/20 cursor-pointer border-b border-[#f59e0b]/10 transition-colors">
@@ -11408,8 +11393,8 @@ export default function DashboardPA() {
                               </div>
                             ))}
                             {/* Nessun gruppo */}
-                            {(!a99xGruppiImprese.hub_urbani || a99xGruppiImprese.hub_urbani.length === 0) && (!a99xGruppiImprese.fuori_hub || a99xGruppiImprese.fuori_hub.count === 0) && (!a99xGruppiImprese.mercati_hub_tcc || a99xGruppiImprese.mercati_hub_tcc.length === 0) && (!a99xGruppiImprese.mercati_no_hub || a99xGruppiImprese.mercati_no_hub.length === 0) && (
-                              <div className="p-4 text-center text-[#e8fbff]/40 text-sm">Nessun gruppo di imprese disponibile per questo comune</div>
+                            {(!a99xGruppiImprese.hub_urbani || a99xGruppiImprese.hub_urbani.length === 0) && (!a99xGruppiImprese.mercati_hub_tcc || a99xGruppiImprese.mercati_hub_tcc.length === 0) && (!a99xGruppiImprese.mercati_no_hub || a99xGruppiImprese.mercati_no_hub.length === 0) && (
+                              <div className="p-4 text-center text-[#e8fbff]/40 text-sm">Nessun gruppo di imprese disponibile</div>
                             )}
                           </>
                         ) : null}
