@@ -1620,6 +1620,16 @@ function APIDashboard() {
       "/api/a99x/prenotazioni/:id": { id: 1 },
       "/api/a99x/prenotazioni/:id/stato": { id: 1, stato: "confermata" },
       "/api/a99x/disponibilita/:id": { id: 1 },
+      "/api/a99x/le-mie-riunioni": { riferimento_id: 1, tipo: "IMPRESA" },
+      "/api/a99x/invita-riunione-singolo": { riunione_id: 1, tipo: "IMPRESA", id: 1, nome: "Test Impresa", email: "test@impresa.it" },
+      "/api/a99x/gruppi-imprese": { comune_id: 1 },
+      "/api/a99x/riunioni/:id/rimanda": { id: 1, nuova_data: new Date(Date.now() + 7*24*60*60*1000).toISOString() },
+      "/api/a99x/migra-a-miohub": { riunione_id: 1 },
+      "/api/a99x/riunioni/:id/rigenera-jitsi": { id: 1 },
+      "/api/a99x/inviti-ricevuti": { comune_id: 1 },
+      "/api/a99x/dashboard": { comune_id: 1 },
+      "/api/a99x/calendario": { comune_id: 1 },
+      "/api/a99x/jitsi/genera-link": { riunione_id: 1, titolo: "Test Jitsi" },
     };
 
     // Cerca esempio per endpoint selezionato
