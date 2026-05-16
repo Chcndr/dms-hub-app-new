@@ -1,11 +1,11 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.4 (Autocompilazione Notifica + Fix Link Duplicato + Notifiche Inviate + Fuso Orario)
+> **Versione:** 10.31.5 (Fix Sessioni Corsi Scope + Autocompilazione Modulo Notifica)
 > **Data:** 16 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.4)
+> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.5)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
@@ -57,6 +57,8 @@
 > - **Query sessioni-tutte DEVE fare JOIN tramite formazione_enti** — `formazione_corsi` NON ha `associazione_id`. Il collegamento è `formazione_corsi.ente_id → formazione_enti.id` dove `formazione_enti.associazione_id = :id`. (Fix v10.31.4)
 > - **Date solo-data DEVONO essere parsate come locali** — Se `data_inizio` è `2026-05-20T00:00:00`, parsarla con `new Date()` la interpreta come UTC e mostra il giorno prima in fuso orario positivo. Usare split manuale per date senza ora. (Fix v10.31.4)
 > - **Modulo notifica corso DEVE autocompilare il messaggio** — Quando si clicca Bell su un corso, il messaggio deve essere precompilato con data, orario, modalità e sede del corso. L'utente può modificarlo prima dell'invio. (Fix v10.31.4)
+> - **NON usare useState dopo useEffect in React** — L'ordine degli hook è fondamentale. Se un `setStato` viene usato in un `useEffect` o in un custom hook, lo `useState` corrispondente deve essere definito nello stesso scope o passato correttamente. (Fix v10.31.5)
+> - **NON usare variabili fuori scope in custom hooks** — Se un custom hook (es. `useDashboardData`) ha bisogno di aggiornare uno stato del componente padre, la funzione setter deve essere passata come argomento o lo stato deve essere gestito interamente dentro l'hook e restituito. (Fix v10.31.5)
 >
 > ---
 >
@@ -77,7 +79,15 @@
 5. **Verifica link Jitsi** — Confermato che il link nella sessione e nella notifica sono identici (stesso URL meet.jit.si generato da `generaLinkCorso`).
 
 ---
-### CHANGELOG v10.31.2 (16 Mag 2026)
+### CHANGELOG v10.31.5 (16 Mag 2026)
+**Fix Sessioni Corsi Scope + Autocompilazione Modulo Notifica**
+
+1. **Frontend: Fix Scope React Hook** — Spostato il fetch `sessioni-tutte` dal custom hook `useDashboardData()` al componente `DashboardPA()`. Il `setEntiSessioniCorsi` era usato fuori scope causando un errore silenzioso e impedendo l'aggiornamento del contatore sessioni nel tab Enti Formatori.
+2. **Frontend: Autocompilazione Modulo Notifica** — Verificato e confermato il funzionamento dell'autocompilazione del modulo "Invia Notifica alle Imprese" (sezione Enti Formatori). Selezionando un corso dal dropdown, i campi Titolo e Messaggio si precompilano automaticamente con i dati del corso (data, orario, modalità, sede).
+3. **Frontend: Fix Notifiche Vecchie** — Le notifiche inviate prima del fix di separazione (quando tutto veniva inviato con `mittente_tipo = ASSOCIAZIONE`) rimangono visibili nel tab "Associazioni & Bandi" per retrocompatibilità. Le nuove notifiche inviate dal modulo Enti Formatori vanno correttamente nel tab Enti Formatori.
+
+---
+### CHANGELOG v10.31.4 (16 Mag 2026)
 **Sessioni Corso — Partecipanti Sempre Visibili Stile A99X con Nomi Imprese dal DB**
 
 1. **Backend: GET lista sessioni con presenze** — La route `GET /api/associazioni/:id/corsi/:cid/sessioni` ora ritorna per ogni sessione anche l'array `presenze` con JOIN su `imprese.denominazione AS impresa_nome`. Prima le presenze venivano caricate solo al click (dettaglio singola sessione).
