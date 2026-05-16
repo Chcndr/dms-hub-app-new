@@ -160,6 +160,29 @@ export default function AppImpresaNotifiche() {
   const IMPRESA_NOME = impresaData.nome;
   const IMPRESA_EMAIL = impresaData.email;
 
+  // v10.31.6: Email impresa dal DB per le riunioni A99X
+  // Per le imprese, l'invito usa l'email dell'impresa (dal DB), non l'email di login dell'utente
+  // Questo risolve il conflitto quando admin (chcndr@gmail.com) accede come MIO TEST (checchi@me.com)
+  const [impresaEmailDB, setImpresaEmailDB] = useState<string>(IMPRESA_EMAIL);
+  useEffect(() => {
+    if (!IMPRESA_ID) return;
+    const fetchImpresaEmail = async () => {
+      try {
+        const res = await fetch(`https://api.miohub.it/api/imprese/${IMPRESA_ID}?fields=light`);
+        const data = await res.json();
+        if (data.success && data.data && data.data.email) {
+          setImpresaEmailDB(data.data.email);
+          console.log(`[A99X] Email impresa dal DB: ${data.data.email} (login: ${IMPRESA_EMAIL})`);
+        }
+      } catch (err) {
+        console.warn('[A99X] Impossibile ottenere email impresa dal DB, uso email login:', err);
+      }
+    };
+    fetchImpresaEmail();
+  }, [IMPRESA_ID]);
+  // Usa impresaEmailDB per le riunioni (email dell'impresa come entità)
+  const IMPRESA_EMAIL_RIUNIONI = impresaEmailDB;
+
   // v5.9.0: Usa MIHUB Hetzner (stesso backend dove le notifiche vengono create da ControlliSanzioniPanel)
   // In produzione usa proxy Vercel (/api/notifiche/* → mihub Hetzner), in dev URL diretto
   const API_BASE_URL = import.meta.env.DEV
@@ -812,8 +835,8 @@ export default function AppImpresaNotifiche() {
                               setInvRiunioneScaduta(false);
                               segnaComeLetta(notifica);
                               // Se INVITO_RIUNIONE, carica lo stato reale dal backend
-                              if (notifica.tipo_messaggio === 'INVITO_RIUNIONE' && IMPRESA_EMAIL) {
-                                fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL)}`)
+                              if (notifica.tipo_messaggio === 'INVITO_RIUNIONE' && IMPRESA_EMAIL_RIUNIONI) {
+                                fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL_RIUNIONI)}`)
                                   .then(r => r.json())
                                   .then(data => {
                                     if (data.success && data.data) {
@@ -1243,7 +1266,7 @@ export default function AppImpresaNotifiche() {
                             onClick={async () => {
                               try {
                                 // Cerca il token dall'endpoint le-mie-riunioni
-                                const res = await fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL)}`);
+                                const res = await fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL_RIUNIONI)}`);
                                 const data = await res.json();
                                 if (data.success) {
                                   // Trova la riunione corrispondente dalla notifica
@@ -1267,7 +1290,7 @@ export default function AppImpresaNotifiche() {
                           <button
                             onClick={async () => {
                               try {
-                                const res = await fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL)}`);
+                                const res = await fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL_RIUNIONI)}`);
                                 const data = await res.json();
                                 if (data.success) {
                                   const riunione = data.data?.find((r: any) => 
@@ -1457,9 +1480,7 @@ export default function AppImpresaNotifiche() {
         </div>
 
         {/* Sezione Le Mie Riunioni PA */}
-        <MieRiunioniSection email={IMPRESA_EMAIL} nascosta={!!notificaSelezionata} />
-
-        {/* Sezione Azioni Rapide */}
+       <MieRiunioniSection email={IMPRESA_EMAIL_RIUNIONI} nascosta={!!notificaSelezionata} />  {/* Sezione Azioni Rapide */}
         <div
           className={`mt-4 sm:mt-6 ${notificaSelezionata ? "hidden sm:block" : ""}`}
         >

@@ -2124,7 +2124,35 @@ export default function DashboardPA() {
     setA99xInvitaLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const cId = comuneIdFromUrl || '0';
+      // v10.31.6: Logica creatore riunione — Associazione / Comune / Super Admin (MIO HUB)
+      const isAssocCreator = isAssociazioneImpersonation();
+      const assocIdCreator = urlParams.get('associazione_id');
+      const assocNomeCreator = urlParams.get('associazione_nome');
+      const isComuneCreator = !isAssocCreator && isImpersonating && !!comuneIdFromUrl;
+      // Determina creato_da in base al contesto
+      let creatoDaNome = 'MIO HUB';
+      let creatoDaTipo = 'PA';
+      let creatoDaId = 0;
+      let cId = '0';
+      if (isAssocCreator) {
+        // Impersonazione Associazione
+        creatoDaNome = assocNomeCreator || 'Associazione';
+        creatoDaTipo = 'ASSOCIAZIONE';
+        creatoDaId = parseInt(assocIdCreator || '0');
+        cId = assocIdCreator || '0';
+      } else if (isComuneCreator) {
+        // Impersonazione Comune
+        creatoDaNome = comuneNomeFromUrl || 'Comune';
+        creatoDaTipo = 'COMUNE';
+        creatoDaId = parseInt(comuneIdFromUrl || '0');
+        cId = comuneIdFromUrl || '0';
+      } else {
+        // Super Admin (MIO HUB)
+        creatoDaNome = 'MIO HUB';
+        creatoDaTipo = 'PA';
+        creatoDaId = 0;
+        cId = '0';
+      }
       const body = {
         comune_id: parseInt(cId),
         titolo: a99xInvitaForm.titolo,
@@ -2138,8 +2166,11 @@ export default function DashboardPA() {
         importanza: parseInt(a99xInvitaForm.importanza) || 3,
         dipendenze: parseInt(a99xInvitaForm.dipendenze) || 1,
         stakeholder: parseInt(a99xInvitaForm.stakeholder) || 1,
-        creato_da_nome: comuneNomeFromUrl || 'MIO HUB',
-        creato_da_tipo: 'PA',
+        creato_da_nome: creatoDaNome,
+        creato_da_tipo: creatoDaTipo,
+        creato_da_id: creatoDaId,
+        // v10.31.6: Email del funzionario/dirigente che crea la riunione (email di login)
+        creatore_email: (() => { try { const u = JSON.parse(localStorage.getItem('user') || '{}'); return u.email || null; } catch { return null; } })(),
         invitati: a99xInvitaSelezionati.map((s: any) => ({ tipo: s.tipo, id: s.id, nome: s.nome, email: s.email, telefono: s.telefono }))
       };
       console.log('[A99X] Invio riunione:', JSON.stringify(body));

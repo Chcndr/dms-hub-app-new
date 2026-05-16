@@ -174,6 +174,11 @@ export default function InvitoNotifier() {
     const identity = getUserIdentity();
     if (!identity) return;
 
+    // v10.31.6: Il super admin NON riceve il popup inviti
+    // Il super admin vede già tutte le riunioni nella sezione A99X della DashboardPA
+    // Il popup con comune_id=0 restituiva TUTTI gli inviti di tutte le riunioni create dal super admin
+    if (identity.tipo === 'SUPERADMIN') return;
+
     try {
       let url = '';
 
