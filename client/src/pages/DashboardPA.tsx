@@ -341,6 +341,19 @@ function useDashboardData() {
       })
       .catch(err => console.error("Formazione stats fetch error:", err));
 
+    // Fetch sessioni corsi (tutte le sessioni dell'associazione)
+    if (assocIdParam) {
+      const sessApiBase = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      fetch(`${sessApiBase}/api/associazioni/${assocIdParam}/sessioni-tutte`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.data)) {
+            setEntiSessioniCorsi(data.data);
+          }
+        })
+        .catch(err => console.error('Sessioni corsi fetch error:', err));
+    }
+
     // Fetch bandi stats (associazioni e catalogo bandi)
     fetch(`${MIHUB_API}/bandi/stats`)
       .then(res => res.json())
@@ -1792,6 +1805,9 @@ export default function DashboardPA() {
   const [entiCorsoPiattaforma, setEntiCorsoPiattaforma] = useState<"A99X" | "ESTERNO">("A99X");
   const [entiCorsoLink, setEntiCorsoLink] = useState("");
   const [entiCorsoSede, setEntiCorsoSede] = useState("");
+  const [entiNotificaTitolo, setEntiNotificaTitolo] = useState("");
+  const [entiNotificaMessaggio, setEntiNotificaMessaggio] = useState("");
+  const [entiSessioniCorsi, setEntiSessioniCorsi] = useState<any[]>([]);
   const [assocTargetTipo, setAssocTargetTipo] = useState("TUTTI");
   const [assocCorsoDettagliAperti, setAssocCorsoDettagliAperti] = useState(false);
   const [assocCorsoModalita, setAssocCorsoModalita] = useState<"ONLINE" | "SEDE">("ONLINE");
@@ -2361,15 +2377,24 @@ export default function DashboardPA() {
       })
       .catch(err => console.error("Notifiche risposte fetch error:", err));
 
-    // Fetch messaggi inviati - Enti Formatori (ID=1)
-    fetch(`${MIHUB_API}/notifiche/messaggi/ENTE_FORMATORE/1?filtro=inviati`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.data)) {
-          setMessaggiInviatiEnti(espandiMessaggiInviatiPerImpresa(data.data));
-        }
-      })
-      .catch(err => console.error("Messaggi inviati Enti fetch error:", err));
+    // Fetch messaggi inviati - Enti Formatori: cerca sia ENTE_FORMATORE/1 (vecchie) che ASSOCIAZIONE/{id} (nuove con mittente_tipo corretto)
+    const entiAssocId = new URLSearchParams(window.location.search).get("associazione_id") || "1";
+    Promise.all([
+      fetch(`${MIHUB_API}/notifiche/messaggi/ENTE_FORMATORE/1?filtro=inviati`).then(r => r.json()).catch(() => ({ success: false })),
+      fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/${entiAssocId}?filtro=inviati`).then(r => r.json()).catch(() => ({ success: false }))
+    ]).then(([dataEF, dataAssoc]) => {
+      const msgEF = (dataEF.success && Array.isArray(dataEF.data)) ? dataEF.data : [];
+      const msgAssoc = (dataAssoc.success && Array.isArray(dataAssoc.data)) ? dataAssoc.data : [];
+      // Unisci e deduplica per id
+      const allIds = new Set<number>();
+      const merged: any[] = [];
+      [...msgAssoc, ...msgEF].forEach((m: any) => {
+        if (!allIds.has(m.id)) { allIds.add(m.id); merged.push(m); }
+      });
+      // Ordina per data decrescente
+      merged.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setMessaggiInviatiEnti(espandiMessaggiInviatiPerImpresa(merged));
+    }).catch(err => console.error("Messaggi inviati Enti fetch error:", err));
 
     // Fetch messaggi inviati - Associazioni: usa la stessa associazione attiva dell'invio, non un ID fisso
     const impersonationForMessages = getImpersonationParams();
@@ -7795,6 +7820,85 @@ export default function DashboardPA() {
                   </CardContent>
                 </Card>
 
+                {/* Sessioni Corsi - Tutte le sessioni di tutti i corsi */}
+                <Card className="bg-[#1a2332] border-[#3b82f6]/20">
+                  <CardHeader>
+                    <CardTitle className="text-[#e8fbff] flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-[#3b82f6]" />
+                      Sessioni Corsi
+                      <Badge className="bg-blue-500/20 text-blue-400 ml-2">
+                        {entiSessioniCorsi.length}
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="text-[#e8fbff]/50">
+                      Tutte le sessioni programmate per i corsi dell'associazione
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="max-h-[500px] overflow-y-auto space-y-4 pr-2">
+                      {entiSessioniCorsi.map((sessione: any) => {
+                        const dataInizio = sessione.data_inizio ? (() => {
+                          const d = sessione.data_inizio;
+                          const dateStr = typeof d === 'string' && d.includes('T') ? d : d + 'T00:00:00';
+                          return new Date(dateStr).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' });
+                        })() : 'N/D';
+                        const statoColor = sessione.stato === 'PROGRAMMATA' ? 'text-blue-400 bg-blue-500/20' : sessione.stato === 'IN_CORSO' ? 'text-green-400 bg-green-500/20' : 'text-gray-400 bg-gray-500/20';
+                        return (
+                          <div key={sessione.id} className="p-4 bg-[#0b1220] rounded-lg border border-[#3b82f6]/10">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <div className="font-semibold text-[#e8fbff]">{sessione.titolo || sessione.corso_titolo || 'Sessione'}</div>
+                                <div className="text-sm text-[#e8fbff]/60">
+                                  Corso: {sessione.corso_titolo || 'N/D'}
+                                </div>
+                              </div>
+                              <span className={`text-xs px-2 py-1 rounded-full ${statoColor}`}>
+                                {sessione.stato || 'N/D'}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-[#e8fbff]/70 mb-3">
+                              <div>Data: <span className="text-[#e8fbff]">{dataInizio}</span></div>
+                              <div>Durata: <span className="text-[#e8fbff]">{sessione.durata_minuti ? `${Math.round(sessione.durata_minuti / 60)}h` : 'N/D'}</span></div>
+                              <div>Modalità: <span className="text-[#e8fbff]">{sessione.modalita || 'N/D'}</span></div>
+                              <div>Partecipanti: <span className="text-[#e8fbff]">{sessione.num_partecipanti || 0}</span></div>
+                            </div>
+                            {sessione.jitsi_link && (
+                              <a href={sessione.jitsi_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:underline">
+                                Link videoconferenza
+                              </a>
+                            )}
+                            {sessione.presenze && sessione.presenze.length > 0 && (
+                              <div className="mt-3 border-t border-[#3b82f6]/10 pt-3">
+                                <div className="text-xs text-[#e8fbff]/50 mb-2">Partecipanti:</div>
+                                <div className="flex flex-wrap gap-2">
+                                  {sessione.presenze.map((p: any, pIdx: number) => (
+                                    <div key={pIdx} className="flex items-center gap-1.5 bg-[#1a2332] px-2 py-1 rounded text-xs">
+                                      <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
+                                        {(p.impresa_nome || '?')[0]}
+                                      </div>
+                                      <span className="text-[#e8fbff]/80">{p.impresa_nome || `Impresa #${p.impresa_id}`}</span>
+                                      <span className={`text-[10px] px-1 rounded ${p.stato === 'PRESENTE' ? 'bg-green-500/20 text-green-400' : p.stato === 'INVITATO' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                                        {p.stato || 'N/D'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {entiSessioniCorsi.length === 0 && (
+                        <div className="text-center text-[#e8fbff]/50 py-8">
+                          <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p>Nessuna sessione registrata</p>
+                          <p className="text-xs mt-1">Le sessioni vengono create automaticamente quando invii una notifica corso</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Form Invio Notifiche Enti Formatori */}
                 <Card className="bg-[#1a2332] border-[#3b82f6]/20">
                   <CardHeader>
@@ -7860,6 +7964,8 @@ export default function DashboardPA() {
                               setEntiCorsoModalita("ONLINE");
                               setEntiCorsoLink("");
                               setEntiCorsoSede("");
+                              setEntiNotificaTitolo("");
+                              setEntiNotificaMessaggio("");
                             } else {
                               alert("❌ Errore: " + data.error);
                             }
@@ -8018,6 +8124,30 @@ export default function DashboardPA() {
                                 name="corso_id"
                                 className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
                                 required={entiTargetTipo === "CORSO"}
+                                onChange={(e) => {
+                                  const corsoId = e.target.value;
+                                  if (!corsoId) {
+                                    setEntiNotificaTitolo("");
+                                    setEntiNotificaMessaggio("");
+                                    return;
+                                  }
+                                  const corso = (realData.formazioneStats?.corsi || []).find((c: any) => String(c.id) === corsoId);
+                                  if (corso) {
+                                    setEntiNotificaTitolo(`Corso: ${corso.titolo}`);
+                                    const dataStr = corso.data_inizio ? new Date(corso.data_inizio + (corso.data_inizio.includes('T') ? '' : 'T00:00:00')).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' }) : 'da definire';
+                                    const orarioStr = corso.orario || '';
+                                    const modalitaStr = corso.modalita === 'SEDE' ? 'in presenza' : (corso.modalita === 'ONLINE' ? 'online' : (corso.modalita || 'online'));
+                                    let msg = `Gentile impresa, la informiamo che il corso "${corso.titolo}" si terrà il ${dataStr}`;
+                                    if (orarioStr) msg += ` alle ore ${orarioStr}`;
+                                    msg += ` in modalità ${modalitaStr}.`;
+                                    if (corso.sede) msg += ` Sede: ${corso.sede}.`;
+                                    msg += `\nLa invitiamo a collegarsi puntualmente. Per qualsiasi informazione non esiti a contattarci.`;
+                                    setEntiNotificaMessaggio(msg);
+                                    // Autoseleziona modalità nel popup dettagli
+                                    if (corso.modalita === 'SEDE') setEntiCorsoModalita('SEDE');
+                                    else setEntiCorsoModalita('ONLINE');
+                                  }
+                                }}
                               >
                                 <option value="">Seleziona il corso...</option>
                                 {(realData.formazioneStats?.corsi || []).map((corso: any) => (
@@ -8192,6 +8322,8 @@ export default function DashboardPA() {
                           placeholder="Es: Nuovo corso HACCP disponibile"
                           className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
                           required
+                          value={entiNotificaTitolo}
+                          onChange={(e) => setEntiNotificaTitolo(e.target.value)}
                         />
                       </div>
                       <div>
@@ -8204,6 +8336,8 @@ export default function DashboardPA() {
                           placeholder="Scrivi il messaggio da inviare alle imprese..."
                           className="w-full bg-[#0b1220] border border-[#3b82f6]/30 rounded-lg p-2 text-[#e8fbff]"
                           required
+                          value={entiNotificaMessaggio}
+                          onChange={(e) => setEntiNotificaMessaggio(e.target.value)}
                         />
                       </div>
                       <div className="flex justify-end">
