@@ -2184,10 +2184,13 @@ export default function DashboardPA() {
       let cId = '0';
       if (isAssocCreator) {
         // Impersonazione Associazione
+        // v10.31.7h: comune_id DEVE essere 0, NON associazione_id!
+        // L'associazione non è un comune — usare associazione_id come comune_id
+        // causava che i comuni vedessero riunioni non loro (es. Grosseto vedeva riunioni di Confcommercio Bologna)
         creatoDaNome = assocNomeCreator || 'Associazione';
         creatoDaTipo = 'ASSOCIAZIONE';
         creatoDaId = parseInt(assocIdCreator || '0');
-        cId = assocIdCreator || '0';
+        cId = '0';  // Le associazioni non hanno un comune_id — la riunione non appartiene a nessun territorio
       } else if (isComuneCreator) {
         // Impersonazione Comune
         creatoDaNome = comuneNomeFromUrl || 'Comune';
