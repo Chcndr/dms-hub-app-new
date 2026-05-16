@@ -6,6 +6,10 @@
  * nell'angolo alto-destra che lampeggia e NON sparisce finché
  * l'utente non accetta o rifiuta.
  * 
+ * v10.31.7d: Risoluzione identità robusta con retry + storage listener
+ * (stessa strategia di SpuntaNotifier) per garantire che il popup
+ * appaia su /dashboard-impresa anche per utenti super admin con impresa_id.
+ * 
  * v10.22.0: Supporta COMUNI, IMPRESE e ASSOCIAZIONI.
  * Cerca l'identità dell'utente da:
  * 1. sessionStorage "miohub_impersonation" (comuni e associazioni in impersonificazione)
@@ -53,6 +57,7 @@ export default function InvitoNotifier() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [userIdentity, setUserIdentity] = useState<UserIdentity | null>(null);
   // Persistere dismissedTokens in localStorage per sopravvivere ai reload
   const [dismissedTokens, setDismissedTokens] = useState<Set<string>>(() => {
     try {
@@ -70,59 +75,126 @@ export default function InvitoNotifier() {
   }, [dismissedTokens]);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Risolvi identità utente da tutte le fonti possibili
-  const getUserIdentity = useCallback((): UserIdentity | null => {
-    try {
-      // 1. Impersonificazione (sessionStorage) - comuni e associazioni
-      const imp = sessionStorage.getItem("miohub_impersonation");
-      if (imp) {
-        const parsed = JSON.parse(imp);
-        if (parsed.isImpersonating) {
-          // Associazione (entityType dal sessionStorage, role dall'URL)
-          if ((parsed.entityType === 'associazione' || parsed.role === 'associazione') && parsed.associazioneId) {
-            return {
-              tipo: 'ASSOCIAZIONE',
-              id: parseInt(parsed.associazioneId) || parsed.associazioneId,
-              nome: parsed.associazioneNome || 'Associazione',
-              email: parsed.userEmail || parsed.email,
-            };
-          }
-          // Comune
-          if ((parsed.entityType === 'comune' || parsed.role === 'comune' || !parsed.entityType) && parsed.comuneId) {
-            return {
-              tipo: 'COMUNE',
-              comuneId: parseInt(parsed.comuneId) || parsed.comuneId,
-              nome: parsed.comuneNome || 'Comune',
-              email: parsed.userEmail || parsed.email,
-            };
-          }
-        }
-      }
-
-      // 2. Utente (localStorage "user")
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        // v10.31.7b: Se siamo su una pagina dell'app impresa E l'utente ha impresa_id,
-        // trattare come IMPRESA (non come SUPERADMIN) — il popup deve apparire per le imprese
-        // Route reali: /dashboard-impresa, /app/impresa/...
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RISOLUZIONE IDENTITÀ ROBUSTA (pattern SpuntaNotifier)
+  // Con retry ogni 2s per max 30s + storage event listener
+  // ═══════════════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    const tryResolve = (): UserIdentity | null => {
+      try {
         const path = window.location.pathname;
         const isOnAppImpresa = path.includes('/dashboard-impresa') || path.includes('/app/impresa');
-        if (isOnAppImpresa && user.impresa_id) {
-          return {
-            tipo: 'IMPRESA',
-            id: user.impresa_id,
-            nome: user.impresa_nome || user.name || 'Impresa',
-            email: user.email || user.impresa_email || user.username,
-          };
+
+        // ─── PRIORITÀ 0: Se siamo su app impresa, SEMPRE trattare come IMPRESA ───
+        // Questo DEVE venire PRIMA di qualsiasi altro check (incluso SUPERADMIN)
+        // per gestire il caso chcndr@gmail.com (super admin con impresa_id=38)
+        if (isOnAppImpresa) {
+          let impresaId: number | null = null;
+          let impresaNome = 'Impresa';
+          let impresaEmail = '';
+
+          // Fonte 1: miohub_firebase_user
+          try {
+            const fbStr = localStorage.getItem("miohub_firebase_user");
+            if (fbStr) {
+              const fb = JSON.parse(fbStr);
+              if (fb.impresaId) {
+                impresaId = Number(fb.impresaId);
+                impresaNome = fb.impresaNome || fb.displayName || 'Impresa';
+                impresaEmail = fb.email || '';
+              }
+            }
+          } catch { /* ignore */ }
+
+          // Fonte 2: localStorage['user'] (legacy bridge)
+          if (!impresaId) {
+            try {
+              const userStr = localStorage.getItem("user");
+              if (userStr) {
+                const user = JSON.parse(userStr);
+                if (user.impresa_id) {
+                  impresaId = Number(user.impresa_id);
+                  impresaNome = user.impresa_nome || user.name || 'Impresa';
+                  impresaEmail = user.email || user.impresa_email || user.username || '';
+                }
+                // Collaboratore autorizzato
+                if (!impresaId && user.isCollaborator && user.collaboratorData) {
+                  impresaId = Number(user.collaboratorData.impresa_id);
+                  impresaNome = user.collaboratorData.impresa_nome || 'Impresa';
+                  impresaEmail = user.email || '';
+                }
+              }
+            } catch { /* ignore */ }
+          }
+
+          if (impresaId) {
+            return {
+              tipo: 'IMPRESA',
+              id: impresaId,
+              nome: impresaNome,
+              email: impresaEmail,
+            };
+          }
+          // Se su app impresa ma impresaId non ancora disponibile → null (retry)
+          return null;
         }
-        // Impresa (utente non-admin con impresa_id) — check PRIMA di super admin
-        // Così le imprese normali (intim8@gmail.com, ecc.) ricevono il popup
-        if (user.impresa_id && !isOnAppImpresa) {
-          // Se non siamo su app impresa ma l'utente ha impresa_id, è comunque un'impresa
-          // a meno che non sia un admin sulla DashboardPA
-          const isOnDashboardPA = path.includes('/dashboard-pa') || path === '/';
-          if (!isOnDashboardPA) {
+
+        // ─── PRIORITÀ 1: Impersonificazione (sessionStorage) ───
+        const imp = sessionStorage.getItem("miohub_impersonation");
+        if (imp) {
+          const parsed = JSON.parse(imp);
+          if (parsed.isImpersonating) {
+            // Associazione
+            if ((parsed.entityType === 'associazione' || parsed.role === 'associazione') && parsed.associazioneId) {
+              return {
+                tipo: 'ASSOCIAZIONE',
+                id: parseInt(parsed.associazioneId) || parsed.associazioneId,
+                nome: parsed.associazioneNome || 'Associazione',
+                email: parsed.userEmail || parsed.email,
+              };
+            }
+            // Comune
+            if ((parsed.entityType === 'comune' || parsed.role === 'comune' || !parsed.entityType) && parsed.comuneId) {
+              return {
+                tipo: 'COMUNE',
+                comuneId: parseInt(parsed.comuneId) || parsed.comuneId,
+                nome: parsed.comuneNome || 'Comune',
+                email: parsed.userEmail || parsed.email,
+              };
+            }
+          }
+        }
+
+        // ─── PRIORITÀ 2: localStorage "user" ───
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+          const user = JSON.parse(userStr);
+
+          // Impresa (utente non-admin con impresa_id e NON su DashboardPA)
+          if (user.impresa_id) {
+            const isOnDashboardPA = path.includes('/dashboard-pa') || path === '/';
+            if (!isOnDashboardPA) {
+              return {
+                tipo: 'IMPRESA',
+                id: user.impresa_id,
+                nome: user.impresa_nome || user.name || 'Impresa',
+                email: user.email || user.impresa_email || user.username,
+              };
+            }
+          }
+
+          // Super admin — solo sulla DashboardPA
+          if (user.email === 'chcndr@gmail.com' || user.is_super_admin === true || user.role === 'admin' || user.base_role === 'admin') {
+            return {
+              tipo: 'SUPERADMIN',
+              comuneId: 0,
+              nome: 'MIO HUB',
+              email: user.email,
+            };
+          }
+
+          // Impresa (fallback)
+          if (user.impresa_id) {
             return {
               tipo: 'IMPRESA',
               id: user.impresa_id,
@@ -131,91 +203,114 @@ export default function InvitoNotifier() {
             };
           }
         }
-        // Super admin — solo sulla DashboardPA (non blocca il popup nelle app impresa)
-        if (user.email === 'chcndr@gmail.com' || user.is_super_admin === true || user.role === 'admin' || user.base_role === 'admin') {
-          return {
-            tipo: 'SUPERADMIN',
-            comuneId: 0,
-            nome: 'MIO HUB',
-            email: user.email,
-          };
-        }
-        // Impresa (fallback)
-        if (user.impresa_id) {
-          return {
-            tipo: 'IMPRESA',
-            id: user.impresa_id,
-            nome: user.impresa_nome || user.name || 'Impresa',
-            email: user.email || user.impresa_email || user.username,
-          };
-        }
-      }
 
-      // 3. Firebase user
-      const fbStr = localStorage.getItem("miohub_firebase_user");
-      if (fbStr) {
-        const fb = JSON.parse(fbStr);
-        // Super admin — check PRIMA di comune_id
-        if (fb.email === 'chcndr@gmail.com' || fb.isSuperAdmin === true || fb.role === 'pa') {
-          return {
-            tipo: 'SUPERADMIN',
-            comuneId: 0,
-            nome: 'MIO HUB',
-            email: fb.email,
-          };
+        // ─── PRIORITÀ 3: Firebase user ───
+        const fbStr = localStorage.getItem("miohub_firebase_user");
+        if (fbStr) {
+          const fb = JSON.parse(fbStr);
+          // Super admin
+          if (fb.email === 'chcndr@gmail.com' || fb.isSuperAdmin === true || fb.role === 'pa') {
+            return {
+              tipo: 'SUPERADMIN',
+              comuneId: 0,
+              nome: 'MIO HUB',
+              email: fb.email,
+            };
+          }
+          if (fb.comune_id) {
+            return {
+              tipo: 'COMUNE',
+              comuneId: fb.comune_id,
+              nome: fb.comune_nome || 'Comune',
+              email: fb.email,
+            };
+          }
         }
-        if (fb.comune_id) {
+
+        // ─── PRIORITÀ 4: URL params ───
+        const params = new URLSearchParams(window.location.search);
+        const cid = params.get("comune_id");
+        if (cid) {
           return {
             tipo: 'COMUNE',
-            comuneId: fb.comune_id,
-            nome: fb.comune_nome || 'Comune',
-            email: fb.email,
+            comuneId: parseInt(cid),
+            email: params.get("user_email") || undefined,
           };
         }
-      }
+        const aid = params.get("associazione_id");
+        if (aid) {
+          return {
+            tipo: 'ASSOCIAZIONE',
+            id: parseInt(aid),
+            nome: params.get("associazione_nome") || 'Associazione',
+            email: params.get("user_email") || undefined,
+          };
+        }
+      } catch { /* ignore */ }
+      return null;
+    };
 
-      // 4. URL params
-      const params = new URLSearchParams(window.location.search);
-      const cid = params.get("comune_id");
-      if (cid) {
-        return {
-          tipo: 'COMUNE',
-          comuneId: parseInt(cid),
-          email: params.get("user_email") || undefined,
-        };
+    // Primo tentativo immediato
+    const immediateIdentity = tryResolve();
+    if (immediateIdentity) {
+      console.log(`[InvitoNotifier] identità trovata subito: ${immediateIdentity.tipo} id=${immediateIdentity.id || immediateIdentity.comuneId}`);
+      setUserIdentity(immediateIdentity);
+      return;
+    }
+
+    console.log('[InvitoNotifier] identità non trovata subito, attendo login...');
+
+    // Retry ogni 2 secondi per max 30 secondi (il login potrebbe essere in corso)
+    let attempts = 0;
+    const maxAttempts = 15;
+    const retryInterval = setInterval(() => {
+      attempts++;
+      const identity = tryResolve();
+      if (identity) {
+        console.log(`[InvitoNotifier] identità trovata dopo ${attempts * 2}s: ${identity.tipo} id=${identity.id || identity.comuneId}`);
+        setUserIdentity(identity);
+        clearInterval(retryInterval);
+      } else if (attempts >= maxAttempts) {
+        console.log('[InvitoNotifier] identità non trovata dopo 30s, rinuncio');
+        clearInterval(retryInterval);
       }
-      const aid = params.get("associazione_id");
-      if (aid) {
-        return {
-          tipo: 'ASSOCIAZIONE',
-          id: parseInt(aid),
-          nome: params.get("associazione_nome") || 'Associazione',
-          email: params.get("user_email") || undefined,
-        };
+    }, 2000);
+
+    // Ascolta anche l'evento storage (il FirebaseAuthContext fa window.dispatchEvent(new Event('storage')))
+    const onStorage = () => {
+      const identity = tryResolve();
+      if (identity) {
+        console.log(`[InvitoNotifier] identità trovata via storage event: ${identity.tipo} id=${identity.id || identity.comuneId}`);
+        setUserIdentity(identity);
+        clearInterval(retryInterval);
       }
-    } catch { /* ignore */ }
-    return null;
+    };
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      clearInterval(retryInterval);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   // Polling inviti pendenti
   const fetchInviti = useCallback(async () => {
-    const identity = getUserIdentity();
-    if (!identity) return;
+    if (!userIdentity) return;
 
     // v10.31.6: Il super admin NON riceve il popup inviti
     // Il super admin vede già tutte le riunioni nella sezione A99X della DashboardPA
     // Il popup con comune_id=0 restituiva TUTTI gli inviti di tutte le riunioni create dal super admin
-    if (identity.tipo === 'SUPERADMIN') return;
+    if (userIdentity.tipo === 'SUPERADMIN') return;
 
     try {
       let url = '';
 
-      if (identity.tipo === 'COMUNE' || identity.tipo === 'SUPERADMIN') {
-        // Per comuni e super admin: usa inviti-ricevuti con comune_id
-        url = `${API_BASE}/api/a99x/inviti-ricevuti?comune_id=${identity.comuneId}`;
-      } else if (identity.tipo === 'IMPRESA' || identity.tipo === 'ASSOCIAZIONE') {
+      if (userIdentity.tipo === 'COMUNE') {
+        // Per comuni: usa inviti-ricevuti con comune_id
+        url = `${API_BASE}/api/a99x/inviti-ricevuti?comune_id=${userIdentity.comuneId}`;
+      } else if (userIdentity.tipo === 'IMPRESA' || userIdentity.tipo === 'ASSOCIAZIONE') {
         // Per imprese e associazioni: usa le-mie-riunioni con riferimento_id e tipo
-        url = `${API_BASE}/api/a99x/le-mie-riunioni?riferimento_id=${identity.id}&tipo=${identity.tipo}`;
+        url = `${API_BASE}/api/a99x/le-mie-riunioni?riferimento_id=${userIdentity.id}&tipo=${userIdentity.tipo}`;
       }
 
       if (!url) return;
@@ -226,7 +321,7 @@ export default function InvitoNotifier() {
 
       let pendenti: InvitoData[] = [];
 
-      if (identity.tipo === 'COMUNE' || identity.tipo === 'SUPERADMIN') {
+      if (userIdentity.tipo === 'COMUNE') {
         // Formato inviti-ricevuti
         if (data.success && Array.isArray(data.data)) {
           const now = new Date();
@@ -289,20 +384,21 @@ export default function InvitoNotifier() {
 
       setInviti(pendenti);
     } catch { /* ignore */ }
-  }, [getUserIdentity, dismissedTokens]);
+  }, [userIdentity, dismissedTokens]);
 
-  // Avvia polling ogni 20 secondi
+  // Avvia polling ogni 20 secondi (solo quando userIdentity è disponibile)
   useEffect(() => {
+    if (!userIdentity) return;
     fetchInviti();
     pollRef.current = setInterval(fetchInviti, 20000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [fetchInviti]);
+  }, [fetchInviti, userIdentity]);
 
   // Rispondi all'invito
   const rispondi = async (token: string, azione: 'accetta' | 'rifiuta') => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/a99x/invito/${token}/${azione}`);
+      const res = await fetch(`${API_BASE}/api/a99x/invito/${token}/${azione}?confirmed=1`);
       if (res.ok) {
         // Rimuovi dall'elenco
         setInviti(prev => prev.filter(inv => inv.token !== token));

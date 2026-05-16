@@ -2246,7 +2246,7 @@ export default function DashboardPA() {
   const rispondiA99xInvito = async (token: string, azione: 'accetta' | 'rifiuta') => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      await fetch(`${apiUrl}/api/a99x/invito/${token}/${azione}`);
+      await fetch(`${apiUrl}/api/a99x/invito/${token}/${azione}?confirmed=1`);
       fetchA99xInviti();
       fetchA99xData();
     } catch (err) { console.warn('Errore risposta invito:', err); }

@@ -639,7 +639,7 @@ export default function AppImpresaNotifiche() {
                         <button
                           onClick={async () => {
                             try {
-                              const res = await fetch(`https://api.miohub.it/api/a99x/invito/${r.token}/accetta`);
+                              const res = await fetch(`https://api.miohub.it/api/a99x/invito/${r.token}/accetta?confirmed=1`);
                               if (res.ok) fetchRiunioni();
                             } catch {}
                           }}
@@ -650,7 +650,7 @@ export default function AppImpresaNotifiche() {
                         <button
                           onClick={async () => {
                             try {
-                              const res = await fetch(`https://api.miohub.it/api/a99x/invito/${r.token}/rifiuta`);
+                              const res = await fetch(`https://api.miohub.it/api/a99x/invito/${r.token}/rifiuta?confirmed=1`);
                               if (res.ok) fetchRiunioni();
                             } catch {}
                           }}
@@ -1274,7 +1274,7 @@ export default function AppImpresaNotifiche() {
                                     notificaSelezionata.messaggio?.includes(r.titolo)
                                   );
                                   if (riunione?.token) {
-                                    const accRes = await fetch(`https://api.miohub.it/api/a99x/invito/${riunione.token}/accetta`);
+                                    const accRes = await fetch(`https://api.miohub.it/api/a99x/invito/${riunione.token}/accetta?confirmed=1`);
                                     if (accRes.ok) {
                                       setInvRiunioneStato('CONFERMATO');
                                       setInvRiunioneLink(riunione.jitsi_link || '');
@@ -1297,7 +1297,7 @@ export default function AppImpresaNotifiche() {
                                     notificaSelezionata.messaggio?.includes(r.titolo)
                                   );
                                   if (riunione?.token) {
-                                    const rifRes = await fetch(`https://api.miohub.it/api/a99x/invito/${riunione.token}/rifiuta`);
+                                    const rifRes = await fetch(`https://api.miohub.it/api/a99x/invito/${riunione.token}/rifiuta?confirmed=1`);
                                     if (rifRes.ok) setInvRiunioneStato('RIFIUTATO');
                                   }
                                 }
