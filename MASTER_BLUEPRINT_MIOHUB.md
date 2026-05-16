@@ -1,16 +1,16 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.6b (Fix Pulsanti Creatore Associazione A99X + Popup InvitoNotifier App Impresa)
+> **Versione:** 10.31.7 (Selezione Rapida Gruppi Imprese + Invitato Esterno A99X)
 > **Data:** 16 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.6b)
+> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.7)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `1bdf2b0` (v10.31.6) |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `b1d7c74` (v10.31.6b) |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `fa1cdb3` (v10.31.7) |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `b214558` (v10.31.7) |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -76,6 +76,26 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
+### CHANGELOG v10.31.7 (16 Mag 2026)
+
+**Feature A — Selezione Rapida Gruppi Imprese (Tab Invita Riunione):**
+- Nuovo endpoint backend `GET /api/a99x/gruppi-imprese?comune_id=X` con 4 gruppi:
+  - Imprese SEDE FISSA dell'Hub Urbano (hub_shops + hub_locations indipendenti)
+  - Imprese SEDE FISSA fuori dall'Hub Urbano (imprese del comune non in hub)
+  - Imprese del Mercato con Hub TCC attivo (impresa_hub_markets + markets.hub_location_id NOT NULL)
+  - Imprese del Mercato senza Hub TCC (vendors + concessions + markets.hub_location_id IS NULL)
+- Popup al focus sulla barra ricerca imprese (input vuoto) con selezione in blocco
+- Dati cachati in `a99xGruppiImprese` per evitare chiamate ripetute
+
+**Feature B — Invitato Esterno Non Registrato:**
+- Pulsante "Aggiungi Invitato Esterno (non registrato)" sotto la barra ricerca
+- Form con: Nome*, Email*, Comune/Regione, Settore
+- Tipo `ESTERNO` con `riferimento_id = NULL` in `a99x_partecipanti`
+- Nuova colonna `comune_regione VARCHAR(255)` in `a99x_partecipanti`
+- Backend `invita-riunione` aggiornato per salvare `persona_nome`, `persona_settore`, `comune_regione`
+
+---
+
 ### CHANGELOG v10.31.6b (16 Mag 2026)
 **Fix Pulsanti Creatore Associazione A99X + Popup InvitoNotifier App Impresa**
 
