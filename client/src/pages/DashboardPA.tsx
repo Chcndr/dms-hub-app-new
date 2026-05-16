@@ -10919,7 +10919,12 @@ export default function DashboardPA() {
                             )}
                             {/* I pulsanti ACCETTA/RIFIUTA e PARTECIPA sono ora inline sulla riga del partecipante */}
                             {/* Pulsanti Rimanda/Elimina + Aggiungi Partecipante - visibile per creatore o super admin, solo riunioni attive */}
-                            {isAttiva && (!comuneIdFromUrl || String(riunione.comune_id) === String(comuneIdFromUrl)) && !isAssociazioneImpersonation() && (
+                            {isAttiva && (
+                              // Super admin (comune_id match) OPPURE associazione creatrice
+                              (!comuneIdFromUrl && !isAssociazioneImpersonation()) ||
+                              (comuneIdFromUrl && String(riunione.comune_id) === String(comuneIdFromUrl)) ||
+                              (isAssociazioneImpersonation() && riunione.creato_da_tipo === 'ASSOCIAZIONE' && String(riunione.creato_da_id) === String(assocIdParam))
+                            ) && (
                               <div className="mt-3 pt-3 border-t border-[#8b5cf6]/10">
                                 {a99xAddPartRiunioneId === riunione.id ? (
                                   <div className="space-y-2">

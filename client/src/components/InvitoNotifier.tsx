@@ -103,6 +103,17 @@ export default function InvitoNotifier() {
       const userStr = localStorage.getItem("user");
       if (userStr) {
         const user = JSON.parse(userStr);
+        // v10.31.6b: Se siamo su una pagina app-impresa E l'utente ha impresa_id,
+        // trattare come IMPRESA (non come SUPERADMIN) — il popup deve apparire per le imprese
+        const isOnAppImpresa = window.location.pathname.includes('/app-impresa');
+        if (isOnAppImpresa && user.impresa_id) {
+          return {
+            tipo: 'IMPRESA',
+            id: user.impresa_id,
+            nome: user.impresa_nome || user.name || 'Impresa',
+            email: user.email || user.impresa_email || user.username,
+          };
+        }
         // Super admin — check PRIMA di impresa per evitare che cada nel vuoto
         if (user.email === 'chcndr@gmail.com' || user.is_super_admin === true || user.role === 'admin' || user.base_role === 'admin') {
           return {
