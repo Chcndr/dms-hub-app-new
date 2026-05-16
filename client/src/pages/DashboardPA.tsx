@@ -2377,7 +2377,7 @@ export default function DashboardPA() {
       })
       .catch(err => console.error("Notifiche risposte fetch error:", err));
 
-    // Fetch messaggi inviati - Enti Formatori: cerca sia ENTE_FORMATORE/1 (vecchie) che ASSOCIAZIONE/{id} (nuove con mittente_tipo corretto)
+    // Fetch messaggi inviati - Enti Formatori E Associazioni & Bandi (stessa fonte, filtro diverso)
     const impersonationForEntiMsg = getImpersonationParams();
     const entiAssocId = impersonationForEntiMsg.associazioneId || new URLSearchParams(window.location.search).get("associazione_id") || "1";
     Promise.all([
@@ -2394,23 +2394,13 @@ export default function DashboardPA() {
       });
       // Ordina per data decrescente
       merged.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setMessaggiInviatiEnti(espandiMessaggiInviatiPerImpresa(merged));
-    }).catch(err => console.error("Messaggi inviati Enti fetch error:", err));
-
-    // Fetch messaggi inviati - Associazioni: usa la stessa associazione attiva dell'invio, non un ID fisso
-    const impersonationForMessages = getImpersonationParams();
-    const associazioneMessaggiId =
-      impersonationForMessages.associazioneId ||
-      new URLSearchParams(window.location.search).get("associazione_id") ||
-      "1";
-    fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/${associazioneMessaggiId}?filtro=inviati`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.data)) {
-          setMessaggiInviatiAssoc(espandiMessaggiInviatiPerImpresa(data.data));
-        }
-      })
-      .catch(err => console.error("Messaggi inviati Assoc fetch error:", err));
+      // Filtra: Enti Formatori = solo notifiche relative ai corsi (target_tipo CORSO o tipo_messaggio AVVISO_CORSO)
+      const isCorsoRelated = (m: any) => m.target_tipo === 'CORSO' || m.tipo_messaggio === 'AVVISO_CORSO';
+      const msgEntiFormatori = merged.filter(isCorsoRelated);
+      const msgAssocBandi = merged.filter((m: any) => !isCorsoRelated(m));
+      setMessaggiInviatiEnti(espandiMessaggiInviatiPerImpresa(msgEntiFormatori));
+      setMessaggiInviatiAssoc(espandiMessaggiInviatiPerImpresa(msgAssocBandi));
+    }).catch(err => console.error("Messaggi inviati fetch error:", err));
 
     // Fetch notifiche riunione associazione (INVITO_RIUNIONE, RIUNIONE_ANNULLATA) per sotto-tab Enti/Bandi
     const fetchRiunioniNotifiche = () => {
