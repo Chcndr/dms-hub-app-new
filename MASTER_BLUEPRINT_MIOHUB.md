@@ -5,12 +5,12 @@
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.7c)
+> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.7h)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
 > | **GitHub Backend** | Allineato | mihub-backend-rest `aab1c92` (v10.31.7g) |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `e0bdf45` (v10.31.7g) |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `e184680` (v10.31.7h) |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -68,6 +68,7 @@
 > - **NON identificare come SUPERADMIN quando si è su pagina app-impresa con impresa_id** — In InvitoNotifier, se `window.location.pathname` include `/dashboard-impresa` o `/app/impresa` e l'utente ha `impresa_id`, deve essere trattato come IMPRESA (non SUPERADMIN). Altrimenti il popup inviti non appare nell'app impresa per utenti che sono anche admin. (Fix v10.31.7b, rafforzato v10.31.7d con retry+storage listener)
 > - **NON usare useCallback con deps vuote per risolvere identità utente** — La risoluzione identità in componenti globali (InvitoNotifier, SpuntaNotifier) DEVE usare useEffect con retry + storage event listener per gestire la race condition del login asincrono Firebase. Un useCallback[] legge il localStorage una sola volta e fallisce se i dati non sono ancora disponibili. (Fix v10.31.7d)
 > - **NON filtrare inviti-ricevuti per r.comune_id (territorio)** — L'endpoint `inviti-ricevuti?comune_id=X` DEVE filtrare per `p.tipo='COMUNE' AND p.riferimento_id=X` (comune come partecipante), NON per `r.comune_id=X` (territorio della riunione). Altrimenti il comune vede inviti per imprese del suo territorio che non lo riguardano. I comuni POSSONO essere invitati come partecipanti alle riunioni. (Fix v10.31.7g, sostituisce toppa v10.31.7f)
+> - **NON usare associazione_id come comune_id nella creazione riunione** — Quando un'associazione impersonata crea una riunione, `cId` DEVE essere `'0'` (nessun territorio), NON `assocIdCreator`. L'associazione_id e il comune_id sono entità diverse — confonderli causa che comuni sbagliati vedono riunioni non loro. Le associazioni vedono le riunioni tramite partecipazione (`le-mie-riunioni`), non tramite `r.comune_id`. (Fix v10.31.7h)
 > - **NON mostrare popup InvitoNotifier per collaboratori team** — I collaboratori (es. Viola Checchi per Alimentari Rossi) hanno `impresa_id` nel localStorage ma NON ricevono inviti A99X diretti. Gli inviti vanno all'impresa titolare. Se `user.isCollaborator === true`, bloccare il popup. (Fix v10.31.7e)
 > - **NON usare endpoint GET per azioni dirette nelle email** — Gli scanner antivirus/anti-bot fanno pre-fetch GET su tutti i link nelle email. Endpoint come `/invito/:token/accetta` e `/invito/:token/rifiuta` DEVONO avere una pagina di conferma intermedia (`?confirmed=1`) per evitare azioni automatiche da parte degli scanner. (Fix v10.31.7c)
 >
@@ -80,6 +81,16 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
+### CHANGELOG v10.31.7h (16 Mag 2026)
+- **FIX FRONTEND DashboardPA — Confusione associazione_id / comune_id nella creazione riunione**:
+  - BUG: Quando un'associazione (es. Confcommercio Bologna, id=1) creava una riunione, il frontend usava `associazione_id` come `comune_id` → la riunione veniva salvata con `comune_id=1` (Grosseto!) invece di `comune_id=0`
+  - EFFETTO: Grosseto vedeva nella DashboardPA (calendario, conferme inviti, prossime riunioni) riunioni create da Confcommercio Bologna che non lo riguardavano
+  - FIX: `cId = '0'` per le associazioni — le associazioni non hanno un `comune_id`, le riunioni non appartengono a nessun territorio
+  - Le associazioni vedono le loro riunioni tramite `le-mie-riunioni?riferimento_id=X&tipo=ASSOCIAZIONE` (partecipazione), NON tramite `r.comune_id`
+- **FIX DB** — Corretti `comune_id` per riunioni già create da associazioni:
+  - Riunione 8, 9 (Confesercenti Modena): `comune_id` da 2 a 0
+  - Riunione 10 (Confcommercio Bologna): `comune_id` da 1 a 0
+
 ### CHANGELOG v10.31.7g (16 Mag 2026)
 - **FIX BACKEND endpoint inviti-ricevuti** — Fix corretto alla radice:
   - Prima: `WHERE r.comune_id = X` → restituiva TUTTI i partecipanti di riunioni nel territorio
