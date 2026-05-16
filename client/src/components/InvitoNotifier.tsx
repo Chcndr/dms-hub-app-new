@@ -312,16 +312,17 @@ export default function InvitoNotifier() {
     // Il popup con comune_id=0 restituiva TUTTI gli inviti di tutte le riunioni create dal super admin
     if (userIdentity.tipo === 'SUPERADMIN') return;
 
-    // v10.31.7f: I COMUNI NON ricevono il popup inviti
-    // I comuni non vengono invitati alle riunioni — sono le imprese e associazioni che ricevono inviti.
-    // L'endpoint inviti-ricevuti?comune_id=X restituiva TUTTI i partecipanti invitati nel territorio,
-    // non inviti destinati al comune. Il comune vede tutto nella sezione A99X/Conferme della DashboardPA.
-    if (userIdentity.tipo === 'COMUNE') return;
+    // v10.31.7g: I comuni possono essere invitati come partecipanti alle riunioni.
+    // Il fix è nel backend: inviti-ricevuti?comune_id=X ora filtra per p.tipo='COMUNE' AND p.riferimento_id=X
+    // (cioè il comune come partecipante), NON più per r.comune_id=X (territorio della riunione).
 
     try {
       let url = '';
 
-      if (userIdentity.tipo === 'IMPRESA' || userIdentity.tipo === 'ASSOCIAZIONE') {
+      if (userIdentity.tipo === 'COMUNE') {
+        // Per comuni: usa inviti-ricevuti con comune_id (ora filtra per comune come partecipante)
+        url = `${API_BASE}/api/a99x/inviti-ricevuti?comune_id=${userIdentity.comuneId}`;
+      } else if (userIdentity.tipo === 'IMPRESA' || userIdentity.tipo === 'ASSOCIAZIONE') {
         // Per imprese e associazioni: usa le-mie-riunioni con riferimento_id e tipo
         url = `${API_BASE}/api/a99x/le-mie-riunioni?riferimento_id=${userIdentity.id}&tipo=${userIdentity.tipo}`;
       }
