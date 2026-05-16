@@ -2378,7 +2378,8 @@ export default function DashboardPA() {
       .catch(err => console.error("Notifiche risposte fetch error:", err));
 
     // Fetch messaggi inviati - Enti Formatori: cerca sia ENTE_FORMATORE/1 (vecchie) che ASSOCIAZIONE/{id} (nuove con mittente_tipo corretto)
-    const entiAssocId = new URLSearchParams(window.location.search).get("associazione_id") || "1";
+    const impersonationForEntiMsg = getImpersonationParams();
+    const entiAssocId = impersonationForEntiMsg.associazioneId || new URLSearchParams(window.location.search).get("associazione_id") || "1";
     Promise.all([
       fetch(`${MIHUB_API}/notifiche/messaggi/ENTE_FORMATORE/1?filtro=inviati`).then(r => r.json()).catch(() => ({ success: false })),
       fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/${entiAssocId}?filtro=inviati`).then(r => r.json()).catch(() => ({ success: false }))

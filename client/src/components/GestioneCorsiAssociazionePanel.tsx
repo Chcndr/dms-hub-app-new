@@ -657,7 +657,7 @@ const GestioneCorsiAssociazionePanel = memo(
                             {c.data_inizio && (
                               <span>
                                 <Calendar className="h-3 w-3 inline mr-1" />
-                                {c.data_inizio}
+                                {new Date(c.data_inizio + (c.data_inizio.includes('T') ? '' : 'T00:00:00')).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' })}
                               </span>
                             )}
                             {c.sede && (

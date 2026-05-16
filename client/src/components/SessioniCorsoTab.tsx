@@ -3,7 +3,10 @@
  * Tab "Sessioni" per la gestione delle sessioni live dei corsi
  * Stile card A99X riunioni: data/ora, partecipanti, istruttore, relatore, link Jitsi
  *
- * @version 10.31.0
+ * v10.31.5: Mostra TUTTE le sessioni all'avvio senza dover selezionare un corso.
+ *           Filtro opzionale per corso. Usa route sessioni-tutte.
+ *
+ * @version 10.31.5
  */
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,6 +43,7 @@ const API_BASE = MIHUB_API_BASE_URL;
 interface Sessione {
   id: number;
   corso_id: number;
+  corso_titolo?: string;
   titolo: string;
   descrizione?: string;
   data_inizio: string;
@@ -104,6 +108,7 @@ const MODALITA_OPTIONS = [
 
 export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCorsoTabProps) {
   const [sessioni, setSessioni] = useState<Sessione[]>([]);
+  const [allSessioni, setAllSessioni] = useState<Sessione[]>([]);
   const [relatori, setRelatori] = useState<Relatore[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCorsoId, setSelectedCorsoId] = useState<number | null>(null);
@@ -130,28 +135,30 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
   const impState = getImpersonationParams();
   const associazioneId = impState.associazioneId;
 
-  // Carica sessioni per il corso selezionato
-  const loadSessioni = useCallback(async () => {
-    if (!associazioneId || !selectedCorsoId) {
-      setSessioni([]);
-      return;
-    }
+  // Carica TUTTE le sessioni dell'associazione (route sessioni-tutte)
+  const loadAllSessioni = useCallback(async () => {
+    if (!associazioneId) return;
     setLoading(true);
     try {
+      const apiBase = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
       const res = await fetch(
-        `${API_BASE}/api/associazioni/${associazioneId}/corsi/${selectedCorsoId}/sessioni`
+        `${apiBase}/api/associazioni/${associazioneId}/sessioni-tutte`
       );
       const data = await res.json();
-      if (data.success) {
-        setSessioni(data.data || []);
-        onSessioniCount?.(data.data?.length || 0);
+      if (data.success && Array.isArray(data.data)) {
+        setAllSessioni(data.data);
+        onSessioniCount?.(data.data.length);
+      } else {
+        setAllSessioni([]);
+        onSessioniCount?.(0);
       }
     } catch (err) {
-      console.error("Errore caricamento sessioni:", err);
+      console.error("Errore caricamento sessioni-tutte:", err);
+      setAllSessioni([]);
     } finally {
       setLoading(false);
     }
-  }, [associazioneId, selectedCorsoId]);
+  }, [associazioneId]);
 
   // Carica relatori
   const loadRelatori = useCallback(async () => {
@@ -167,24 +174,37 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
     }
   }, [associazioneId]);
 
+  // Carica tutte le sessioni all'avvio
   useEffect(() => {
-    loadSessioni();
-  }, [loadSessioni]);
+    loadAllSessioni();
+  }, [loadAllSessioni]);
 
   useEffect(() => {
     loadRelatori();
   }, [loadRelatori]);
 
+  // Filtra sessioni per corso selezionato (o mostra tutte)
+  useEffect(() => {
+    if (selectedCorsoId) {
+      const filtered = allSessioni.filter(s => s.corso_id === selectedCorsoId);
+      setSessioni(filtered);
+    } else {
+      setSessioni(allSessioni);
+    }
+  }, [selectedCorsoId, allSessioni]);
+
   // Carica dettaglio sessione con presenze
-  const loadDettaglio = async (sessioneId: number) => {
-    if (!associazioneId || !selectedCorsoId) return;
+  const loadDettaglio = async (sessioneId: number, corsoId?: number) => {
+    if (!associazioneId) return;
+    const cId = corsoId || selectedCorsoId;
+    if (!cId) return;
     try {
       const res = await fetch(
-        `${API_BASE}/api/associazioni/${associazioneId}/corsi/${selectedCorsoId}/sessioni/${sessioneId}`
+        `${API_BASE}/api/associazioni/${associazioneId}/corsi/${cId}/sessioni/${sessioneId}`
       );
       const data = await res.json();
       if (data.success) {
-        setSessioni((prev) =>
+        setAllSessioni((prev) =>
           prev.map((s) => (s.id === sessioneId ? { ...s, presenze: data.data.presenze } : s))
         );
       }
@@ -225,21 +245,26 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
       note: s.note || "",
       auto_invita_iscritti: false,
     });
+    // Se non c'è un corso selezionato, seleziona il corso della sessione
+    if (!selectedCorsoId && s.corso_id) {
+      setSelectedCorsoId(s.corso_id);
+    }
     setEditingId(s.id);
     setShowForm(true);
   };
 
   const saveSessione = async () => {
-    if (!associazioneId || !selectedCorsoId || !form.titolo.trim() || !form.data_inizio) {
-      toast.error("Titolo e data inizio sono obbligatori");
+    const corsoIdForSave = selectedCorsoId;
+    if (!associazioneId || !corsoIdForSave || !form.titolo.trim() || !form.data_inizio) {
+      toast.error("Seleziona un corso, poi compila titolo e data inizio");
       return;
     }
     setSaving(true);
     try {
       const method = editingId ? "PUT" : "POST";
       const url = editingId
-        ? `${API_BASE}/api/associazioni/${associazioneId}/corsi/${selectedCorsoId}/sessioni/${editingId}`
-        : `${API_BASE}/api/associazioni/${associazioneId}/corsi/${selectedCorsoId}/sessioni`;
+        ? `${API_BASE}/api/associazioni/${associazioneId}/corsi/${corsoIdForSave}/sessioni/${editingId}`
+        : `${API_BASE}/api/associazioni/${associazioneId}/corsi/${corsoIdForSave}/sessioni`;
 
       const body = {
         ...form,
@@ -256,7 +281,7 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
       if (data.success) {
         toast.success(editingId ? "Sessione aggiornata" : "Sessione creata con link Jitsi");
         setShowForm(false);
-        loadSessioni();
+        loadAllSessioni();
       } else {
         toast.error(data.error || "Errore salvataggio");
       }
@@ -267,27 +292,31 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
     }
   };
 
-  const deleteSessione = async (sid: number) => {
+  const deleteSessione = async (sid: number, corsoId?: number) => {
     if (!confirm("Eliminare questa sessione?")) return;
+    const cId = corsoId || selectedCorsoId;
+    if (!cId) { toast.error("Seleziona un corso"); return; }
     try {
       const res = await authenticatedFetch(
-        `${API_BASE}/api/associazioni/${associazioneId}/corsi/${selectedCorsoId}/sessioni/${sid}`,
+        `${API_BASE}/api/associazioni/${associazioneId}/corsi/${cId}/sessioni/${sid}`,
         { method: "DELETE" }
       );
       const data = await res.json();
       if (data.success) {
         toast.success("Sessione eliminata");
-        loadSessioni();
+        loadAllSessioni();
       }
     } catch (err) {
       toast.error("Errore eliminazione");
     }
   };
 
-  const cambiaStato = async (sid: number, nuovoStato: string) => {
+  const cambiaStato = async (sid: number, nuovoStato: string, corsoId?: number) => {
+    const cId = corsoId || selectedCorsoId;
+    if (!cId) { toast.error("Seleziona un corso"); return; }
     try {
       const res = await authenticatedFetch(
-        `${API_BASE}/api/associazioni/${associazioneId}/corsi/${selectedCorsoId}/sessioni/${sid}`,
+        `${API_BASE}/api/associazioni/${associazioneId}/corsi/${cId}/sessioni/${sid}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -297,7 +326,7 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
       const data = await res.json();
       if (data.success) {
         toast.success(`Stato aggiornato: ${nuovoStato}`);
-        loadSessioni();
+        loadAllSessioni();
       }
     } catch (err) {
       toast.error("Errore cambio stato");
@@ -340,38 +369,36 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
 
   return (
     <div className="space-y-4">
-      {/* Selettore corso */}
+      {/* Filtro corso (opzionale) + azioni */}
       <div className="flex items-center gap-3">
         <select
           className="flex-1 bg-[#0b1220] border border-[#8b5cf6]/30 rounded-lg px-3 py-2 text-sm text-[#e8fbff]"
           value={selectedCorsoId ?? ""}
           onChange={(e) => setSelectedCorsoId(e.target.value ? parseInt(e.target.value) : null)}
         >
-          <option value="">Seleziona un corso...</option>
+          <option value="">Tutti i corsi</option>
           {corsi.map((c) => (
             <option key={c.id} value={c.id}>
               {c.titolo}
             </option>
           ))}
         </select>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={loadAllSessioni}
+          className="border-[#8b5cf6]/30 text-[#8b5cf6]"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
         {selectedCorsoId && (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadSessioni}
-              className="border-[#8b5cf6]/30 text-[#8b5cf6]"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              onClick={openNew}
-              className="bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white"
-            >
-              <Plus className="h-4 w-4 mr-1" /> Nuova Sessione
-            </Button>
-          </>
+          <Button
+            size="sm"
+            onClick={openNew}
+            className="bg-[#8b5cf6] hover:bg-[#8b5cf6]/80 text-white"
+          >
+            <Plus className="h-4 w-4 mr-1" /> Nuova Sessione
+          </Button>
         )}
       </div>
 
@@ -526,28 +553,27 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
         </Card>
       )}
 
-      {/* Lista sessioni */}
-      {!selectedCorsoId ? (
-        <div className="text-center py-12 text-[#e8fbff]/50">
-          <Video className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm">Seleziona un corso per gestire le sessioni</p>
-        </div>
-      ) : loading ? (
+      {/* Lista sessioni — mostra tutte o filtrate */}
+      {loading ? (
         <div className="text-center py-8">
           <Loader2 className="h-6 w-6 animate-spin mx-auto text-[#8b5cf6]" />
         </div>
       ) : sessioni.length === 0 ? (
         <div className="text-center py-12 text-[#e8fbff]/50">
           <Video className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm">Nessuna sessione programmata</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={openNew}
-            className="mt-3 border-[#8b5cf6]/30 text-[#8b5cf6]"
-          >
-            <Plus className="h-4 w-4 mr-1" /> Crea la prima sessione
-          </Button>
+          <p className="text-sm">
+            {selectedCorsoId ? "Nessuna sessione per questo corso" : "Nessuna sessione programmata"}
+          </p>
+          {selectedCorsoId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openNew}
+              className="mt-3 border-[#8b5cf6]/30 text-[#8b5cf6]"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Crea la prima sessione
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -577,7 +603,7 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
                           setExpandedSessione(null);
                         } else {
                           setExpandedSessione(s.id);
-                          if (!s.presenze) loadDettaglio(s.id);
+                          if (!s.presenze) loadDettaglio(s.id, s.corso_id);
                         }
                       }}
                     >
@@ -591,7 +617,13 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
                         </Badge>
                         {s.modalita && (
                           <Badge variant="outline" className="text-[10px] text-[#e8fbff]/60 border-[#e8fbff]/20">
-                            {s.modalita === "ONLINE" ? "🎥 Online" : s.modalita === "IN_SEDE" ? "🏢 In sede" : "🔄 Ibrida"}
+                            {s.modalita === "ONLINE" ? "Online" : s.modalita === "IN_SEDE" ? "In sede" : "Ibrida"}
+                          </Badge>
+                        )}
+                        {/* Mostra nome corso se non filtrato */}
+                        {!selectedCorsoId && s.corso_titolo && (
+                          <Badge variant="outline" className="text-[10px] text-[#8b5cf6] border-[#8b5cf6]/30 bg-[#8b5cf6]/10">
+                            {s.corso_titolo}
                           </Badge>
                         )}
                       </div>
@@ -649,7 +681,7 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteSessione(s.id)}
+                        onClick={() => deleteSessione(s.id, s.corso_id)}
                         className="text-[#ef4444] h-7 w-7"
                         title="Elimina"
                       >
@@ -663,7 +695,7 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
                     <div className="flex gap-2 mt-3">
                       <Button
                         size="sm"
-                        onClick={() => cambiaStato(s.id, "IN_CORSO")}
+                        onClick={() => cambiaStato(s.id, "IN_CORSO", s.corso_id)}
                         className="bg-[#f59e0b] hover:bg-[#f59e0b]/80 text-white h-7 text-xs"
                       >
                         <Play className="h-3 w-3 mr-1" /> Avvia Sessione
@@ -674,7 +706,7 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
                     <div className="flex gap-2 mt-3">
                       <Button
                         size="sm"
-                        onClick={() => cambiaStato(s.id, "COMPLETATA")}
+                        onClick={() => cambiaStato(s.id, "COMPLETATA", s.corso_id)}
                         className="bg-[#10b981] hover:bg-[#10b981]/80 text-white h-7 text-xs"
                       >
                         <CheckCircle2 className="h-3 w-3 mr-1" /> Completa
@@ -682,7 +714,7 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => cambiaStato(s.id, "ANNULLATA")}
+                        onClick={() => cambiaStato(s.id, "ANNULLATA", s.corso_id)}
                         className="border-[#ef4444]/30 text-[#ef4444] h-7 text-xs"
                       >
                         <XCircle className="h-3 w-3 mr-1" /> Annulla
