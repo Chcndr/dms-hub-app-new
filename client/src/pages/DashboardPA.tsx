@@ -341,18 +341,8 @@ function useDashboardData() {
       })
       .catch(err => console.error("Formazione stats fetch error:", err));
 
-    // Fetch sessioni corsi (tutte le sessioni dell'associazione)
-    if (assocIdParam) {
-      const sessApiBase = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      fetch(`${sessApiBase}/api/associazioni/${assocIdParam}/sessioni-tutte`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.success && Array.isArray(data.data)) {
-            setEntiSessioniCorsi(data.data);
-          }
-        })
-        .catch(err => console.error('Sessioni corsi fetch error:', err));
-    }
+    // NOTE: fetch sessioni corsi spostato nel useEffect del componente DashboardPA
+    // dove setEntiSessioniCorsi è effettivamente in scope
 
     // Fetch bandi stats (associazioni e catalogo bandi)
     fetch(`${MIHUB_API}/bandi/stats`)
@@ -1808,6 +1798,24 @@ export default function DashboardPA() {
   const [entiNotificaTitolo, setEntiNotificaTitolo] = useState("");
   const [entiNotificaMessaggio, setEntiNotificaMessaggio] = useState("");
   const [entiSessioniCorsi, setEntiSessioniCorsi] = useState<any[]>([]);
+
+  // Fetch sessioni corsi (tutte le sessioni dell'associazione) - in scope corretto
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const assocId = urlParams.get('associazione_id');
+    if (!assocId) return;
+    const isAssoc = urlParams.get('role') === 'associazione' && urlParams.get('impersonate') === 'true';
+    if (!isAssoc) return;
+    fetch(`${MIHUB_API_BASE_URL}/api/associazioni/${assocId}/sessioni-tutte`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          setEntiSessioniCorsi(data.data);
+        }
+      })
+      .catch(err => console.error('Sessioni corsi fetch error:', err));
+  }, []);
+
   const [assocTargetTipo, setAssocTargetTipo] = useState("TUTTI");
   const [assocCorsoDettagliAperti, setAssocCorsoDettagliAperti] = useState(false);
   const [assocCorsoModalita, setAssocCorsoModalita] = useState<"ONLINE" | "SEDE">("ONLINE");
@@ -2377,30 +2385,29 @@ export default function DashboardPA() {
       })
       .catch(err => console.error("Notifiche risposte fetch error:", err));
 
-    // Fetch messaggi inviati - Enti Formatori E Associazioni & Bandi (stessa fonte, filtro diverso)
+    // Fetch messaggi inviati - SEPARATI per modulo
     const impersonationForEntiMsg = getImpersonationParams();
     const entiAssocId = impersonationForEntiMsg.associazioneId || new URLSearchParams(window.location.search).get("associazione_id") || "1";
-    Promise.all([
-      fetch(`${MIHUB_API}/notifiche/messaggi/ENTE_FORMATORE/1?filtro=inviati`).then(r => r.json()).catch(() => ({ success: false })),
-      fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/${entiAssocId}?filtro=inviati`).then(r => r.json()).catch(() => ({ success: false }))
-    ]).then(([dataEF, dataAssoc]) => {
-      const msgEF = (dataEF.success && Array.isArray(dataEF.data)) ? dataEF.data : [];
-      const msgAssoc = (dataAssoc.success && Array.isArray(dataAssoc.data)) ? dataAssoc.data : [];
-      // Unisci e deduplica per id
-      const allIds = new Set<number>();
-      const merged: any[] = [];
-      [...msgAssoc, ...msgEF].forEach((m: any) => {
-        if (!allIds.has(m.id)) { allIds.add(m.id); merged.push(m); }
-      });
-      // Ordina per data decrescente
-      merged.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      // Filtra: Enti Formatori = solo notifiche relative ai corsi (target_tipo CORSO o tipo_messaggio AVVISO_CORSO)
-      const isCorsoRelated = (m: any) => m.target_tipo === 'CORSO' || m.tipo_messaggio === 'AVVISO_CORSO';
-      const msgEntiFormatori = merged.filter(isCorsoRelated);
-      const msgAssocBandi = merged.filter((m: any) => !isCorsoRelated(m));
-      setMessaggiInviatiEnti(espandiMessaggiInviatiPerImpresa(msgEntiFormatori));
-      setMessaggiInviatiAssoc(espandiMessaggiInviatiPerImpresa(msgAssocBandi));
-    }).catch(err => console.error("Messaggi inviati fetch error:", err));
+    
+    // Enti Formatori: le notifiche inviate dal modulo Enti Formatori (mittente_tipo = ENTE_FORMATORE, mittente_id = associazioneId)
+    fetch(`${MIHUB_API}/notifiche/messaggi/ENTE_FORMATORE/${entiAssocId}?filtro=inviati`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          setMessaggiInviatiEnti(espandiMessaggiInviatiPerImpresa(data.data));
+        }
+      })
+      .catch(err => console.error("Messaggi inviati Enti fetch error:", err));
+    
+    // Associazioni & Bandi: le notifiche inviate dal modulo Associazioni & Bandi (mittente_tipo = ASSOCIAZIONE, mittente_id = associazioneId)
+    fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/${entiAssocId}?filtro=inviati`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          setMessaggiInviatiAssoc(espandiMessaggiInviatiPerImpresa(data.data));
+        }
+      })
+      .catch(err => console.error("Messaggi inviati Assoc fetch error:", err));
 
     // Fetch notifiche riunione associazione (INVITO_RIUNIONE, RIUNIONE_ANNULLATA) per sotto-tab Enti/Bandi
     const fetchRiunioniNotifiche = () => {
@@ -7987,8 +7994,8 @@ export default function DashboardPA() {
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({
                                 mittente_tipo: "ENTE_FORMATORE",
-                                mittente_id: 1,
-                                mittente_nome: "Ente Formatore",
+                                mittente_id: parseInt(associazioneId, 10),
+                                mittente_nome: impersonation.associazioneNome || "Ente Formatore",
                                 titolo: formData.get("titolo"),
                                 messaggio: formData.get("messaggio"),
                                 tipo_messaggio: formData.get("tipo_messaggio"),
