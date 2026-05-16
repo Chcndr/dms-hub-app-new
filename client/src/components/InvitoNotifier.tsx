@@ -92,13 +92,15 @@ export default function InvitoNotifier() {
           let impresaId: number | null = null;
           let impresaNome = 'Impresa';
           let impresaEmail = '';
+          let isCollaborator = false;
 
           // Fonte 1: miohub_firebase_user
           try {
             const fbStr = localStorage.getItem("miohub_firebase_user");
             if (fbStr) {
               const fb = JSON.parse(fbStr);
-              if (fb.impresaId) {
+              if (fb.isCollaborator) isCollaborator = true;
+              if (fb.impresaId && !fb.isCollaborator) {
                 impresaId = Number(fb.impresaId);
                 impresaNome = fb.impresaNome || fb.displayName || 'Impresa';
                 impresaEmail = fb.email || '';
@@ -112,19 +114,21 @@ export default function InvitoNotifier() {
               const userStr = localStorage.getItem("user");
               if (userStr) {
                 const user = JSON.parse(userStr);
-                if (user.impresa_id) {
+                if (user.isCollaborator) isCollaborator = true;
+                // Collaboratori team NON ricevono il popup inviti
+                // Gli inviti A99X vanno all'impresa titolare, non ai dipendenti
+                if (user.impresa_id && !user.isCollaborator) {
                   impresaId = Number(user.impresa_id);
                   impresaNome = user.impresa_nome || user.name || 'Impresa';
                   impresaEmail = user.email || user.impresa_email || user.username || '';
                 }
-                // Collaboratore autorizzato
-                if (!impresaId && user.isCollaborator && user.collaboratorData) {
-                  impresaId = Number(user.collaboratorData.impresa_id);
-                  impresaNome = user.collaboratorData.impresa_nome || 'Impresa';
-                  impresaEmail = user.email || '';
-                }
               }
             } catch { /* ignore */ }
+          }
+
+          // Collaboratori team: NON mostrare popup (ritorna SUPERADMIN per bloccare)
+          if (isCollaborator) {
+            return { tipo: 'SUPERADMIN', comuneId: 0, nome: '', email: '' };
           }
 
           if (impresaId) {
@@ -169,6 +173,12 @@ export default function InvitoNotifier() {
         const userStr = localStorage.getItem("user");
         if (userStr) {
           const user = JSON.parse(userStr);
+
+          // Collaboratori team: NON mostrare popup inviti
+          // Gli inviti A99X vanno all'impresa titolare, non ai dipendenti del team
+          if (user.isCollaborator) {
+            return { tipo: 'SUPERADMIN', comuneId: 0, nome: '', email: '' };
+          }
 
           // Impresa (utente non-admin con impresa_id e NON su DashboardPA)
           if (user.impresa_id) {
