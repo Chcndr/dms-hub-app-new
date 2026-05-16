@@ -1,16 +1,16 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.7 (Selezione Rapida Gruppi Imprese + Invitato Esterno A99X)
+> **Versione:** 10.31.7c (Protezione Anti-Bot + Fix InvitoNotifier App Impresa)
 > **Data:** 16 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.7)
+> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.7c)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `fa1cdb3` (v10.31.7) |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `b214558` (v10.31.7) |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `02c64e4` (v10.31.7c) |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `877b9d1` (v10.31.7b) |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -65,7 +65,8 @@
 > - **NON usare useState dopo useEffect in React** — L'ordine degli hook è fondamentale. Se un `setStato` viene usato in un `useEffect` o in un custom hook, lo `useState` corrispondente deve essere definito nello stesso scope o passato correttamente. (Fix v10.31.5)
 > - **NON usare variabili fuori scope in custom hooks** — Se un custom hook (es. `useDashboardData`) ha bisogno di aggiornare uno stato del componente padre, la funzione setter deve essere passata come argomento o lo stato deve essere gestito interamente dentro l'hook e restituito. (Fix v10.31.5)
 > - **NON usare `!isAssociazioneImpersonation()` per nascondere pulsanti al creatore associazione** — Quando un'associazione è il creatore della riunione (`creato_da_tipo === 'ASSOCIAZIONE'` e `creato_da_id === assocIdParam`), i pulsanti Rimanda/Elimina/Aggiungi devono essere visibili. La condizione deve verificare se l'associazione impersonata è il creatore, non bloccare tutti i pulsanti per le associazioni. (Fix v10.31.6b)
-> - **NON identificare come SUPERADMIN quando si è su pagina app-impresa con impresa_id** — In InvitoNotifier, se `window.location.pathname` include `/app-impresa` e l'utente ha `impresa_id`, deve essere trattato come IMPRESA (non SUPERADMIN). Altrimenti il popup inviti non appare nell'app impresa per utenti che sono anche admin. (Fix v10.31.6b)
+> - **NON identificare come SUPERADMIN quando si è su pagina app-impresa con impresa_id** — In InvitoNotifier, se `window.location.pathname` include `/dashboard-impresa` o `/app/impresa` e l'utente ha `impresa_id`, deve essere trattato come IMPRESA (non SUPERADMIN). Altrimenti il popup inviti non appare nell'app impresa per utenti che sono anche admin. (Fix v10.31.7b)
+> - **NON usare endpoint GET per azioni dirette nelle email** — Gli scanner antivirus/anti-bot fanno pre-fetch GET su tutti i link nelle email. Endpoint come `/invito/:token/accetta` e `/invito/:token/rifiuta` DEVONO avere una pagina di conferma intermedia (`?confirmed=1`) per evitare azioni automatiche da parte degli scanner. (Fix v10.31.7c)
 >
 > ---
 >
@@ -76,6 +77,26 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
+### CHANGELOG v10.31.7c (16 Mag 2026)
+- **PROTEZIONE ANTI-BOT** endpoint accetta/rifiuta invito: pagina di conferma intermedia
+  - Il primo GET mostra una pagina con pulsante "Conferma" (shield icon)
+  - Solo cliccando il pulsante (`?confirmed=1`) viene eseguita l'azione
+  - Gli scanner antivirus/anti-bot fanno GET sui link ma NON cliccano i pulsanti
+  - Nuova funzione `renderConfermaPage()` con design MIO HUB
+  - Risolve: Mercato Centrale S.r.l. auto-rifiutato da scanner email in 18 secondi
+- **FIX InvitoNotifier path check** per app impresa:
+  - Corretto path: `/app-impresa` (sbagliato) → `/dashboard-impresa` e `/app/impresa` (corretti)
+  - Ora il popup giallo informativo appare nelle app impresa (MIO TEST, Intim8, ecc.)
+  - Logica: se utente è su app impresa con `impresa_id`, viene trattato come IMPRESA (non SUPERADMIN)
+
+### CHANGELOG v10.31.7b (16 Mag 2026)
+- **FIX endpoint gruppi-imprese** riscritto completamente con query corrette
+  - Rimosso filtro `comune_id` (non esiste in hub_locations)
+  - Usa `hub_shops.owner_id` per collegare imprese a hub
+  - Usa `concessions → vendors → imprese` per collegare imprese a mercati
+  - Restituisce TUTTI i gruppi disponibili (non filtrati per comune)
+- **FIX frontend** rimossa chiamata con `comune_id`, rimossa sezione "Fuori Hub"
+
 ### CHANGELOG v10.31.7 (16 Mag 2026)
 
 **Feature A — Selezione Rapida Gruppi Imprese (Tab Invita Riunione):**
