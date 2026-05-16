@@ -2279,7 +2279,7 @@ export default function DashboardPA() {
   }, [comuneIdFromUrl]);
 
 
-  const espandiMessaggiInviatiPerImpresaa = (messaggi: any[] = []) =>
+  const espandiMessaggiInviatiPerImpresa = (messaggi: any[] = []) =>
     messaggi.flatMap((m: any) => {
       const dettagli = Array.isArray(m.destinatari_dettaglio)
         ? m.destinatari_dettaglio
