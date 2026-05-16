@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.7d (Fix InvitoNotifier Robustezza Identità App Impresa)
+> **Versione:** 10.31.7f (Fix InvitoNotifier: Blocco COMUNE + Collaboratori + Robustezza)
 > **Data:** 16 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -10,7 +10,7 @@
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
 > | **GitHub Backend** | Allineato | mihub-backend-rest `02c64e4` (v10.31.7c) |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `7be03bb` (v10.31.7d) |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `124d1c8` (v10.31.7f) |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -67,6 +67,8 @@
 > - **NON usare `!isAssociazioneImpersonation()` per nascondere pulsanti al creatore associazione** — Quando un'associazione è il creatore della riunione (`creato_da_tipo === 'ASSOCIAZIONE'` e `creato_da_id === assocIdParam`), i pulsanti Rimanda/Elimina/Aggiungi devono essere visibili. La condizione deve verificare se l'associazione impersonata è il creatore, non bloccare tutti i pulsanti per le associazioni. (Fix v10.31.6b)
 > - **NON identificare come SUPERADMIN quando si è su pagina app-impresa con impresa_id** — In InvitoNotifier, se `window.location.pathname` include `/dashboard-impresa` o `/app/impresa` e l'utente ha `impresa_id`, deve essere trattato come IMPRESA (non SUPERADMIN). Altrimenti il popup inviti non appare nell'app impresa per utenti che sono anche admin. (Fix v10.31.7b, rafforzato v10.31.7d con retry+storage listener)
 > - **NON usare useCallback con deps vuote per risolvere identità utente** — La risoluzione identità in componenti globali (InvitoNotifier, SpuntaNotifier) DEVE usare useEffect con retry + storage event listener per gestire la race condition del login asincrono Firebase. Un useCallback[] legge il localStorage una sola volta e fallisce se i dati non sono ancora disponibili. (Fix v10.31.7d)
+> - **NON mostrare popup InvitoNotifier per COMUNE** — I comuni non vengono invitati alle riunioni A99X. L'endpoint `inviti-ricevuti?comune_id=X` restituisce TUTTI i partecipanti invitati nel territorio, non inviti destinati al comune. Il comune vede tutto nella sezione A99X/Conferme della DashboardPA. (Fix v10.31.7f)
+> - **NON mostrare popup InvitoNotifier per collaboratori team** — I collaboratori (es. Viola Checchi per Alimentari Rossi) hanno `impresa_id` nel localStorage ma NON ricevono inviti A99X diretti. Gli inviti vanno all'impresa titolare. Se `user.isCollaborator === true`, bloccare il popup. (Fix v10.31.7e)
 > - **NON usare endpoint GET per azioni dirette nelle email** — Gli scanner antivirus/anti-bot fanno pre-fetch GET su tutti i link nelle email. Endpoint come `/invito/:token/accetta` e `/invito/:token/rifiuta` DEVONO avere una pagina di conferma intermedia (`?confirmed=1`) per evitare azioni automatiche da parte degli scanner. (Fix v10.31.7c)
 >
 > ---
@@ -78,6 +80,16 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
+### CHANGELOG v10.31.7f (16 Mag 2026)
+- **FIX popup InvitoNotifier per COMUNE** — Bloccato popup per tipo COMUNE:
+  - L'endpoint `inviti-ricevuti?comune_id=X` restituiva TUTTI i partecipanti invitati nel territorio
+  - Grosseto impersonato vedeva 4 inviti per imprese della riunione La Piazzola Bologna
+  - I comuni non vengono invitati — vedono tutto nella DashboardPA sezione A99X/Conferme
+- **FIX popup InvitoNotifier per collaboratori team** (v10.31.7e) — Bloccato popup per `isCollaborator=true`:
+  - Viola Checchi (collaboratore Alimentari Rossi) vedeva il popup perché aveva `impresa_id` nel localStorage
+  - Gli inviti A99X vanno all'impresa titolare, non ai dipendenti del team
+- **Popup InvitoNotifier ora appare SOLO per**: IMPRESA e ASSOCIAZIONE (via `le-mie-riunioni`)
+
 ### CHANGELOG v10.31.7d (16 Mag 2026)
 - **FIX InvitoNotifier robustezza identità app impresa** — Riscritto completamente con pattern SpuntaNotifier:
   - `useEffect` con retry ogni 2s per max 30s (gestisce race condition login asincrono)
