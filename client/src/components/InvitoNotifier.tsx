@@ -103,9 +103,11 @@ export default function InvitoNotifier() {
       const userStr = localStorage.getItem("user");
       if (userStr) {
         const user = JSON.parse(userStr);
-        // v10.31.6b: Se siamo su una pagina app-impresa E l'utente ha impresa_id,
+        // v10.31.7b: Se siamo su una pagina dell'app impresa E l'utente ha impresa_id,
         // trattare come IMPRESA (non come SUPERADMIN) — il popup deve apparire per le imprese
-        const isOnAppImpresa = window.location.pathname.includes('/app-impresa');
+        // Route reali: /dashboard-impresa, /app/impresa/...
+        const path = window.location.pathname;
+        const isOnAppImpresa = path.includes('/dashboard-impresa') || path.includes('/app/impresa');
         if (isOnAppImpresa && user.impresa_id) {
           return {
             tipo: 'IMPRESA',
@@ -114,7 +116,22 @@ export default function InvitoNotifier() {
             email: user.email || user.impresa_email || user.username,
           };
         }
-        // Super admin — check PRIMA di impresa per evitare che cada nel vuoto
+        // Impresa (utente non-admin con impresa_id) — check PRIMA di super admin
+        // Così le imprese normali (intim8@gmail.com, ecc.) ricevono il popup
+        if (user.impresa_id && !isOnAppImpresa) {
+          // Se non siamo su app impresa ma l'utente ha impresa_id, è comunque un'impresa
+          // a meno che non sia un admin sulla DashboardPA
+          const isOnDashboardPA = path.includes('/dashboard-pa') || path === '/';
+          if (!isOnDashboardPA) {
+            return {
+              tipo: 'IMPRESA',
+              id: user.impresa_id,
+              nome: user.impresa_nome || user.name || 'Impresa',
+              email: user.email || user.impresa_email || user.username,
+            };
+          }
+        }
+        // Super admin — solo sulla DashboardPA (non blocca il popup nelle app impresa)
         if (user.email === 'chcndr@gmail.com' || user.is_super_admin === true || user.role === 'admin' || user.base_role === 'admin') {
           return {
             tipo: 'SUPERADMIN',
@@ -123,7 +140,7 @@ export default function InvitoNotifier() {
             email: user.email,
           };
         }
-        // Impresa
+        // Impresa (fallback)
         if (user.impresa_id) {
           return {
             tipo: 'IMPRESA',
