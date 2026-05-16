@@ -1896,7 +1896,54 @@ export default function DashboardPA() {
   const [a99xRimandaLoading, setA99xRimandaLoading] = useState(false);
   const [a99xEliminaRiunioneId, setA99xEliminaRiunioneId] = useState<number | null>(null);
   const [a99xEliminaLoading, setA99xEliminaLoading] = useState(false);
+  // v10.31.7: Selezione rapida gruppi imprese + invitato esterno
+  const [a99xGruppiImprese, setA99xGruppiImprese] = useState<any>(null);
+  const [a99xGruppiLoading, setA99xGruppiLoading] = useState(false);
+  const [a99xShowGruppi, setA99xShowGruppi] = useState(false);
+  const [a99xEsternoForm, setA99xEsternoForm] = useState({ nome: '', comune_regione: '', settore: '', email: '' });
+  const [a99xShowEsternoForm, setA99xShowEsternoForm] = useState(false);
 
+
+  // v10.31.7: Carica gruppi imprese per selezione rapida
+  const fetchGruppiImprese = async () => {
+    if (a99xGruppiImprese) return; // gia cachato
+    setA99xGruppiLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
+      const cid = comuneIdFromUrl || assocIdFromUrl || '0';
+      const resp = await fetch(`${apiUrl}/api/a99x/gruppi-imprese?comune_id=${cid}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.success) setA99xGruppiImprese(data.data);
+      }
+    } catch (err) { console.error('Errore caricamento gruppi imprese:', err); }
+    setA99xGruppiLoading(false);
+  };
+
+  // v10.31.7: Seleziona tutte le imprese di un gruppo
+  const selectGruppoImprese = (imprese: any[]) => {
+    const nuovi = imprese.filter((imp: any) => !a99xInvitaSelezionati.some((s: any) => s.tipo === 'IMPRESA' && s.id === imp.id));
+    const nuoviContatti = nuovi.map((imp: any) => ({ tipo: 'IMPRESA', id: imp.id, nome: imp.denominazione, email: imp.email, settore: imp.settore }));
+    setA99xInvitaSelezionati([...a99xInvitaSelezionati, ...nuoviContatti]);
+    setA99xShowGruppi(false);
+  };
+
+  // v10.31.7: Aggiungi invitato esterno
+  const addEsternoToSelezionati = () => {
+    if (!a99xEsternoForm.nome || !a99xEsternoForm.email) return;
+    const esterno = {
+      tipo: 'ESTERNO',
+      id: null,
+      nome: a99xEsternoForm.nome,
+      email: a99xEsternoForm.email,
+      comune_regione: a99xEsternoForm.comune_regione || null,
+      persona_settore: a99xEsternoForm.settore || null,
+      persona_nome: a99xEsternoForm.nome
+    };
+    setA99xInvitaSelezionati([...a99xInvitaSelezionati, esterno]);
+    setA99xEsternoForm({ nome: '', comune_regione: '', settore: '', email: '' });
+    setA99xShowEsternoForm(false);
+  };
 
   // Ricerca contatti per aggiungere partecipante
   const searchContactsForAdd = async (q: string) => {
@@ -2173,7 +2220,7 @@ export default function DashboardPA() {
         creato_da_id: creatoDaId,
         // v10.31.6: Email del funzionario/dirigente che crea la riunione (email di login)
         creatore_email: (() => { try { const u = JSON.parse(localStorage.getItem('user') || '{}'); return u.email || null; } catch { return null; } })(),
-        invitati: a99xInvitaSelezionati.map((s: any) => ({ tipo: s.tipo, id: s.id, nome: s.nome, email: s.email, telefono: s.telefono }))
+        invitati: a99xInvitaSelezionati.map((s: any) => ({ tipo: s.tipo, id: s.id, nome: s.nome, email: s.email, telefono: s.telefono, persona_nome: s.persona_nome || s.nome, persona_settore: s.persona_settore || null, comune_regione: s.comune_regione || null }))
       };
       console.log('[A99X] Invio riunione:', JSON.stringify(body));
       const resp = await authenticatedFetch(`${apiUrl}/api/a99x/invita-riunione`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -11275,8 +11322,8 @@ export default function DashboardPA() {
                       <input
                         placeholder={a99xSearchEntityType === 'imprese' ? 'Cerca per nome, CF o email...' : a99xSearchEntityType === 'associazioni' ? 'Cerca per nome associazione, tipo o email...' : 'Cerca per comune, settore o responsabile...'}
                         value={a99xInvitaSearch}
-                        onChange={e => { setA99xInvitaSearch(e.target.value); setA99xShowDropdown(true); }}
-                        onFocus={() => setA99xShowDropdown(true)}
+                        onChange={e => { setA99xInvitaSearch(e.target.value); setA99xShowDropdown(true); setA99xShowGruppi(false); }}
+                        onFocus={() => { setA99xShowDropdown(true); if (!a99xInvitaSearch && a99xSearchEntityType === 'imprese') { fetchGruppiImprese(); setA99xShowGruppi(true); } }}
                         className="w-full bg-[#0b1220] border border-[#14b8a6]/30 rounded-lg text-[#e8fbff] pl-10 pr-10 py-2.5 text-sm focus:border-[#14b8a6] focus:outline-none placeholder-[#e8fbff]/30"
                       />
                       {a99xInvitaSearch && (
@@ -11288,6 +11335,86 @@ export default function DashboardPA() {
                         </button>
                       )}
                     </div>
+
+                    {/* v10.31.7: Popup Selezione Rapida Gruppi Imprese */}
+                    {a99xShowGruppi && a99xSearchEntityType === 'imprese' && !a99xInvitaSearch && (
+                      <div className="absolute z-50 w-full mt-1 bg-[#1a2332] border border-[#14b8a6]/30 rounded-lg shadow-xl max-h-80 overflow-y-auto">
+                        <div className="p-3 border-b border-[#14b8a6]/20 bg-[#14b8a6]/5">
+                          <p className="text-[#14b8a6] font-semibold text-sm flex items-center gap-2">⚡ Selezione Rapida</p>
+                          <p className="text-[#e8fbff]/40 text-[10px] mt-0.5">Seleziona un gruppo per invitare tutte le imprese in blocco</p>
+                        </div>
+                        {a99xGruppiLoading ? (
+                          <div className="p-6 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-[#14b8a6]" /><p className="text-[#e8fbff]/40 text-xs mt-2">Caricamento gruppi...</p></div>
+                        ) : a99xGruppiImprese ? (
+                          <>
+                            {/* Hub Urbani */}
+                            {a99xGruppiImprese.hub_urbani && a99xGruppiImprese.hub_urbani.length > 0 && a99xGruppiImprese.hub_urbani.map((hub: any) => (
+                              <div key={`hub-${hub.hub_id}`} onClick={() => selectGruppoImprese(hub.imprese)} className="p-3 hover:bg-[#14b8a6]/20 cursor-pointer border-b border-[#14b8a6]/10 transition-colors">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">🏪</span>
+                                    <div>
+                                      <p className="text-[#e8fbff] text-sm font-medium">Tutte le imprese SEDE FISSA dell'Hub Urbano di {hub.hub_name}</p>
+                                      <p className="text-[#e8fbff]/40 text-[10px]">{hub.city}</p>
+                                    </div>
+                                  </div>
+                                  <span className="text-[#14b8a6] font-bold text-sm bg-[#14b8a6]/10 px-2 py-0.5 rounded">{hub.count}</span>
+                                </div>
+                              </div>
+                            ))}
+                            {/* Fuori Hub */}
+                            {a99xGruppiImprese.fuori_hub && a99xGruppiImprese.fuori_hub.count > 0 && (
+                              <div onClick={() => selectGruppoImprese(a99xGruppiImprese.fuori_hub.imprese)} className="p-3 hover:bg-[#8b5cf6]/20 cursor-pointer border-b border-[#8b5cf6]/10 transition-colors">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">🏢</span>
+                                    <div>
+                                      <p className="text-[#e8fbff] text-sm font-medium">Tutte le imprese SEDE FISSA fuori dall'Hub Urbano di {a99xGruppiImprese.fuori_hub.comune_nome}</p>
+                                      <p className="text-[#e8fbff]/40 text-[10px]">Imprese del comune non registrate in un Hub Urbano</p>
+                                    </div>
+                                  </div>
+                                  <span className="text-[#8b5cf6] font-bold text-sm bg-[#8b5cf6]/10 px-2 py-0.5 rounded">{a99xGruppiImprese.fuori_hub.count}</span>
+                                </div>
+                              </div>
+                            )}
+                            {/* Mercati con Hub TCC */}
+                            {a99xGruppiImprese.mercati_hub_tcc && a99xGruppiImprese.mercati_hub_tcc.length > 0 && a99xGruppiImprese.mercati_hub_tcc.map((mkt: any) => (
+                              <div key={`mkt-hub-${mkt.market_id}`} onClick={() => selectGruppoImprese(mkt.imprese)} className="p-3 hover:bg-[#f59e0b]/20 cursor-pointer border-b border-[#f59e0b]/10 transition-colors">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">🛒</span>
+                                    <div>
+                                      <p className="text-[#e8fbff] text-sm font-medium">Tutte le imprese del Mercato di {mkt.market_name}</p>
+                                      <p className="text-[#f59e0b]/60 text-[10px]">Hub TCC Carbon Credit attivo</p>
+                                    </div>
+                                  </div>
+                                  <span className="text-[#f59e0b] font-bold text-sm bg-[#f59e0b]/10 px-2 py-0.5 rounded">{mkt.count}</span>
+                                </div>
+                              </div>
+                            ))}
+                            {/* Mercati senza Hub TCC */}
+                            {a99xGruppiImprese.mercati_no_hub && a99xGruppiImprese.mercati_no_hub.length > 0 && a99xGruppiImprese.mercati_no_hub.map((mkt: any) => (
+                              <div key={`mkt-nohub-${mkt.market_id}`} onClick={() => selectGruppoImprese(mkt.imprese)} className="p-3 hover:bg-[#ef4444]/20 cursor-pointer border-b border-[#ef4444]/10 transition-colors">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">🛒</span>
+                                    <div>
+                                      <p className="text-[#e8fbff] text-sm font-medium">Tutte le imprese del Mercato di {mkt.market_name}</p>
+                                      <p className="text-[#ef4444]/60 text-[10px]">Senza Hub TCC</p>
+                                    </div>
+                                  </div>
+                                  <span className="text-[#ef4444] font-bold text-sm bg-[#ef4444]/10 px-2 py-0.5 rounded">{mkt.count}</span>
+                                </div>
+                              </div>
+                            ))}
+                            {/* Nessun gruppo */}
+                            {(!a99xGruppiImprese.hub_urbani || a99xGruppiImprese.hub_urbani.length === 0) && (!a99xGruppiImprese.fuori_hub || a99xGruppiImprese.fuori_hub.count === 0) && (!a99xGruppiImprese.mercati_hub_tcc || a99xGruppiImprese.mercati_hub_tcc.length === 0) && (!a99xGruppiImprese.mercati_no_hub || a99xGruppiImprese.mercati_no_hub.length === 0) && (
+                              <div className="p-4 text-center text-[#e8fbff]/40 text-sm">Nessun gruppo di imprese disponibile per questo comune</div>
+                            )}
+                          </>
+                        ) : null}
+                      </div>
+                    )}
 
                     {/* Dropdown risultati */}
                     {a99xShowDropdown && a99xInvitaSearch && a99xInvitaSearch.length >= 2 && (
@@ -11424,6 +11551,47 @@ export default function DashboardPA() {
                             })
                           )
                         )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* v10.31.7: Pulsante + Form Invitato Esterno */}
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setA99xShowEsternoForm(!a99xShowEsternoForm)}
+                      className={`w-full py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${a99xShowEsternoForm ? 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/40' : 'bg-[#1a2332] text-[#e8fbff]/60 border border-[#e8fbff]/10 hover:border-[#f59e0b]/40 hover:text-[#f59e0b]'}`}
+                    >
+                      {a99xShowEsternoForm ? <XCircle className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                      {a99xShowEsternoForm ? 'Chiudi Form Esterno' : 'Aggiungi Invitato Esterno (non registrato)'}
+                    </button>
+                    {a99xShowEsternoForm && (
+                      <div className="mt-2 bg-[#0b1220] border border-[#f59e0b]/30 rounded-lg p-4 space-y-3">
+                        <p className="text-[#f59e0b] text-xs font-semibold flex items-center gap-2"><UserPlus className="h-3.5 w-3.5" /> Invitato Esterno — Non registrato nel sistema</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[#e8fbff]/60 text-[10px] mb-1">Nome *</label>
+                            <input value={a99xEsternoForm.nome} onChange={e => setA99xEsternoForm({...a99xEsternoForm, nome: e.target.value})} placeholder="Nome e Cognome" className="w-full bg-[#1a2332] border border-[#f59e0b]/20 rounded-lg p-2 text-[#e8fbff] text-sm placeholder-[#e8fbff]/20" />
+                          </div>
+                          <div>
+                            <label className="block text-[#e8fbff]/60 text-[10px] mb-1">Email *</label>
+                            <input type="email" value={a99xEsternoForm.email} onChange={e => setA99xEsternoForm({...a99xEsternoForm, email: e.target.value})} placeholder="email@esempio.it" className="w-full bg-[#1a2332] border border-[#f59e0b]/20 rounded-lg p-2 text-[#e8fbff] text-sm placeholder-[#e8fbff]/20" />
+                          </div>
+                          <div>
+                            <label className="block text-[#e8fbff]/60 text-[10px] mb-1">Comune / Regione</label>
+                            <input value={a99xEsternoForm.comune_regione} onChange={e => setA99xEsternoForm({...a99xEsternoForm, comune_regione: e.target.value})} placeholder="Es: Bologna, Emilia-Romagna" className="w-full bg-[#1a2332] border border-[#f59e0b]/20 rounded-lg p-2 text-[#e8fbff] text-sm placeholder-[#e8fbff]/20" />
+                          </div>
+                          <div>
+                            <label className="block text-[#e8fbff]/60 text-[10px] mb-1">Settore</label>
+                            <input value={a99xEsternoForm.settore} onChange={e => setA99xEsternoForm({...a99xEsternoForm, settore: e.target.value})} placeholder="Es: Alimentari, Turismo" className="w-full bg-[#1a2332] border border-[#f59e0b]/20 rounded-lg p-2 text-[#e8fbff] text-sm placeholder-[#e8fbff]/20" />
+                          </div>
+                        </div>
+                        <button
+                          onClick={addEsternoToSelezionati}
+                          disabled={!a99xEsternoForm.nome || !a99xEsternoForm.email}
+                          className="w-full py-2 rounded-lg text-sm font-medium bg-[#f59e0b] text-[#0b1220] hover:bg-[#f59e0b]/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                        >
+                          <UserPlus className="h-4 w-4" /> Aggiungi alla Riunione
+                        </button>
                       </div>
                     )}
                   </div>
