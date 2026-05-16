@@ -1,19 +1,20 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.7g (Fix inviti-ricevuti: Comuni come partecipanti + Collaboratori + Robustezza)
+> **Versione:** 10.31.7h (Fix confusione associazione_id/comune_id + InvitoNotifier robusto + Integrazioni A99X)
 > **Data:** 16 Maggio 2026
-> **Stato:** PUNTO DI RIPRISTINO STABILE
+> **Stato:** PUNTO DI RIPRISTINO STABILE — Tag `STABLE-v10.31.7h-20260516`
 >
 > ---
 > ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.7h)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `aab1c92` (v10.31.7g) |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `e184680` (v10.31.7h) |
-> | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
-> | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
-> | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `a867ab0` — Tag `STABLE-v10.31.7h-20260516` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `8e673d3` — Tag `STABLE-v10.31.7h-20260516` |
+> | **GitHub MIO-hub** | Allineato | MIO-hub v46 — Tag `STABLE-v46-20260516` — 1.100 endpoint catalogati |
+> | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy via GitHub Actions — 938 endpoint attivi |
+> | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy su push master |
+> | **Neon (DB)** | Integro | 195+ tabelle, riunioni assoc corrette (comune_id=0), 11 riunioni totali |
 >
 > ---
 >
@@ -81,6 +82,32 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
+### RIEPILOGO SESSIONE 16 Mag 2026 (v10.31.7d → v10.31.7h)
+
+**Fix completati in questa sessione (5 versioni):**
+
+| Versione | Fix | Repo | Stato |
+|----------|-----|------|-------|
+| v10.31.7d | InvitoNotifier riscritto con retry + storage listener | Frontend | FUNZIONANTE |
+| v10.31.7e | Collaboratori team esclusi dal popup | Frontend | FUNZIONANTE |
+| v10.31.7f | Blocco COMUNE (toppa) | Frontend | SOSTITUITO da v10.31.7g |
+| v10.31.7g | Backend inviti-ricevuti: filtro per comune come partecipante | Backend + Frontend | FUNZIONANTE |
+| v10.31.7h | Fix radice: cId='0' per associazioni + DB corretto + Integrazioni A99X | Frontend + DB | FUNZIONANTE |
+
+**Problemi residui da risolvere:**
+- **Popup InvitoNotifier NON appare nell'app impresa mobile** (MIO TEST su `miohub.it`, Intim8 su `miohub.it`) — Da investigare: potrebbe essere un problema di path al primo render, o di localStorage non ancora popolato. Il popup funziona nella DashboardPA (Confesercenti Modena impersonata). Da testare con nuova riunione.
+- **Popup InvitoNotifier NON appare per app cittadino** (Viola Checchi) — Corretto: collaboratori team esclusi (v10.31.7e). Se Viola deve vedere inviti, serve logica diversa.
+
+**Allineamento sistema verificato:**
+- GitHub ↔ Vercel: allineato (autodeploy su push master)
+- GitHub ↔ Hetzner: allineato (autodeploy via GitHub Actions)
+- Neon DB: integro, riunioni associazioni corrette (comune_id=0)
+- MIO-hub index.json: v46, 1.100 endpoint catalogati
+- Backend endpoint-count: 938 attivi + 199 backup = 1.137 totali
+- Tag di ripristino: `STABLE-v10.31.7h-20260516` su tutti e 3 i repo
+
+---
+
 ### CHANGELOG v10.31.7h (16 Mag 2026)
 - **FIX FRONTEND DashboardPA — Confusione associazione_id / comune_id nella creazione riunione**:
   - BUG: Quando un'associazione (es. Confcommercio Bologna, id=1) creava una riunione, il frontend usava `associazione_id` come `comune_id` → la riunione veniva salvata con `comune_id=1` (Grosseto!) invece di `comune_id=0`
