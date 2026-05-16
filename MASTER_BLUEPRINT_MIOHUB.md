@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.7c (Protezione Anti-Bot + Fix InvitoNotifier App Impresa)
+> **Versione:** 10.31.7d (Fix InvitoNotifier Robustezza Identità App Impresa)
 > **Data:** 16 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
@@ -10,7 +10,7 @@
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
 > | **GitHub Backend** | Allineato | mihub-backend-rest `02c64e4` (v10.31.7c) |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `877b9d1` (v10.31.7b) |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `7be03bb` (v10.31.7d) |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -65,7 +65,8 @@
 > - **NON usare useState dopo useEffect in React** — L'ordine degli hook è fondamentale. Se un `setStato` viene usato in un `useEffect` o in un custom hook, lo `useState` corrispondente deve essere definito nello stesso scope o passato correttamente. (Fix v10.31.5)
 > - **NON usare variabili fuori scope in custom hooks** — Se un custom hook (es. `useDashboardData`) ha bisogno di aggiornare uno stato del componente padre, la funzione setter deve essere passata come argomento o lo stato deve essere gestito interamente dentro l'hook e restituito. (Fix v10.31.5)
 > - **NON usare `!isAssociazioneImpersonation()` per nascondere pulsanti al creatore associazione** — Quando un'associazione è il creatore della riunione (`creato_da_tipo === 'ASSOCIAZIONE'` e `creato_da_id === assocIdParam`), i pulsanti Rimanda/Elimina/Aggiungi devono essere visibili. La condizione deve verificare se l'associazione impersonata è il creatore, non bloccare tutti i pulsanti per le associazioni. (Fix v10.31.6b)
-> - **NON identificare come SUPERADMIN quando si è su pagina app-impresa con impresa_id** — In InvitoNotifier, se `window.location.pathname` include `/dashboard-impresa` o `/app/impresa` e l'utente ha `impresa_id`, deve essere trattato come IMPRESA (non SUPERADMIN). Altrimenti il popup inviti non appare nell'app impresa per utenti che sono anche admin. (Fix v10.31.7b)
+> - **NON identificare come SUPERADMIN quando si è su pagina app-impresa con impresa_id** — In InvitoNotifier, se `window.location.pathname` include `/dashboard-impresa` o `/app/impresa` e l'utente ha `impresa_id`, deve essere trattato come IMPRESA (non SUPERADMIN). Altrimenti il popup inviti non appare nell'app impresa per utenti che sono anche admin. (Fix v10.31.7b, rafforzato v10.31.7d con retry+storage listener)
+> - **NON usare useCallback con deps vuote per risolvere identità utente** — La risoluzione identità in componenti globali (InvitoNotifier, SpuntaNotifier) DEVE usare useEffect con retry + storage event listener per gestire la race condition del login asincrono Firebase. Un useCallback[] legge il localStorage una sola volta e fallisce se i dati non sono ancora disponibili. (Fix v10.31.7d)
 > - **NON usare endpoint GET per azioni dirette nelle email** — Gli scanner antivirus/anti-bot fanno pre-fetch GET su tutti i link nelle email. Endpoint come `/invito/:token/accetta` e `/invito/:token/rifiuta` DEVONO avere una pagina di conferma intermedia (`?confirmed=1`) per evitare azioni automatiche da parte degli scanner. (Fix v10.31.7c)
 >
 > ---
@@ -77,6 +78,19 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
+### CHANGELOG v10.31.7d (16 Mag 2026)
+- **FIX InvitoNotifier robustezza identità app impresa** — Riscritto completamente con pattern SpuntaNotifier:
+  - `useEffect` con retry ogni 2s per max 30s (gestisce race condition login asincrono)
+  - Storage event listener per catturare login Firebase tardivo
+  - **PRIORITÀ 0**: Se path contiene `/dashboard-impresa` o `/app/impresa`, SEMPRE trattare come IMPRESA
+    (risolve definitivamente il bug per `chcndr@gmail.com` che cadeva nel check SUPERADMIN)
+  - Multi-fonte impresaId: `miohub_firebase_user` → `localStorage user` → `collaboratorData`
+  - Stato `userIdentity` come state React (non più useCallback) → polling si attiva solo quando identità risolta
+- **FIX `?confirmed=1`** su tutte le chiamate accetta/rifiuta interne:
+  - InvitoNotifier.tsx (popup globale)
+  - DashboardPA.tsx (sezione Conferme Inviti)
+  - AppImpresaNotifiche.tsx (4 chiamate: righe 642, 653, 1277, 1300)
+
 ### CHANGELOG v10.31.7c (16 Mag 2026)
 - **PROTEZIONE ANTI-BOT** endpoint accetta/rifiuta invito: pagina di conferma intermedia
   - Il primo GET mostra una pagina con pulsante "Conferma" (shield icon)
