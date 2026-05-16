@@ -9,7 +9,7 @@
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `02b08d8` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `a6a4eb7` |
 > | **GitHub Frontend** | Allineato | dms-hub-app-new `9030bd9` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
