@@ -1,16 +1,16 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.6 (Fix A99X Riunioni: Creatore, Auto-invito, Email Impresa DB, Popup Admin)
+> **Versione:** 10.31.6b (Fix Pulsanti Creatore Associazione A99X + Popup InvitoNotifier App Impresa)
 > **Data:** 16 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.6)
+> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.6b)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `6287a73` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `4b42288` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `1bdf2b0` (v10.31.6) |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `b1d7c74` (v10.31.6b) |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -64,6 +64,8 @@
 > - **Modulo notifica corso DEVE autocompilare il messaggio** — Quando si clicca Bell su un corso, il messaggio deve essere precompilato con data, orario, modalità e sede del corso. L'utente può modificarlo prima dell'invio. (Fix v10.31.4)
 > - **NON usare useState dopo useEffect in React** — L'ordine degli hook è fondamentale. Se un `setStato` viene usato in un `useEffect` o in un custom hook, lo `useState` corrispondente deve essere definito nello stesso scope o passato correttamente. (Fix v10.31.5)
 > - **NON usare variabili fuori scope in custom hooks** — Se un custom hook (es. `useDashboardData`) ha bisogno di aggiornare uno stato del componente padre, la funzione setter deve essere passata come argomento o lo stato deve essere gestito interamente dentro l'hook e restituito. (Fix v10.31.5)
+> - **NON usare `!isAssociazioneImpersonation()` per nascondere pulsanti al creatore associazione** — Quando un'associazione è il creatore della riunione (`creato_da_tipo === 'ASSOCIAZIONE'` e `creato_da_id === assocIdParam`), i pulsanti Rimanda/Elimina/Aggiungi devono essere visibili. La condizione deve verificare se l'associazione impersonata è il creatore, non bloccare tutti i pulsanti per le associazioni. (Fix v10.31.6b)
+> - **NON identificare come SUPERADMIN quando si è su pagina app-impresa con impresa_id** — In InvitoNotifier, se `window.location.pathname` include `/app-impresa` e l'utente ha `impresa_id`, deve essere trattato come IMPRESA (non SUPERADMIN). Altrimenti il popup inviti non appare nell'app impresa per utenti che sono anche admin. (Fix v10.31.6b)
 >
 > ---
 >
@@ -72,6 +74,27 @@
 > - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
 > - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+
+---
+### CHANGELOG v10.31.6b (16 Mag 2026)
+**Fix Pulsanti Creatore Associazione A99X + Popup InvitoNotifier App Impresa**
+
+1. **Frontend: Pulsanti creatore associazione** — I pulsanti "Rimanda Riunione", "Elimina Evento" e "Aggiungi Partecipante" ora sono visibili anche quando l'associazione impersonata è il creatore della riunione. La condizione `!isAssociazioneImpersonation()` è stata rimossa e sostituita con una logica che verifica `creato_da_tipo === 'ASSOCIAZIONE' && creato_da_id === assocIdParam`. File: `DashboardPA.tsx` riga ~10922.
+2. **Frontend: InvitoNotifier tratta come IMPRESA su app-impresa** — Il componente InvitoNotifier ora controlla `window.location.pathname.includes('/app-impresa')` prima del check SUPERADMIN. Se l'utente è su una pagina app-impresa e ha `impresa_id`, viene trattato come IMPRESA (non SUPERADMIN), permettendo al popup inviti di apparire correttamente. Risolve il caso `chcndr@gmail.com` (admin + impresa_id=38). File: `InvitoNotifier.tsx` righe 106-116.
+
+**Commit frontend:** `b1d7c74` — Solo frontend, nessuna modifica backend.
+
+---
+### CHANGELOG v10.31.6 (16 Mag 2026)
+**Fix A99X Riunioni: Creatore, Auto-invito, Email Impresa DB, Popup Admin, Data Fine**
+
+1. **Frontend: Creatore usa nome ente impersonato** — Quando si crea una riunione in impersonazione Associazione/Comune, `creato_da_nome` e `creato_da_id` sono quelli dell'ente impersonato (non "MIO HUB").
+2. **Backend: Auto-invito creatore** — Il creatore della riunione viene aggiunto automaticamente come partecipante CONFERMATO con `creatore_email` dal login.
+3. **Frontend: Email impresa dal DB** — Per riunioni A99X, le imprese usano `IMPRESA_EMAIL_RIUNIONI` (email dal DB) invece di `IMPRESA_EMAIL` (email login).
+4. **Frontend: Popup InvitoNotifier disabilitato per super admin** — Il super admin (comune_id=0) non riceve più il popup InvitoNotifier.
+5. **Backend: Validazione data_fine >= data_inizio** — Il backend ricalcola `data_fine` se è precedente a `data_inizio`.
+
+**Commit frontend:** `d86d594` — **Commit backend:** `1bdf2b0`
 
 ---
 ### CHANGELOG v10.31.3 (16 Mag 2026)
