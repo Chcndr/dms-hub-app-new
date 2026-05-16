@@ -1073,6 +1073,8 @@ export default function DashboardPA() {
   const isSuperAdmin = !isImpersonating && !urlParams.get("comune_id");
   const comuneIdFromUrl = urlParams.get("comune_id") || (isSuperAdmin ? '0' : null);
   const comuneNomeFromUrl = urlParams.get("comune_nome") || (isSuperAdmin ? 'MIO HUB' : null);
+  // v10.31.6b fix: assocIdFromUrl a livello di componente per uso nel JSX (pulsanti creatore associazione)
+  const assocIdFromUrl = isAssociazioneImpersonation() ? urlParams.get("associazione_id") : null;
 
   const [dashboardSubTab, setDashboardSubTab] = useState<
     "overview" | "mercati"
@@ -10923,7 +10925,7 @@ export default function DashboardPA() {
                               // Super admin (comune_id match) OPPURE associazione creatrice
                               (!comuneIdFromUrl && !isAssociazioneImpersonation()) ||
                               (comuneIdFromUrl && String(riunione.comune_id) === String(comuneIdFromUrl)) ||
-                              (isAssociazioneImpersonation() && riunione.creato_da_tipo === 'ASSOCIAZIONE' && String(riunione.creato_da_id) === String(assocIdParam))
+                              (isAssociazioneImpersonation() && riunione.creato_da_tipo === 'ASSOCIAZIONE' && String(riunione.creato_da_id) === String(assocIdFromUrl))
                             ) && (
                               <div className="mt-3 pt-3 border-t border-[#8b5cf6]/10">
                                 {a99xAddPartRiunioneId === riunione.id ? (
