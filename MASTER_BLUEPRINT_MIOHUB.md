@@ -1,16 +1,16 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.5 (Fix Sessioni Corsi Scope + Autocompilazione Modulo Notifica)
+> **Versione:** 10.31.6 (Fix A99X Riunioni: Creatore, Auto-invito, Email Impresa DB, Popup Admin)
 > **Data:** 16 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE
 >
 > ---
-> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.5)
+> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.6)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `a6a4eb7` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `9030bd9` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `6287a73` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `4b42288` |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy |
 > | **Neon (DB)** | Integro | 195+ tabelle, comune_id=0 = MIO HUB (Andrea Checchi) |
@@ -48,6 +48,11 @@
 > - **Invio notifica corso DEVE creare sessione automatica** — Quando si invia una notifica corso tramite il modulo "Invia Notifica alle Imprese" (qualsiasi piattaforma: A99X, Zoom, Teams, link manuale), il backend DEVE creare automaticamente una riga in `formazione_sessioni_corso` con titolo, link, modalità, sede, relatore e partecipanti (imprese iscritte).
 > - **NON usare campo 'corpo' nella tabella notifiche** — Il campo corretto è `messaggio`. L'errore `column "corpo" of relation "notifiche" does not exist` si verifica se si usa il nome sbagliato.
 > - **GET lista sessioni DEVE includere presenze con JOIN imprese** — La route `GET /api/associazioni/:id/corsi/:cid/sessioni` DEVE ritornare per ogni sessione anche l'array `presenze` con `impresa_nome` (JOIN su `imprese.denominazione`). NON ritornare solo i dati sessione senza presenze.
+> - **NON usare email di login per inviti riunione alle imprese** — Le imprese sono entità giuridiche, l'invito va all'email dell'impresa nel DB (`impresa_email`), non all'email dell'utente che fa login (es. admin che impersona). Per PA/Comuni/Associazioni si usa invece l'email di login del funzionario.
+> - **NON mostrare popup InvitoNotifier al super admin** — Il super admin (comune_id=0) vede già tutte le riunioni nella DashboardPA. Il popup con comune_id=0 restituirebbe tutti gli inviti di tutte le riunioni create, causando spam.
+> - **NON usare 'MIO HUB' come creatore in impersonazione** — Quando si crea una riunione in impersonazione Associazione o Comune, il `creato_da_nome` e `creato_da_id` devono essere quelli dell'ente impersonato, non il default 'MIO HUB'.
+> - **NON permettere data_fine < data_inizio** — Il backend deve validare e ricalcolare `data_fine` se è precedente a `data_inizio` per evitare che le riunioni risultino immediatamente scadute nel frontend.
+> - **NON dimenticare l'auto-invito del creatore** — Il backend deve aggiungere automaticamente il creatore della riunione come partecipante CONFERMATO per permettergli di accedere alla videoconferenza.
 > - **Partecipanti sessione DEVONO essere sempre visibili nella card** — NON nascondere i partecipanti dietro un click/expand. Le righe partecipanti (con avatar iniziale, nome impresa, stato) devono essere visibili direttamente nella card sessione, stile A99X riunioni.
 > - **Sessione automatica DEVE usare data_inizio del corso** — Quando si crea la sessione automatica (invio notifica), il campo `data_inizio` DEVE essere preso da `formazione_corsi.data_inizio`, NON da `NOW()`. Anche `data_fine` e `durata_minuti` (= durata_ore * 60) devono venire dal corso.
 > - **Tab Sessioni DEVE mostrare contatore (N)** — Come gli altri tab (Corsi (9), Iscrizioni (8)), il tab Sessioni deve mostrare il numero di sessioni caricate: "Sessioni (N)". Il conteggio viene esposto dal componente SessioniCorsoTab tramite callback `onSessioniCount`.
