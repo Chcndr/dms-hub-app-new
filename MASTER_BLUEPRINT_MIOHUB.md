@@ -14186,3 +14186,64 @@ AVA organizzerà riunioni in autonomia: identificherà settori PA competenti, ce
 > - NON usare API cloud (Google/OpenAI) per il TTS; usare sempre Piper TTS in locale per garantire la privacy.
 > - NON riprodurre l'audio automaticamente se l'utente non ha attivato esplicitamente il toggle voce (rispetto policy autoplay browser).
 > - NON bloccare lo streaming testuale in attesa del TTS; il testo deve apparire subito, l'audio viene generato e riprodotto alla fine.
+
+> ---
+> ### CHANGELOG v11.2.0 (17 Mag 2026)
+> **Fix TTS (velocità + separatori) e Glossario MIO HUB nel System Prompt AVA**
+>
+> **Stato deploy:**
+> | Sistema | Commit Frontend | Commit Backend | Stato |
+> |---|---|---|---|
+> | GitHub `dms-hub-app-new` master | push TTS fix | — | Aggiornato |
+> | GitHub `mihub-backend-rest` master | — | `5d7c754` | Aggiornato |
+> | Hetzner backend (api.mio-hub.me) | — | — | Autodeploy completato |
+> | Vercel frontend (miohub.it) | — | — | Autodeploy completato |
+>
+> **FIX TTS FRONTEND (useStreamingChat.ts):**
+> - Velocità TTS ridotta da `0.9` a `0.7` (l'utente la trovava troppo veloce).
+> - Rimossi i separatori `:` e `;` dalla regex di split frasi TTS. Questi caratteri causavano il troncamento del messaggio vocale (es. "MIO HUB:" veniva letto come frase completa e il resto veniva perso). Ora i separatori di frase sono solo: `.`, `!`, `?`, `\n`.
+>
+> **FIX RISPOSTE AVA — GLOSSARIO MIO HUB (ai-chat.js):**
+> - **PROBLEMA:** AVA rispondeva con definizioni completamente sbagliate:
+>   - SCIA = "Simplified Company Information and Approval" (SBAGLIATO — è Segnalazione Certificata di Inizio Attività)
+>   - SSO = "Single Sign-On" generico (SBAGLIATO nel contesto MIO HUB — è il modulo SUAP)
+>   - Non sapeva cos'è MIO HUB, le sezioni della dashboard, i moduli del sistema
+> - **FIX:** Aggiunto nel `CORE_PROMPT_BASE` (iniettato in OGNI conversazione):
+>   - Sezione "COS'È MIO HUB" con descrizione della piattaforma
+>   - **GLOSSARIO MIO HUB** con 16 definizioni ufficiali (SCIA, SSO SUAP, SUAP, Concessione, Spunta, Spuntista, Wallet, PagoPA, Canone Unico, Bolkestein, DMS Legacy, A99X, TCC, Mappa GIS, D.Lgs. 114/98, DPR 160/2010)
+>   - Lista completa 17 sezioni Dashboard PA
+>   - Regola esplicita: "usa SEMPRE le definizioni del GLOSSARIO MIO HUB"
+> - Aggiornato anche il frammento KB `suap` con le definizioni corrette di SCIA e SSO SUAP.
+>
+> **KNOWLEDGE BASE — 10 DOCUMENTI CARICATI:**
+> Caricati 10 documenti nella Knowledge Base RAG (`ava_knowledge_base`) tramite endpoint `/api/ava/kb/ingest`:
+> | # | Titolo | Settore |
+> |---|---|---|
+> | 1 | Cos'è MIO HUB — Panoramica del Sistema | sistema |
+> | 2 | SCIA e SSO SUAP — Modulo Pratiche MIO HUB | suap |
+> | 3 | Concessioni e Direttiva Bolkestein | concessioni |
+> | 4 | Presenze Mercati e Sistema Spunta | presenze |
+> | 5 | Wallet e Pagamenti PagoPA in MIO HUB | pagamenti |
+> | 6 | Sezioni della Dashboard PA di MIO HUB | sistema |
+> | 7 | A99X — Modulo Agenda Intelligente di MIO HUB | a99x |
+> | 8 | Normativa Mercati Ambulanti Italiani | normativa |
+> | 9 | DMS Legacy e Integrazioni Esterne di MIO HUB | integrazioni |
+> | 10 | AVA AI — Assistente Virtuale Attivo di MIO HUB | sistema |
+>
+> Gli embeddings vengono generati automaticamente dal worker in background (nomic-embed-text via Ollama).
+>
+> **VINCOLI NEGATIVI (cosa NON fare):**
+> - NON rimettere la velocità TTS sopra 0.7x — l'utente la trova troppo veloce.
+> - NON usare `:` o `;` come separatori di frase nel TTS — causano troncamento del messaggio vocale.
+> - NON rimuovere il GLOSSARIO MIO HUB dal CORE_PROMPT_BASE — è essenziale per risposte corrette.
+> - NON inventare significati per gli acronimi — usare SEMPRE le definizioni del glossario.
+> - NON caricare più di 2 frammenti KB per richiesta — il 7b perde coerenza con troppo contesto.
+>
+> **Stato attuale AVA (aggiornato):**
+> - Modello: `qwen2.5:7b-instruct-q4_K_M` (4.7 GB)
+> - System Prompt: **v3.0 con Glossario MIO HUB** (~2000 token base, max ~2500 con KB)
+> - TTS: Piper `it_IT-paola-medium`, velocità **0.7x**, separatori frase: `.!?\n`
+> - Knowledge Base: **11 documenti** (10 MIO HUB + 1 preesistente), embeddings via nomic-embed-text
+> - Server: Hetzner CPX62 (16 vCPU, 32GB RAM, no GPU)
+> - Stato: **PRODUZIONE** — funzionante, stabile, risposte corrette
+> - Deploy: **autodeploy** via GitHub Actions su push master
