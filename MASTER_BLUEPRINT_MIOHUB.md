@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 11.0.0 (Integrazione Mente Normativa AVA AI + Knowledge Base RAG)
+> **Versione:** 11.1.0 (Integrazione Voce AVA Piper TTS + Jitsi Bot)
 > **Data:** 17 Maggio 2026
 > **Stato:** PUNTO DI RIPRISTINO STABILE — Tag `STABLE-v11.0.0-20260517`
 >
@@ -14116,7 +14116,7 @@ AVA organizzerà riunioni in autonomia: identificherà settori PA competenti, ce
 | :--- | :--- | :--- | :--- |
 | **Fase 1** | Trascrizione offline riunioni (Faster-Whisper + Pyannote + PDF) | Upgrade Hetzner (32GB RAM, GPU) | In attesa di upgrade |
 | **Fase 2** | Normattiva MCP + Knowledge Base RAG | ✅ **Completata** | 17 Mag 2026 |
-| **Fase 3** | Voce di AVA in riunione (Piper TTS + Jitsi Bot) | Fattibile con hardware attuale | Prossima fase |
+| **Fase 3** | Voce di AVA in riunione (Piper TTS + Jitsi Bot) | Fattibile con hardware attuale | ✅ **Completata** |
 | **Fase 4** | Orchestratore autonomo riunioni (LLM avanzato + IPA + A99X) | Modello LLM 32B+ | In attesa di upgrade |
 | **Continuo** | Perfezionamento prompt multi-ruolo e addestramento | Nessuno | Continuo |
 
@@ -14152,3 +14152,37 @@ AVA organizzerà riunioni in autonomia: identificherà settori PA competenti, ce
 > - NON esporre il CLI direttamente agli utenti finali; l'accesso deve sempre passare attraverso il Data Access Gateway di AVA AI.
 > - NON fare ingestione sincrona (embedding durante la POST); causa timeout nginx/502. Usare SEMPRE il pattern asincrono.
 > - NON usare solo `/api/embeddings` di Ollama; le versioni recenti (>= 0.4) usano `/api/embed`. Supportare entrambi.
+>
+> ---
+> ### CHANGELOG v11.1.0 (17 Mag 2026)
+> **Integrazione Voce AVA (Piper TTS) e Jitsi Bot (Fase 3 AVA AI)**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Tag | Stato |
+> |---|---|---|---|
+> | GitHub `mihub-backend-rest` master | `8a25f0b` | — | Aggiornato |
+> | GitHub `dms-hub-app-new` master | `fb7b8ba` | — | Aggiornato |
+> | Hetzner backend (api.mio-hub.me) | — | — | Aggiornato |
+> | Vercel frontend (miohub.it) | — | — | Autodeploy completato |
+>
+> **PIPER TTS (Voce AVA):**
+> - Installato Piper TTS (binary C++) su Hetzner tramite script di setup automatico.
+> - Scaricato modello vocale italiano `it_IT-paola-medium` (femminile, qualità media).
+> - Creato endpoint `POST /api/ava/tts` per la sintesi vocale in tempo reale (genera file WAV in < 3 secondi).
+> - Integrato nel flusso di chat `ai-chat.js`: il backend invia un evento SSE `tts_available` quando la risposta è pronta.
+>
+> **JITSI BOT (Partecipazione Riunioni):**
+> - Creato servizio `jitsi-bot.js` basato su Puppeteer (headless Chrome).
+> - Il bot può entrare nelle stanze Jitsi come partecipante "AVA AI".
+> - Creato router `ava-jitsi-bot.js` per gestire il bot via API REST.
+>
+> **FRONTEND (Toggle Voce):**
+> - Aggiunto toggle ON/OFF (icona Volume) nell'`AIChatHeader` della dashboard.
+> - Stato `voiceEnabled` persistito in `localStorage`.
+> - Quando la voce è ON, il frontend chiama automaticamente l'API TTS e riproduce l'audio al termine della risposta di AVA.
+> - Aggiunto stato visivo "Sta parlando..." (icona pulsante) durante la riproduzione.
+>
+> **VINCOLI NEGATIVI (cosa NON fare):**
+> - NON usare API cloud (Google/OpenAI) per il TTS; usare sempre Piper TTS in locale per garantire la privacy.
+> - NON riprodurre l'audio automaticamente se l'utente non ha attivato esplicitamente il toggle voce (rispetto policy autoplay browser).
+> - NON bloccare lo streaming testuale in attesa del TTS; il testo deve apparire subito, l'audio viene generato e riprodotto alla fine.
