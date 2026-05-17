@@ -1,20 +1,21 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 11.4.3 (Fix AVA Tool DATABASE e AIChatSidebar)
-> **Data:** 17 Maggio 2026
-> **Stato:** PUNTO DI RIPRISTINO STABILE — Tag `STABLE-v11.4.3-20260517`
+> **Versione:** 11.4.8 (Fix AVA Filtri Ruolo: PA/Comune, Associazione, Impresa + Autodeploy)
+> **Data:** 18 Maggio 2026
+> **Stato:** OPERATIVO — Autodeploy GitHub Actions ↔ Hetzner attivo
 >
 > ---
-> ### STATO SISTEMA (17 Mag 2026 — Snapshot stabile v11.4.3)
+> ### STATO SISTEMA (18 Mag 2026 — v11.4.8)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `e3bab87` — Tag `STABLE-v11.4.3-20260517` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `da93687` — Tag `STABLE-v11.4.3-20260517` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `a94bd21` — v11.4.8 |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `2972ab3` — Tag `STABLE-v11.4.4-20260517` |
 > | **GitHub MIO-hub** | Allineato | MIO-hub v46 — Tag `STABLE-v46-20260516` — 1.100 endpoint catalogati |
-> | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy via GitHub Actions — 938 endpoint attivi |
+> | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy via GitHub Actions — Build 20260518-0130 |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy su push master |
-> | **Neon (DB)** | Integro | 195+ tabelle, riunioni assoc corrette (comune_id=0), 11 riunioni totali |
+> | **Neon (DB)** | Integro | 195+ tabelle, utente test impresa creato (user_id=262) |
+> | **Autodeploy** | Attivo | Secret `HETZNER_SSH_KEY` configurato — workflow `deploy.yml` funzionante |
 >
 > ---
 >
@@ -69,6 +70,10 @@
 > - **NON identificare come SUPERADMIN quando si è su pagina app-impresa con impresa_id** — In InvitoNotifier, se `window.location.pathname` include `/dashboard-impresa` o `/app/impresa` e l'utente ha `impresa_id`, deve essere trattato come IMPRESA (non SUPERADMIN). Altrimenti il popup inviti non appare nell'app impresa per utenti che sono anche admin. (Fix v10.31.7b, rafforzato v10.31.7d con retry+storage listener)
 > - **NON usare useCallback con deps vuote per risolvere identità utente** — La risoluzione identità in componenti globali (InvitoNotifier, SpuntaNotifier) DEVE usare useEffect con retry + storage event listener per gestire la race condition del login asincrono Firebase. Un useCallback[] legge il localStorage una sola volta e fallisce se i dati non sono ancora disponibili. (Fix v10.31.7d)
 > - **NON filtrare inviti-ricevuti per r.comune_id (territorio)** — L'endpoint `inviti-ricevuti?comune_id=X` DEVE filtrare per `p.tipo='COMUNE' AND p.riferimento_id=X` (comune come partecipante), NON per `r.comune_id=X` (territorio della riunione). Altrimenti il comune vede inviti per imprese del suo territorio che non lo riguardano. I comuni POSSONO essere invitati come partecipanti alle riunioni. (Fix v10.31.7g, sostituisce toppa v10.31.7f)
+> - **NON usare `operatore_id` nelle query concessioni** — La colonna non esiste nella tabella `concessions`. Usare `impresa_id`. (Fix v11.4.8)
+> - **NON filtrare imprese per `imprese.comune_id` quando si cerca per comune** — Molte imprese hanno `comune_id=NULL` o operano in più comuni. Usare JOIN `concessions → markets` per trovare le imprese operative nel comune: `WHERE i.id IN (SELECT DISTINCT c.impresa_id FROM concessions c JOIN markets m ON c.market_id = m.id WHERE m.comune_id = X)`. (Fix v11.4.7)
+> - **NON dimenticare `shouldFilterByComune` per super_admin con comune_id** — Quando il super_admin impersona un comune (comune_id dal frontend), il filtro `comuneFilter` e `shouldFilterByComune` devono attivarsi. La condizione è: `(role === 'pa' || (role === 'super_admin' && comuneId && comuneId !== 0))`. (Fix v11.4.6/v11.4.7)
+> - **NON assegnare ruolo `super_admin` a utenti impresa** — L'utente intim8 (user_id=260) ha sia `super_admin` (level=100) che `business_owner` (level=30). La query RBAC prende il ruolo con level più alto → viene trattato come super_admin, bypassando tutti i filtri impresa. Rimuovere il ruolo super_admin dagli utenti impresa.
 > - **NON usare associazione_id come comune_id nella creazione riunione** — Quando un'associazione impersonata crea una riunione, `cId` DEVE essere `'0'` (nessun territorio), NON `assocIdCreator`. L'associazione_id e il comune_id sono entità diverse — confonderli causa che comuni sbagliati vedono riunioni non loro. Le associazioni vedono le riunioni tramite partecipazione (`le-mie-riunioni`), non tramite `r.comune_id`. (Fix v10.31.7h)
 > - **NON mostrare popup InvitoNotifier per collaboratori team** — I collaboratori (es. Viola Checchi per Alimentari Rossi) hanno `impresa_id` nel localStorage ma NON ricevono inviti A99X diretti. Gli inviti vanno all'impresa titolare. Se `user.isCollaborator === true`, bloccare il popup. (Fix v10.31.7e)
 > - **NON usare endpoint GET per azioni dirette nelle email** — Gli scanner antivirus/anti-bot fanno pre-fetch GET su tutti i link nelle email. Endpoint come `/invito/:token/accetta` e `/invito/:token/rifiuta` DEVONO avere una pagina di conferma intermedia (`?confirmed=1`) per evitare azioni automatiche da parte degli scanner. (Fix v10.31.7c)
@@ -82,48 +87,121 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
-### RIEPILOGO SESSIONE 17 Mag 2026 (v11.4.2 → v11.4.3)
+### RIEPILOGO SESSIONE 18 Mag 2026 (v11.4.5 → v11.4.8)
+
+**Fix completati in questa sessione:**
+
+| Versione | Fix | Repo | Stato |
+|----------|-----|------|-------|
+| v11.4.5 | Filtro associazione per AVA (assocFilter) | Backend | FUNZIONANTE |
+| v11.4.6 | Filtro comune per super_admin in impersonazione (shouldFilterByComune) | Backend | FUNZIONANTE |
+| v11.4.7 | Fix query imprese per comune: JOIN concessions→markets invece di imprese.comune_id | Backend | FUNZIONANTE |
+| v11.4.8 | Fix bug concessioni: operatore_id→impresa_id (colonna inesistente) + filtro comune concessioni | Backend | FUNZIONANTE |
+
+**Problemi risolti:**
+- **AVA non filtrava per associazione**: Confcommercio Bologna vedeva tutte le imprese/concessioni. Aggiunto `assocFilter` che filtra tramite `associazioni_imprese` per mostrare solo gli associati.
+- **AVA non filtrava per comune quando super_admin impersona**: Il `comuneFilter` si applicava solo a `role=pa`. Aggiunto `shouldFilterByComune` che si attiva anche per `super_admin` con `comune_id` specifico dal frontend.
+- **AVA restituiva solo 1 impresa per Bologna**: Il filtro `imprese.comune_id=6` era troppo restrittivo (15 imprese su 35 hanno `comune_id=NULL`). Riscritto con JOIN `concessions → markets` per trovare le 7 imprese operative nei mercati di Bologna.
+- **Query concessioni falliva per colonna inesistente**: Usava `operatore_id` che non esiste nella tabella `concessions`. Corretto in `impresa_id`.
+
+**Verifica isolamento dati AVA per ruolo impresa:**
+- Conversazioni isolate per `user_id` + `comune_id` — nessun mix possibile tra utenti
+- Filtro `impresaFilter` attivo per: concessioni (`impresa_id`), sanzioni (`impresa_id`), wallet (`company_id`), qualificazioni (`impresa_id`)
+- Utente test creato: user_id=262, openId=test_impresa_intim8, impresa_id=9 (Intim8), ruolo=business_owner
+- Nota: utente intim8 (user_id=260) ha doppio ruolo super_admin+business_owner → viene trattato come super_admin (da correggere nel DB)
+
+**Autodeploy verificato:**
+- GitHub Actions workflow `deploy.yml` attivo e funzionante
+- Secret `HETZNER_SSH_KEY` configurato nel repo backend
+- Ogni push su master → deploy automatico su Hetzner via `appleboy/ssh-action`
+- Chiave SSH: `~/.ssh/manus_hetzner_key` (ed25519) per accesso root@157.90.29.66
+
+**Allineamento sistema verificato:**
+- GitHub ↔ Hetzner: allineato (autodeploy attivo, ultimo run funzionante)
+- GitHub ↔ Vercel: allineato (autodeploy su push master)
+- Neon DB: integro
+
+---
+
+### CHANGELOG v11.4.8 (18 Mag 2026)
+- **FIX BACKEND AVA Concessioni operatore_id → impresa_id**:
+  - Bug: La query predefinita concessioni usava `WHERE operatore_id = X` — colonna inesistente nella tabella `concessions`
+  - Fix: Sostituito con `WHERE impresa_id = X` per filtro impresa
+  - Aggiunto filtro comune concessioni: `WHERE market_id IN (SELECT id FROM markets WHERE comune_id = X)`
+
+### CHANGELOG v11.4.7 (18 Mag 2026)
+- **FIX BACKEND AVA Query Imprese per Comune**:
+  - Bug: Il filtro `WHERE imprese.comune_id = 6` restituiva solo 1 impresa per Bologna (15 su 35 hanno `comune_id=NULL`)
+  - Fix: Riscritto con JOIN: `WHERE i.id IN (SELECT DISTINCT c.impresa_id FROM concessions c JOIN markets m ON c.market_id = m.id WHERE m.comune_id = X)`
+  - Risultato: 7 imprese operative nei mercati di Bologna
+- **FIX BACKEND AVA shouldFilterByComune per super_admin**:
+  - Bug: `comuneFilter` si applicava solo a `role === 'pa'`
+  - Fix: Nuova variabile `shouldFilterByComune = (role === 'pa' || (role === 'super_admin' && comuneId && comuneId !== 0))`
+  - Applicato a: query imprese, mercati, concessioni, notifiche, posteggi, pratiche SUAP
+
+### CHANGELOG v11.4.6 (18 Mag 2026)
+- **FEATURE BACKEND AVA Filtro Associazione (assocFilter)**:
+  - Nuovo filtro per ruolo associazione: filtra imprese tramite `associazioni_imprese` (tabella di collegamento)
+  - Confcommercio Bologna (associazione_id=1) vede solo i propri associati
+  - Filtro applicato a: imprese, concessioni (tramite impresa_id degli associati)
+
+### CHANGELOG v11.4.5 (18 Mag 2026)
+- **FEATURE BACKEND AVA Filtro Impresa (impresaFilter)**:
+  - Verificato e documentato il filtro per ruolo `impresa` (business_owner/business_operator)
+  - `impresaFilter` si attiva quando `role === 'impresa' && impresaId`
+  - Filtra: concessioni, sanzioni, wallet, qualificazioni — solo dati dell'impresa loggata
+  - Conversazioni isolate per user_id + comune_id
+
+---
+### RIEPILOGO SESSIONE 17 Mag 2026 (v11.4.2 → v11.4.4)
 
 **Fix completati in questa sessione:**
 
 | Versione | Fix | Repo | Stato |
 |----------|-----|------|-------|
 | v11.4.2 | Fix CRITICO query predefinite AVA - colonne reali dal DB | Backend | FUNZIONANTE |
-| v11.4.3 | Fix regex classificatore DATABASE AVA e 7 nuove categorie query | Backend | FUNZIONANTE |
-| v11.4.3 | Fix file corrotto AIChatSidebar.tsx (testo duplicato) | Frontend | FUNZIONANTE |
+| v11.4.3 | Fix prompt SQL dinamico AVA e 7 nuove categorie query | Backend | FUNZIONANTE |
+| v11.4.4 | Ingestione completa 44 PDF nella Knowledge Base AVA | Backend | FUNZIONANTE |
+| v11.4.4 | Fix UI AIChatSidebar.tsx (troncamento titolo lungo) | Frontend | FUNZIONANTE |
 
 **Problemi risolti:**
-- **AVA Tool DATABASE non si attivava per domande come "quanti comuni ci sono"**: Il regex `quant[ie]\s+(sono|ci|ne|ha)` richiedeva che la parola successiva fosse immediatamente "sono/ci/ne/ha". Modificato in `quant[ie]\b` per permettere parole intermedie.
-- **AVA Tool DATABASE falliva per colonne inesistenti**: Le query predefinite usavano nomi di colonne errati (es. `nome` invece di `denominazione` per le imprese). Aggiornato il prompt SQL dinamico per usare le colonne reali del DB.
-- **Frontend corrotto in AIChatSidebar.tsx**: Il file aveva testo duplicato (`overflow-hidden ${overflow-hidden ${`) che causava errori di compilazione. Corretto e aggiunto troncamento corretto per i titoli lunghi.
+- **AVA Tool DATABASE falliva per colonne inesistenti**: Le query predefinite e il prompt SQL dinamico usavano nomi di colonne errati (es. `nome` invece di `denominazione` per le imprese). Aggiornato il prompt SQL dinamico per usare le colonne reali del DB.
+- **Frontend Sidebar non troncava i titoli lunghi**: Aggiunto `overflow-hidden` al container e `maxWidth: calc(100% - 80px)` al titolo per evitare che i titoli lunghi nascondano le icone di azione.
+- **Knowledge Base AVA incompleta**: Eseguito lo script `ingest_pdfs_v3.py` per caricare i restanti 41 PDF (dal 4 al 44) nella Knowledge Base. Ora AVA ha accesso a tutti i 44 documenti del progetto DMS (~1.170 chunks totali).
 
 **Allineamento sistema verificato:**
 - GitHub ↔ Vercel: allineato (autodeploy su push master)
-- GitHub ↔ Hetzner: allineato (autodeploy via GitHub Actions) - Build 20260517-2140 attivo
+- GitHub ↔ Hetzner: allineato (autodeploy via GitHub Actions) - Build 20260517-2310 attivo
 - Neon DB: integro
-- Tag di ripristino: `STABLE-v11.4.3-20260517` su backend e frontend
+- Tag di ripristino: `STABLE-v11.4.4-20260517` su backend e frontend
 
 ---
 
-### CHANGELOG v11.4.3 (17 Mag 2026)
+### CHANGELOG v11.4.4 (17 Mag 2026)
+- **FEATURE BACKEND AVA Knowledge Base**:
+  - Completata l'ingestione di tutti i 44 PDF del progetto DMS nella Knowledge Base
+  - Caricati 969 chunks aggiuntivi (dal documento 4 al 44)
+  - AVA ora può rispondere a domande normative e strategiche basandosi sull'intera documentazione
 - **FIX FRONTEND AIChatSidebar.tsx**:
-  - Risolto errore di sintassi causato da testo duplicato nelle classi Tailwind (`overflow-hidden ${overflow-hidden ${`)
   - Aggiunto `overflow-hidden` al container per forzare il troncamento
   - Aggiunto `maxWidth: calc(100% - 80px)` sullo span del titolo per evitare che i titoli lunghi nascondano le icone di azione
+
+### CHANGELOG v11.4.3 (17 Mag 2026)
 - **FIX BACKEND AVA Classificatore DATABASE**:
-  - Modificato il regex `dbForceRegex` in `routes/ai-chat.js`
-  - Cambiato `quant[ie]\s+(sono|ci|ne|ha)` in `quant[ie]\b` (word boundary)
-  - Ora domande come "quanti comuni ci sono" o "quante imprese abbiamo" attivano correttamente il tool DATABASE
+  - Aggiunte nuove keyword al regex `dbForceRegex` in `routes/ai-chat.js` (posteggi, ispezioni, fatture, documenti, mobilità, graduatorie)
 - **FEATURE BACKEND AVA Query Predefinite**:
   - Aggiunte 7 nuove categorie di query predefinite per migliorare le risposte senza LLM: posteggi, ispezioni, fatture, documenti, mobilità, graduatorie
+- **FIX BACKEND AVA Prompt SQL Dinamico**:
+  - Aggiornato il prompt di sistema per il fallback Ollama con lo schema reale di 15 tabelle principali
+  - Corretti i nomi delle colonne (es. `denominazione` invece di `ragione_sociale` per le imprese)
 
 ### CHANGELOG v11.4.2 (17 Mag 2026)
 - **FIX CRITICO BACKEND AVA Tool DATABASE**:
-  - Aggiornato il prompt SQL dinamico per usare i nomi reali delle colonne del DB
+  - Aggiornate le query predefinite per usare i nomi reali delle colonne del DB
   - `imprese`: usa `denominazione` (non nome), `codice_fiscale`, `partita_iva`
   - `comuni`: usa `nome`
   - `users`: usa `name`, `email`
-  - `hub_markets`: usa `name`, `status`
+  - `markets`: usa `name`, `status`
   - Questo previene errori SQL quando l'LLM tenta di generare query con nomi di colonne inventati
 
 ---
