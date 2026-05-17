@@ -32,8 +32,9 @@ function mapWidgetRole(
 export default function ChatWidget({ userRole }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const avaRole = mapWidgetRole(userRole);
-  const { comuneId: impComuneId } = useImpersonation();
+  const { comuneId: impComuneId, associazioneId: impAssocId, entityType } = useImpersonation();
   const comuneId = impComuneId ? parseInt(impComuneId, 10) : undefined;
+  const associazioneId = impAssocId ? parseInt(impAssocId, 10) : undefined;
 
   if (!isOpen) {
     return (
@@ -72,7 +73,7 @@ export default function ChatWidget({ userRole }: ChatWidgetProps) {
 
       {/* Chat AVA a schermo intero */}
       <div className="flex-1 min-h-0">
-        <AIChatPanel userRole={avaRole} comuneId={comuneId} fullHeight />
+        <AIChatPanel userRole={avaRole} comuneId={comuneId} associazioneId={associazioneId} fullHeight />
       </div>
     </div>
   );

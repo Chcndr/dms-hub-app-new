@@ -5817,6 +5817,7 @@ export default function DashboardPA() {
             <AIChatPanel
               userRole="pa"
               comuneId={comuneIdFromUrl ? parseInt(comuneIdFromUrl, 10) : undefined}
+              associazioneId={assocIdFromUrl ? parseInt(assocIdFromUrl, 10) : undefined}
               currentTab={activeTab}
             />
           </TabsContent>

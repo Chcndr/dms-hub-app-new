@@ -42,6 +42,8 @@ interface AIChatPanelProps {
   userRole?: UserRoleType;
   /** ID comune (da impersonazione o contesto) */
   comuneId?: number;
+  /** ID associazione (da impersonazione o contesto) */
+  associazioneId?: number;
   /** Tab corrente della dashboard (per contesto AVA) */
   currentTab?: string;
   /** Se true, occupa tutta l'altezza disponibile (per uso fullscreen/widget) */
@@ -51,6 +53,7 @@ interface AIChatPanelProps {
 export function AIChatPanel({
   userRole,
   comuneId,
+  associazioneId,
   currentTab,
   fullHeight,
 }: AIChatPanelProps) {
@@ -127,6 +130,7 @@ export function AIChatPanel({
   } = useStreamingChat({
     context: {
       comune_id: comuneId,
+      associazione_id: associazioneId,
       user_role: effectiveRole,
       current_tab: currentTab,
       impresa_id: user?.impresaId ?? undefined,
