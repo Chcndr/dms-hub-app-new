@@ -14419,3 +14419,65 @@ I 30 riassunti originali sono ancora nel file `src/modules/orchestrator/llm.js` 
 - NON superare 8000 chars di contesto documento — Ollama ha 4096 token di context window
 - pdf-parse DEVE essere installato su Hetzner (`npm install pdf-parse`)
 
+
+### v11.4.0 — AVA Copilota Admin Livello 3 (17 maggio 2026)
+
+**TOOL 7: query_database — SQL Dinamico**
+AVA ora può interrogare TUTTE le 207 tabelle del database MIO HUB tramite query SQL generate dinamicamente.
+
+**Architettura 3-step:**
+1. **Identificazione tabelle**: Ollama identifica le tabelle rilevanti dalla domanda utente (catalogo 17 moduli)
+2. **Schema on-demand**: Il tool chiede lo schema delle tabelle identificate al DB (information_schema)
+3. **Generazione SQL**: Ollama genera una query SELECT con alias italiani, LIMIT 50, formattazione date/importi
+
+**Protezioni anti-distruttive:**
+- Solo query SELECT (validazione server-side)
+- Blacklist keyword pericolose (INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, GRANT, REVOKE)
+- LIMIT 50 automatico se non presente
+- Timeout 10 secondi per query
+- Integrato con AVA Data Gateway: BLOCKED_TABLES (30 tabelle sensibili), sanitize colonne (password_hash, firebaseUid, etc.)
+- Filtro automatico WHERE comune_id per ruolo PA
+
+**Classificatore aggiornato:**
+- Nuova categoria `DATABASE` per domande su dati non coperti dai tool specifici
+- Il classificatore distingue tra PRESENZE/SCADENZE/CONCESSIONARI/MERCATI (tool dedicati) e DATABASE (tool generico)
+- Domande su associazioni, formazione, corsi, bandi, sanzioni, TCC, mobilità, etc. → DATABASE
+
+**System prompt super_admin aggiornato:**
+- Catalogo tabelle per modulo (13 moduli, tabelle principali)
+- Istruzioni per il tool DATABASE
+
+**Tabelle accessibili per modulo:**
+
+| Modulo | Tabelle principali |
+|--------|-------------------|
+| Mercati | markets, stalls, market_sessions, market_settings, market_tariffs |
+| Imprese | imprese, vendors, vendor_presences, collaboratori_impresa |
+| Concessioni | concessions, concession_payments, storico_titolarita_posteggio |
+| SUAP/SCIA | suap_pratiche, suap_documenti, suap_checks, suap_bandi |
+| Presenze | checkins, graduatoria_presenze, spunta_coda |
+| Wallet | wallets, wallet_transactions, wallet_scadenze, pagopa_posizioni |
+| Comuni | comuni, comune_utenti, users, user_roles |
+| A99X | a99x_riunioni, a99x_partecipanti, a99x_task_followup |
+| Formazione | formazione_corsi, formazione_iscrizioni, attestati_pdf |
+| Associazioni | associazioni, bandi_associazioni, servizi_associazioni |
+| Controlli | inspections, sanctions, violations |
+| Carbon/TCC | carbon_credits_config, ecocredits, tcc_qr_tokens |
+| Mobilità | mobility_checkins, mobility_data, route_completions |
+
+**Esempi di domande che ora funzionano:**
+- "Quante associazioni ci sono nel sistema?"
+- "Elenca i corsi di formazione attivi"
+- "Quante pratiche SUAP sono state approvate questo mese?"
+- "Top 10 imprese per numero di presenze"
+- "Lista sanzioni pendenti"
+- "Quanti utenti hanno il ruolo admin?"
+- "Report riunioni A99X dell'ultimo mese"
+
+**VINCOLI NEGATIVI:**
+- NON permettere query diverse da SELECT — la validazione è server-side, non fidarsi del prompt
+- NON rimuovere il LIMIT 50 — query senza LIMIT su tabelle grandi (vendor_presences, wallet_transactions) possono bloccare il DB
+- NON esporre le tabelle in BLOCKED_TABLES (30 tabelle sensibili: secrets, api_keys, agent_*, etc.)
+- NON rimuovere il timeout 10s — query complesse con JOIN multipli possono bloccare il pool di connessioni
+- Il tool DATABASE è disponibile SOLO per super_admin e PA — imprese e cittadini NON devono avere accesso SQL diretto
+
