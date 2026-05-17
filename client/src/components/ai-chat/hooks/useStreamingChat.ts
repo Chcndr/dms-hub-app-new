@@ -1,7 +1,7 @@
 /**
  * useStreamingChat — Hook per gestione streaming SSE della chat AI
  * Connette al backend REST su api.mio-hub.me (NON tRPC)
- * v2.1: Fix TTS — risolto autoplay policy mobile + gestione audio corretta
+ * v3.0: Fix TTS iOS/Safari — usa Web Audio API per riproduzione (bypass autoplay policy)
  */
 import { useState, useCallback, useRef, useEffect } from "react";
 import { streamChat } from "../lib/sse-client";
@@ -33,53 +33,128 @@ interface UseStreamingChatReturn {
 }
 
 /**
- * Crea un AudioContext condiviso per sbloccare l'autoplay su iOS/Safari.
- * Su mobile, l'audio può essere riprodotto solo dopo un'interazione utente.
- * Questo AudioContext viene "sbloccato" al primo click/tap dell'utente.
+ * AudioContext condiviso — la chiave per iOS/Safari.
+ * L'AudioContext DEVE essere creato e resumed durante un'interazione utente (tap/click).
+ * Una volta sbloccato, possiamo usarlo per riprodurre qualsiasi audio in qualsiasi momento.
  */
-let audioContextUnlocked = false;
 let sharedAudioContext: AudioContext | null = null;
+let audioContextReady = false;
 
-function unlockAudioContext() {
-  if (audioContextUnlocked) return;
+function getOrCreateAudioContext(): AudioContext | null {
+  if (sharedAudioContext && sharedAudioContext.state !== 'closed') {
+    return sharedAudioContext;
+  }
   try {
-    sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    // Crea un buffer silenzioso per sbloccare il contesto
-    const buffer = sharedAudioContext.createBuffer(1, 1, 22050);
-    const source = sharedAudioContext.createBufferSource();
-    source.buffer = buffer;
-    source.connect(sharedAudioContext.destination);
-    source.start(0);
-    audioContextUnlocked = true;
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    sharedAudioContext = new AudioCtx();
+    return sharedAudioContext;
   } catch {
-    // Fallback: ignora
+    return null;
   }
 }
 
-// Sblocca l'audio al primo touch/click dell'utente
-if (typeof window !== 'undefined') {
-  const unlock = () => {
-    unlockAudioContext();
-    document.removeEventListener('touchstart', unlock);
-    document.removeEventListener('click', unlock);
-  };
-  document.addEventListener('touchstart', unlock, { once: true });
-  document.addEventListener('click', unlock, { once: true });
+/**
+ * Sblocca l'AudioContext — DEVE essere chiamato durante un evento utente (click/tap/touchstart).
+ * Su iOS, un AudioContext creato fuori da un evento utente resta "suspended" per sempre.
+ */
+function unlockAudioForIOS() {
+  const ctx = getOrCreateAudioContext();
+  if (!ctx) return;
+
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(() => {
+      audioContextReady = true;
+    }).catch(() => {});
+  } else {
+    audioContextReady = true;
+  }
+
+  // Riproduci un buffer silenzioso per sbloccare definitivamente su iOS
+  try {
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+  } catch {
+    // ignore
+  }
 }
 
-/** Chiama il TTS backend e riproduce l'audio */
+// Sblocca al primo touch/click dell'utente sulla pagina
+if (typeof window !== 'undefined') {
+  const earlyUnlock = () => {
+    unlockAudioForIOS();
+    document.removeEventListener('touchstart', earlyUnlock);
+    document.removeEventListener('touchend', earlyUnlock);
+    document.removeEventListener('click', earlyUnlock);
+  };
+  document.addEventListener('touchstart', earlyUnlock, { passive: true });
+  document.addEventListener('touchend', earlyUnlock, { passive: true });
+  document.addEventListener('click', earlyUnlock);
+}
+
+/** Riproduce audio WAV usando Web Audio API (funziona su iOS dopo unlock) */
+async function playWavWithWebAudio(
+  wavArrayBuffer: ArrayBuffer,
+  onStart: () => void,
+  onEnd: () => void,
+  sourceNodeRef: React.MutableRefObject<AudioBufferSourceNode | null>
+): Promise<void> {
+  const ctx = getOrCreateAudioContext();
+  if (!ctx) {
+    onEnd();
+    return;
+  }
+
+  // Assicurati che il context sia attivo
+  if (ctx.state === 'suspended') {
+    try {
+      await ctx.resume();
+    } catch {
+      onEnd();
+      return;
+    }
+  }
+
+  try {
+    // Decodifica il WAV in un AudioBuffer
+    const audioBuffer = await ctx.decodeAudioData(wavArrayBuffer);
+
+    // Crea un source node per la riproduzione
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+
+    sourceNodeRef.current = source;
+
+    source.onended = () => {
+      sourceNodeRef.current = null;
+      onEnd();
+    };
+
+    onStart();
+    source.start(0);
+  } catch {
+    sourceNodeRef.current = null;
+    onEnd();
+  }
+}
+
+/** Chiama il TTS backend e riproduce l'audio via Web Audio API */
 async function playTts(
   text: string,
-  audioRef: React.MutableRefObject<HTMLAudioElement | null>,
+  sourceNodeRef: React.MutableRefObject<AudioBufferSourceNode | null>,
   onStart: () => void,
   onEnd: () => void
 ): Promise<void> {
   try {
     // Ferma eventuale audio in corso
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+      } catch { /* already stopped */ }
+      sourceNodeRef.current = null;
     }
 
     // Pulisci il testo: rimuovi markdown, asterischi, elenchi puntati
@@ -122,46 +197,16 @@ async function playTts(
       return;
     }
 
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audioRef.current = audio;
+    // Leggi la risposta come ArrayBuffer (necessario per Web Audio API)
+    const arrayBuffer = await response.arrayBuffer();
 
-    // Imposta volume e gestione eventi
-    audio.volume = 1.0;
-
-    audio.onended = () => {
-      URL.revokeObjectURL(url);
-      audioRef.current = null;
+    if (!arrayBuffer || arrayBuffer.byteLength < 100) {
       onEnd();
-    };
-
-    audio.onerror = () => {
-      URL.revokeObjectURL(url);
-      audioRef.current = null;
-      onEnd();
-    };
-
-    onStart();
-
-    // Prova a riprodurre — se fallisce per autoplay policy, usa AudioContext
-    try {
-      await audio.play();
-    } catch (playError: any) {
-      // Autoplay bloccato — prova con AudioContext
-      if (sharedAudioContext && sharedAudioContext.state === 'suspended') {
-        await sharedAudioContext.resume();
-      }
-      // Riprova
-      try {
-        await audio.play();
-      } catch {
-        // Non possiamo riprodurre — cleanup
-        URL.revokeObjectURL(url);
-        audioRef.current = null;
-        onEnd();
-      }
+      return;
     }
+
+    // Riproduci usando Web Audio API (funziona su iOS!)
+    await playWavWithWebAudio(arrayBuffer, onStart, onEnd, sourceNodeRef);
   } catch {
     // TTS fallisce silenziosamente — non bloccare la chat
     onEnd();
@@ -182,7 +227,7 @@ export function useStreamingChat(
   const tokenBufferRef = useRef("");
   const rafIdRef = useRef<number | undefined>(undefined);
   const dataEventsRef = useRef<SSEDataEvent[]>([]);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const voiceEnabledRef = useRef(options?.voiceEnabled ?? false);
   const ttsTriggeredRef = useRef(false);
 
@@ -192,10 +237,11 @@ export function useStreamingChat(
   }, [options?.voiceEnabled]);
 
   const stopSpeaking = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+      } catch { /* already stopped */ }
+      sourceNodeRef.current = null;
     }
     setIsSpeaking(false);
   }, []);
@@ -218,8 +264,8 @@ export function useStreamingChat(
       tokenBufferRef.current = "";
       ttsTriggeredRef.current = false;
 
-      // Sblocca AudioContext al momento dell'invio (è un'interazione utente)
-      unlockAudioContext();
+      // CRUCIALE: Sblocca AudioContext al momento dell'invio (è un'interazione utente diretta)
+      unlockAudioForIOS();
 
       abortRef.current = new AbortController();
 
@@ -259,8 +305,7 @@ export function useStreamingChat(
 
           onTts: (_ttsData) => {
             // Ignoriamo l'evento tts_available dal backend —
-            // usiamo solo il testo completo dal onDone per evitare doppie riproduzioni
-            // e per avere il testo completo (non troncato a 500 char)
+            // usiamo solo il testo completo dal onDone
           },
 
           onDone: data => {
@@ -287,12 +332,12 @@ export function useStreamingChat(
                 };
                 setMessages(msgs => [...msgs, assistantMessage]);
 
-                // Riproduci TTS con il testo completo della risposta
+                // Riproduci TTS con il testo completo della risposta (via Web Audio API)
                 if (voiceEnabledRef.current && !ttsTriggeredRef.current) {
                   ttsTriggeredRef.current = true;
                   playTts(
                     finalContent,
-                    audioRef,
+                    sourceNodeRef,
                     () => setIsSpeaking(true),
                     () => setIsSpeaking(false)
                   );
