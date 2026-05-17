@@ -128,7 +128,7 @@ function ConversationItem({
       onClick={onClick}
     >
       <MessageSquare className="size-3.5 shrink-0 text-slate-500" />
-      <span className="flex-1 min-w-0 text-xs truncate overflow-hidden text-ellipsis whitespace-nowrap" style={{maxWidth: 'calc(100% - 80px)'}}>{conversation.title}</span>
+      <span className="flex-1 min-w-0 text-xs truncate" style={{maxWidth: 'calc(100% - 80px)'}}>{conversation.title}</span>
       <div className="flex items-center gap-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
         <button
           onClick={e => {
