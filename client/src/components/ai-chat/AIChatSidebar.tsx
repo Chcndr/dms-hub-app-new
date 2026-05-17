@@ -128,8 +128,8 @@ function ConversationItem({
       onClick={onClick}
     >
       <MessageSquare className="size-3.5 shrink-0 text-slate-500" />
-      <span className="flex-1 text-xs truncate">{conversation.title}</span>
-      <div className="flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+      <span className="flex-1 min-w-0 text-xs truncate">{conversation.title}</span>
+      <div className="flex items-center gap-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
         <button
           onClick={e => {
             e.stopPropagation();
