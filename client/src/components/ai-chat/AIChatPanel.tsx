@@ -315,6 +315,7 @@ export function AIChatPanel({
           voiceEnabled={voiceEnabled}
           onToggleVoice={handleToggleVoice}
           isSpeaking={isSpeaking}
+          onDeleteConversation={activeConversationId ? () => handleDeleteConversation(activeConversationId) : undefined}
         />
 
         {/* Mobile: dropdown conversazioni dall'alto */}

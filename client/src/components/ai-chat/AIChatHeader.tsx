@@ -1,9 +1,9 @@
 /**
- * AIChatHeader — Header con titolo conversazione + info modello + toggle voce
- * v2.0: Aggiunto toggle voce AVA (ON/OFF)
+ * AIChatHeader — Header con titolo conversazione + info modello + toggle voce + elimina
+ * v3.0: Aggiunto pulsante elimina conversazione attiva
  */
-import { memo } from "react";
-import { Bot, Sparkles, PanelLeft, Volume2, VolumeX } from "lucide-react";
+import { memo, useState } from "react";
+import { Bot, Sparkles, PanelLeft, Volume2, VolumeX, Trash2 } from "lucide-react";
 import type { Conversation, QuotaInfo } from "./types";
 
 interface AIChatHeaderProps {
@@ -19,6 +19,8 @@ interface AIChatHeaderProps {
   onToggleVoice?: () => void;
   /** Se true, AVA sta parlando in questo momento */
   isSpeaking?: boolean;
+  /** Callback per eliminare la conversazione attiva */
+  onDeleteConversation?: () => void;
 }
 
 export const AIChatHeader = memo(function AIChatHeader({
@@ -29,7 +31,10 @@ export const AIChatHeader = memo(function AIChatHeader({
   voiceEnabled,
   onToggleVoice,
   isSpeaking,
+  onDeleteConversation,
 }: AIChatHeaderProps) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-[#0b1220]/50">
       <div className="flex items-center gap-3 min-w-0">
@@ -88,6 +93,39 @@ export const AIChatHeader = memo(function AIChatHeader({
           <span className="text-[10px] text-slate-500">
             {quota.messages_used}/{quota.messages_limit} msg
           </span>
+        )}
+        {/* Pulsante elimina conversazione attiva */}
+        {conversation && onDeleteConversation && (
+          confirmDelete ? (
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-red-400">Elimina?</span>
+              <button
+                onClick={() => {
+                  onDeleteConversation();
+                  setConfirmDelete(false);
+                }}
+                className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                title="Conferma eliminazione"
+              >
+                <span className="text-xs font-bold">Si</span>
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="p-1 text-slate-400 hover:text-slate-300 transition-colors"
+                title="Annulla"
+              >
+                <span className="text-xs font-bold">No</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="p-1.5 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-slate-700/50"
+              title="Elimina conversazione"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          )
         )}
       </div>
     </div>

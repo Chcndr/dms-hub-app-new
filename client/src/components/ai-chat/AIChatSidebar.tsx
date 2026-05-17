@@ -129,7 +129,7 @@ function ConversationItem({
     >
       <MessageSquare className="size-3.5 shrink-0 text-slate-500" />
       <span className="flex-1 text-xs truncate">{conversation.title}</span>
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <button
           onClick={e => {
             e.stopPropagation();
