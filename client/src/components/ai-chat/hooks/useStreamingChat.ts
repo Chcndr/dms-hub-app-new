@@ -1,9 +1,9 @@
 /**
  * useStreamingChat — Hook per gestione streaming SSE della chat AI
  * Connette al backend REST su api.mio-hub.me (NON tRPC)
- * v2.0: Aggiunto supporto TTS (voce AVA)
+ * v2.1: Fix TTS — risolto autoplay policy mobile + gestione audio corretta
  */
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { streamChat } from "../lib/sse-client";
 import type { ChatMessage, StreamChatRequest, SSEDataEvent } from "../types";
 import { MIHUB_API_BASE_URL } from "@/config/api";
@@ -32,36 +32,128 @@ interface UseStreamingChatReturn {
   stopSpeaking: () => void;
 }
 
+/**
+ * Crea un AudioContext condiviso per sbloccare l'autoplay su iOS/Safari.
+ * Su mobile, l'audio può essere riprodotto solo dopo un'interazione utente.
+ * Questo AudioContext viene "sbloccato" al primo click/tap dell'utente.
+ */
+let audioContextUnlocked = false;
+let sharedAudioContext: AudioContext | null = null;
+
+function unlockAudioContext() {
+  if (audioContextUnlocked) return;
+  try {
+    sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // Crea un buffer silenzioso per sbloccare il contesto
+    const buffer = sharedAudioContext.createBuffer(1, 1, 22050);
+    const source = sharedAudioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(sharedAudioContext.destination);
+    source.start(0);
+    audioContextUnlocked = true;
+  } catch {
+    // Fallback: ignora
+  }
+}
+
+// Sblocca l'audio al primo touch/click dell'utente
+if (typeof window !== 'undefined') {
+  const unlock = () => {
+    unlockAudioContext();
+    document.removeEventListener('touchstart', unlock);
+    document.removeEventListener('click', unlock);
+  };
+  document.addEventListener('touchstart', unlock, { once: true });
+  document.addEventListener('click', unlock, { once: true });
+}
+
 /** Chiama il TTS backend e riproduce l'audio */
-async function playTts(text: string, audioRef: React.MutableRefObject<HTMLAudioElement | null>): Promise<void> {
+async function playTts(
+  text: string,
+  audioRef: React.MutableRefObject<HTMLAudioElement | null>,
+  onStart: () => void,
+  onEnd: () => void
+): Promise<void> {
   try {
     // Ferma eventuale audio in corso
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
       audioRef.current = null;
+    }
+
+    // Pulisci il testo: rimuovi markdown, asterischi, elenchi puntati
+    const cleanText = text
+      .replace(/\*\*([^*]+)\*\*/g, '$1')  // **bold** → bold
+      .replace(/\*([^*]+)\*/g, '$1')       // *italic* → italic
+      .replace(/^[-•]\s*/gm, '')           // rimuovi bullet points
+      .replace(/^\d+\.\s*/gm, '')          // rimuovi numeri elenco
+      .replace(/#{1,6}\s*/g, '')           // rimuovi headers markdown
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [link](url) → link
+      .replace(/\n{2,}/g, '. ')            // doppi a capo → punto
+      .replace(/\n/g, ' ')                 // singoli a capo → spazio
+      .trim()
+      .substring(0, 1500);                 // max 1500 chars per TTS
+
+    if (!cleanText || cleanText.length < 3) {
+      onEnd();
+      return;
     }
 
     const response = await fetch(`${MIHUB_API_BASE_URL}/api/ava/tts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text.substring(0, 2000), voice: 'it_IT-paola-medium', speed: 1.0 }),
+      body: JSON.stringify({ text: cleanText, voice: 'it_IT-paola-medium', speed: 1.0 }),
     });
 
-    if (!response.ok) return;
+    if (!response.ok) {
+      onEnd();
+      return;
+    }
 
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     audioRef.current = audio;
 
+    // Imposta volume e gestione eventi
+    audio.volume = 1.0;
+
     audio.onended = () => {
       URL.revokeObjectURL(url);
       audioRef.current = null;
+      onEnd();
     };
 
-    await audio.play();
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      audioRef.current = null;
+      onEnd();
+    };
+
+    onStart();
+
+    // Prova a riprodurre — se fallisce per autoplay policy, usa AudioContext
+    try {
+      await audio.play();
+    } catch (playError: any) {
+      // Autoplay bloccato — prova con AudioContext
+      if (sharedAudioContext && sharedAudioContext.state === 'suspended') {
+        await sharedAudioContext.resume();
+      }
+      // Riprova
+      try {
+        await audio.play();
+      } catch {
+        // Non possiamo riprodurre — cleanup
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+        onEnd();
+      }
+    }
   } catch {
     // TTS fallisce silenziosamente — non bloccare la chat
+    onEnd();
   }
 }
 
@@ -81,13 +173,17 @@ export function useStreamingChat(
   const dataEventsRef = useRef<SSEDataEvent[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const voiceEnabledRef = useRef(options?.voiceEnabled ?? false);
+  const ttsTriggeredRef = useRef(false);
 
   // Aggiorna il ref quando cambia l'opzione
-  voiceEnabledRef.current = options?.voiceEnabled ?? false;
+  useEffect(() => {
+    voiceEnabledRef.current = options?.voiceEnabled ?? false;
+  }, [options?.voiceEnabled]);
 
   const stopSpeaking = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
       audioRef.current = null;
     }
     setIsSpeaking(false);
@@ -109,6 +205,10 @@ export function useStreamingChat(
       setDataEvents([]);
       dataEventsRef.current = [];
       tokenBufferRef.current = "";
+      ttsTriggeredRef.current = false;
+
+      // Sblocca AudioContext al momento dell'invio (è un'interazione utente)
+      unlockAudioContext();
 
       abortRef.current = new AbortController();
 
@@ -146,13 +246,10 @@ export function useStreamingChat(
             }
           },
 
-          onTts: (ttsData) => {
-            // Il backend ci dice che il TTS è disponibile
-            // Riproduciamo solo se la voce è attiva
-            if (voiceEnabledRef.current && ttsData.text) {
-              setIsSpeaking(true);
-              playTts(ttsData.text, audioRef).finally(() => setIsSpeaking(false));
-            }
+          onTts: (_ttsData) => {
+            // Ignoriamo l'evento tts_available dal backend —
+            // usiamo solo il testo completo dal onDone per evitare doppie riproduzioni
+            // e per avere il testo completo (non troncato a 500 char)
           },
 
           onDone: data => {
@@ -179,11 +276,15 @@ export function useStreamingChat(
                 };
                 setMessages(msgs => [...msgs, assistantMessage]);
 
-                // Se la voce è attiva e non abbiamo già ricevuto un evento tts_available,
-                // chiama il TTS con il testo completo della risposta
-                if (voiceEnabledRef.current && !audioRef.current) {
-                  setIsSpeaking(true);
-                  playTts(finalContent, audioRef).finally(() => setIsSpeaking(false));
+                // Riproduci TTS con il testo completo della risposta
+                if (voiceEnabledRef.current && !ttsTriggeredRef.current) {
+                  ttsTriggeredRef.current = true;
+                  playTts(
+                    finalContent,
+                    audioRef,
+                    () => setIsSpeaking(true),
+                    () => setIsSpeaking(false)
+                  );
                 }
               }
               return "";
