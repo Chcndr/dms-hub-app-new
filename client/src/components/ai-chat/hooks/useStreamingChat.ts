@@ -168,7 +168,7 @@ async function playTts(
       .replace(/\n{2,}/g, '. ')            // doppi a capo → punto
       .replace(/\n/g, ' ')                 // singoli a capo → spazio
       .trim()
-      .substring(0, 300);                  // max 300 chars per TTS (velocità mobile)
+      .substring(0, 600);                  // max 600 chars per TTS (copre 4-5 frasi)
 
     if (!cleanText || cleanText.length < 3) {
       onEnd();
@@ -186,7 +186,7 @@ async function playTts(
     const response = await fetch(ttsUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: cleanText, voice: 'it_IT-paola-medium', speed: 1.0 }),
+      body: JSON.stringify({ text: cleanText, voice: 'it_IT-paola-medium', speed: 0.85 }),
       signal: controller.signal,
     });
 
