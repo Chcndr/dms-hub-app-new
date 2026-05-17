@@ -120,7 +120,7 @@ function ConversationItem({
 
   return (
     <div
-      className={`group flex items-center gap-2 px-3 py-2 mx-1 rounded-lg cursor-pointer transition-all ${
+      className={`group flex items-center gap-2 px-3 py-2 mx-1 rounded-lg cursor-pointer transition-all overflow-hidden ${
         isActive
           ? "bg-teal-500/15 border border-teal-500/30 text-[#e8fbff]"
           : "hover:bg-[#1a2332] text-slate-300 border border-transparent"
@@ -128,7 +128,7 @@ function ConversationItem({
       onClick={onClick}
     >
       <MessageSquare className="size-3.5 shrink-0 text-slate-500" />
-      <span className="flex-1 min-w-0 text-xs truncate">{conversation.title}</span>
+      <span className="flex-1 min-w-0 text-xs truncate overflow-hidden text-ellipsis whitespace-nowrap" style={{maxWidth: 'calc(100% - 80px)'}}>{conversation.title}</span>
       <div className="flex items-center gap-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
         <button
           onClick={e => {
