@@ -13970,3 +13970,117 @@ POST   /api/a99x/jitsi/genera-link      — Genera link Jitsi standalone
 - NON usare Cal.com self-hosted (troppo pesante per Hetzner 2vCPU/4GB)
 - NON mettere credenziali SMTP in .env (hardcoded come fallback nel codice)
 - NON usare porta 465 per SMTP da Hetzner (bloccata), usare porta 587 STARTTLS
+
+
+## 🤖 PROGETTO AVA AI + A99X: Potenziamento Agente Intelligente per Riunioni e Conoscenza Normativa (16 Maggio 2026)
+
+### 1. Visione e Principi Fondamentali
+
+AVA AI è già operativa all'interno di MIO HUB come assistente multi-ruolo, con prompt di sistema e strumenti dedicati per ciascuna delle quattro categorie di utenti: Pubblica Amministrazione, Associazioni, Imprese e Cittadini. Il presente progetto non mira a ricostruire AVA, bensì a **potenziarla** con capacità avanzate legate al modulo A99X (Agenda Intelligente), trasformandola da assistente testuale a partecipante attivo nelle videoriunioni e consulente normativo in tempo reale.
+
+Lo sviluppo sarà guidato da tre principi inderogabili:
+
+**Privacy-First e Sovranità dei Dati (100% Locale).** Nessun dato della Pubblica Amministrazione, delle imprese o dei cittadini lascerà l'infrastruttura europea. Tutte le tecnologie — modello linguistico, trascrizione audio, sintesi vocale, database vettoriali — saranno eseguite localmente sui server Hetzner e Neon. Non verranno utilizzate API esterne come OpenAI, Google o altri servizi cloud americani. Anche le traduzioni e l'elaborazione del linguaggio naturale avverranno in locale.
+
+**Perfezionamento, non Ricostruzione.** AVA è già divisa per ruoli (Cittadini, Imprese, PA, Admin) e funziona. Il lavoro consiste nel perfezionare i prompt esistenti, aggiungere nuovi strumenti (tools) al Data Gateway, e integrare le capacità audio/video senza alterare l'architettura multi-ruolo già collaudata.
+
+**Scalabilità Orizzontale.** L'architettura sarà progettata per scalare da un singolo comune a migliaia di enti, gestendo centinaia di riunioni in parallelo. L'hardware su Hetzner verrà potenziato progressivamente (aggiunta di GPU, aumento RAM) senza necessità di riscrivere il codice.
+
+### 2. Stato Attuale dell'Infrastruttura
+
+| Componente | Stato | Dettagli |
+| :--- | :--- | :--- |
+| **AVA AI (Ollama)** | Operativo | Modello `qwen2.5:7b-instruct-q4_K_M` su Hetzner. System prompt multi-ruolo (PA, Imprese, Cittadini, Admin). Data Gateway per query al database. |
+| **A99X Agenda Intelligente** | Operativo | 49 endpoint. Riunioni, partecipanti, inviti, task, disponibilità, calendario, Jitsi integrato. |
+| **Jitsi Videoconferenze** | Operativo | Integrazione con `meet.jit.si` tramite `jitsi-service.js`. Link univoci generati automaticamente. |
+| **IndicePA (IPA)** | Operativo | API CKAN per ricerca enti, unità organizzative e responsabili PA. Integrato nella sezione Comuni. |
+| **PDND** | Operativo | Connessione per visure camerali e regolarità fiscale delle imprese. |
+| **Database Neon (PostgreSQL)** | Operativo | Tutte le tabelle A99X, utenti, comuni, settori, imprese, associazioni. Supporta nativamente `pgvector`. |
+| **Trascrizione Audio (STT)** | Da aggiungere | Faster-Whisper o WhisperX da installare su Hetzner. |
+| **Speaker Diarization** | Da aggiungere | Pyannote-audio 4.0 da installare su Hetzner. |
+| **Sintesi Vocale (TTS)** | Da aggiungere | Piper TTS da installare su Hetzner. |
+| **Knowledge Base Normativa** | Da aggiungere | `pgvector` da attivare su Neon + `nomic-embed-text` su Ollama per gli embeddings. |
+| **Ricerca Leggi Nazionali** | Da aggiungere | Integrazione di **Normattiva MCP Server** e **Printing Press** per interrogazioni in tempo reale. |
+| **Jitsi Bot (partecipazione AVA)** | Da aggiungere | Bot headless per entrare nelle riunioni e catturare/inviare audio. |
+
+### 3. Stack Tecnologico 100% Locale
+
+| Funzione | Tecnologia | Esecuzione | Note |
+| :--- | :--- | :--- | :--- |
+| Modello Linguistico (LLM) | Ollama (`qwen2.5:7b` → scalabile a 70B+) | Hetzner | Già installato. Modello aggiornabile comprando più capacità. |
+| Trascrizione Audio | **Faster-Whisper** (C++ ottimizzato) | Hetzner | 4x più veloce dell'originale. Supporta italiano. Nessuna API esterna. |
+| Identificazione Parlanti | **Pyannote-audio 4.0** (community model) | Hetzner | Stato dell'arte open-source. Modello gratuito su HuggingFace. |
+| Sintesi Vocale | **Piper TTS** | Hetzner | Velocissimo, supporto italiano nativo, modelli pre-addestrati leggeri. |
+| Embeddings Vettoriali | **nomic-embed-text** (via Ollama) | Hetzner | Supera OpenAI ada-002. Già disponibile nel catalogo Ollama. |
+| Database Vettoriale | **pgvector** (estensione PostgreSQL) | Neon | Supportato nativamente da Neon. Basta `CREATE EXTENSION vector;`. |
+| Ricerca Normativa | **MCP Server (Normattiva)** + **Printing Press** | Hetzner | Interrogazione in tempo reale delle leggi italiane ufficiali. Printing Press genera CLI/MCP da qualsiasi API. |
+| Bot Riunioni | **Puppeteer-stream** o **Jitsi MCP Server** | Hetzner | Chrome headless per cattura/invio audio WebRTC nelle stanze Jitsi. |
+
+### 4. Nuove Capacità di AVA
+
+**4.1. Partecipazione alle Videoriunioni e Trascrizione Automatica.** AVA entrerà in ogni riunione Jitsi come partecipante silenzioso (senza video, con avatar identificativo). Un servizio Python su Hetzner catturerà lo stream audio della stanza tramite WebRTC, lo segmenterà per parlante con Pyannote, e lo trascriverà con Faster-Whisper. A fine riunione, AVA genererà automaticamente un verbale PDF con intestazione, partecipanti, trascrizione completa, punti chiave e azioni concordate.
+
+**4.2. La "Mente Normativa" (MCP e Knowledge Base Locale).** Il sistema normativo sarà ibrido: (1) Ricerca Normativa Nazionale in Tempo Reale tramite MCP (Normattiva MCP Server, Italian Law MCP, generati con Printing Press) per leggi nazionali sempre aggiornate; (2) Knowledge Base Locale (RAG) con pgvector su Neon per regolamenti comunali e delibere specifiche. AVA deciderà autonomamente quale fonte interrogare.
+
+**4.3. Consulenza Vocale in Tempo Reale.** Durante le riunioni, AVA potrà essere interpellata e risponderà vocalmente tramite Piper TTS, fornendo dati statistici, citazioni normative e suggerimenti.
+
+**4.4. Orchestrazione Autonoma di Riunioni.** Un assessore potrà chiedere ad AVA di organizzare una riunione: AVA identificherà i settori PA competenti, cercherà i dirigenti (anche da IPA), incrocerà le disponibilità A99X, proporrà data/ora, creerà la riunione con Jitsi e invierà gli inviti.
+
+### 5. Perfezionamento Prompt Multi-Ruolo
+
+| Ruolo | Prompt Attuale | Aggiunte Previste |
+| :--- | :--- | :--- |
+| **PA (Funzionari/Assessori)** | Accesso ai dati del Gemello Digitale, query database, analisi statistiche. | Organizzazione autonoma riunioni, consulenza normativa RAG, ricerca dirigenti IPA, verbalizzazione. |
+| **Associazioni** | Supporto analisi dati aggregati, gestione associati. | Preparazione proposte per la PA con citazioni normative, facilitazione tavoli tecnici, analisi impatto. |
+| **Imprese** | Assistenza adempimenti, verifica regolarità PDND. | Preparazione documentazione per riunioni PA, accesso a bandi/finanziamenti, riepilogo verbali. |
+| **Cittadini** | Guida servizi comunali, prenotazioni. | Spiegazione semplificata di delibere e normative, accesso ai verbali pubblici delle riunioni. |
+| **Admin (Super Admin)** | Gestione completa del sistema, configurazione. | Monitoraggio di tutte le trascrizioni, gestione Knowledge Base, configurazione modelli Ollama. |
+
+### 6. Nuove Tabelle Database
+
+| Tabella | Scopo | Campi Principali |
+| :--- | :--- | :--- |
+| `ava_trascrizioni` | Verbali delle riunioni | `riunione_id`, `testo_completo`, `pdf_url`, `parlanti_json`, `punti_chiave`, `azioni`, `created_at` |
+| `ava_knowledge_base` | Archivio normativo vettoriale | `id`, `titolo`, `settore`, `tipo` (legge/delibera/regolamento), `testo`, `embedding` (vector), `fonte_url`, `data_pubblicazione` |
+| `ava_kb_indice` | Indice per settore della KB | `id`, `settore`, `sotto_settore`, `descrizione`, `num_documenti` |
+| `ava_interazioni_riunione` | Log delle domande/risposte in riunione | `riunione_id`, `timestamp`, `domanda`, `risposta`, `fonte_kb_id`, `parlante` |
+
+### 7. Nuovi Endpoint API
+
+| Endpoint | Metodo | Scopo |
+| :--- | :--- | :--- |
+| `/api/ava/trascrizione/:riunione_id` | GET | Recupera la trascrizione completa di una riunione |
+| `/api/ava/trascrizione/:riunione_id/pdf` | GET | Scarica il verbale PDF della riunione |
+| `/api/ava/kb/search` | POST | Ricerca semantica nella Knowledge Base normativa |
+| `/api/ava/kb/ingest` | POST | Ingestione di un nuovo documento nella Knowledge Base |
+| `/api/ava/kb/indice` | GET | Elenco dei settori e sotto-settori dell'archivio normativo |
+| `/api/ava/organizza-riunione` | POST | Richiesta ad AVA di organizzare autonomamente una riunione |
+| `/api/ava/bot/join/:riunione_id` | POST | Comando per far entrare AVA in una riunione Jitsi |
+| `/api/ava/bot/status/:riunione_id` | GET | Stato del bot AVA in una riunione (attivo/inattivo/trascrizione) |
+
+### 8. Requisiti Hardware e Scalabilità
+
+**Stato Attuale.** Hetzner gestisce backend Node.js + Ollama `qwen2.5:7b`. Sufficiente per chat testuali.
+
+**Fase 1-2.** Upgrade Hetzner a 32GB RAM + GPU consigliata per Faster-Whisper e Pyannote in tempo reale.
+
+**Fase 3-4.** Piper TTS leggero (nessun upgrade). Orchestrazione richiede LLM 32B+ per ragionamenti complessi.
+
+**Scalabilità.** Architettura a microservizi separabili: server LLM, server audio, backend API.
+
+### 9. Vincoli Negativi
+
+- **MAI** inviare dati PA a servizi cloud esterni (OpenAI, Google, Amazon)
+- **MAI** alterare l'architettura multi-ruolo esistente di AVA
+- **MAI** salvare audio riunioni in chiaro su storage esterni (eliminare dopo trascrizione)
+- **MAI** confondere `associazione_id` con `comune_id` (bug v10.31.7h)
+
+### 10. Roadmap
+
+| Fase | Obiettivo | Prerequisiti | Stima |
+| :--- | :--- | :--- | :--- |
+| **Fase 1** | Trascrizione offline riunioni (Faster-Whisper + Pyannote + PDF) | Upgrade Hetzner (32GB RAM, GPU) | 2-3 settimane |
+| **Fase 2** | Integrazione Normattiva MCP + Printing Press + Knowledge Base locale (RAG) | pgvector su Neon | 3-4 settimane |
+| **Fase 3** | Voce di AVA in riunione (Piper TTS + Jitsi Bot) | Nessun upgrade | 2 settimane |
+| **Fase 4** | Orchestratore autonomo riunioni (LLM avanzato + IPA + A99X) | Modello LLM 32B+ | 2-3 settimane |
+| **Continuo** | Perfezionamento prompt multi-ruolo e addestramento | Nessuno | Continuo |
