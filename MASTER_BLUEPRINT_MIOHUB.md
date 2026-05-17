@@ -14391,3 +14391,31 @@ I 30 riassunti originali sono ancora nel file `src/modules/orchestrator/llm.js` 
 - Il valore `0` per `comune_id` e' VALIDO e significa "super admin MIO HUB"
 - Il valore `NULL` per `comune_id` significa "nessun contesto comune" (utente senza impersonalizzazione)
 
+
+---
+
+### v11.3.0 — Elimina Conversazione + Upload Documento nella Chat AVA (17 Mag 2026)
+
+**Nuova funzionalita: Elimina conversazione**
+- **Header chat**: pulsante cestino (Trash2) accanto alla voce/quota, con conferma "Elimina? Si/No"
+- **Sidebar cronologia**: pulsanti rinomina/elimina ora visibili anche su mobile/touch (prima solo hover desktop)
+- L'eliminazione chiama `DELETE /conversations/:id` (soft delete) e resetta la vista
+
+**Nuova funzionalita: Upload documento nella chat**
+- **Frontend (AIChatInput.tsx)**: pulsante graffetta (Paperclip) accanto al textarea
+  - Accetta: PDF, TXT, CSV, MD (max 5MB)
+  - Preview: mostra nome file, dimensione in chars, stato troncamento
+  - Il testo estratto viene iniettato come prefisso nel messaggio: `[DOCUMENTO ALLEGATO: nome.pdf]\n{testo}\n[FINE DOCUMENTO]\n\nDomanda utente`
+- **Backend (ai-chat.js)**: nuovo endpoint `POST /upload-document`
+  - Usa multer (memoryStorage, 5MB limit)
+  - Estrae testo da PDF con `pdf-parse` (nuova dipendenza)
+  - TXT/CSV/MD letti come UTF-8
+  - Tronca a 8000 chars per non sovraccaricare il contesto Ollama (4096 token window)
+  - Limite messaggio aumentato da 10000 a 15000 chars
+- **Flusso**: Upload file -> backend estrae testo -> frontend riceve testo -> utente invia messaggio con contesto documento -> Ollama analizza
+
+**VINCOLI NEGATIVI:**
+- NON inviare il file binario nell'endpoint stream — il testo va estratto PRIMA e iniettato come stringa nel messaggio
+- NON superare 8000 chars di contesto documento — Ollama ha 4096 token di context window
+- pdf-parse DEVE essere installato su Hetzner (`npm install pdf-parse`)
+
