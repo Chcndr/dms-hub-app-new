@@ -76,12 +76,19 @@ export interface StatItem {
   icon?: string;
 }
 
+export interface SSETtsEvent {
+  type: "tts_available";
+  tts_url: string;
+  text: string;
+}
+
 export type SSEEvent =
   | SSETokenEvent
   | SSEDoneEvent
   | SSEErrorEvent
   | SSEStartEvent
-  | SSEDataEvent;
+  | SSEDataEvent
+  | SSETtsEvent;
 
 export interface StreamChatRequest {
   conversation_id: string | null;

@@ -5,6 +5,7 @@
  *
  * Fase 2.1: Auto-detect ruolo utente da FirebaseAuth + comuneId da impersonazione
  * Fase 3.1: Aggiunto impresa_id e user_id nel context per Data Access Gateway multi-ruolo
+ * Fase 3.3: Aggiunto toggle voce AVA (Piper TTS) — ON/OFF con riproduzione automatica
  */
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { AlertCircle, Download } from "lucide-react";
@@ -67,6 +68,20 @@ export function AIChatPanel({
     return () => mql.removeEventListener('change', handler);
   }, []);
 
+  // Voce AVA — toggle ON/OFF, persistito in localStorage
+  const [voiceEnabled, setVoiceEnabled] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('ava_voice_enabled') === 'true';
+  });
+
+  const handleToggleVoice = useCallback(() => {
+    setVoiceEnabled(prev => {
+      const next = !prev;
+      localStorage.setItem('ava_voice_enabled', String(next));
+      return next;
+    });
+  }, []);
+
   // Auto-detect ruolo se non passato esplicitamente
   const effectiveRole = useMemo<UserRoleType>(
     () => userRole ?? mapFirebaseRoleToAva(user?.role),
@@ -107,6 +122,8 @@ export function AIChatPanel({
     stopStreaming,
     setMessages,
     clearError,
+    isSpeaking,
+    stopSpeaking,
   } = useStreamingChat({
     context: {
       comune_id: comuneId,
@@ -115,6 +132,7 @@ export function AIChatPanel({
       impresa_id: user?.impresaId ?? undefined,
       user_id: user?.uid ?? undefined,
     },
+    voiceEnabled,
     onConversationCreated: newId => {
       setActiveConversationId(newId);
       fetchConversations();
@@ -285,12 +303,15 @@ export function AIChatPanel({
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header con toggle sidebar su mobile */}
+        {/* Header con toggle sidebar su mobile + toggle voce */}
         <AIChatHeader
           conversation={activeConversation}
           quota={quota}
           onToggleSidebar={handleToggleSidebar}
           showSidebarToggle={isMobile || !sidebarOpen}
+          voiceEnabled={voiceEnabled}
+          onToggleVoice={handleToggleVoice}
+          isSpeaking={isSpeaking}
         />
 
         {/* Mobile: dropdown conversazioni dall'alto */}

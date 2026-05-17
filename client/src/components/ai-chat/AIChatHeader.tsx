@@ -1,8 +1,9 @@
 /**
- * AIChatHeader — Header con titolo conversazione + info modello
+ * AIChatHeader — Header con titolo conversazione + info modello + toggle voce
+ * v2.0: Aggiunto toggle voce AVA (ON/OFF)
  */
 import { memo } from "react";
-import { Bot, Sparkles, PanelLeft } from "lucide-react";
+import { Bot, Sparkles, PanelLeft, Volume2, VolumeX } from "lucide-react";
 import type { Conversation, QuotaInfo } from "./types";
 
 interface AIChatHeaderProps {
@@ -12,6 +13,12 @@ interface AIChatHeaderProps {
   onToggleSidebar?: () => void;
   /** Se true, mostra il pulsante toggle sidebar (es. su mobile o quando sidebar è chiusa) */
   showSidebarToggle?: boolean;
+  /** Se true, la voce di AVA è attiva */
+  voiceEnabled?: boolean;
+  /** Callback per attivare/disattivare la voce */
+  onToggleVoice?: () => void;
+  /** Se true, AVA sta parlando in questo momento */
+  isSpeaking?: boolean;
 }
 
 export const AIChatHeader = memo(function AIChatHeader({
@@ -19,6 +26,9 @@ export const AIChatHeader = memo(function AIChatHeader({
   quota,
   onToggleSidebar,
   showSidebarToggle,
+  voiceEnabled,
+  onToggleVoice,
+  isSpeaking,
 }: AIChatHeaderProps) {
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-[#0b1220]/50">
@@ -46,6 +56,29 @@ export const AIChatHeader = memo(function AIChatHeader({
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
+        {/* Toggle voce AVA */}
+        {onToggleVoice && (
+          <button
+            onClick={onToggleVoice}
+            className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border transition-all ${
+              voiceEnabled
+                ? isSpeaking
+                  ? "bg-teal-500/20 border-teal-400/50 text-teal-300 animate-pulse"
+                  : "bg-teal-500/10 border-teal-500/30 text-teal-400 hover:bg-teal-500/20"
+                : "bg-slate-800/50 border-slate-600/30 text-slate-500 hover:text-slate-400 hover:border-slate-500/30"
+            }`}
+            title={voiceEnabled ? "Disattiva voce AVA" : "Attiva voce AVA"}
+          >
+            {voiceEnabled ? (
+              <Volume2 className={`size-3.5 ${isSpeaking ? "animate-pulse" : ""}`} />
+            ) : (
+              <VolumeX className="size-3.5" />
+            )}
+            <span className="hidden sm:inline">
+              {isSpeaking ? "Sta parlando..." : voiceEnabled ? "Voce ON" : "Voce OFF"}
+            </span>
+          </button>
+        )}
         {conversation?.model && (
           <span className="text-[10px] text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full hidden sm:inline">
             {conversation.model}

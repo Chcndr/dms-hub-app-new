@@ -1,6 +1,7 @@
 /**
  * useStreamingChat — Hook per gestione streaming SSE della chat AI
  * Connette al backend REST su api.mio-hub.me (NON tRPC)
+ * v2.0: Aggiunto supporto TTS (voce AVA)
  */
 import { useState, useCallback, useRef } from "react";
 import { streamChat } from "../lib/sse-client";
@@ -12,6 +13,8 @@ const AI_STREAM_URL = `${MIHUB_API_BASE_URL}/api/ai/chat/stream`;
 interface UseStreamingChatOptions {
   onConversationCreated?: (conversationId: string) => void;
   context?: StreamChatRequest["context"];
+  /** Se true, riproduce automaticamente la voce di AVA quando finisce di rispondere */
+  voiceEnabled?: boolean;
 }
 
 interface UseStreamingChatReturn {
@@ -25,6 +28,41 @@ interface UseStreamingChatReturn {
   stopStreaming: () => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   clearError: () => void;
+  isSpeaking: boolean;
+  stopSpeaking: () => void;
+}
+
+/** Chiama il TTS backend e riproduce l'audio */
+async function playTts(text: string, audioRef: React.MutableRefObject<HTMLAudioElement | null>): Promise<void> {
+  try {
+    // Ferma eventuale audio in corso
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    const response = await fetch(`${MIHUB_API_BASE_URL}/api/ava/tts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text.substring(0, 2000), voice: 'it_IT-paola-medium', speed: 1.0 }),
+    });
+
+    if (!response.ok) return;
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audioRef.current = audio;
+
+    audio.onended = () => {
+      URL.revokeObjectURL(url);
+      audioRef.current = null;
+    };
+
+    await audio.play();
+  } catch {
+    // TTS fallisce silenziosamente — non bloccare la chat
+  }
 }
 
 export function useStreamingChat(
@@ -36,10 +74,24 @@ export function useStreamingChat(
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataEvents, setDataEvents] = useState<SSEDataEvent[]>([]);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const tokenBufferRef = useRef("");
   const rafIdRef = useRef<number | undefined>(undefined);
   const dataEventsRef = useRef<SSEDataEvent[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const voiceEnabledRef = useRef(options?.voiceEnabled ?? false);
+
+  // Aggiorna il ref quando cambia l'opzione
+  voiceEnabledRef.current = options?.voiceEnabled ?? false;
+
+  const stopSpeaking = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsSpeaking(false);
+  }, []);
 
   const sendMessage = useCallback(
     async (text: string, conversationId: string | null) => {
@@ -94,6 +146,15 @@ export function useStreamingChat(
             }
           },
 
+          onTts: (ttsData) => {
+            // Il backend ci dice che il TTS è disponibile
+            // Riproduciamo solo se la voce è attiva
+            if (voiceEnabledRef.current && ttsData.text) {
+              setIsSpeaking(true);
+              playTts(ttsData.text, audioRef).finally(() => setIsSpeaking(false));
+            }
+          },
+
           onDone: data => {
             // Cancel any pending RAF to avoid stale flush
             if (rafIdRef.current) {
@@ -117,6 +178,13 @@ export function useStreamingChat(
                   data_events: dataEventsRef.current.length > 0 ? dataEventsRef.current : undefined,
                 };
                 setMessages(msgs => [...msgs, assistantMessage]);
+
+                // Se la voce è attiva e non abbiamo già ricevuto un evento tts_available,
+                // chiama il TTS con il testo completo della risposta
+                if (voiceEnabledRef.current && !audioRef.current) {
+                  setIsSpeaking(true);
+                  playTts(finalContent, audioRef).finally(() => setIsSpeaking(false));
+                }
               }
               return "";
             });
@@ -195,5 +263,7 @@ export function useStreamingChat(
     stopStreaming,
     setMessages,
     clearError,
+    isSpeaking,
+    stopSpeaking,
   };
 }

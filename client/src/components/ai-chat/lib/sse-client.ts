@@ -11,6 +11,7 @@ interface SSEClientOptions {
   onToken: (token: string) => void;
   onStart?: (data: { conversation_id: string; model: string }) => void;
   onData?: (data: SSEDataEvent) => void;
+  onTts?: (data: { tts_url: string; text: string }) => void;
   onDone: (data: {
     message_id: string;
     tokens_used: number;
@@ -87,6 +88,12 @@ export async function streamChat(options: SSEClientOptions): Promise<void> {
               break;
             case "data":
               options.onData?.(data);
+              break;
+            case "tts_available":
+              options.onTts?.({
+                tts_url: data.tts_url,
+                text: data.text,
+              });
               break;
             case "done":
               options.onDone({
