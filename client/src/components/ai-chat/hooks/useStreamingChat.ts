@@ -356,21 +356,22 @@ export function useStreamingChat(
               ttsQueueRef.current.flush();
             }
 
-            setStreamingContent(prev => {
-              const finalContent = prev + remainingTokens;
-              if (finalContent) {
-                const assistantMessage: ChatMessage = {
-                  id: data.message_id,
-                  role: "assistant",
-                  content: finalContent,
-                  tokens_used: data.tokens_used,
-                  created_at: new Date().toISOString(),
-                  data_events: dataEventsRef.current.length > 0 ? dataEventsRef.current : undefined,
-                };
-                setMessages(msgs => [...msgs, assistantMessage]);
-              }
-              return "";
-            });
+            // FIX: usa fullTextRef.current come fonte di verità per il testo completo
+            // prev + remainingTokens potrebbe essere vuoto se il RAF ha già flushato tutto
+            const safeContent = fullTextRef.current || "";
+
+            if (safeContent) {
+              const assistantMessage: ChatMessage = {
+                id: data.message_id,
+                role: "assistant",
+                content: safeContent,
+                tokens_used: data.tokens_used,
+                created_at: new Date().toISOString(),
+                data_events: dataEventsRef.current.length > 0 ? dataEventsRef.current : undefined,
+              };
+              setMessages(msgs => [...msgs, assistantMessage]);
+            }
+            setStreamingContent("");
             setIsStreaming(false);
             setIsLoadingData(false);
           },

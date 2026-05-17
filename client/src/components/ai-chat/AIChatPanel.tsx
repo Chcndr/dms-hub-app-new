@@ -163,7 +163,10 @@ export function AIChatPanel({
       // Refresh quota after sending
       fetchQuota();
       // Refresh conversations list (title may have been auto-generated)
-      setTimeout(() => fetchConversations(), 2000);
+      // Primo refresh rapido per aggiornare la lista
+      setTimeout(() => fetchConversations(), 3000);
+      // Secondo refresh per catturare il titolo auto-generato da Ollama (può impiegare fino a 15s)
+      setTimeout(() => fetchConversations(), 8000);
     },
     [
       activeConversationId,
