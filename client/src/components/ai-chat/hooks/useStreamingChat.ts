@@ -114,7 +114,7 @@ async function fetchAndPlayChunk(
   const response = await fetch(ttsUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, voice: 'it_IT-paola-medium', speed: 0.7 }),
+    body: JSON.stringify({ text, voice: 'it_IT-paola-medium', speed: 0.8 }),
     signal: controller.signal,
   });
 

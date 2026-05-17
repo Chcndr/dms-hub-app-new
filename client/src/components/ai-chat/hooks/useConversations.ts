@@ -63,7 +63,8 @@ export function useConversations(comuneId?: number): UseConversationsReturn {
   const fetchConversations = useCallback(async () => {
     setIsLoading(true);
     try {
-      const url = comuneId
+      // FIX: comuneId=0 (super admin MIO HUB) è falsy in JS — usare !== undefined/null
+      const url = comuneId !== undefined && comuneId !== null
         ? `${AI_API_BASE}/conversations?comune_id=${comuneId}`
         : `${AI_API_BASE}/conversations`;
       const res = await authFetchWithRetry(url);
@@ -82,7 +83,8 @@ export function useConversations(comuneId?: number): UseConversationsReturn {
     useCallback(async (): Promise<Conversation | null> => {
       try {
         const body: Record<string, unknown> = {};
-        if (comuneId) body.comune_id = comuneId;
+        // FIX: comuneId=0 (super admin) è falsy — usare !== undefined/null
+        if (comuneId !== undefined && comuneId !== null) body.comune_id = comuneId;
         const res = await authFetch(`${AI_API_BASE}/conversations`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
