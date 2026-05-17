@@ -91,10 +91,10 @@ function cleanTextForTts(text: string): string {
     .trim();
 }
 
-/** Divide il testo in frasi (split su . ! ? : e newline) */
+/** Divide il testo in frasi (split su . ! ? e newline) */
 function splitIntoSentences(text: string): string[] {
-  // Split su fine frase, mantenendo il separatore
-  const parts = text.split(/(?<=[.!?:;])\s+/);
+  // Split SOLO su fine frase reale (. ! ?) — NON su : e ; che appaiono dentro le frasi
+  const parts = text.split(/(?<=[.!?])\s+/);
   return parts.filter(p => p.trim().length > 5);
 }
 
@@ -114,7 +114,7 @@ async function fetchAndPlayChunk(
   const response = await fetch(ttsUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, voice: 'it_IT-paola-medium', speed: 0.9 }),
+    body: JSON.stringify({ text, voice: 'it_IT-paola-medium', speed: 0.7 }),
     signal: controller.signal,
   });
 
@@ -163,8 +163,8 @@ class TtsStreamingQueue {
 
     this.pendingText += newText;
 
-    // Cerca frasi complete (terminano con . ! ? : ;)
-    const sentences = this.pendingText.split(/(?<=[.!?:;])\s+/);
+    // Cerca frasi complete (terminano con . ! ? — NON : e ; che sono dentro le frasi)
+    const sentences = this.pendingText.split(/(?<=[.!?])\s+/);
 
     if (sentences.length > 1) {
       // Tutte tranne l'ultima sono frasi complete
