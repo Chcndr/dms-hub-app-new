@@ -14346,3 +14346,23 @@ Ritrovata la libreria di 30+ documenti PDF del progetto DMS, originariamente cre
 **RIFERIMENTO LIBRERIA MIO AGENT ORIGINALE:**
 I 30 riassunti originali sono ancora nel file `src/modules/orchestrator/llm.js` (righe 249-480). Possono essere usati come fonte alternativa più compatta rispetto ai PDF completi. Categorie: Strategici (9), Normativi (4), Tecnici (5), Carbon Credit (5), Regionali (3), Operativi (4).
 
+
+---
+
+### v11.2.2 — Fix Risposta Scompare + Titolo Non Si Salva (17 Mag 2026)
+
+**BUG 1 — Risposta AVA scompare dopo essere stata generata:**
+- **Causa:** Nel frontend (`useStreamingChat.ts`), l'evento `onDone` usava `prev + remainingTokens` per costruire il messaggio finale. Se il `requestAnimationFrame` aveva già flushato tutto il testo in `streamingContent`, `prev` era vuoto e `remainingTokens` era vuoto → il messaggio veniva perso.
+- **Fix Frontend:** Ora `onDone` usa `fullTextRef.current` come fonte di verità — questo ref accumula OGNI token ricevuto e non viene mai svuotato dal RAF.
+- **Fix Backend:** Il salvataggio nel DB e l'auto-titolazione sono ora in try/catch separati. Il `done` event viene SEMPRE inviato al client, anche se il salvataggio fallisce.
+
+**BUG 2 — Conversazione resta "Nuova conversazione":**
+- **Causa:** `autoTitleConversation` chiamava Ollama in modo sincrono (timeout 15s) PRIMA di inviare il `done` event. Se Ollama era occupato (embeddings KB), il timeout bloccava tutto.
+- **Fix Backend:** `autoTitleConversation` ora è completamente asincrona (fire-and-forget con `.then()/.catch()`). Il `done` event parte subito senza aspettare il titolo.
+- **Fix Frontend:** Doppio refresh della lista conversazioni — a 3s e a 8s dopo l'invio — per catturare il titolo anche se Ollama impiega tempo.
+
+**VINCOLI NEGATIVI:**
+- NON rendere `autoTitleConversation` sincrona/bloccante — deve restare fire-and-forget
+- NON usare `prev + remainingTokens` nel `onDone` — usare SEMPRE `fullTextRef.current`
+- NON rimuovere il try/catch separato per il salvataggio — il done event deve arrivare SEMPRE
+
