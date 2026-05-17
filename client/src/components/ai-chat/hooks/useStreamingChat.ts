@@ -1,7 +1,7 @@
 /**
  * useStreamingChat — Hook per gestione streaming SSE della chat AI
  * Connette al backend REST su api.mio-hub.me (NON tRPC)
- * v3.0: Fix TTS iOS/Safari — usa Web Audio API per riproduzione (bypass autoplay policy)
+ * v4.0: TTS Streaming — AVA parla MENTRE scrive, a pezzi (frase per frase)
  */
 import { useState, useCallback, useRef, useEffect } from "react";
 import { streamChat } from "../lib/sse-client";
@@ -13,7 +13,6 @@ const AI_STREAM_URL = `${MIHUB_API_BASE_URL}/api/ai/chat/stream`;
 interface UseStreamingChatOptions {
   onConversationCreated?: (conversationId: string) => void;
   context?: StreamChatRequest["context"];
-  /** Se true, riproduce automaticamente la voce di AVA quando finisce di rispondere */
   voiceEnabled?: boolean;
 }
 
@@ -32,13 +31,9 @@ interface UseStreamingChatReturn {
   stopSpeaking: () => void;
 }
 
-/**
- * AudioContext condiviso — la chiave per iOS/Safari.
- * L'AudioContext DEVE essere creato e resumed durante un'interazione utente (tap/click).
- * Una volta sbloccato, possiamo usarlo per riprodurre qualsiasi audio in qualsiasi momento.
- */
+// ─── Web Audio API per iOS/Safari ───────────────────────────────────────────
+
 let sharedAudioContext: AudioContext | null = null;
-let audioContextReady = false;
 
 function getOrCreateAudioContext(): AudioContext | null {
   if (sharedAudioContext && sharedAudioContext.state !== 'closed') {
@@ -53,35 +48,21 @@ function getOrCreateAudioContext(): AudioContext | null {
   }
 }
 
-/**
- * Sblocca l'AudioContext — DEVE essere chiamato durante un evento utente (click/tap/touchstart).
- * Su iOS, un AudioContext creato fuori da un evento utente resta "suspended" per sempre.
- */
 function unlockAudioForIOS() {
   const ctx = getOrCreateAudioContext();
   if (!ctx) return;
-
   if (ctx.state === 'suspended') {
-    ctx.resume().then(() => {
-      audioContextReady = true;
-    }).catch(() => {});
-  } else {
-    audioContextReady = true;
+    ctx.resume().catch(() => {});
   }
-
-  // Riproduci un buffer silenzioso per sbloccare definitivamente su iOS
   try {
     const buffer = ctx.createBuffer(1, 1, 22050);
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(ctx.destination);
     source.start(0);
-  } catch {
-    // ignore
-  }
+  } catch { /* ignore */ }
 }
 
-// Sblocca al primo touch/click dell'utente sulla pagina
 if (typeof window !== 'undefined') {
   const earlyUnlock = () => {
     unlockAudioForIOS();
@@ -94,124 +75,163 @@ if (typeof window !== 'undefined') {
   document.addEventListener('click', earlyUnlock);
 }
 
-/** Riproduce audio WAV usando Web Audio API (funziona su iOS dopo unlock) */
-async function playWavWithWebAudio(
-  wavArrayBuffer: ArrayBuffer,
-  onStart: () => void,
-  onEnd: () => void,
-  sourceNodeRef: React.MutableRefObject<AudioBufferSourceNode | null>
+// ─── TTS Streaming Queue ────────────────────────────────────────────────────
+
+/** Pulisce il testo markdown per il TTS */
+function cleanTextForTts(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/^[-•]\s*/gm, '')
+    .replace(/^\d+\.\s*/gm, '')
+    .replace(/#{1,6}\s*/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\n{2,}/g, '. ')
+    .replace(/\n/g, ' ')
+    .trim();
+}
+
+/** Divide il testo in frasi (split su . ! ? : e newline) */
+function splitIntoSentences(text: string): string[] {
+  // Split su fine frase, mantenendo il separatore
+  const parts = text.split(/(?<=[.!?:;])\s+/);
+  return parts.filter(p => p.trim().length > 5);
+}
+
+/** Genera e riproduce un chunk di TTS */
+async function fetchAndPlayChunk(
+  text: string,
+  ctx: AudioContext,
+  onStart: () => void
 ): Promise<void> {
-  const ctx = getOrCreateAudioContext();
-  if (!ctx) {
-    onEnd();
-    return;
-  }
+  const ttsUrl = typeof window !== 'undefined' && window.location.origin.includes('miohub')
+    ? '/api/ava/tts'
+    : `${MIHUB_API_BASE_URL}/api/ava/tts`;
 
-  // Assicurati che il context sia attivo
-  if (ctx.state === 'suspended') {
-    try {
-      await ctx.resume();
-    } catch {
-      onEnd();
-      return;
-    }
-  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
 
-  try {
-    // Decodifica il WAV in un AudioBuffer
-    const audioBuffer = await ctx.decodeAudioData(wavArrayBuffer);
+  const response = await fetch(ttsUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voice: 'it_IT-paola-medium', speed: 0.9 }),
+    signal: controller.signal,
+  });
 
-    // Crea un source node per la riproduzione
+  clearTimeout(timeout);
+
+  if (!response.ok) throw new Error('TTS failed');
+
+  const arrayBuffer = await response.arrayBuffer();
+  if (!arrayBuffer || arrayBuffer.byteLength < 100) throw new Error('Empty audio');
+
+  if (ctx.state === 'suspended') await ctx.resume();
+
+  const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+
+  return new Promise<void>((resolve, reject) => {
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(ctx.destination);
-
-    sourceNodeRef.current = source;
-
-    source.onended = () => {
-      sourceNodeRef.current = null;
-      onEnd();
-    };
-
+    source.onended = () => resolve();
     onStart();
     source.start(0);
-  } catch {
-    sourceNodeRef.current = null;
-    onEnd();
-  }
+  });
 }
 
-/** Chiama il TTS backend e riproduce l'audio via Web Audio API */
-async function playTts(
-  text: string,
-  sourceNodeRef: React.MutableRefObject<AudioBufferSourceNode | null>,
-  onStart: () => void,
-  onEnd: () => void
-): Promise<void> {
-  try {
-    // Ferma eventuale audio in corso
-    if (sourceNodeRef.current) {
+/**
+ * Classe che gestisce la coda TTS streaming.
+ * Accumula testo durante lo streaming, e appena ha una frase completa
+ * la manda al TTS e la riproduce. Le frasi vengono riprodotte in sequenza.
+ */
+class TtsStreamingQueue {
+  private queue: string[] = [];
+  private isPlaying = false;
+  private isStopped = false;
+  private pendingText = '';
+  private totalSpoken = 0;
+  private maxChars = 800; // max caratteri totali da parlare
+  private onSpeakingChange: (speaking: boolean) => void;
+
+  constructor(onSpeakingChange: (speaking: boolean) => void) {
+    this.onSpeakingChange = onSpeakingChange;
+  }
+
+  /** Aggiungi testo in arrivo dallo streaming */
+  addText(newText: string) {
+    if (this.isStopped || this.totalSpoken >= this.maxChars) return;
+
+    this.pendingText += newText;
+
+    // Cerca frasi complete (terminano con . ! ? : ;)
+    const sentences = this.pendingText.split(/(?<=[.!?:;])\s+/);
+
+    if (sentences.length > 1) {
+      // Tutte tranne l'ultima sono frasi complete
+      const completeSentences = sentences.slice(0, -1);
+      this.pendingText = sentences[sentences.length - 1];
+
+      for (const sentence of completeSentences) {
+        const clean = cleanTextForTts(sentence);
+        if (clean.length > 10 && this.totalSpoken + clean.length <= this.maxChars) {
+          this.queue.push(clean);
+          this.totalSpoken += clean.length;
+        }
+      }
+
+      this.processQueue();
+    }
+  }
+
+  /** Segnala che lo streaming è finito — processa eventuale testo rimanente */
+  flush() {
+    if (this.isStopped || this.totalSpoken >= this.maxChars) return;
+
+    if (this.pendingText.trim().length > 10) {
+      const clean = cleanTextForTts(this.pendingText);
+      if (clean.length > 10 && this.totalSpoken + clean.length <= this.maxChars) {
+        this.queue.push(clean);
+        this.totalSpoken += clean.length;
+      }
+    }
+    this.pendingText = '';
+    this.processQueue();
+  }
+
+  /** Ferma tutto */
+  stop() {
+    this.isStopped = true;
+    this.queue = [];
+    this.pendingText = '';
+    this.onSpeakingChange(false);
+  }
+
+  /** Processa la coda: riproduce le frasi una alla volta */
+  private async processQueue() {
+    if (this.isPlaying || this.isStopped) return;
+
+    const ctx = getOrCreateAudioContext();
+    if (!ctx) return;
+
+    this.isPlaying = true;
+
+    while (this.queue.length > 0 && !this.isStopped) {
+      const text = this.queue.shift()!;
       try {
-        sourceNodeRef.current.stop();
-      } catch { /* already stopped */ }
-      sourceNodeRef.current = null;
+        await fetchAndPlayChunk(text, ctx, () => this.onSpeakingChange(true));
+      } catch {
+        // Se un chunk fallisce, continua con il prossimo
+      }
     }
 
-    // Pulisci il testo: rimuovi markdown, asterischi, elenchi puntati
-    const cleanText = text
-      .replace(/\*\*([^*]+)\*\*/g, '$1')  // **bold** → bold
-      .replace(/\*([^*]+)\*/g, '$1')       // *italic* → italic
-      .replace(/^[-•]\s*/gm, '')           // rimuovi bullet points
-      .replace(/^\d+\.\s*/gm, '')          // rimuovi numeri elenco
-      .replace(/#{1,6}\s*/g, '')           // rimuovi headers markdown
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [link](url) → link
-      .replace(/\n{2,}/g, '. ')            // doppi a capo → punto
-      .replace(/\n/g, ' ')                 // singoli a capo → spazio
-      .trim()
-      .substring(0, 600);                  // max 600 chars per TTS (copre 4-5 frasi)
-
-    if (!cleanText || cleanText.length < 3) {
-      onEnd();
-      return;
+    this.isPlaying = false;
+    if (this.queue.length === 0) {
+      this.onSpeakingChange(false);
     }
-
-    // Usa URL relativo per passare dal proxy Vercel (più affidabile su mobile)
-    const ttsUrl = typeof window !== 'undefined' && window.location.origin.includes('miohub')
-      ? '/api/ava/tts'
-      : `${MIHUB_API_BASE_URL}/api/ava/tts`;
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-    const response = await fetch(ttsUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: cleanText, voice: 'it_IT-paola-medium', speed: 0.85 }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      onEnd();
-      return;
-    }
-
-    // Leggi la risposta come ArrayBuffer (necessario per Web Audio API)
-    const arrayBuffer = await response.arrayBuffer();
-
-    if (!arrayBuffer || arrayBuffer.byteLength < 100) {
-      onEnd();
-      return;
-    }
-
-    // Riproduci usando Web Audio API (funziona su iOS!)
-    await playWavWithWebAudio(arrayBuffer, onStart, onEnd, sourceNodeRef);
-  } catch {
-    // TTS fallisce silenziosamente — non bloccare la chat
-    onEnd();
   }
 }
+
+// ─── Hook principale ────────────────────────────────────────────────────────
 
 export function useStreamingChat(
   options?: UseStreamingChatOptions
@@ -227,21 +247,19 @@ export function useStreamingChat(
   const tokenBufferRef = useRef("");
   const rafIdRef = useRef<number | undefined>(undefined);
   const dataEventsRef = useRef<SSEDataEvent[]>([]);
-  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const voiceEnabledRef = useRef(options?.voiceEnabled ?? false);
-  const ttsTriggeredRef = useRef(false);
+  const ttsQueueRef = useRef<TtsStreamingQueue | null>(null);
+  // Accumula il testo completo per il TTS (separato dal rendering)
+  const fullTextRef = useRef("");
 
-  // Aggiorna il ref quando cambia l'opzione
   useEffect(() => {
     voiceEnabledRef.current = options?.voiceEnabled ?? false;
   }, [options?.voiceEnabled]);
 
   const stopSpeaking = useCallback(() => {
-    if (sourceNodeRef.current) {
-      try {
-        sourceNodeRef.current.stop();
-      } catch { /* already stopped */ }
-      sourceNodeRef.current = null;
+    if (ttsQueueRef.current) {
+      ttsQueueRef.current.stop();
+      ttsQueueRef.current = null;
     }
     setIsSpeaking(false);
   }, []);
@@ -262,10 +280,17 @@ export function useStreamingChat(
       setDataEvents([]);
       dataEventsRef.current = [];
       tokenBufferRef.current = "";
-      ttsTriggeredRef.current = false;
+      fullTextRef.current = "";
 
-      // CRUCIALE: Sblocca AudioContext al momento dell'invio (è un'interazione utente diretta)
+      // CRUCIALE: Sblocca AudioContext (interazione utente diretta)
       unlockAudioForIOS();
+
+      // Crea la coda TTS streaming se la voce è attiva
+      if (voiceEnabledRef.current) {
+        ttsQueueRef.current = new TtsStreamingQueue((speaking) => setIsSpeaking(speaking));
+      } else {
+        ttsQueueRef.current = null;
+      }
 
       abortRef.current = new AbortController();
 
@@ -294,6 +319,13 @@ export function useStreamingChat(
           onToken: token => {
             setIsLoadingData(false);
             tokenBufferRef.current += token;
+
+            // Accumula testo per il TTS streaming
+            fullTextRef.current += token;
+            if (ttsQueueRef.current) {
+              ttsQueueRef.current.addText(token);
+            }
+
             if (!rafIdRef.current) {
               rafIdRef.current = requestAnimationFrame(() => {
                 setStreamingContent(prev => prev + tokenBufferRef.current);
@@ -304,20 +336,25 @@ export function useStreamingChat(
           },
 
           onTts: (_ttsData) => {
-            // Ignoriamo l'evento tts_available dal backend —
-            // usiamo solo il testo completo dal onDone
+            // Non usato — usiamo il TTS streaming diretto
           },
 
           onDone: data => {
-            // Cancel any pending RAF to avoid stale flush
             if (rafIdRef.current) {
               cancelAnimationFrame(rafIdRef.current);
               rafIdRef.current = undefined;
             }
 
-            // Flush remaining buffer synchronously into final content
             const remainingTokens = tokenBufferRef.current;
             tokenBufferRef.current = "";
+
+            // Flush il TTS con eventuale testo rimanente
+            if (ttsQueueRef.current) {
+              if (remainingTokens) {
+                ttsQueueRef.current.addText(remainingTokens);
+              }
+              ttsQueueRef.current.flush();
+            }
 
             setStreamingContent(prev => {
               const finalContent = prev + remainingTokens;
@@ -331,17 +368,6 @@ export function useStreamingChat(
                   data_events: dataEventsRef.current.length > 0 ? dataEventsRef.current : undefined,
                 };
                 setMessages(msgs => [...msgs, assistantMessage]);
-
-                // Riproduci TTS con il testo completo della risposta (via Web Audio API)
-                if (voiceEnabledRef.current && !ttsTriggeredRef.current) {
-                  ttsTriggeredRef.current = true;
-                  playTts(
-                    finalContent,
-                    sourceNodeRef,
-                    () => setIsSpeaking(true),
-                    () => setIsSpeaking(false)
-                  );
-                }
               }
               return "";
             });
@@ -350,7 +376,6 @@ export function useStreamingChat(
           },
 
           onError: err => {
-            // Cancel any pending RAF
             if (rafIdRef.current) {
               cancelAnimationFrame(rafIdRef.current);
               rafIdRef.current = undefined;
@@ -360,15 +385,15 @@ export function useStreamingChat(
             setIsStreaming(false);
             setIsLoadingData(false);
             setStreamingContent("");
+            // Ferma il TTS in caso di errore
+            if (ttsQueueRef.current) {
+              ttsQueueRef.current.stop();
+            }
           },
         });
       } catch (err: unknown) {
-        if (err instanceof Error && err.name === "AbortError") {
-          // User aborted, content already handled in stopStreaming
-          return;
-        }
-        const message =
-          err instanceof Error ? err.message : "Errore di connessione";
+        if (err instanceof Error && err.name === "AbortError") return;
+        const message = err instanceof Error ? err.message : "Errore di connessione";
         setError(message);
         setIsStreaming(false);
         setStreamingContent("");
@@ -380,13 +405,17 @@ export function useStreamingChat(
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
 
-    // Cancel any pending RAF
     if (rafIdRef.current) {
       cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = undefined;
     }
 
-    // Flush buffer
+    // Ferma anche il TTS
+    if (ttsQueueRef.current) {
+      ttsQueueRef.current.stop();
+      ttsQueueRef.current = null;
+    }
+
     const remaining = tokenBufferRef.current;
     tokenBufferRef.current = "";
 
