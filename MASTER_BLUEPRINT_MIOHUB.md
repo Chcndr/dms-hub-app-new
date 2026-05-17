@@ -1,16 +1,16 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 11.1.0 (Integrazione Voce AVA Piper TTS + Jitsi Bot)
+> **Versione:** 11.4.3 (Fix AVA Tool DATABASE e AIChatSidebar)
 > **Data:** 17 Maggio 2026
-> **Stato:** PUNTO DI RIPRISTINO STABILE — Tag `STABLE-v11.0.0-20260517`
+> **Stato:** PUNTO DI RIPRISTINO STABILE — Tag `STABLE-v11.4.3-20260517`
 >
 > ---
-> ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.7h)
+> ### STATO SISTEMA (17 Mag 2026 — Snapshot stabile v11.4.3)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `a867ab0` — Tag `STABLE-v10.31.7h-20260516` |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `8e673d3` — Tag `STABLE-v10.31.7h-20260516` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `e3bab87` — Tag `STABLE-v11.4.3-20260517` |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new `da93687` — Tag `STABLE-v11.4.3-20260517` |
 > | **GitHub MIO-hub** | Allineato | MIO-hub v46 — Tag `STABLE-v46-20260516` — 1.100 endpoint catalogati |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy via GitHub Actions — 938 endpoint attivi |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy su push master |
@@ -82,6 +82,52 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
+### RIEPILOGO SESSIONE 17 Mag 2026 (v11.4.2 → v11.4.3)
+
+**Fix completati in questa sessione:**
+
+| Versione | Fix | Repo | Stato |
+|----------|-----|------|-------|
+| v11.4.2 | Fix CRITICO query predefinite AVA - colonne reali dal DB | Backend | FUNZIONANTE |
+| v11.4.3 | Fix regex classificatore DATABASE AVA e 7 nuove categorie query | Backend | FUNZIONANTE |
+| v11.4.3 | Fix file corrotto AIChatSidebar.tsx (testo duplicato) | Frontend | FUNZIONANTE |
+
+**Problemi risolti:**
+- **AVA Tool DATABASE non si attivava per domande come "quanti comuni ci sono"**: Il regex `quant[ie]\s+(sono|ci|ne|ha)` richiedeva che la parola successiva fosse immediatamente "sono/ci/ne/ha". Modificato in `quant[ie]\b` per permettere parole intermedie.
+- **AVA Tool DATABASE falliva per colonne inesistenti**: Le query predefinite usavano nomi di colonne errati (es. `nome` invece di `denominazione` per le imprese). Aggiornato il prompt SQL dinamico per usare le colonne reali del DB.
+- **Frontend corrotto in AIChatSidebar.tsx**: Il file aveva testo duplicato (`overflow-hidden ${overflow-hidden ${`) che causava errori di compilazione. Corretto e aggiunto troncamento corretto per i titoli lunghi.
+
+**Allineamento sistema verificato:**
+- GitHub ↔ Vercel: allineato (autodeploy su push master)
+- GitHub ↔ Hetzner: allineato (autodeploy via GitHub Actions) - Build 20260517-2140 attivo
+- Neon DB: integro
+- Tag di ripristino: `STABLE-v11.4.3-20260517` su backend e frontend
+
+---
+
+### CHANGELOG v11.4.3 (17 Mag 2026)
+- **FIX FRONTEND AIChatSidebar.tsx**:
+  - Risolto errore di sintassi causato da testo duplicato nelle classi Tailwind (`overflow-hidden ${overflow-hidden ${`)
+  - Aggiunto `overflow-hidden` al container per forzare il troncamento
+  - Aggiunto `maxWidth: calc(100% - 80px)` sullo span del titolo per evitare che i titoli lunghi nascondano le icone di azione
+- **FIX BACKEND AVA Classificatore DATABASE**:
+  - Modificato il regex `dbForceRegex` in `routes/ai-chat.js`
+  - Cambiato `quant[ie]\s+(sono|ci|ne|ha)` in `quant[ie]\b` (word boundary)
+  - Ora domande come "quanti comuni ci sono" o "quante imprese abbiamo" attivano correttamente il tool DATABASE
+- **FEATURE BACKEND AVA Query Predefinite**:
+  - Aggiunte 7 nuove categorie di query predefinite per migliorare le risposte senza LLM: posteggi, ispezioni, fatture, documenti, mobilità, graduatorie
+
+### CHANGELOG v11.4.2 (17 Mag 2026)
+- **FIX CRITICO BACKEND AVA Tool DATABASE**:
+  - Aggiornato il prompt SQL dinamico per usare i nomi reali delle colonne del DB
+  - `imprese`: usa `denominazione` (non nome), `codice_fiscale`, `partita_iva`
+  - `comuni`: usa `nome`
+  - `users`: usa `name`, `email`
+  - `hub_markets`: usa `name`, `status`
+  - Questo previene errori SQL quando l'LLM tenta di generare query con nomi di colonne inventati
+
+---
+
 ### RIEPILOGO SESSIONE 16 Mag 2026 (v10.31.7d → v10.31.7h)
 
 **Fix completati in questa sessione (5 versioni):**
