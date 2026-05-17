@@ -808,7 +808,7 @@
 > - **MIO Agent: DEPRECATO** — Zapier NLA non funziona (errore 400), agente SSH insicuro, dati PA su server USA
 > - **AVA AI: OPERATIVA** — Chat AI streaming SSE, Ollama self-hosted, RBAC 4 livelli, Data Access Gateway, sistema quote
 > - **Decisione: Abbandonare MIO Agent, sviluppare AVA AI / Progetto A99X**
-> - Documento progetto operativo: `PROGETTO_OPERATIVO_A99X.md` (nel repo backend)
+> - Documento progetto operativo: `BLUEPRINT_AVA_A99X.md` (nel repo backend)
 > - Roadmap A99X: Fase 1 (immediata) → Fase 2 (estate 2026) → Fase 3 (autunno 2026) → Fase 4 (inizio 2027)
 >
 > **SISTEMA NOTIFICHE:**
@@ -14016,15 +14016,45 @@ Lo sviluppo sarà guidato da tre principi inderogabili:
 | Ricerca Normativa | **MCP Server (Normattiva)** + **Printing Press** | Hetzner | Interrogazione in tempo reale delle leggi italiane ufficiali. Printing Press genera CLI/MCP da qualsiasi API. |
 | Bot Riunioni | **Puppeteer-stream** o **Jitsi MCP Server** | Hetzner | Chrome headless per cattura/invio audio WebRTC nelle stanze Jitsi. |
 
-### 4. Nuove Capacità di AVA
+### 4. La "Mente Normativa" (Sistema Ibrido) — ✅ COMPLETATA
 
-**4.1. Partecipazione alle Videoriunioni e Trascrizione Automatica.** AVA entrerà in ogni riunione Jitsi come partecipante silenzioso (senza video, con avatar identificativo). Un servizio Python su Hetzner catturerà lo stream audio della stanza tramite WebRTC, lo segmenterà per parlante con Pyannote, e lo trascriverà con Faster-Whisper. A fine riunione, AVA genererà automaticamente un verbale PDF con intestazione, partecipanti, trascrizione completa, punti chiave e azioni concordate.
+Il sistema normativo di AVA è ibrido per massimizzare l'efficienza:
 
-**4.2. La "Mente Normativa" (MCP e Knowledge Base Locale).** Il sistema normativo sarà ibrido: (1) Ricerca Normativa Nazionale in Tempo Reale tramite MCP (Normattiva MCP Server, Italian Law MCP, generati con Printing Press) per leggi nazionali sempre aggiornate; (2) Knowledge Base Locale (RAG) con pgvector su Neon per regolamenti comunali e delibere specifiche. AVA deciderà autonomamente quale fonte interrogare.
+**4.1. Ricerca Normativa Nazionale (MCP) — ✅ COMPLETATA**
+- Utilizza **Printing Press v4.8.0** per generare un MCP Server in Go (`normattiva-pp-mcp`).
+- Interroga in tempo reale le API ufficiali di Normattiva Open Data.
+- Endpoint supportati: ricerca semplice, ricerca avanzata, dettaglio atto (URN), tipologiche.
+- Repository GitHub: `Chcndr/normattiva-pp-cli` (76 file, CLI + MCP Server).
+- OpenAPI spec creata manualmente dal PDF ufficiale di Normattiva.
+- **Integrazione AVA:** Tool `cerca_normativa` aggiunto al flusso di chat (`ai-chat.js`). Il classificatore LLM riconosce la categoria `NORMATIVA` e instrada la richiesta all'API.
 
-**4.3. Consulenza Vocale in Tempo Reale.** Durante le riunioni, AVA potrà essere interpellata e risponderà vocalmente tramite Piper TTS, fornendo dati statistici, citazioni normative e suggerimenti.
+**4.2. Knowledge Base Locale (RAG) — ✅ COMPLETATA**
+- Per regolamenti comunali, delibere e documenti interni PA.
+- `pgvector` attivato su Neon con indice HNSW (cosine similarity).
+- `nomic-embed-text` su Ollama per la generazione degli embeddings (768 dimensioni).
+- **Prerequisito Hetzner:** eseguire `ollama pull nomic-embed-text` per scaricare il modello.
+- **Integrazione AVA:** Tool `cerca_knowledge_base` aggiunto al flusso di chat (`ai-chat.js`). Il classificatore LLM riconosce la categoria `KNOWLEDGE_BASE` e instrada la richiesta all'endpoint interno `/api/ava/kb/search`.
 
-**4.4. Orchestrazione Autonoma di Riunioni.** Un assessore potrà chiedere ad AVA di organizzare una riunione: AVA identificherà i settori PA competenti, cercherà i dirigenti (anche da IPA), incrocerà le disponibilità A99X, proporrà data/ora, creerà la riunione con Jitsi e invierà gli inviti.
+**Funzionalità chiave del router (v2.0 — Architettura Asincrona):**
+- **Ingestione asincrona:** il documento viene salvato immediatamente nel DB senza embedding. Un worker in background genera l'embedding entro 30 secondi. Questo evita timeout nginx/502.
+- Ogni documento ha un campo `embedding_status`: `pending` (appena salvato) o `ready` (embedding generato).
+- Worker background: `setInterval` ogni 30 secondi, processa max 5 documenti alla volta.
+- Chunking automatico per documenti lunghi (2000 char/chunk, 200 overlap).
+- Supporto dual API Ollama: `/api/embed` (>= 0.4) con fallback a `/api/embeddings` (legacy).
+- Filtro per `comune_id` per isolare documenti per ente.
+- Soft delete (mai eliminazione fisica).
+- Auto-migration: crea tabelle e indici se non esistono.
+
+### 5. Nuove Capacità di AVA (Cosa Viene Aggiunto)
+
+**5.1. Partecipazione alle Videoriunioni e Trascrizione Automatica (Fase 3B)**
+AVA entrerà in ogni riunione Jitsi come partecipante silenzioso. Un servizio Python su Hetzner catturerà lo stream audio, lo segmenterà per parlante con Pyannote, e lo trascriverà con Faster-Whisper. A fine riunione, AVA genererà automaticamente un verbale PDF.
+
+**5.2. Consulenza Vocale in Tempo Reale (Fase 3B)**
+AVA potrà essere interpellata vocalmente durante le riunioni e risponderà tramite Piper TTS.
+
+**5.3. Orchestrazione Autonoma di Riunioni (Fase 4)**
+AVA organizzerà riunioni in autonomia: identificherà settori PA competenti, cercherà dirigenti via IPA, incrocerà disponibilità A99X, proporrà data/ora, creerà riunione con Jitsi, invierà inviti.
 
 ### 5. Perfezionamento Prompt Multi-Ruolo
 
@@ -14068,19 +14098,57 @@ Lo sviluppo sarà guidato da tre principi inderogabili:
 
 **Scalabilità.** Architettura a microservizi separabili: server LLM, server audio, backend API.
 
-### 9. Vincoli Negativi
+### 9. Vincoli Negativi (Cosa NON Fare)
 
-- **MAI** inviare dati PA a servizi cloud esterni (OpenAI, Google, Amazon)
-- **MAI** alterare l'architettura multi-ruolo esistente di AVA
-- **MAI** salvare audio riunioni in chiaro su storage esterni (eliminare dopo trascrizione)
-- **MAI** confondere `associazione_id` con `comune_id` (bug v10.31.7h)
+- **MAI inviare dati PA a servizi cloud esterni.** Nessuna chiamata a OpenAI API, Google Cloud Speech, Amazon Transcribe.
+- **MAI alterare l'architettura multi-ruolo esistente di AVA.** Le nuove capacità vengono aggiunte come tools aggiuntivi.
+- **MAI salvare audio delle riunioni in chiaro su storage esterni.** Le registrazioni temporanee devono essere eliminate dopo la generazione del verbale PDF.
+- **MAI confondere `associazione_id` con `comune_id`.** Bug già corretto: quando un'associazione crea una riunione, il `comune_id` deve essere 0.
+- **NON compilare Printing Press da sorgente (Go 1.26+) sul server Hetzner;** usare sempre i binari pre-compilati da GitHub Releases o compilare con Go 1.24.
+- **NON eliminare fisicamente documenti dalla KB;** usare sempre soft delete (attivo = false).
+- **NON usare API esterne per embeddings;** usare solo `nomic-embed-text` locale via Ollama.
+- **NON fare ingestione sincrona (embedding durante la POST);** causa timeout nginx/502. Usare SEMPRE il pattern asincrono (salva subito, embedding in background).
+- **NON usare solo `/api/embeddings` di Ollama;** le versioni recenti (>= 0.4) usano `/api/embed` con formato diverso (`embeddings: [[...]]` vs `embedding: [...]`). Supportare entrambi.
 
 ### 10. Roadmap
 
 | Fase | Obiettivo | Prerequisiti | Stima |
 | :--- | :--- | :--- | :--- |
 | **Fase 1** | Trascrizione offline riunioni (Faster-Whisper + Pyannote + PDF) | Upgrade Hetzner (32GB RAM, GPU) | 2-3 settimane |
-| **Fase 2** | Integrazione Normattiva MCP + Printing Press + Knowledge Base locale (RAG) | pgvector su Neon | 3-4 settimane |
+| **Fase 2** | Normattiva MCP + Knowledge Base RAG | ✅ **Completata** | 17 Mag 2026 |
 | **Fase 3** | Voce di AVA in riunione (Piper TTS + Jitsi Bot) | Nessun upgrade | 2 settimane |
 | **Fase 4** | Orchestratore autonomo riunioni (LLM avanzato + IPA + A99X) | Modello LLM 32B+ | 2-3 settimane |
 | **Continuo** | Perfezionamento prompt multi-ruolo e addestramento | Nessuno | Continuo |
+
+> ---
+> ### CHANGELOG v10.16.0 (17 Mag 2026)
+> **Integrazione Normattiva Open Data e Knowledge Base RAG (Fase 2 AVA AI)**
+>
+> **Stato deploy:**
+> | Sistema | Commit | Tag | Stato |
+> |---|---|---|---|
+> | GitHub `mihub-backend-rest` master | `c4f118f` | — | Aggiornato |
+> | Hetzner backend (api.mio-hub.me) | — | — | Aggiornato |
+>
+> **ARCHITETTURA NORMATTIVA (Printing Press):**
+> - **Generazione**: Utilizzato `printing-press` v4.8.0 per generare un CLI Go e un MCP Server a partire da una specifica OpenAPI YAML custom (`normattiva-openapi.yaml`).
+> - **Componenti Generati**: 76 file Go, inclusi `normattiva-pp-cli` e `normattiva-pp-mcp`.
+> - **Integrazione AVA AI**: Il server MCP `normattiva-pp-mcp` è stato integrato nel backend Node.js di AVA AI, esponendo le API di Normattiva come *tools* utilizzabili dal LLM.
+>
+> **KNOWLEDGE BASE RAG:**
+> - Attivato `pgvector` su Neon PostgreSQL.
+> - Create 4 tabelle: `ava_knowledge_base`, `ava_kb_indice`, `ava_trascrizioni`, `ava_interazioni_riunione`.
+> - Implementato router `routes/ava-knowledge-base.js` con 8 endpoint (search, ingest, CRUD, stats).
+> - Ingestione asincrona con worker in background per evitare timeout nginx/502.
+> - Supporto dual API Ollama per `nomic-embed-text` (`/api/embed` e `/api/embeddings`).
+>
+> **INTEGRAZIONE FLUSSO CHAT AVA:**
+> - Classificatore LLM aggiornato con categorie `NORMATIVA` e `KNOWLEDGE_BASE`.
+> - Aggiunti tool `cerca_normativa` e `cerca_knowledge_base` in `ai-chat.js`.
+>
+> **VINCOLI NEGATIVI (cosa NON fare):**
+> - NON compilare Printing Press da sorgente (Go 1.26+) sul server Hetzner; usare sempre i binari pre-compilati o compilare con Go 1.24.
+> - NON abusare delle API di Normattiva con polling aggressivi; utilizzare i filtri di paginazione.
+> - NON esporre il CLI direttamente agli utenti finali; l'accesso deve sempre passare attraverso il Data Access Gateway di AVA AI.
+> - NON fare ingestione sincrona (embedding durante la POST); causa timeout nginx/502. Usare SEMPRE il pattern asincrono.
+> - NON usare solo `/api/embeddings` di Ollama; le versioni recenti (>= 0.4) usano `/api/embed`. Supportare entrambi.
