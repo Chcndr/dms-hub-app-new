@@ -1,7 +1,7 @@
 # Blueprint AVA AI + A99X: Agente Intelligente per Riunioni e Conoscenza Normativa
 
 **Data:** 17 maggio 2026  
-**Versione:** 3.1  
+**Versione:** 3.2  
 **Autore:** Manus AI — Digital Market System  
 **Stato:** Fase 1, Fase 2, Fase 3A COMPLETATE — Prossima: Fase 3B (STT/TTS)
 
@@ -85,7 +85,8 @@ Il sistema normativo di AVA è ibrido per massimizzare l'efficienza:
 | Endpoint | Metodo | Scopo |
 | :--- | :--- | :--- |
 | `/api/ava/kb/search` | POST | Ricerca semantica nella KB (query → embedding → pgvector) |
-| `/api/ava/kb/ingest` | POST | Ingestione documento con chunking automatico + embedding |
+| `/api/ava/kb/ingest` | POST | Ingestione asincrona: salva subito, embedding in background |
+| `/api/ava/kb/process-embeddings` | POST | Trigger manuale per processare embedding pendenti |
 | `/api/ava/kb/indice` | GET | Elenco settori e sotto-settori dell'archivio |
 | `/api/ava/kb/documents` | GET | Lista documenti con filtri (settore, tipo, comune_id) |
 | `/api/ava/kb/documents/:id` | GET | Dettaglio singolo documento |
@@ -93,11 +94,25 @@ Il sistema normativo di AVA è ibrido per massimizzare l'efficienza:
 | `/api/ava/kb/documents/:id` | DELETE | Soft delete (attivo = false) |
 | `/api/ava/kb/stats` | GET | Statistiche KB + stato Ollama embedding model |
 
-**Funzionalità chiave del router:**
+**Funzionalità chiave del router (v2.0 — Architettura Asincrona):**
+- **Ingestione asincrona:** il documento viene salvato immediatamente nel DB senza embedding. Un worker in background genera l'embedding entro 30 secondi. Questo evita timeout nginx/502.
+- Ogni documento ha un campo `embedding_status`: `pending` (appena salvato) o `ready` (embedding generato).
+- Worker background: `setInterval` ogni 30 secondi, processa max 5 documenti alla volta.
 - Chunking automatico per documenti lunghi (2000 char/chunk, 200 overlap).
+- Supporto dual API Ollama: `/api/embed` (>= 0.4) con fallback a `/api/embeddings` (legacy).
 - Filtro per `comune_id` per isolare documenti per ente.
 - Soft delete (mai eliminazione fisica).
 - Auto-migration: crea tabelle e indici se non esistono.
+
+**Test superati (17 Mag 2026):**
+
+| Test | Risultato |
+| :--- | :--- |
+| `POST /ingest` — salvataggio documento | ✅ Risposta immediata (< 1s), ID restituito |
+| Worker background — generazione embedding | ✅ Embedding generato entro 30s (768 dim) |
+| `GET /documents/1` — verifica stato | ✅ `embedding_status: ready` |
+| `POST /search` — ricerca semantica | ✅ Similarity 0.72 su query correlata |
+| `GET /stats` — stato sistema | ✅ `ollama_status: ready`, worker attivo |
 
 ---
 
@@ -135,6 +150,8 @@ AVA organizzerà riunioni in autonomia: identificherà settori PA competenti, ce
 - **NON compilare Printing Press da sorgente (Go 1.26+) sul server Hetzner;** usare sempre i binari pre-compilati da GitHub Releases o compilare con Go 1.24.
 - **NON eliminare fisicamente documenti dalla KB;** usare sempre soft delete (attivo = false).
 - **NON usare API esterne per embeddings;** usare solo `nomic-embed-text` locale via Ollama.
+- **NON fare ingestione sincrona (embedding durante la POST);** causa timeout nginx/502. Usare SEMPRE il pattern asincrono (salva subito, embedding in background).
+- **NON usare solo `/api/embeddings` di Ollama;** le versioni recenti (>= 0.4) usano `/api/embed` con formato diverso (`embeddings: [[...]]` vs `embedding: [...]`). Supportare entrambi.
 
 ---
 
@@ -165,5 +182,6 @@ AVA organizzerà riunioni in autonomia: identificherà settori PA competenti, ce
 
 | Data | Versione | Modifiche |
 | :--- | :--- | :--- |
+| 17 Mag 2026 | v3.2 | KB v2.0: ingestione asincrona, worker background, fix timeout nginx/502, test completi superati (ingest + search + stats) |
 | 17 Mag 2026 | v3.1 | Fase 2 completata: pgvector attivato su Neon, 4 tabelle create, 8 endpoint RAG deployati, Normattiva MCP Server generato con Printing Press v4.8.0 |
 | 17 Mag 2026 | v3.0 | Blueprint AVA AI + A99X creato come fonte di verità unificata |
