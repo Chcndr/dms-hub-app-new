@@ -1,7 +1,7 @@
 # Blueprint AVA AI + A99X: Agente Intelligente per Riunioni e Conoscenza Normativa
 
 **Data:** 17 maggio 2026  
-**Versione:** 3.2  
+**Versione:** 4.0  
 **Autore:** Manus AI — Digital Market System  
 **Stato:** Fase 1, Fase 2, Fase 3A COMPLETATE — Prossima: Fase 3B (STT/TTS)
 
@@ -64,12 +64,14 @@ Il sistema normativo di AVA è ibrido per massimizzare l'efficienza:
 - Endpoint supportati: ricerca semplice, ricerca avanzata, dettaglio atto (URN), tipologiche.
 - Repository GitHub: `Chcndr/normattiva-pp-cli` (76 file, CLI + MCP Server).
 - OpenAPI spec creata manualmente dal PDF ufficiale di Normattiva.
+- **Integrazione AVA:** Tool `cerca_normativa` aggiunto al flusso di chat (`ai-chat.js`). Il classificatore LLM riconosce la categoria `NORMATIVA` e instrada la richiesta all'API.
 
 ### 4.2. Knowledge Base Locale (RAG) — ✅ COMPLETATA
 - Per regolamenti comunali, delibere e documenti interni PA.
 - `pgvector` attivato su Neon con indice HNSW (cosine similarity).
 - `nomic-embed-text` su Ollama per la generazione degli embeddings (768 dimensioni).
 - **Prerequisito Hetzner:** eseguire `ollama pull nomic-embed-text` per scaricare il modello.
+- **Integrazione AVA:** Tool `cerca_knowledge_base` aggiunto al flusso di chat (`ai-chat.js`). Il classificatore LLM riconosce la categoria `KNOWLEDGE_BASE` e instrada la richiesta all'endpoint interno `/api/ava/kb/search`.
 
 **Tabelle create su Neon:**
 
@@ -182,6 +184,7 @@ AVA organizzerà riunioni in autonomia: identificherà settori PA competenti, ce
 
 | Data | Versione | Modifiche |
 | :--- | :--- | :--- |
+| 17 Mag 2026 | v4.0 | AVA_TOOLS v4.0: integrati tool cerca_normativa e cerca_knowledge_base nel flusso di chat di AVA. Classificatore LLM aggiornato con categorie NORMATIVA e KNOWLEDGE_BASE. |
 | 17 Mag 2026 | v3.2 | KB v2.0: ingestione asincrona, worker background, fix timeout nginx/502, test completi superati (ingest + search + stats) |
 | 17 Mag 2026 | v3.1 | Fase 2 completata: pgvector attivato su Neon, 4 tabelle create, 8 endpoint RAG deployati, Normattiva MCP Server generato con Printing Press v4.8.0 |
 | 17 Mag 2026 | v3.0 | Blueprint AVA AI + A99X creato come fonte di verità unificata |
