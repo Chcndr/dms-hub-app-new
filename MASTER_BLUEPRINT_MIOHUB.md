@@ -14247,3 +14247,102 @@ AVA organizzerà riunioni in autonomia: identificherà settori PA competenti, ce
 > - Server: Hetzner CPX62 (16 vCPU, 32GB RAM, no GPU)
 > - Stato: **PRODUZIONE** — funzionante, stabile, risposte corrette
 > - Deploy: **autodeploy** via GitHub Actions su push master
+
+---
+
+### v11.2.1 — Libreria PDF DMS: Ingestione Parziale (17 Mag 2026)
+
+> **STATO: IN PAUSA — Da completare nella prossima sessione**
+
+**CONTESTO:**
+Ritrovata la libreria di 30+ documenti PDF del progetto DMS, originariamente creata per MIO Agent (sistema eliminato). I riassunti erano nel file `src/modules/orchestrator/llm.js` (righe 249-480, commit `0741226` del 30/12/2025). La fonte pubblica dei PDF è il sito "Strumento Politico" su GitHub Pages:
+- **Sito:** https://chcndr.github.io/dms-gemello-news/landing/home.html
+- **Pagina SPOT (tutti i PDF):** https://chcndr.github.io/dms-gemello-news/landing/spot.html
+- **Pagina Mappa:** https://chcndr.github.io/dms-gemello-news/landing/mappa-ministeri.html
+- **Pagina Home (orologio):** https://chcndr.github.io/dms-gemello-news/landing/home.html
+
+**COSA È STATO FATTO:**
+1. Scaricati tutti i **44 PDF** dalla pagina SPOT (salvati in `/dms_pdfs/` sul server locale).
+2. Estratto il testo da **43 PDF** (1 è solo immagine/scan, "Mercato Connesso").
+3. Caricati nella KB AVA i primi **3 documenti** come chunk da 1800 chars:
+   - Doc 01: Hub Nazionale del Commercio — 3 chunk OK
+   - Doc 02: DMS e CLUST-ER Emilia-Romagna — 48/49 chunk OK
+   - Doc 03: Dossier Nazionale DMS — 49 chunk OK
+4. **Totale documenti attivi nella KB: 197** (11 precedenti + ~186 chunk dei 3 PDF).
+5. **Embeddings: 1 completato, 196 in coda** (il worker li processa 5 alla volta ogni 30s).
+
+**COSA RESTA DA FARE (prossima sessione):**
+1. **Completare l'ingestione dei documenti 4-44** — lo script è pronto:
+   ```bash
+   cd /home/ubuntu && python3 -u ingest_pdfs_v3.py 4
+   ```
+2. **Attendere che il worker generi tutti gli embeddings** — verificare con:
+   ```bash
+   curl -s https://api.mio-hub.me/api/ava/kb/stats | python3 -m json.tool
+   ```
+3. **Testare la ricerca semantica** con query tipo "Cos'è la SCIA?", "Carbon Credit DMS", "Bolkestein".
+4. **Valutare se ridurre i chunk per documento** — alcuni PDF generano 50+ chunk (es. CLUST-ER 49 chunk, Dossier Nazionale 49 chunk). Potrebbe essere meglio limitare a 5-10 chunk per documento (primi 9000-18000 chars) per evitare rumore nella ricerca semantica.
+
+**PROBLEMA TECNICO RISCONTRATO:**
+- L'endpoint `/api/ava/kb/ingest` restituisce **502 (nginx timeout)** quando il testo supera ~2000 chars.
+- **Causa:** il backend tenta di generare l'embedding sincrono prima di rispondere, e Ollama è lento.
+- **Workaround applicato:** pre-chunking a 1800 chars lato client (script `ingest_pdfs_v3.py`).
+- **Fix definitivo da fare:** modificare il backend per salvare il documento PRIMA e generare l'embedding in background (il worker già esiste, basta non fare embedding sincrono nell'endpoint ingest).
+
+**VINCOLI NEGATIVI:**
+- NON inviare testi > 1800 chars all'endpoint `/api/ava/kb/ingest` — causa 502.
+- NON cancellare i file in `/dms_pdfs/` e `/dms_texts/` — contengono i PDF e i testi già estratti.
+- NON ricaricare i documenti 1-3 — sono già nella KB (ID 15-197).
+
+**CATALOGO COMPLETO 44 PDF (dalla pagina SPOT):**
+
+| # | Titolo | Settore | Chars | Stato KB |
+|---|--------|---------|-------|----------|
+| 1 | Hub Nazionale del Commercio | strategico | 4020 | CARICATO |
+| 2 | DMS e CLUST-ER Emilia-Romagna | regionale | 79742 | CARICATO |
+| 3 | Dossier Nazionale DMS | strategico | 80858 | CARICATO |
+| 4 | DMS Riaccendiamo i Mercati | strategico | 1442 | DA FARE |
+| 5 | Passaporto Digitale Europeo | normativo | 25065 | DA FARE |
+| 6 | Presentazione DMS Bologna | strategico | 17146 | DA FARE |
+| 7 | Hub Urbani Prossimita ER | regionale | 80371 | DA FARE |
+| 8 | Gemello DMS Infrastruttura Europa | tecnico | 15078 | DA FARE |
+| 9 | DMS Equilibrio Ecosostenibile | carbon_credit | 43651 | DA FARE |
+| 10 | DMS ECC Tecnico | carbon_credit | 8634 | DA FARE |
+| 11 | Carbon Credit Logica | carbon_credit | 19640 | DA FARE |
+| 12 | Carbon Credit DMS | carbon_credit | 125240 | DA FARE |
+| 13 | Ecosistema DMS Costi PA | operativo | 98079 | DA FARE |
+| 14 | Analisi e Soluzione DMS | strategico | 241182 | DA FARE |
+| 15 | Scenario Futuro DMS | strategico | 34321 | DA FARE |
+| 16 | DMS Completo v1 | strategico | 88636 | DA FARE |
+| 17 | Idee per Hub | strategico | 3648 | DA FARE |
+| 18 | IoT Civico | tecnico | 4291 | DA FARE |
+| 19 | Analisi Calo Commercio Ambulante | analisi | 21234 | DA FARE |
+| 20 | Report Controlli PA | operativo | 54684 | DA FARE |
+| 21 | Automazione Eventi | tecnico | 5236 | DA FARE |
+| 22 | Mercato Usato Traffico Rimanenze | operativo | 11526 | DA FARE |
+| 23 | Riequilibrio Economico | carbon_credit | 23788 | DA FARE |
+| 24 | Presentazione DMS | strategico | 43508 | DA FARE |
+| 25 | Chiodo Ancoraggio | tecnico | 1909 | DA FARE |
+| 26 | Implementazioni Avanzate | tecnico | 91414 | DA FARE |
+| 27 | DMS Offline con CIE | tecnico | 9971 | DA FARE |
+| 28 | Gestione Servizi Accessori | operativo | 20586 | DA FARE |
+| 29 | DMS al Centro di Tutto | strategico | 7722 | DA FARE |
+| 30 | Frammentazione Digitale PA | analisi | 3875 | DA FARE |
+| 31 | DMS FinTech 2 | carbon_credit | 9876 | DA FARE |
+| 32 | Eco Carbon Credit | carbon_credit | 3638 | DA FARE |
+| 33 | DMS Catalogo | operativo | 60341 | DA FARE |
+| 34 | Eventi Straordinari | operativo | 4266 | DA FARE |
+| 35 | Progetto Nazionale DMS | strategico | 57344 | DA FARE |
+| 36 | Hub DMS Web3 Smart Contract | tecnico | 71720 | DA FARE |
+| 37 | Mercati in Italia | analisi | 2060 | DA FARE |
+| 38 | Bolkestein Commercio Area Pubblica | normativo | 121023 | DA FARE |
+| 39 | App DMS Assistente Personale | tecnico | 6683 | DA FARE |
+| 40 | DMS Locandina | strategico | 2271 | DA FARE |
+| 41 | DMS SSET InfoCamere v2 | operativo | 58646 | DA FARE |
+| 42 | Modulo GIS | tecnico | 2196 | DA FARE |
+| 43 | Mercato Connesso | tecnico | 0 | SKIP (scan) |
+| 44 | DMS Spot | strategico | 979 | DA FARE |
+
+**RIFERIMENTO LIBRERIA MIO AGENT ORIGINALE:**
+I 30 riassunti originali sono ancora nel file `src/modules/orchestrator/llm.js` (righe 249-480). Possono essere usati come fonte alternativa più compatta rispetto ai PDF completi. Categorie: Strategici (9), Normativi (4), Tecnici (5), Carbon Credit (5), Regionali (3), Operativi (4).
+
