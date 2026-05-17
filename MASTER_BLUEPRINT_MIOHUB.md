@@ -1,8 +1,8 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 10.31.7h (Fix confusione associazione_id/comune_id + InvitoNotifier robusto + Integrazioni A99X)
-> **Data:** 16 Maggio 2026
-> **Stato:** PUNTO DI RIPRISTINO STABILE — Tag `STABLE-v10.31.7h-20260516`
+> **Versione:** 11.0.0 (Integrazione Mente Normativa AVA AI + Knowledge Base RAG)
+> **Data:** 17 Maggio 2026
+> **Stato:** PUNTO DI RIPRISTINO STABILE — Tag `STABLE-v11.0.0-20260517`
 >
 > ---
 > ### STATO SISTEMA (16 Mag 2026 — Snapshot stabile v10.31.7h)
@@ -14114,14 +14114,14 @@ AVA organizzerà riunioni in autonomia: identificherà settori PA competenti, ce
 
 | Fase | Obiettivo | Prerequisiti | Stima |
 | :--- | :--- | :--- | :--- |
-| **Fase 1** | Trascrizione offline riunioni (Faster-Whisper + Pyannote + PDF) | Upgrade Hetzner (32GB RAM, GPU) | 2-3 settimane |
+| **Fase 1** | Trascrizione offline riunioni (Faster-Whisper + Pyannote + PDF) | Upgrade Hetzner (32GB RAM, GPU) | In attesa di upgrade |
 | **Fase 2** | Normattiva MCP + Knowledge Base RAG | ✅ **Completata** | 17 Mag 2026 |
-| **Fase 3** | Voce di AVA in riunione (Piper TTS + Jitsi Bot) | Nessun upgrade | 2 settimane |
-| **Fase 4** | Orchestratore autonomo riunioni (LLM avanzato + IPA + A99X) | Modello LLM 32B+ | 2-3 settimane |
+| **Fase 3** | Voce di AVA in riunione (Piper TTS + Jitsi Bot) | Fattibile con hardware attuale | Prossima fase |
+| **Fase 4** | Orchestratore autonomo riunioni (LLM avanzato + IPA + A99X) | Modello LLM 32B+ | In attesa di upgrade |
 | **Continuo** | Perfezionamento prompt multi-ruolo e addestramento | Nessuno | Continuo |
 
 > ---
-> ### CHANGELOG v10.16.0 (17 Mag 2026)
+> ### CHANGELOG v11.0.0 (17 Mag 2026)
 > **Integrazione Normattiva Open Data e Knowledge Base RAG (Fase 2 AVA AI)**
 >
 > **Stato deploy:**
