@@ -14366,3 +14366,28 @@ I 30 riassunti originali sono ancora nel file `src/modules/orchestrator/llm.js` 
 - NON usare `prev + remainingTokens` nel `onDone` — usare SEMPRE `fullTextRef.current`
 - NON rimuovere il try/catch separato per il salvataggio — il done event deve arrivare SEMPRE
 
+
+---
+
+### v11.2.3 — Fix Isolamento Conversazioni + TTS 0.8x (17 Mag 2026)
+
+**BUG CRITICO — Conversazioni non isolate per ruolo/impersonalizzazione:**
+- **Causa root:** In JavaScript, `0` e' **falsy**. Il super admin MIO HUB ha `comune_id = 0`, ma ovunque nel codice si usava `||` (OR logico) per i fallback: `comune_id || null` diventa `0 || null = null`. Le conversazioni venivano create con `comune_id = NULL` invece di `comune_id = 0`, e il filtro `?comune_id=0` non le trovava.
+- **Fix Backend (ai-chat.js):**
+  - Tutti i `||` per `comune_id` sostituiti con `??` (nullish coalescing): `comune_id ?? null` diventa `0 ?? null = 0`
+  - `GET /conversations`: aggiunto `hasComuneId` (boolean) per gestire `comune_id=0` nei WHERE, queryParams e countParams
+  - `POST /conversations`: `comune_id ?? null`
+  - `resolveAndValidateUser`: tutti i fallback con `??`
+  - Lookup nome comune: skip per `comune_id=0` (super admin non ha un comune nel DB)
+- **Fix Frontend (useConversations.ts):**
+  - `fetchConversations`: usa `comuneId !== undefined && comuneId !== null` invece di truthy check
+  - `createConversation`: stessa logica per includere `comune_id: 0` nel body
+
+**TTS Speed:** Velocita portata da 0.7x a **0.8x** come richiesto dall'utente.
+
+**VINCOLI NEGATIVI:**
+- MAI usare `||` per fallback di `comune_id` — usare SEMPRE `??` (nullish coalescing)
+- MAI usare truthy check (`if (comuneId)`) per `comune_id` — usare SEMPRE `!== undefined && !== null`
+- Il valore `0` per `comune_id` e' VALIDO e significa "super admin MIO HUB"
+- Il valore `NULL` per `comune_id` significa "nessun contesto comune" (utente senza impersonalizzazione)
+
