@@ -18,7 +18,7 @@ export const AIChatDataTable = memo(function AIChatDataTable({ event }: AIChatDa
   }
 
   return (
-    <div className="my-3 rounded-xl border border-slate-600/50 bg-[#0d1520] overflow-hidden">
+    <div className="my-3 rounded-xl border border-slate-600/50 bg-[#0d1520] overflow-hidden max-w-full">
       {title && (
         <div className="px-4 py-2.5 border-b border-slate-700/50 bg-slate-800/30">
           <h4 className="text-sm font-medium text-teal-400">{title}</h4>
@@ -47,7 +47,7 @@ export const AIChatDataTable = memo(function AIChatDataTable({ event }: AIChatDa
                 {columns.map(col => (
                   <td
                     key={col}
-                    className="px-4 py-2 text-slate-300 whitespace-nowrap"
+                    className="px-4 py-2 text-slate-300 whitespace-nowrap sm:whitespace-normal"
                   >
                     {row[col] != null ? String(row[col]) : "—"}
                   </td>

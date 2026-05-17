@@ -76,12 +76,12 @@ export const AIChatMessage = memo(function AIChatMessage({
   return (
     <div className="flex items-start gap-3 group min-w-0">
       <AIChatAvatar role="assistant" />
-      <div className="flex flex-col gap-1 max-w-[85%] min-w-0">
+      <div className="flex flex-col gap-1 max-w-[85%] min-w-0 w-0 flex-1">
         <div className="flex items-center gap-2 mb-0.5">
           <span className="text-xs font-medium text-teal-400">AVA</span>
           <span className="text-xs text-slate-500">{time}</span>
         </div>
-        <div className="rounded-2xl rounded-tl-sm bg-[#1a2332] border border-teal-500/20 px-4 py-3 overflow-hidden">
+        <div className="rounded-2xl rounded-tl-sm bg-[#1a2332] border border-teal-500/20 px-4 py-3 overflow-hidden" style={{overflowWrap: 'anywhere'}}>
           <AIChatMarkdown content={message.content} isStreaming={isStreaming} />
         </div>
         <div className="flex items-center gap-2 px-1 opacity-0 group-hover:opacity-100 transition-opacity">

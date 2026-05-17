@@ -89,11 +89,7 @@ export const AIChatHeader = memo(function AIChatHeader({
             {conversation.model}
           </span>
         )}
-        {quota && (
-          <span className="text-[10px] text-slate-500">
-            {quota.messages_used}/{quota.messages_limit} msg
-          </span>
-        )}
+
         {/* Pulsante elimina conversazione attiva */}
         {conversation && onDeleteConversation && (
           confirmDelete ? (

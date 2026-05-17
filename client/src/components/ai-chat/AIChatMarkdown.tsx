@@ -60,7 +60,7 @@ export const AIChatMarkdown = memo(function AIChatMarkdown({ content, isStreamin
 
   return (
     <div
-      className="prose prose-invert prose-sm max-w-none break-words overflow-hidden
+      className="prose prose-invert prose-sm max-w-none break-words overflow-hidden [overflow-wrap:anywhere]
                     prose-p:my-1.5 prose-p:leading-relaxed
                     prose-li:my-0.5
                     prose-headings:text-teal-400 prose-headings:mt-3 prose-headings:mb-1.5

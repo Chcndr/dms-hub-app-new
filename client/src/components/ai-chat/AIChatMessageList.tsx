@@ -119,7 +119,7 @@ export const AIChatMessageList = memo(function AIChatMessageList({
                   {message.role === "assistant" && message.data_events && message.data_events.length > 0 && (
                     <div className="flex items-start gap-3 min-w-0">
                       <AIChatAvatar role="assistant" />
-                      <div className="flex flex-col gap-1 max-w-[85%] w-full min-w-0">
+                      <div className="flex flex-col gap-1 max-w-[85%] w-0 flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-xs font-medium text-teal-400">
                             AVA
@@ -152,7 +152,7 @@ export const AIChatMessageList = memo(function AIChatMessageList({
             {isStreaming && dataEvents && dataEvents.length > 0 && (
               <div className="flex items-start gap-3 min-w-0">
                 <AIChatAvatar role="assistant" />
-                <div className="flex flex-col gap-1 max-w-[85%] w-full min-w-0">
+                <div className="flex flex-col gap-1 max-w-[85%] w-0 flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-xs font-medium text-teal-400">
                       AVA
@@ -186,13 +186,13 @@ export const AIChatMessageList = memo(function AIChatMessageList({
             {isStreaming && streamingContent && (
               <div className="flex items-start gap-3 min-w-0">
                 <AIChatAvatar role="assistant" />
-                <div className="flex flex-col gap-1 max-w-[85%] min-w-0">
+                <div className="flex flex-col gap-1 max-w-[85%] min-w-0 w-0 flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-xs font-medium text-teal-400">
                       AVA
                     </span>
                   </div>
-                  <div className="rounded-2xl rounded-tl-sm bg-[#1a2332] border border-teal-500/20 px-4 py-3 overflow-hidden">
+                  <div className="rounded-2xl rounded-tl-sm bg-[#1a2332] border border-teal-500/20 px-4 py-3 overflow-hidden" style={{overflowWrap: 'anywhere'}}>
                     <AIChatMarkdown content={streamingContent} isStreaming />
                   </div>
                 </div>

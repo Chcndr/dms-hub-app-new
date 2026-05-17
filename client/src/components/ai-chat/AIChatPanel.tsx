@@ -141,9 +141,7 @@ export function AIChatPanel({
 
   const activeConversation =
     conversations.find(c => c.id === activeConversationId) ?? null;
-  const quotaExceeded = quota
-    ? quota.messages_used >= quota.messages_limit
-    : false;
+  const quotaExceeded = false;
 
   // Load messages when selecting a conversation
   useEffect(() => {
@@ -309,7 +307,7 @@ export function AIChatPanel({
         {/* Header con toggle sidebar su mobile + toggle voce */}
         <AIChatHeader
           conversation={activeConversation}
-          quota={quota}
+          quota={null}
           onToggleSidebar={handleToggleSidebar}
           showSidebarToggle={isMobile || !sidebarOpen}
           voiceEnabled={voiceEnabled}
@@ -333,8 +331,6 @@ export function AIChatPanel({
           />
         )}
 
-        {/* Quota banner */}
-        {quota && <AIChatQuotaBanner quota={quota} />}
 
         {/* Error banner */}
         {error && (
