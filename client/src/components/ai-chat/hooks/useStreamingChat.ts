@@ -93,18 +93,29 @@ async function playTts(
       .replace(/\n{2,}/g, '. ')            // doppi a capo → punto
       .replace(/\n/g, ' ')                 // singoli a capo → spazio
       .trim()
-      .substring(0, 1500);                 // max 1500 chars per TTS
+      .substring(0, 300);                  // max 300 chars per TTS (velocità mobile)
 
     if (!cleanText || cleanText.length < 3) {
       onEnd();
       return;
     }
 
-    const response = await fetch(`${MIHUB_API_BASE_URL}/api/ava/tts`, {
+    // Usa URL relativo per passare dal proxy Vercel (più affidabile su mobile)
+    const ttsUrl = typeof window !== 'undefined' && window.location.origin.includes('miohub')
+      ? '/api/ava/tts'
+      : `${MIHUB_API_BASE_URL}/api/ava/tts`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+    const response = await fetch(ttsUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: cleanText, voice: 'it_IT-paola-medium', speed: 1.0 }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
 
     if (!response.ok) {
       onEnd();

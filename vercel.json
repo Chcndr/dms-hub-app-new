@@ -4,6 +4,14 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/ava/:path*",
+      "destination": "https://api.mio-hub.me/api/ava/:path*"
+    },
+    {
+      "source": "/api/ai/:path*",
+      "destination": "https://api.mio-hub.me/api/ai/:path*"
+    },
+    {
       "source": "/api/auth/:path*",
       "destination": "https://api.mio-hub.me/api/auth/:path*"
     },
