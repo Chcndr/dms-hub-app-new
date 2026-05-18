@@ -46,6 +46,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 // API Base URL - usa backend Hetzner
 const MIHUB_API = MIHUB_API_BASE_URL + "/api";
@@ -230,7 +231,7 @@ export default function NuovoVerbalePage() {
       const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       // Fetch comuni
-      const comuniRes = await fetch(`${MIHUB_API}/comuni`, {
+      const comuniRes = await apiFetch(`${MIHUB_API}/comuni`, {
         signal: controller.signal,
       });
       const comuniData = await comuniRes.json();
@@ -264,14 +265,14 @@ export default function NuovoVerbalePage() {
       }
 
       // Fetch config
-      const configRes = await fetch(`${MIHUB_API}/verbali/config`, {
+      const configRes = await apiFetch(`${MIHUB_API}/verbali/config`, {
         signal: controller.signal,
       });
       const configData = await configRes.json();
       if (configData.success) setConfig(configData.data);
 
       // Fetch infrazioni
-      const infrazioniRes = await fetch(`${MIHUB_API}/verbali/infrazioni`, {
+      const infrazioniRes = await apiFetch(`${MIHUB_API}/verbali/infrazioni`, {
         signal: controller.signal,
       });
       const infrazioniData = await infrazioniRes.json();
@@ -284,7 +285,7 @@ export default function NuovoVerbalePage() {
           impreseUrl += `&comune_id=${urlComuneId}`;
           console.warn("[Verbale] Filtrando imprese per comune:", urlComuneId);
         }
-        const impreseRes = await fetch(impreseUrl, {
+        const impreseRes = await apiFetch(impreseUrl, {
           signal: controller.signal,
         });
         const impreseData = await impreseRes.json();
@@ -307,7 +308,7 @@ export default function NuovoVerbalePage() {
             const { latitude, longitude } = position.coords;
             try {
               // Reverse geocoding con Nominatim (OpenStreetMap)
-              const geoRes = await fetch(
+              const geoRes = await apiFetch(
                 `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
                 { headers: { "Accept-Language": "it" } }
               );

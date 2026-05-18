@@ -7,6 +7,7 @@ import {
   XCircle,
   Play,
 } from "lucide-react";
+import { apiFetch } from "@/lib/apiFetch";
 
 // Types from MIO-hub JSON
 interface Endpoint {
@@ -72,11 +73,11 @@ export default function GuardianEndpoints() {
     const loadData = async () => {
       try {
         const [endpointsRes, permissionsRes] = await Promise.all([
-          fetch(
+          apiFetch(
             "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/api/index.json",
             { signal: controller.signal }
           ),
-          fetch(
+          apiFetch(
             "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/agents/permissions.json",
             { signal: controller.signal }
           ),

@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { addAssociazioneIdToUrl, isAssociazioneImpersonation, addComuneIdToUrl } from "@/hooks/useImpersonation";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
@@ -143,8 +144,8 @@ export default function TeamFormazionePanel({ impresaId }: { impresaId: number |
         scadenzeUrl = addComuneIdToUrl(scadenzeUrl);
       }
       const [matriceRes, scadenzeRes] = await Promise.all([
-        fetch(matriceUrl),
-        fetch(scadenzeUrl),
+        apiFetch(matriceUrl),
+        apiFetch(scadenzeUrl),
       ]);
       const matriceJson = await matriceRes.json();
       const scadenzeJson = await scadenzeRes.json();
@@ -162,7 +163,7 @@ export default function TeamFormazionePanel({ impresaId }: { impresaId: number |
   const addQualificazione = async (collaboratoreId: number) => {
     if (!impresaId || !newQual.data_rilascio) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/collaboratori/${collaboratoreId}/qualificazioni`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/collaboratori/${collaboratoreId}/qualificazioni`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ impresa_id: impresaId, ...newQual }),
@@ -180,7 +181,7 @@ export default function TeamFormazionePanel({ impresaId }: { impresaId: number |
 
   const downloadAttestatoPdf = async (attestatoId: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/attestati/${attestatoId}/pdf`);
+      const res = await apiFetch(`${API_BASE_URL}/api/attestati/${attestatoId}/pdf`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");

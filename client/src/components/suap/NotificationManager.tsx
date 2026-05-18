@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDateTime as formatDate } from "@/lib/formatUtils";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 // v5.9.0: Usa MIHUB Hetzner (stesso backend di ControlliSanzioniPanel per coerenza notifiche)
 const MIHUB_API =
@@ -129,7 +130,7 @@ export function NotificationManager({
       if (comuneId) params.append("comune_id", comuneId.toString());
       const queryString = params.toString() ? `?${params.toString()}` : "";
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${MIHUB_API}/notifiche/messaggi/${mittenteTipo}/${mittenteId}${queryString}`
       );
       const data = await response.json();
@@ -152,21 +153,21 @@ export function NotificationManager({
       const comuneParam = comuneId ? `?comune_id=${comuneId}` : "";
 
       // Mercati - filtrati per comune se specificato
-      const mercatiRes = await fetch(
+      const mercatiRes = await apiFetch(
         `${MIHUB_API}/notifiche/markets${comuneParam}`
       );
       const mercatiData = await mercatiRes.json();
       if (mercatiData.success) setMercatiList(mercatiData.data || []);
 
       // Imprese - filtrate per comune se specificato
-      const impreseRes = await fetch(
+      const impreseRes = await apiFetch(
         `${MIHUB_API}/notifiche/imprese${comuneParam}`
       );
       const impreseData = await impreseRes.json();
       if (impreseData.success) setImpreseList(impreseData.data || []);
 
       // HUB (da targets)
-      const targetsRes = await fetch(`${MIHUB_API}/notifiche/targets`);
+      const targetsRes = await apiFetch(`${MIHUB_API}/notifiche/targets`);
       const targetsData = await targetsRes.json();
       if (targetsData.success && targetsData.data?.hubs) {
         setHubList(targetsData.data.hubs);

@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { getCachedUser, logout, type User as AuthUser } from "@/api/authClient";
 import { ORCHESTRATORE_API_BASE_URL, MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { toast } from "sonner";
 import { AIChatPanel } from "@/components/ai-chat/AIChatPanel";
 
@@ -154,7 +155,7 @@ export default function DashboardImpresa() {
         // Strategia 1: Carica impresa direttamente per ID (dal bridge Firebase)
         if (impresaId) {
           try {
-            const response = await fetch(
+            const response = await apiFetch(
               `${MIHUB_API_BASE_URL}/api/imprese/${impresaId}`
             );
             if (response.ok) {
@@ -179,7 +180,7 @@ export default function DashboardImpresa() {
         // Strategia 2: Cerca per ID su orchestratore
         if (!impresaData && impresaId) {
           try {
-            const response = await fetch(
+            const response = await apiFetch(
               `${ORCHESTRATORE_API_BASE_URL}/api/imprese/${impresaId}`
             );
             if (response.ok) {
@@ -206,7 +207,7 @@ export default function DashboardImpresa() {
         // Strategia 4: Cerca per codice fiscale su orchestratore (fallback originale)
         if (!impresaData && effectiveUser.fiscalCode) {
           try {
-            const response = await fetch(
+            const response = await apiFetch(
               `${ORCHESTRATORE_API_BASE_URL}/api/imprese?rappresentante_legale_cf=${effectiveUser.fiscalCode}`
             );
             if (response.ok) {
@@ -223,7 +224,7 @@ export default function DashboardImpresa() {
         // Strategia 5: Cerca per user_id su orchestratore
         if (!impresaData && effectiveUser.id) {
           try {
-            const response = await fetch(
+            const response = await apiFetch(
               `${ORCHESTRATORE_API_BASE_URL}/api/imprese?user_id=${effectiveUser.id}`
             );
             if (response.ok) {
@@ -242,7 +243,7 @@ export default function DashboardImpresa() {
 
           // Carica pratiche dell'impresa
           try {
-            const praticheResponse = await fetch(
+            const praticheResponse = await apiFetch(
               `${ORCHESTRATORE_API_BASE_URL}/api/suap/pratiche?impresa_id=${impresaData.id}`
             );
             if (praticheResponse.ok) {

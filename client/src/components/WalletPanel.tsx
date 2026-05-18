@@ -69,6 +69,7 @@ import {
 } from "@/hooks/useImpersonation";
 import NotificationManager from "@/components/suap/NotificationManager";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 // API Base URL — in produzione usa proxy Vercel, in sviluppo locale URL diretto
 const WALLET_API_BASE = import.meta.env.DEV ? MIHUB_API_BASE_URL : "";
@@ -237,7 +238,7 @@ const WalletPanel = memo(function WalletPanel() {
     setIsLoading(true);
     try {
       const API_URL = WALLET_API_BASE;
-      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/wallets`));
+      const response = await apiFetch(addComuneIdToUrl(`${API_URL}/api/wallets`));
       const data = await response.json();
 
       if (data.success) {
@@ -323,7 +324,7 @@ const WalletPanel = memo(function WalletPanel() {
   const fetchImpostazioniMora = async () => {
     try {
       const API_URL = WALLET_API_BASE;
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_URL}/api/canone-unico/impostazioni-mora`)
       );
       const data = await response.json();
@@ -396,7 +397,7 @@ const WalletPanel = memo(function WalletPanel() {
         params.append("stato", canoneFilters.stato);
 
       // Usa addComuneIdToUrl per filtrare per comune
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(
           `${API_URL}/api/canone-unico/riepilogo?${params.toString()}`
         )
@@ -423,7 +424,7 @@ const WalletPanel = memo(function WalletPanel() {
       if (canoneFilters.impresa_search)
         params.append("impresa_search", canoneFilters.impresa_search);
 
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(
           `${API_URL}/api/canone-unico/ricariche-spunta?${params.toString()}`
         )
@@ -508,7 +509,7 @@ const WalletPanel = memo(function WalletPanel() {
   const handleViewScadenza = async (scadenzaId: number) => {
     try {
       const API_URL = WALLET_API_BASE;
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_URL}/api/canone-unico/scadenza/${scadenzaId}`)
       );
       const data = await response.json();
@@ -638,7 +639,7 @@ const WalletPanel = memo(function WalletPanel() {
       if (impresaId) params.append("impresa_id", impresaId);
 
       // v3.90.0: Filtro per comune_id durante impersonificazione
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(
           `${API_URL}/api/canone-unico/posteggi-mercato/${mercatoId}?${params.toString()}`
         )
@@ -674,7 +675,7 @@ const WalletPanel = memo(function WalletPanel() {
     try {
       const API_URL = WALLET_API_BASE;
       // v3.90.0: Filtro per comune_id durante impersonificazione
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(
           `${API_URL}/api/imprese?search=${encodeURIComponent(search)}&limit=5`
         )
@@ -712,7 +713,7 @@ const WalletPanel = memo(function WalletPanel() {
     try {
       const API_URL = WALLET_API_BASE;
       // Usa addComuneIdToUrl per filtrare i mercati per comune
-      const response = await fetch(addComuneIdToUrl(`${API_URL}/api/markets`));
+      const response = await apiFetch(addComuneIdToUrl(`${API_URL}/api/markets`));
       const data = await response.json();
       if (data.success && data.data) {
         const mercati = data.data.map((m: any) => ({ id: m.id, name: m.name }));
@@ -745,7 +746,7 @@ const WalletPanel = memo(function WalletPanel() {
       if (tipoOperatore && tipoOperatore !== "all")
         params.append("tipo_operatore", tipoOperatore);
 
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(
           `${API_URL}/api/canone-unico/imprese-concessioni?${params.toString()}`
         )
@@ -817,7 +818,7 @@ const WalletPanel = memo(function WalletPanel() {
 
       // Fetch in parallel
       const promises = walletIds.map(id =>
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${API_URL}/api/wallets/${id}/transactions`)
         ).then(r => r.json())
       );
@@ -861,7 +862,7 @@ const WalletPanel = memo(function WalletPanel() {
     try {
       const API_URL = WALLET_API_BASE;
       // Usa addComuneIdToUrl per filtrare per comune
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_URL}/api/wallet-history`)
       );
       const data = await response.json();
@@ -898,7 +899,7 @@ const WalletPanel = memo(function WalletPanel() {
       const url = addComuneIdToUrl(
         `${API_URL}/api/sanctions/riepilogo-pagamenti?${params.toString()}`
       );
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const data = await res.json();
       if (data.success) {
         setSanzioniList(data.data || []);
@@ -938,7 +939,7 @@ const WalletPanel = memo(function WalletPanel() {
       const API_URL = WALLET_API_BASE;
       const iuv = `MAN-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_URL}/api/sanctions/${selectedSanzione.id}/paga-pagopa`,
         {
           method: "POST",
@@ -979,7 +980,7 @@ const WalletPanel = memo(function WalletPanel() {
       const url = addComuneIdToUrl(
         `${MIHUB_API}/notifiche/messaggi/TRIBUTI/${tributiId}`
       );
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const data = await res.json();
       if (data.success) {
         setNotificheNonLette(data.non_letti || 0);
@@ -1012,7 +1013,7 @@ const WalletPanel = memo(function WalletPanel() {
       const anno = new Date().getFullYear();
 
       // Prima prova a caricare le scadenze esistenti
-      const scadenzeRes = await fetch(
+      const scadenzeRes = await apiFetch(
         addComuneIdToUrl(
           `${API_URL}/api/canone-unico/semaforo-rate/${wallet.id}/${anno}`
         )

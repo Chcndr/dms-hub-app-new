@@ -70,6 +70,7 @@ const API_BASE_URL = MIHUB_API_BASE_URL;
 // Fix per icone marker Leaflet
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import { apiFetch } from "@/lib/apiFetch";
 
 const DefaultIcon = L.icon({
   iconUrl: icon,
@@ -219,7 +220,7 @@ export default function MappaItaliaComponent({
 
   const fetchMarkets = async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/markets`)
       );
       const data = await response.json();
@@ -413,7 +414,7 @@ function MarketDetail({
   useEffect(() => {
     const fetchStalls = async () => {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/markets/${market.id}/stalls`)
         );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -805,7 +806,7 @@ function CompanyDetailCard({
   const fetchCompanyData = async (companyId: number | string) => {
     setLoading(true);
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${companyId}`)
       );
       const data = await response.json();
@@ -1874,7 +1875,7 @@ function PosteggiTab({
       const stall = stalls.find(s => s.id === selectedStallId);
       if (stall?.concession_id) {
         try {
-          const response = await fetch(
+          const response = await apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/concessions/${stall.concession_id}`
             )
@@ -1900,13 +1901,13 @@ function PosteggiTab({
   const fetchData = async () => {
     try {
       const [stallsRes, mapRes, concessionsRes] = await Promise.all([
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)
         ),
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map/${marketId}`)
         ),
-        fetch(
+        apiFetch(
           addComuneIdToUrl(
             `${API_BASE_URL}/api/markets/${marketId}/concessions`
           )
@@ -2943,7 +2944,7 @@ function PosteggiTab({
                         concessionsByStallId[selectedStall.number]?.companyId;
                       if (companyId) {
                         try {
-                          const response = await fetch(
+                          const response = await apiFetch(
                             addComuneIdToUrl(
                               `${API_BASE_URL}/api/imprese/${companyId}`
                             )
@@ -3345,12 +3346,12 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
   const fetchData = async () => {
     try {
       const [concessionsRes, vendorsRes] = await Promise.all([
-        fetch(
+        apiFetch(
           addComuneIdToUrl(
             `${API_BASE_URL}/api/concessions?market_id=${marketId}`
           )
         ),
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/vendors`)),
+        apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/vendors`)),
       ]);
 
       const concessionsData = await concessionsRes.json();

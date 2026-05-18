@@ -26,6 +26,7 @@ import {
   addComuneIdToUrl,
 } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
@@ -384,7 +385,7 @@ export default function SciaForm({
 
         // Per ogni mercato, carica i posteggi e filtra quelli del CEDENTE
         for (const market of markets) {
-          const res = await fetch(
+          const res = await apiFetch(
             addComuneIdToUrl(`${API_URL}/api/markets/${market.id}/stalls`)
           );
           const json = await res.json();
@@ -434,7 +435,7 @@ export default function SciaForm({
         const marketsUrl = comuneId
           ? `${API_URL}/api/markets?comune_id=${comuneId}`
           : `${API_URL}/api/markets`;
-        const marketsRes = await fetch(addComuneIdToUrl(marketsUrl));
+        const marketsRes = await apiFetch(addComuneIdToUrl(marketsUrl));
         const marketsJson = await marketsRes.json();
         if (marketsJson.success && marketsJson.data) {
           setMarkets(marketsJson.data);
@@ -443,7 +444,7 @@ export default function SciaForm({
         // Carica tutte le imprese per ricerca locale (versione leggera senza immagini/subquery)
         const lightFields =
           "id,denominazione,partita_iva,codice_fiscale,comune,indirizzo_via,indirizzo_civico,indirizzo_cap,indirizzo_provincia,stato_impresa,pec,telefono,email,rappresentante_legale,rappresentante_legale_cognome,rappresentante_legale_nome,rappresentante_legale_cf,rappresentante_legale_data_nascita,rappresentante_legale_luogo_nascita,rappresentante_legale_residenza_via,rappresentante_legale_residenza_civico,rappresentante_legale_residenza_cap,rappresentante_legale_residenza_comune,rappresentante_legale_residenza_provincia";
-        const impreseRes = await fetch(
+        const impreseRes = await apiFetch(
           addComuneIdToUrl(`${API_URL}/api/imprese?fields=${lightFields}`)
         );
         const impreseJson = await impreseRes.json();
@@ -452,7 +453,7 @@ export default function SciaForm({
         }
 
         // Carica lista comuni registrati nel sistema
-        const comuniRes = await fetch(`${API_URL}/api/comuni`);
+        const comuniRes = await apiFetch(`${API_URL}/api/comuni`);
         const comuniJson = await comuniRes.json();
         if (comuniJson.success && comuniJson.data) {
           setComuniRegistrati(comuniJson.data.map((c: any) => ({ id: c.id, nome: c.nome })));
@@ -462,7 +463,7 @@ export default function SciaForm({
         const bandiUrl = comuneId
           ? `${API_URL}/api/suap/bandi?comune_id=${comuneId}&stato=APERTO`
           : `${API_URL}/api/suap/bandi?stato=APERTO`;
-        const bandiRes = await fetch(addComuneIdToUrl(bandiUrl));
+        const bandiRes = await apiFetch(addComuneIdToUrl(bandiUrl));
         const bandiJson = await bandiRes.json();
         if (bandiJson.success && bandiJson.data) {
           setBandiAperti(bandiJson.data);
@@ -489,7 +490,7 @@ export default function SciaForm({
     const fetchStalls = async () => {
       try {
         setLoadingStalls(true);
-        const res = await fetch(
+        const res = await apiFetch(
           addComuneIdToUrl(`${API_URL}/api/markets/${selectedMarketId}/stalls`)
         );
         const json = await res.json();
@@ -612,7 +613,7 @@ export default function SciaForm({
   // Fetch dati Bolkestein per autocompilazione campi
   const fetchBolkesteinData = async (impresaId: number) => {
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         addComuneIdToUrl(`${API_URL}/api/imprese/${impresaId}/bolkestein-data`)
       );
       const json = await res.json();
@@ -813,7 +814,7 @@ export default function SciaForm({
     if (stall.impresa_id) {
       try {
         setLoadingImpresa(true);
-        const res = await fetch(
+        const res = await apiFetch(
           addComuneIdToUrl(`${API_URL}/api/imprese/${stall.impresa_id}`)
         );
         const json = await res.json();
@@ -843,7 +844,7 @@ export default function SciaForm({
 
     // Cerca SCIA precedente per questo posteggio (per pre-compilare i campi SCIA Precedente)
     try {
-      const sciaRes = await fetch(
+      const sciaRes = await apiFetch(
         addComuneIdToUrl(`${API_URL}/api/suap/pratiche?posteggio_id=${stallId}`)
       );
       const sciaJson = await sciaRes.json();
@@ -1426,7 +1427,7 @@ export default function SciaForm({
                       const { associazioneId } = getImpersonationParams();
                       if (associazioneId) {
                         try {
-                          const res = await fetch(
+                          const res = await apiFetch(
                             addComuneIdToUrl(
                               `${MIHUB_API_BASE_URL}/api/associazioni/${associazioneId}`
                             )

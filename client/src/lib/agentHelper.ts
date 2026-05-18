@@ -13,6 +13,7 @@ import {
   type AgentId,
   type OrchestratorMode,
 } from "@/api/orchestratorClient";
+import { apiFetch } from "@/lib/apiFetch";
 
 export interface AgentMessage {
   id: string;
@@ -52,7 +53,7 @@ async function reloadMessages(conversationId: string): Promise<AgentMessage[]> {
   });
 
   const url = `/api/mihub/get-messages?${params.toString()}`;
-  const res = await fetch(url);
+  const res = await apiFetch(url);
 
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}`);

@@ -35,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getImpersonationParams, authenticatedFetch } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -120,10 +121,10 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
     setLoading(true);
     try {
       const [assocRes, contrattiRes, fattureRes, respRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}`),
-        fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/contratti`),
-        fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/fatture`),
-        fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/responsabili`),
+        apiFetch(`${API_BASE_URL}/api/associazioni/${associazioneId}`),
+        apiFetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/contratti`),
+        apiFetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/fatture`),
+        apiFetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/responsabili`),
       ]);
 
       const assocData = await assocRes.json();
@@ -573,7 +574,7 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
                           ? `${API_BASE_URL}/api/associazioni/responsabili/${editResp.id}`
                           : `${API_BASE_URL}/api/associazioni/${associazioneId}/responsabili`;
                         const method = editResp ? 'PUT' : 'POST';
-                        const res = await fetch(url, {
+                        const res = await apiFetch(url, {
                           method,
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(respForm),
@@ -636,7 +637,7 @@ const AnagraficaAssociazionePanel = memo(function AnagraficaAssociazionePanel() 
                           <Button variant="ghost" size="sm" onClick={async () => {
                             if (!confirm('Rimuovere questo responsabile?')) return;
                             try {
-                              const res = await fetch(`${API_BASE_URL}/api/associazioni/responsabili/${r.id}`, { method: 'DELETE' });
+                              const res = await apiFetch(`${API_BASE_URL}/api/associazioni/responsabili/${r.id}`, { method: 'DELETE' });
                               const data = await res.json();
                               if (data.success) { toast.success('Responsabile rimosso'); loadData(); }
                               else toast.error(data.error || 'Errore');

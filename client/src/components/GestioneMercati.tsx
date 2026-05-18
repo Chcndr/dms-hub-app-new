@@ -71,6 +71,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import {
   useImpersonation,
   addComuneIdToUrl,
@@ -229,7 +230,7 @@ const GestioneMercati = memo(function GestioneMercati() {
   const restMarketsQuery = useQuery({
     queryKey: ["dmsHub-markets-list-fallback"],
     queryFn: async () => {
-      const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets`));
+      const res = await apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets`));
       if (!res.ok) return [];
       const json = await res.json();
       return json?.data ?? json ?? [];
@@ -280,7 +281,7 @@ const GestioneMercati = memo(function GestioneMercati() {
 
   const fetchMarkets = async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/markets`)
       );
       const data = await response.json();
@@ -513,7 +514,7 @@ function MarketDetail({
   // Funzione per caricare i posteggi (esposta per refresh esterno)
   const fetchStalls = async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/markets/${market.id}/stalls`)
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -892,7 +893,7 @@ function HubTCCSection({
   const fetchHubStatus = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/markets/${market.id}/hub-status`)
       );
       if (res.ok) {
@@ -1217,7 +1218,7 @@ function CompanyDetailCard({
   const fetchCompanyData = async (companyId: number | string) => {
     setLoading(true);
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${companyId}`)
       );
       const data = await response.json();
@@ -2322,7 +2323,7 @@ function PosteggiTab({
   // Polling turno corrente spunta live
   const fetchSpuntaLiveTurno = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/presenze-live/spunta-turno-corrente/${marketId}`);
+      const res = await apiFetch(`${API_BASE_URL}/api/presenze-live/spunta-turno-corrente/${marketId}`);
       const data = await res.json();
       if (data.success && data.turno_attivo) {
         setSpuntaLiveTurno(data);
@@ -2380,9 +2381,9 @@ function PosteggiTab({
   const fetchStallsAndPresenzeOnly = async () => {
     try {
       const [stallsRes, presenzeRes, spuntistiRes] = await Promise.all([
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)),
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/presenze/mercato/${marketId}`)).catch(() => ({ json: () => ({ success: false }) })),
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/spuntisti/mercato/${marketId}`)).catch(() => ({ json: () => ({ success: false }) })),
+        apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)),
+        apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/presenze/mercato/${marketId}`)).catch(() => ({ json: () => ({ success: false }) })),
+        apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/spuntisti/mercato/${marketId}`)).catch(() => ({ json: () => ({ success: false }) })),
       ]);
       const stallsData = await stallsRes.json();
       const presenzeData = await presenzeRes.json();
@@ -2430,7 +2431,7 @@ function PosteggiTab({
       const stall = stalls.find(s => s.id === selectedStallId);
       if (stall?.concession_id) {
         try {
-          const response = await fetch(
+          const response = await apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/concessions/${stall.concession_id}`
             )
@@ -2459,7 +2460,7 @@ function PosteggiTab({
       const stall = stalls.find(s => s.id === selectedStallId);
       if (stall?.spuntista_impresa_id) {
         try {
-          const response = await fetch(
+          const response = await apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/domande-spunta?impresa_id=${stall.spuntista_impresa_id}&mercato_id=${marketId}`
             )
@@ -2497,7 +2498,7 @@ function PosteggiTab({
       if (companyId) {
         setSidebarCompanyLoading(true);
         try {
-          const response = await fetch(
+          const response = await apiFetch(
             addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${companyId}`)
           );
           if (response.ok) {
@@ -2546,7 +2547,7 @@ function PosteggiTab({
       // Carica impresa
       setSidebarCompanyLoading(true);
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${impresaId}`)
         );
         if (response.ok) {
@@ -2572,7 +2573,7 @@ function PosteggiTab({
 
       // Carica domanda spunta
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           addComuneIdToUrl(
             `${API_BASE_URL}/api/domande-spunta?impresa_id=${impresaId}&mercato_id=${marketId}`
           )
@@ -2605,26 +2606,26 @@ function PosteggiTab({
         graduatoriaRes,
         spuntistiRes,
       ] = await Promise.all([
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)
         ),
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map/${marketId}`)
         ),
-        fetch(
+        apiFetch(
           addComuneIdToUrl(
             `${API_BASE_URL}/api/markets/${marketId}/concessions`
           )
         ),
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/presenze/mercato/${marketId}`)
         ).catch(() => ({ json: () => ({ success: false }) })),
-        fetch(
+        apiFetch(
           addComuneIdToUrl(
             `${API_BASE_URL}/api/graduatoria/mercato/${marketId}`
           )
         ).catch(() => ({ json: () => ({ success: false }) })),
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/spuntisti/mercato/${marketId}`)
         ).catch(() => ({ json: () => ({ success: false }) })),
       ]);
@@ -5389,7 +5390,7 @@ function PosteggiTab({
                       const companyId = selectedSpuntistaForDetail.impresa_id;
                       if (companyId) {
                         try {
-                          const response = await fetch(
+                          const response = await apiFetch(
                             addComuneIdToUrl(
                               `${API_BASE_URL}/api/imprese/${companyId}`
                             )
@@ -6168,7 +6169,7 @@ function PosteggiTab({
                         concessionsByStallId[selectedStall.number]?.companyId;
                       if (companyId) {
                         try {
-                          const response = await fetch(
+                          const response = await apiFetch(
                             addComuneIdToUrl(
                               `${API_BASE_URL}/api/imprese/${companyId}`
                             )
@@ -6572,12 +6573,12 @@ function ConcessioniTab({ marketId }: { marketId: number }) {
   const fetchData = async () => {
     try {
       const [concessionsRes, vendorsRes] = await Promise.all([
-        fetch(
+        apiFetch(
           addComuneIdToUrl(
             `${API_BASE_URL}/api/concessions?market_id=${marketId}`
           )
         ),
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/vendors`)),
+        apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/vendors`)),
       ]);
 
       const concessionsData = await concessionsRes.json();

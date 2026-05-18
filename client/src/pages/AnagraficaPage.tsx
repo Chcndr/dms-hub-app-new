@@ -51,6 +51,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
 
 // ============================================================================
@@ -769,7 +770,7 @@ function QualificazioniSection({
   // Carica adempimenti obbligatori
   useEffect(() => {
     if (!impresaId) return;
-    fetch(
+    apiFetch(
       addComuneIdToUrl(`${API_BASE_URL}/api/adempimenti/impresa/${impresaId}`)
     )
       .then(r => r.json())
@@ -808,7 +809,7 @@ function QualificazioniSection({
     setSendingAlert(true);
     try {
       // Controlla se l'impresa e' tesserata
-      const tessRes = await fetch(
+      const tessRes = await apiFetch(
         addComuneIdToUrl(
           `${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`
         )
@@ -1647,7 +1648,7 @@ function CollaboratoriSection({
     // Carica collaboratori dall'API DB reale, con fallback localStorage
     const loadCollaboratori = async () => {
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `${API_BASE_URL}/api/collaboratori?impresa_id=${impresaId}`
         );
         const json = await res.json();
@@ -2480,7 +2481,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
         let tess: any = null;
         let tessList: any[] = [];
         try {
-          const tessV9Res = await fetch(
+          const tessV9Res = await apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/associazioni-v9/tesseramenti?impresa_id=${impresaId}`
             )
@@ -2501,7 +2502,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
 
         // Fallback: endpoint legacy
         if (!tessList.length) {
-          const tessRes = await fetch(
+          const tessRes = await apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/tesseramenti/impresa/${impresaId}`
             )
@@ -2539,7 +2540,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
       // deve poter vedere e sottoscrivere associazioni alternative, ad esempio Confesercenti Modena.
       try {
         let assocList: any[] = [];
-        const assocRes = await fetch(
+        const assocRes = await apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/associazioni/pubbliche`)
         );
         const assocData = await assocRes.json();
@@ -2555,7 +2556,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
           assocList = pubblicheList;
         } else {
           // Fallback: carica tutte le associazioni (stesso endpoint della dashboard admin)
-          const fallbackRes = await fetch(
+          const fallbackRes = await apiFetch(
             addComuneIdToUrl(`${API_BASE_URL}/api/associazioni`)
           );
           const fallbackData = await fallbackRes.json();
@@ -2587,7 +2588,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     setSelectedAssociazione(assoc);
     setLoadingScheda(true);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/api/associazioni/${assoc.id}/scheda-pubblica`
       );
       const data = await res.json();
@@ -2681,7 +2682,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
     const assocId = getAssociationId(assoc);
     if (!assocId) return null;
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/api/associazioni/${assocId}/scheda-pubblica`
       );
       const data = await res.json();
@@ -2706,7 +2707,7 @@ function AssociazioneSection({ impresaId }: { impresaId: number | null }) {
       const url = assocId
         ? `${API_BASE_URL}/api/bandi/servizi?associazione_id=${assocId}`
         : `${API_BASE_URL}/api/bandi/servizi`;
-      const res = await fetch(addComuneIdToUrl(url));
+      const res = await apiFetch(addComuneIdToUrl(url));
       const data = await res.json();
       const list = Array.isArray(data.data)
         ? data.data
@@ -3660,7 +3661,7 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
       setLoading(true);
       try {
         // Carica catalogo servizi
-        const servRes = await fetch(
+        const servRes = await apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/bandi/servizi`)
         );
         const servData = await servRes.json();
@@ -3673,7 +3674,7 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
               : [];
         setServizi(servList);
         // Carica le mie richieste
-        const richRes = await fetch(
+        const richRes = await apiFetch(
           addComuneIdToUrl(
             `${API_BASE_URL}/api/bandi/richieste?impresa_id=${impresaId}`
           )
@@ -3699,7 +3700,7 @@ function ServiziSection({ impresaId }: { impresaId: number | null }) {
   const loadMercati = async () => {
     setLoadingMercati(true);
     try {
-      const res = await fetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets`));
+      const res = await apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/markets`));
       const data = await res.json();
       if (data.success && data.data) {
         setMercatiList(data.data);
@@ -4141,7 +4142,7 @@ function FormazioneSection({
         const corsiUrl = activeAssociazioneId
           ? `${API_BASE_URL}/api/formazione/corsi?associazione_id=${activeAssociazioneId}`
           : `${API_BASE_URL}/api/formazione/corsi`;
-        const corsiRes = await fetch(addComuneIdToUrl(corsiUrl));
+        const corsiRes = await apiFetch(addComuneIdToUrl(corsiUrl));
         const corsiData = await corsiRes.json();
         const corsiList = Array.isArray(corsiData.data)
           ? corsiData.data
@@ -4152,7 +4153,7 @@ function FormazioneSection({
               : [];
         setCorsi(corsiList);
         // Carica le mie iscrizioni
-        const iscrRes = await fetch(
+        const iscrRes = await apiFetch(
           addComuneIdToUrl(
             `${API_BASE_URL}/api/formazione/iscrizioni?impresa_id=${impresaId}`
           )
@@ -4168,7 +4169,7 @@ function FormazioneSection({
         setIscrizioni(iscrList);
         // Carica collaboratori dell'impresa
         try {
-          const collabRes = await fetch(
+          const collabRes = await apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/collaboratori?impresa_id=${impresaId}`
             )
@@ -4200,7 +4201,7 @@ function FormazioneSection({
     // Carica matrice per trovare chi ha questo tipo di attestato scaduto/mancante
     try {
       const tipoCorso = corso.tipo_attestato || corso.tipo || "";
-      const res = await fetch(
+      const res = await apiFetch(
         addComuneIdToUrl(
           `${API_BASE_URL}/api/collaboratori/team/matrice/${impresaId}`
         )
@@ -4862,7 +4863,7 @@ function GiustificazioniSection({
       let comuneId = null;
       if (selectedConc?.market_id) {
         try {
-          const mktRes = await fetch(
+          const mktRes = await apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/markets/${selectedConc.market_id}`
             )
@@ -5374,27 +5375,27 @@ export default function AnagraficaPage() {
           presRes,
           giustRes,
         ] = await Promise.all([
-          fetch(
+          apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/imprese/${IMPRESA_ID}?fields=light`
             )
           ).catch(() => null),
-          fetch(`${API_BASE_URL}/api/vendors`).catch(() => null),
-          fetch(
+          apiFetch(`${API_BASE_URL}/api/vendors`).catch(() => null),
+          apiFetch(
             `${API_BASE_URL}/api/qualificazioni/impresa/${IMPRESA_ID}`
           ).catch(() => null),
-          fetch(
+          apiFetch(
             `${API_BASE_URL}/api/autorizzazioni?impresa_id=${IMPRESA_ID}`
           ).catch(() => null),
-          fetch(
+          apiFetch(
             `${API_BASE_URL}/api/domande-spunta?impresa_id=${IMPRESA_ID}`
           ).catch(() => null),
-          fetch(
+          apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/presenze/impresa/${IMPRESA_ID}`
             )
           ).catch(() => null),
-          fetch(
+          apiFetch(
             `${API_BASE_URL}/api/giustificazioni/impresa/${IMPRESA_ID}`
           ).catch(() => null),
         ]);
@@ -5421,7 +5422,7 @@ export default function AnagraficaPage() {
               // Carica concessioni per tutti i vendor in PARALLELO
               const concResults = await Promise.all(
                 myVendors.map((vendor: any) =>
-                  fetch(
+                  apiFetch(
                     addComuneIdToUrl(
                       `${API_BASE_URL}/api/concessions?vendor_id=${vendor.id}`
                     )

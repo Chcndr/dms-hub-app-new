@@ -2,6 +2,8 @@
  * Tipo per i messaggi della chat MIO
  * Force rebuild: 2025-12-03 07:16
  */
+import { apiFetch } from "@/lib/apiFetch";
+
 export interface MioChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
@@ -23,7 +25,7 @@ export async function sendMioMessage(
   }
 
   // DIRECT LINK: Bypassiamo il proxy Vercel e chiamiamo direttamente Hetzner
-  const res = await fetch("/api/mihub/orchestrator", {
+  const res = await apiFetch("/api/mihub/orchestrator", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -94,7 +96,7 @@ export async function sendAgentMessage(
   };
 
   // DIRECT LINK: Bypassiamo il proxy Vercel e chiamiamo direttamente Hetzner
-  const res = await fetch("/api/mihub/orchestrator", {
+  const res = await apiFetch("/api/mihub/orchestrator", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

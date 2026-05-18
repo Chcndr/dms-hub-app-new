@@ -39,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
@@ -423,7 +424,7 @@ export default function PresenzePage() {
           if (fbStr) { const fb = JSON.parse(fbStr); userId = fb.miohubId || 0; }
           if (!userId && userStr) { const u = JSON.parse(userStr); userId = u.id || 0; }
           if (userId) {
-            const res = await fetch(`${ORCHESTRATORE_URL}/api/imprese?user_id=${userId}`);
+            const res = await apiFetch(`${ORCHESTRATORE_URL}/api/imprese?user_id=${userId}`);
             if (res.ok) {
               const data = await res.json();
               if (data.success && data.data?.length > 0) {
@@ -445,7 +446,7 @@ export default function PresenzePage() {
         } else {
           // Fallback: carica nome impresa dal server SOLO se non disponibile in localStorage
           try {
-            const resImpresa = await fetch(`${MIHUB_API_BASE_URL}/api/imprese/${id}`);
+            const resImpresa = await apiFetch(`${MIHUB_API_BASE_URL}/api/imprese/${id}`);
             if (resImpresa.ok) {
               const dataImpresa = await resImpresa.json();
               const raw = dataImpresa.success ? dataImpresa.data : dataImpresa;

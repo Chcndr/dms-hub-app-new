@@ -31,6 +31,7 @@ import {
 import { FileText, Printer, Search, Loader2, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { addComuneIdToUrl } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
@@ -188,7 +189,7 @@ export default function AutorizzazioneForm({
 
         // Carica il prossimo numero autorizzazione
         try {
-          const nextNumRes = await fetch(
+          const nextNumRes = await apiFetch(
             addComuneIdToUrl(`${API_URL}/api/autorizzazioni/next-number`)
           );
           const nextNumJson = await nextNumRes.json();
@@ -209,7 +210,7 @@ export default function AutorizzazioneForm({
         }
 
         // Carica mercati
-        const marketsRes = await fetch(
+        const marketsRes = await apiFetch(
           addComuneIdToUrl(`${API_URL}/api/markets`)
         );
         const marketsJson = await marketsRes.json();
@@ -218,7 +219,7 @@ export default function AutorizzazioneForm({
         }
 
         // Carica imprese
-        const impreseRes = await fetch(
+        const impreseRes = await apiFetch(
           addComuneIdToUrl(`${API_URL}/api/imprese`)
         );
         const impreseJson = await impreseRes.json();
@@ -251,7 +252,7 @@ export default function AutorizzazioneForm({
     if (autorizzazioneId && (mode === "view" || mode === "edit")) {
       const fetchAutorizzazione = async () => {
         try {
-          const res = await fetch(
+          const res = await apiFetch(
             addComuneIdToUrl(
               `${API_URL}/api/autorizzazioni/${autorizzazioneId}`
             )
@@ -413,7 +414,7 @@ export default function AutorizzazioneForm({
   // Funzione per caricare i dati delle qualifiche (DURC, Morali, Professionali)
   const fetchQualificheData = async (impresaId: number) => {
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         addComuneIdToUrl(`${API_URL}/api/qualificazioni/impresa/${impresaId}`)
       );
       const json = await res.json();
@@ -521,7 +522,7 @@ export default function AutorizzazioneForm({
 
     // Carica posteggi del mercato
     try {
-      const stallsRes = await fetch(
+      const stallsRes = await apiFetch(
         addComuneIdToUrl(`${API_URL}/api/stalls?market_id=${market.id}`)
       );
       const stallsJson = await stallsRes.json();
@@ -618,7 +619,7 @@ export default function AutorizzazioneForm({
         : `${API_URL}/api/autorizzazioni`;
       const method = isUpdate ? "PUT" : "POST";
 
-      const response = await fetch(addComuneIdToUrl(url), {
+      const response = await apiFetch(addComuneIdToUrl(url), {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

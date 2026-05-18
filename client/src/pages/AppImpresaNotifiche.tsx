@@ -53,6 +53,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 // Tipo notifica
 interface Notifica {
@@ -168,7 +169,7 @@ export default function AppImpresaNotifiche() {
     if (!IMPRESA_ID) return;
     const fetchImpresaEmail = async () => {
       try {
-        const res = await fetch(`https://api.miohub.it/api/imprese/${IMPRESA_ID}?fields=light`);
+        const res = await apiFetch(`https://api.miohub.it/api/imprese/${IMPRESA_ID}?fields=light`);
         const data = await res.json();
         if (data.success && data.data && data.data.email) {
           setImpresaEmailDB(data.data.email);
@@ -199,7 +200,7 @@ export default function AppImpresaNotifiche() {
           : filtro === "lette"
             ? "&stato=LETTO"
             : "";
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/notifiche/impresa/${IMPRESA_ID}?limit=200${statoParam}`
       );
       const data = await response.json();
@@ -234,7 +235,7 @@ export default function AppImpresaNotifiche() {
   useEffect(() => {
     fetchNotifiche();
     // Fetch messaggi inviati dall'impresa (risposte)
-    fetch(`${API_BASE_URL}/notifiche/risposte`)
+    apiFetch(`${API_BASE_URL}/notifiche/risposte`)
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
@@ -538,7 +539,7 @@ export default function AppImpresaNotifiche() {
     const fetchRiunioni = async () => {
       if (!email) { setLoadingR(false); return; }
       try {
-        const res = await fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(email)}`);
+        const res = await apiFetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(email)}`);
         const data = await res.json();
         if (data.success) setRiunioni(data.data || []);
       } catch (err) { console.error('Errore fetch riunioni:', err); }
@@ -639,7 +640,7 @@ export default function AppImpresaNotifiche() {
                         <button
                           onClick={async () => {
                             try {
-                              const res = await fetch(`https://api.miohub.it/api/a99x/invito/${r.token}/accetta?confirmed=1`);
+                              const res = await apiFetch(`https://api.miohub.it/api/a99x/invito/${r.token}/accetta?confirmed=1`);
                               if (res.ok) fetchRiunioni();
                             } catch {}
                           }}
@@ -650,7 +651,7 @@ export default function AppImpresaNotifiche() {
                         <button
                           onClick={async () => {
                             try {
-                              const res = await fetch(`https://api.miohub.it/api/a99x/invito/${r.token}/rifiuta?confirmed=1`);
+                              const res = await apiFetch(`https://api.miohub.it/api/a99x/invito/${r.token}/rifiuta?confirmed=1`);
                               if (res.ok) fetchRiunioni();
                             } catch {}
                           }}
@@ -836,7 +837,7 @@ export default function AppImpresaNotifiche() {
                               segnaComeLetta(notifica);
                               // Se INVITO_RIUNIONE, carica lo stato reale dal backend
                               if (notifica.tipo_messaggio === 'INVITO_RIUNIONE' && IMPRESA_EMAIL_RIUNIONI) {
-                                fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL_RIUNIONI)}`)
+                                apiFetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL_RIUNIONI)}`)
                                   .then(r => r.json())
                                   .then(data => {
                                     if (data.success && data.data) {
@@ -1266,7 +1267,7 @@ export default function AppImpresaNotifiche() {
                             onClick={async () => {
                               try {
                                 // Cerca il token dall'endpoint le-mie-riunioni
-                                const res = await fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL_RIUNIONI)}`);
+                                const res = await apiFetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL_RIUNIONI)}`);
                                 const data = await res.json();
                                 if (data.success) {
                                   // Trova la riunione corrispondente dalla notifica
@@ -1274,7 +1275,7 @@ export default function AppImpresaNotifiche() {
                                     notificaSelezionata.messaggio?.includes(r.titolo)
                                   );
                                   if (riunione?.token) {
-                                    const accRes = await fetch(`https://api.miohub.it/api/a99x/invito/${riunione.token}/accetta?confirmed=1`);
+                                    const accRes = await apiFetch(`https://api.miohub.it/api/a99x/invito/${riunione.token}/accetta?confirmed=1`);
                                     if (accRes.ok) {
                                       setInvRiunioneStato('CONFERMATO');
                                       setInvRiunioneLink(riunione.jitsi_link || '');
@@ -1290,14 +1291,14 @@ export default function AppImpresaNotifiche() {
                           <button
                             onClick={async () => {
                               try {
-                                const res = await fetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL_RIUNIONI)}`);
+                                const res = await apiFetch(`https://api.miohub.it/api/a99x/le-mie-riunioni?email=${encodeURIComponent(IMPRESA_EMAIL_RIUNIONI)}`);
                                 const data = await res.json();
                                 if (data.success) {
                                   const riunione = data.data?.find((r: any) => 
                                     notificaSelezionata.messaggio?.includes(r.titolo)
                                   );
                                   if (riunione?.token) {
-                                    const rifRes = await fetch(`https://api.miohub.it/api/a99x/invito/${riunione.token}/rifiuta?confirmed=1`);
+                                    const rifRes = await apiFetch(`https://api.miohub.it/api/a99x/invito/${riunione.token}/rifiuta?confirmed=1`);
                                     if (rifRes.ok) setInvRiunioneStato('RIFIUTATO');
                                   }
                                 }

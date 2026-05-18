@@ -52,6 +52,7 @@ import {
   authenticatedFetch,
 } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 // ============================================================================
 // TIPI
@@ -204,7 +205,7 @@ export default function BandiBolkesteinPanel({
     setLoading(true);
     try {
       const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/bandi`);
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const data = await res.json();
       if (data.success) {
         setBandi(data.data || []);
@@ -221,7 +222,7 @@ export default function BandiBolkesteinPanel({
   const loadMarkets = async () => {
     try {
       const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/markets`);
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const data = await res.json();
       if (data.success) {
         setMarkets(data.data || []);
@@ -237,7 +238,7 @@ export default function BandiBolkesteinPanel({
     setSelectedBandoId(bandoId);
     try {
       const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/bandi/${bandoId}/graduatoria`);
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const data = await res.json();
       if (data.success && data.data.graduatoria && data.data.graduatoria.length > 0) {
         setGraduatoria(data.data);
@@ -261,7 +262,7 @@ export default function BandiBolkesteinPanel({
       setSelectedBandoId(bandoConGrad.id);
       try {
         const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/bandi/${bandoConGrad.id}/graduatoria`);
-        const res = await fetch(url);
+        const res = await apiFetch(url);
         const data = await res.json();
         if (data.success && data.data.graduatoria && data.data.graduatoria.length > 0) {
           setGraduatoria(data.data);
@@ -279,7 +280,7 @@ export default function BandiBolkesteinPanel({
       setLoading(true);
       try {
         const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/suap/bandi`);
-        const res = await fetch(url);
+        const res = await apiFetch(url);
         const data = await res.json();
         if (data.success) {
           const bandiList = data.data || [];

@@ -85,6 +85,7 @@ import {
 } from "@/api/securityClient";
 import { ORCHESTRATORE_API_BASE_URL } from "@/config/api";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 const SecurityTab = memo(function SecurityTab() {
   const [activeSubTab, setActiveSubTab] = useState("overview");
@@ -232,7 +233,7 @@ const SecurityTab = memo(function SecurityTab() {
   const loadTabPermissions = async () => {
     try {
       // Carica permessi tab
-      const tabPermsRes = await fetch(
+      const tabPermsRes = await apiFetch(
         `${ORCHESTRATORE_API_BASE_URL}/api/security/permissions/tabs`
       );
       const tabPermsData = await tabPermsRes.json();
@@ -244,14 +245,14 @@ const SecurityTab = memo(function SecurityTab() {
         const rolePermsMap: Record<number, number[]> = {};
 
         // Per ogni ruolo, carica i suoi permessi
-        const rolesRes = await fetch(
+        const rolesRes = await apiFetch(
           `${ORCHESTRATORE_API_BASE_URL}/api/security/roles`
         );
         const rolesData = await rolesRes.json();
 
         if (rolesData.success) {
           for (const role of rolesData.data) {
-            const rolePermsRes = await fetch(
+            const rolePermsRes = await apiFetch(
               `${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${role.id}/permissions`
             );
             const rolePermsData = await rolePermsRes.json();
@@ -284,7 +285,7 @@ const SecurityTab = memo(function SecurityTab() {
   const loadQuickAccessPermissions = async () => {
     try {
       // Carica permessi quick access
-      const quickPermsRes = await fetch(
+      const quickPermsRes = await apiFetch(
         `${ORCHESTRATORE_API_BASE_URL}/api/security/permissions/quick-access`
       );
       const quickPermsData = await quickPermsRes.json();
@@ -296,14 +297,14 @@ const SecurityTab = memo(function SecurityTab() {
         const rolePermsMap: Record<number, number[]> = {};
 
         // Per ogni ruolo, carica i suoi permessi
-        const rolesRes = await fetch(
+        const rolesRes = await apiFetch(
           `${ORCHESTRATORE_API_BASE_URL}/api/security/roles`
         );
         const rolesData = await rolesRes.json();
 
         if (rolesData.success) {
           for (const role of rolesData.data) {
-            const rolePermsRes = await fetch(
+            const rolePermsRes = await apiFetch(
               `${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${role.id}/permissions`
             );
             const rolePermsData = await rolePermsRes.json();
@@ -406,7 +407,7 @@ const SecurityTab = memo(function SecurityTab() {
           !original.every(id => edited.includes(id))
         ) {
           // Ottieni tutti i permessi del ruolo (non solo tab)
-          const rolePermsRes = await fetch(
+          const rolePermsRes = await apiFetch(
             `${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${roleId}/permissions`
           );
           const rolePermsData = await rolePermsRes.json();
@@ -476,7 +477,7 @@ const SecurityTab = memo(function SecurityTab() {
           !original.every(id => edited.includes(id))
         ) {
           // Carica permessi attuali del ruolo
-          const rolePermsRes = await fetch(
+          const rolePermsRes = await apiFetch(
             `${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${roleId}/permissions`
           );
           const rolePermsData = await rolePermsRes.json();

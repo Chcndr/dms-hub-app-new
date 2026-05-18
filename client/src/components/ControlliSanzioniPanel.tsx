@@ -14,6 +14,7 @@
 
 import { useState, useEffect, memo} from "react";
 import { useImpersonation, authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 import {
   Shield,
   AlertTriangle,
@@ -415,14 +416,14 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
 
     try {
       // Fetch stats - filtrato per comune se in impersonificazione
-      const statsRes = await fetch(
+      const statsRes = await apiFetch(
         addComuneIdToUrl(`${MIHUB_API}/inspections/stats`)
       );
       const statsData = await statsRes.json();
       if (statsData.success) setStats(statsData.data);
 
       // Fetch watchlist - filtrato per comune se in impersonificazione
-      const watchlistRes = await fetch(
+      const watchlistRes = await apiFetch(
         addComuneIdToUrl(`${MIHUB_API}/watchlist?status=PENDING&limit=20`)
       );
       const watchlistData = await watchlistRes.json();
@@ -430,7 +431,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
 
       // v3.54.2: Fetch sanctions - filtrato per comune_id lato backend
       const sanctionsUrl = addComuneIdToUrl(`${MIHUB_API}/sanctions?limit=100`);
-      const sanctionsRes = await fetch(sanctionsUrl);
+      const sanctionsRes = await apiFetch(sanctionsUrl);
       const sanctionsData = await sanctionsRes.json();
       if (sanctionsData.success) {
         const sanctionsFiltered = sanctionsData.data || [];
@@ -468,12 +469,12 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
       }
 
       // Fetch infraction types (non filtrato - sono globali)
-      const typesRes = await fetch(`${MIHUB_API}/sanctions/types`);
+      const typesRes = await apiFetch(`${MIHUB_API}/sanctions/types`);
       const typesData = await typesRes.json();
       if (typesData.success) setInfractionTypes(typesData.data || []);
 
       // Fetch domande spunta dal SUAP - filtrato per comune se in impersonificazione
-      const domandeRes = await fetch(
+      const domandeRes = await apiFetch(
         addComuneIdToUrl(`${MIHUB_API}/domande-spunta`)
       );
       const domandeData = await domandeRes.json();
@@ -488,14 +489,14 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
       }
 
       // Fetch imprese list - filtrato per comune se in impersonificazione
-      const impreseRes = await fetch(
+      const impreseRes = await apiFetch(
         addComuneIdToUrl(`${MIHUB_API}/imprese?limit=100`)
       );
       const impreseData = await impreseRes.json();
       if (impreseData.success) setImpreseList(impreseData.data || []);
 
       // Fetch risposte PM - filtrato per comune se in impersonificazione
-      const risposteRes = await fetch(
+      const risposteRes = await apiFetch(
         addComuneIdToUrl(`${MIHUB_API}/notifiche/risposte`)
       );
       const risposteData = await risposteRes.json();
@@ -508,7 +509,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
       }
 
       // Fetch trasgressioni in attesa di giustifica - filtrato per comune se in impersonificazione
-      const transgressionsRes = await fetch(
+      const transgressionsRes = await apiFetch(
         addComuneIdToUrl(
           `${MIHUB_API}/market-settings/transgressions/pending-justifications`
         )
@@ -519,7 +520,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
 
       // Fetch giustificazioni manuali inviate dalle imprese (certificati medici, ecc.)
       try {
-        const giustManualiRes = await fetch(
+        const giustManualiRes = await apiFetch(
           addComuneIdToUrl(`${MIHUB_API}/giustificazioni`)
         );
         const giustManualiData = await giustManualiRes.json();
@@ -531,7 +532,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
 
       // Fetch storico sessioni mercato - SEMPRE fetch tutte le sessioni e filtra client-side
       // Il filtro comune_id lato backend spesso non funziona, quindi filtriamo in locale
-      const sessionsRes = await fetch(`${MIHUB_API}/presenze/sessioni`);
+      const sessionsRes = await apiFetch(`${MIHUB_API}/presenze/sessioni`);
       const sessionsData = await sessionsRes.json();
       if (sessionsData.success) {
         const sessionsArray = sessionsData.data || [];
@@ -552,7 +553,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
       // Fetch concessioni dal SUAP - filtrato per comune se in impersonificazione
       let concessioniData: any = { data: [] };
       try {
-        const concessioniRes = await fetch(
+        const concessioniRes = await apiFetch(
           addComuneIdToUrl(`${MIHUB_API}/concessions`)
         );
         concessioniData = await concessioniRes.json();
@@ -587,7 +588,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
       // Fetch autorizzazioni dal SUAP - filtrato per comune se in impersonificazione
       let autorizzazioniData: any = { data: [] };
       try {
-        const autorizzazioniRes = await fetch(
+        const autorizzazioniRes = await apiFetch(
           addComuneIdToUrl(`${MIHUB_API}/autorizzazioni`)
         );
         autorizzazioniData = await autorizzazioniRes.json();
@@ -610,7 +611,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
       // Fetch notifiche SUAP per PM - notifiche di cambio stato pratiche
       // Queste sono le stesse notifiche inviate alle imprese quando il SUAP approva/nega/revisiona
       try {
-        const notificheSuapRes = await fetch(
+        const notificheSuapRes = await apiFetch(
           addComuneIdToUrl(`${MIHUB_API}/suap/notifiche-pm?limit=50`)
         );
         const notificheSuapData = await notificheSuapRes.json();
@@ -767,7 +768,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
       try {
         setGraduatoriaLoading(true);
         // Usa le sessioni gia' filtrate (fetch senza comune_id, filtrate client-side sopra)
-        const gradSessionsRes = await fetch(`${MIHUB_API}/presenze/sessioni`);
+        const gradSessionsRes = await apiFetch(`${MIHUB_API}/presenze/sessioni`);
         const gradSessionsData = await gradSessionsRes.json();
         let sessionsForGrad =
           gradSessionsData.success && gradSessionsData.data?.length > 0
@@ -794,7 +795,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
           let allGraduatoria: any[] = [];
           for (const mId of marketIds) {
             try {
-              const gradRes = await fetch(
+              const gradRes = await apiFetch(
                 `${MIHUB_API}/presenze/graduatoria/mercato/${mId}?tipo=SPUNTA`
               );
               const gradData = await gradRes.json();
@@ -2263,7 +2264,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
                                   setShowWatchlistModal(true);
                                   // Cerca il posteggio dell'impresa
                                   try {
-                                    const res = await fetch(
+                                    const res = await apiFetch(
                                       `${MIHUB_API}/stalls?impresa_id=${item.impresa_id}`
                                     );
                                     const data = await res.json();
@@ -3611,7 +3612,7 @@ const ControlliSanzioniPanel = memo(function ControlliSanzioniPanel() {
                           setDetailsLoading(true);
                           try {
                             // Usa l'ID della sessione per ottenere i dettagli corretti
-                            const res = await fetch(
+                            const res = await apiFetch(
                               `${MIHUB_API}/presenze/sessioni/${session.id}/dettaglio`
                             );
                             const data = await res.json();
@@ -4465,14 +4466,14 @@ function SegnalazioniPMSubtab({ comuneId }: { comuneId: number }) {
       setLoading(true);
       try {
         // Carica stats
-        const statsRes = await fetch(
+        const statsRes = await apiFetch(
           `${MIHUB_API}/civic-reports/stats?comune_id=${comuneId}`
         );
         const statsData = await statsRes.json();
         if (statsData.success) setStats(statsData.data);
 
         // Carica lista segnalazioni - storico completo
-        const reportsRes = await fetch(
+        const reportsRes = await apiFetch(
           `${MIHUB_API}/civic-reports?comune_id=${comuneId}&limit=200`
         );
         const reportsData = await reportsRes.json();
@@ -4530,7 +4531,7 @@ function SegnalazioniPMSubtab({ comuneId }: { comuneId: number }) {
           prev.map(r => (r.id === reportId ? { ...r, status: "resolved" } : r))
         );
         // Aggiorna stats dopo risoluzione
-        const statsRes = await fetch(
+        const statsRes = await apiFetch(
           `${MIHUB_API}/civic-reports/stats?comune_id=${comuneId}`
         );
         const statsData = await statsRes.json();

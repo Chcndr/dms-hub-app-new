@@ -26,6 +26,7 @@ import {
 import { geoAPI } from "@/utils/api";
 import { firebaseLogout } from "@/lib/firebase";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 
 interface SearchResult {
@@ -114,7 +115,7 @@ export default function HomePage() {
           if (!impresaId) return;
 
           const API_BASE_URL = MIHUB_API_BASE_URL;
-          const response = await fetch(
+          const response = await apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/notifiche/impresa/${impresaId}?limit=100`
             ),

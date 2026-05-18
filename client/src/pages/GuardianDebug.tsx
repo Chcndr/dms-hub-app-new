@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Bug, AlertTriangle, XCircle, Lightbulb } from "lucide-react";
+import { apiFetch } from "@/lib/apiFetch";
 
 interface LogEntry {
   timestamp: string;
@@ -23,7 +24,7 @@ export default function GuardianDebug() {
     // Load logs from MIO-hub GitHub repository
     const loadLogs = async () => {
       try {
-        const r = await fetch(
+        const r = await apiFetch(
           "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/logs/api-guardian.log",
           { signal: controller.signal }
         );

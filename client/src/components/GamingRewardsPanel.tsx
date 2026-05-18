@@ -60,6 +60,7 @@ import {
   authenticatedFetch,
 } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 // Fix per icone marker Leaflet
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -747,7 +748,7 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
   useEffect(() => {
     const loadComuniCoords = async () => {
       try {
-        const res = await fetch(`${MIHUB_API_BASE_URL}/comuni`);
+        const res = await apiFetch(`${MIHUB_API_BASE_URL}/comuni`);
         const data = await res.json();
         if (data.success && data.data) {
           const coordsMap: Record<
@@ -872,7 +873,7 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
   // Funzione per caricare la configurazione via REST API
   const loadConfig = useCallback(async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/gaming-rewards/config?comune_id=${configComuneId}`
       );
       if (response.ok) {
@@ -934,7 +935,7 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
   // Funzione per caricare le statistiche via REST API
   const loadStats = useCallback(async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/gaming-rewards/stats${comuneQueryParam ? "?" + comuneQueryParam : ""}`
       );
       if (response.ok) {
@@ -966,10 +967,10 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
     try {
       // Carica lista completa segnalazioni, fallback su stats.recent
       const [reportsRes, statsRes] = await Promise.all([
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${HETZNER_API_URL}/api/civic-reports?limit=200`)
         ).catch(() => null),
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${HETZNER_API_URL}/api/civic-reports/stats`)
         ).catch(() => null),
       ]);
@@ -1012,7 +1013,7 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
   // Funzione per caricare i punti heatmap via REST API
   const loadHeatmapPoints = useCallback(async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/gaming-rewards/heatmap${comuneQueryParam ? "?" + comuneQueryParam : ""}`
       );
       if (response.ok) {
@@ -1041,7 +1042,7 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
   // Funzione per caricare Top 5 Negozi via REST API
   const loadTopShops = useCallback(async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/gaming-rewards/top-shops${comuneQueryParam ? "?" + comuneQueryParam : ""}`
       );
       if (response.ok) {
@@ -1070,7 +1071,7 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
   const loadTrendData = useCallback(async () => {
     try {
       // v1.3.5: Il trend usa trendComuneQueryParam (dipende da geoFilter + timeFilter)
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/gaming-rewards/trend?${trendComuneQueryParam}`
       );
       if (response.ok) {
@@ -1117,7 +1118,7 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
       // v1.3.2: Carica TUTTI i dati senza filtro comune — filtro è solo client-side
       let url = `${API_BASE_URL}/api/gaming-rewards/mobility/heatmap?period=${period}`;
 
-      const response = await fetch(url);
+      const response = await apiFetch(url);
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data)) {
@@ -1165,7 +1166,7 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
       // v1.3.2: Carica TUTTI i dati senza filtro comune
       let url = `${API_BASE_URL}/api/gaming-rewards/culture/heatmap?period=${period}`;
 
-      const response = await fetch(url);
+      const response = await apiFetch(url);
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data)) {
@@ -1211,7 +1212,7 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
       const days = periodMap[timeFilter] || 3650;
       // v1.3.2: Carica TUTTI i dati senza filtro comune
       let referralUrl = `${API_BASE_URL}/api/gaming-rewards/referral/list?days=${days}`;
-      const response = await fetch(referralUrl);
+      const response = await apiFetch(referralUrl);
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -1232,7 +1233,7 @@ const GamingRewardsPanel = memo(function GamingRewardsPanel() {
   // Funzione per caricare le Challenges dal backend
   const loadChallenges = useCallback(async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/gaming-rewards/challenges?comune_id=${configComuneId}`
       );
       if (response.ok) {

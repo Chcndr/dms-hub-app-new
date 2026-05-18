@@ -49,6 +49,7 @@ import {
 } from "@/hooks/useImpersonation";
 import SessioniCorsoTab from "./SessioniCorsoTab";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE = MIHUB_API_BASE_URL;
 
@@ -155,8 +156,8 @@ const GestioneCorsiAssociazionePanel = memo(
       setLoading(true);
       try {
         const [corsiRes, iscrizioniRes] = await Promise.all([
-          fetch(`${API_BASE}/api/associazioni/${associazioneId}/corsi`),
-          fetch(
+          apiFetch(`${API_BASE}/api/associazioni/${associazioneId}/corsi`),
+          apiFetch(
             `${API_BASE}/api/associazioni/${associazioneId}/iscrizioni-corsi`
           ),
         ]);

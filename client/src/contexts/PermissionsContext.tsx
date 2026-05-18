@@ -28,6 +28,7 @@ import React, {
   ReactNode,
 } from "react";
 import { ORCHESTRATORE_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { getImpersonationParams } from "@/hooks/useImpersonation";
 
 // Costanti per i ruoli
@@ -353,7 +354,7 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
       );
 
       // Carica i permessi del ruolo
-      const response = await fetch(
+      const response = await apiFetch(
         `${ORCHESTRATORE_API_BASE_URL}/api/security/roles/${roleId}/permissions`,
         { signal }
       );

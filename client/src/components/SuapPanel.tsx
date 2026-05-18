@@ -83,6 +83,7 @@ import {
   addAssociazioneIdToUrl,
   authenticatedFetch,
 } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 import ConcessioneForm from "@/components/suap/ConcessioneForm";
 import AutorizzazioneForm from "@/components/suap/AutorizzazioneForm";
 import DomandaSpuntaForm from "@/components/suap/DomandaSpuntaForm";
@@ -411,7 +412,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
       if (comuneId) {
         // Fetch nome comune se non presente
         if (!comuneNome) {
-          const response = await fetch(`${MIHUB_API}/comuni/${comuneId}`);
+          const response = await apiFetch(`${MIHUB_API}/comuni/${comuneId}`);
           const data = await response.json();
           if (data.success && data.data) {
             setComuneData({ id: parseInt(comuneId), nome: data.data.nome });
@@ -577,7 +578,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
 
   const loadConcessioni = async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addAssociazioneIdToUrl(
           addComuneIdToUrl("https://api.mio-hub.me/api/concessions")
         )
@@ -624,7 +625,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
     try {
       const API_URL = MIHUB_API_BASE_URL;
       // Usa addComuneIdToUrl per filtrare per comune
-      const response = await fetch(
+      const response = await apiFetch(
         addAssociazioneIdToUrl(
           addComuneIdToUrl(`${API_URL}/api/domande-spunta`)
         )
@@ -653,7 +654,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
         // Per le associazioni, carica notifiche dall'endpoint associazione
         const { associazioneId } = getImpersonationParams();
         if (associazioneId) {
-          const response = await fetch(
+          const response = await apiFetch(
             `${MIHUB_API}/associazioni/${associazioneId}/notifiche?non_lette=true`
           );
           const data = await response.json();
@@ -664,7 +665,7 @@ const SuapPanel = memo(function SuapPanel({ mode = "suap" }: SuapPanelProps) {
       } else {
         // Usa il comune_id dinamico dal contesto
         const currentComuneId = comuneData?.id || 0;
-        const response = await fetch(
+        const response = await apiFetch(
           `${MIHUB_API}/notifiche/messaggi/SUAP/${currentComuneId}`
         );
         const data = await response.json();
@@ -4483,7 +4484,7 @@ Documento generato il ${new Date().toLocaleDateString("it-IT")} alle ${new Date(
                                     onClick={async () => {
                                       // Carica i dettagli completi della concessione (inclusi campi cedente)
                                       try {
-                                        const response = await fetch(
+                                        const response = await apiFetch(
                                           addComuneIdToUrl(
                                             `https://api.mio-hub.me/api/concessions/${conc.id}`
                                           )
@@ -4498,7 +4499,7 @@ Documento generato il ${new Date().toLocaleDateString("it-IT")} alle ${new Date(
                                           if (data.data.cedente_impresa_id) {
                                             try {
                                               const cedenteResponse =
-                                                await fetch(
+                                                await apiFetch(
                                                   addComuneIdToUrl(
                                                     `https://api.mio-hub.me/api/imprese/${data.data.cedente_impresa_id}`
                                                   )
@@ -4566,7 +4567,7 @@ Documento generato il ${new Date().toLocaleDateString("it-IT")} alle ${new Date(
                                     onClick={async () => {
                                       // Carica i dettagli completi della concessione prima di aprire il form
                                       try {
-                                        const response = await fetch(
+                                        const response = await apiFetch(
                                           addComuneIdToUrl(
                                             `https://api.mio-hub.me/api/concessions/${conc.id}`
                                           )

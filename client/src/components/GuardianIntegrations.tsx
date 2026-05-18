@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 export default function GuardianIntegrations() {
   const [selectedEndpoint, setSelectedEndpoint] = useState<any>(null);
@@ -48,7 +49,7 @@ export default function GuardianIntegrations() {
   } = useQuery({
     queryKey: ["guardian-integrations"],
     queryFn: async () => {
-      const res = await fetch(
+      const res = await apiFetch(
         `${MIHUB_API_BASE_URL}/api/guardian/integrations`
       );
       if (!res.ok) throw new Error(`Errore ${res.status}: ${res.statusText}`);

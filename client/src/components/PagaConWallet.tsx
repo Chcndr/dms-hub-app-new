@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Wallet, CheckCircle, AlertCircle, Loader2, X } from "lucide-react";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -58,7 +59,7 @@ export function PagaConWallet({
     const loadSaldo = async () => {
       try {
         // Usa /api/wallets/company/{id} (stesso endpoint di WalletImpresaPage)
-        const res = await fetch(
+        const res = await apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/wallets/company/${impresaId}`)
         );
         const data = await res.json();

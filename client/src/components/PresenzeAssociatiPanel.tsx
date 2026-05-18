@@ -54,6 +54,7 @@ import {
   authenticatedFetch,
 } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import {
   Dialog,
   DialogContent,
@@ -289,7 +290,7 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
     if (!associazioneId) return;
     setQuotaLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}`);
+      const res = await apiFetch(`${API_BASE_URL}/api/associazioni/${associazioneId}`);
       const data = await res.json();
       if (data.success && data.data) {
         const quota = formatQuotaInput(data.data.quota_annuale ?? 50);
@@ -308,7 +309,7 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
     setLoading(true);
     try {
       // Carica stats
-      const statsRes = await fetch(
+      const statsRes = await apiFetch(
         `${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti?stats_only=true`
       );
       const statsData = await statsRes.json();
@@ -317,7 +318,7 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
       }
 
       // Carica lista tesseramenti
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti`
       );
       const data = await res.json();
@@ -367,7 +368,7 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
       setSchedaOpen(true);
       setSchedaData(null);
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `${API_BASE_URL}/api/associazioni/${associazioneId}/tesseramenti/${tesseramentoId}/scheda`
         );
         const data = await res.json();
@@ -449,7 +450,7 @@ const PresenzeAssociatiPanel = memo(function PresenzeAssociatiPanel() {
       return;
     }
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         addComuneIdToUrl(
           `${API_BASE_URL}/api/imprese?search=${encodeURIComponent(query)}&limit=10`
         )

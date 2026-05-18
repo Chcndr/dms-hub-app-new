@@ -39,6 +39,7 @@ import {
   authenticatedFetch,
 } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE = MIHUB_API_BASE_URL;
 
@@ -86,7 +87,7 @@ const SchedaPubblicaPanel = memo(function SchedaPubblicaPanel() {
     if (!associazioneId) return;
     setLoading(true);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE}/api/associazioni/${associazioneId}/scheda-pubblica`
       );
       const data = await res.json();

@@ -32,6 +32,7 @@ import {
   getFirebaseErrorMessage,
   type FirebaseUser,
 } from "@/lib/firebase";
+import { apiFetch } from "@/lib/apiFetch";
 
 // ============================================
 // TYPES
@@ -149,7 +150,7 @@ async function lookupImpresaForUser(
   // Cerca impresa per user_id su orchestratore (associazione diretta utente-impresa)
   if (userId && userId > 0) {
     try {
-      const res = await fetch(`${API_BASE}/api/imprese?user_id=${userId}`);
+      const res = await apiFetch(`${API_BASE}/api/imprese?user_id=${userId}`);
       if (res.ok) {
         const data = await res.json();
         const list = data.success
@@ -183,7 +184,7 @@ async function lookupImpresaForUser(
 async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
   try {
     // Step 1: Cerca utente per email
-    const searchRes = await fetch(
+    const searchRes = await apiFetch(
       `${API_BASE}/api/security/users?search=${encodeURIComponent(email)}&limit=1`
     );
     if (!searchRes.ok) {
@@ -210,7 +211,7 @@ async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
     const userId = basicUser.id;
 
     // Step 2: Recupera dettagli completi (include impresa_id, wallet_balance, roles, ecc.)
-    const detailRes = await fetch(`${API_BASE}/api/security/users/${userId}`);
+    const detailRes = await apiFetch(`${API_BASE}/api/security/users/${userId}`);
     if (!detailRes.ok) {
       console.warn(
         "[FirebaseAuth] Dettagli utente legacy non disponibili:",
@@ -274,7 +275,7 @@ async function checkNeonRoles(
   email: string
 ): Promise<{ roles: any[]; isAdmin: boolean }> {
   try {
-    const res = await fetch(
+    const res = await apiFetch(
       `${TRPC_BASE}/api/auth/check-roles?email=${encodeURIComponent(email)}`,
       {
         credentials: "include",
@@ -304,7 +305,7 @@ async function checkNeonRoles(
  */
 async function tryBootstrapAdmin(email: string): Promise<boolean> {
   try {
-    const res = await fetch(`${TRPC_BASE}/api/auth/bootstrap-admin`, {
+    const res = await apiFetch(`${TRPC_BASE}/api/auth/bootstrap-admin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -336,7 +337,7 @@ const SESSION_TOKEN_KEY = "miohub_session_token";
 
 async function createFirebaseSession(idToken: string): Promise<boolean> {
   try {
-    const res = await fetch(`${TRPC_BASE}/api/auth/firebase-session`, {
+    const res = await apiFetch(`${TRPC_BASE}/api/auth/firebase-session`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -381,7 +382,7 @@ async function trackLoginEvent(
   success: boolean
 ): Promise<void> {
   try {
-    await fetch(`${API_BASE}/api/security/events`, {
+    await apiFetch(`${API_BASE}/api/security/events`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -447,7 +448,7 @@ async function syncUserWithBackend(
 
   const vercelSyncPromise = (async (): Promise<any> => {
     try {
-      const response = await fetch(`/api/auth/firebase/sync`, {
+      const response = await apiFetch(`/api/auth/firebase/sync`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -666,7 +667,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           // Così PresenzePage lo trova subito senza fare chiamate API extra
           if (miohubUser.impresaId && !miohubUser.impresaNome) {
             try {
-              const impRes = await fetch(`${API_BASE}/api/imprese/${miohubUser.impresaId}?fields=light`);
+              const impRes = await apiFetch(`${API_BASE}/api/imprese/${miohubUser.impresaId}?fields=light`);
               if (impRes.ok) {
                 const impData = await impRes.json();
                 const raw = impData.success ? impData.data : impData;
@@ -684,7 +685,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           // v10.3.0: Verifica se l'utente citizen è un collaboratore autorizzato
           if (miohubUser.role === 'citizen' && miohubUser.email) {
             try {
-              const collabRes = await fetch(`${API_BASE}/api/collaboratori/me`, {
+              const collabRes = await apiFetch(`${API_BASE}/api/collaboratori/me`, {
                 headers: { Authorization: `Bearer ${idToken}` }
               });
               const collabData = await collabRes.json();

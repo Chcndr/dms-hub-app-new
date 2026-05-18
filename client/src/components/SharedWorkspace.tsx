@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 interface SharedWorkspaceProps {
   conversationId?: string;
@@ -44,7 +45,7 @@ export function SharedWorkspace({
   // Memoizza loadWorkspaceState per evitare re-render
   const loadWorkspaceState = useCallback(async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${MIHUB_API_BASE_URL}/api/workspace/load?conversationId=${effectiveConversationId}`
       );
       if (response.ok) {

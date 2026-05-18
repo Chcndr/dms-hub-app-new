@@ -7,6 +7,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { streamChat } from "../lib/sse-client";
 import type { ChatMessage, StreamChatRequest, SSEDataEvent } from "../types";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const AI_STREAM_URL = `${MIHUB_API_BASE_URL}/api/ai/chat/stream`;
 
@@ -111,7 +112,7 @@ async function fetchAndPlayChunk(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
 
-  const response = await fetch(ttsUrl, {
+  const response = await apiFetch(ttsUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, voice: 'it_IT-paola-medium', speed: 0.8 }),

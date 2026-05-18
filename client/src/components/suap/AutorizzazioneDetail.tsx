@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { formatDate } from "@/lib/formatUtils";
 
 const API_URL = MIHUB_API_BASE_URL;
@@ -39,7 +40,7 @@ const AutorizzazioneDetail = memo(function AutorizzazioneDetail({
   useEffect(() => {
     const fetchAutorizzazione = async () => {
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `${API_URL}/api/autorizzazioni/${autorizzazioneId}`
         );
         const json = await res.json();

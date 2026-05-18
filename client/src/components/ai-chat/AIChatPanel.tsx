@@ -19,6 +19,7 @@ import { useStreamingChat } from "./hooks/useStreamingChat";
 import { useConversations } from "./hooks/useConversations";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { getIdToken } from "@/lib/firebase";
 import type { UserRoleType } from "./types";
 
@@ -241,7 +242,7 @@ export function AIChatPanel({
       try {
         const token = await getIdToken();
         if (!token) return; // Non inviare feedback senza autenticazione
-        await fetch(`${MIHUB_API_BASE_URL}/api/ai/chat/feedback`, {
+        await apiFetch(`${MIHUB_API_BASE_URL}/api/ai/chat/feedback`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

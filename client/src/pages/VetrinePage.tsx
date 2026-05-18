@@ -46,6 +46,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -131,7 +132,7 @@ export default function VetrinePage() {
       try {
         if (params?.id) {
           // Carica impresa singola
-          const response = await fetch(
+          const response = await apiFetch(
             addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${params.id}`)
           );
           const result = await response.json();
@@ -143,7 +144,7 @@ export default function VetrinePage() {
           }
         } else {
           // Carica lista imprese
-          const response = await fetch(
+          const response = await apiFetch(
             addComuneIdToUrl(`${API_BASE_URL}/api/imprese`)
           );
           const result = await response.json();
@@ -217,7 +218,7 @@ export default function VetrinePage() {
   const handleNavigate = async (impresa: Impresa) => {
     try {
       // 1. Prima cerca se l'impresa ha un negozio HUB (tramite owner_id)
-      const hubShopsResponse = await fetch(`${API_BASE_URL}/api/hub/shops`);
+      const hubShopsResponse = await apiFetch(`${API_BASE_URL}/api/hub/shops`);
       const hubShopsResult = await hubShopsResponse.json();
 
       if (hubShopsResult.success && hubShopsResult.data) {
@@ -241,7 +242,7 @@ export default function VetrinePage() {
 
       // 2. Se non è un negozio HUB, cerca nei posteggi del mercato
       // TODO: market ID=1 is hardcoded — should be dynamically resolved
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/markets/1/stalls`)
       );
       const result = await response.json();
@@ -1104,7 +1105,7 @@ export default function VetrinePage() {
   }) => {
     // Ricarica la lista imprese
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/imprese`)
       );
       const result = await response.json();

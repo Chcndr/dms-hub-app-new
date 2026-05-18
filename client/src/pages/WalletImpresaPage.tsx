@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/dialog";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 // Tipi wallet
 interface WalletItem {
@@ -240,7 +241,7 @@ export default function WalletImpresaPage() {
       // Strategia 5: cerca per user_id su orchestratore
       if (!impresaId && userId) {
         try {
-          const res = await fetch(
+          const res = await apiFetch(
             `${ORCHESTRATORE_URL}/api/imprese?user_id=${userId}`
           );
           if (res.ok) {
@@ -257,7 +258,7 @@ export default function WalletImpresaPage() {
       // Strategia 6: cerca per codice fiscale su orchestratore
       if (!impresaId && userCF) {
         try {
-          const res = await fetch(
+          const res = await apiFetch(
             `${ORCHESTRATORE_URL}/api/imprese?rappresentante_legale_cf=${userCF}`
           );
           if (res.ok) {
@@ -327,12 +328,12 @@ export default function WalletImpresaPage() {
       const needsImpresaFetch = denominazione === "Impresa" || partitaIva === "N/A";
 
       const [walletsRes, impresaRes, sanzioniRes, sanzioniPagateRes] = await Promise.all([
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/company/${resolvedImpresaId}`)),
+        apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/company/${resolvedImpresaId}`)),
         needsImpresaFetch
-          ? fetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${resolvedImpresaId}?fields=light`))
+          ? apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${resolvedImpresaId}?fields=light`))
           : Promise.resolve(null),
-        fetch(addComuneIdToUrl(`${SANCTIONS_URL}/api/sanctions/impresa/${resolvedImpresaId}/da-pagare`)).catch(() => null),
-        fetch(addComuneIdToUrl(`${SANCTIONS_URL}/api/sanctions?impresa_id=${resolvedImpresaId}&payment_status=PAGATO&limit=50`)).catch(() => null),
+        apiFetch(addComuneIdToUrl(`${SANCTIONS_URL}/api/sanctions/impresa/${resolvedImpresaId}/da-pagare`)).catch(() => null),
+        apiFetch(addComuneIdToUrl(`${SANCTIONS_URL}/api/sanctions?impresa_id=${resolvedImpresaId}&payment_status=PAGATO&limit=50`)).catch(() => null),
       ]);
 
       // Parse wallets
@@ -441,7 +442,7 @@ export default function WalletImpresaPage() {
       const phase2Promises: Promise<any>[] = [];
       if (ragioneSociale) {
         phase2Promises.push(
-          fetch(addComuneIdToUrl(`${API_BASE_URL}/api/canone-unico/riepilogo?impresa_search=${encodeURIComponent(ragioneSociale)}`))
+          apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/canone-unico/riepilogo?impresa_search=${encodeURIComponent(ragioneSociale)}`))
             .then(r => r.json())
             .then(data => { if (data.success) setScadenze(data.data || []); })
             .catch(() => {})
@@ -450,7 +451,7 @@ export default function WalletImpresaPage() {
 
       // Fetch transazioni per tutti i wallet in parallelo
       const txPromises = allWallets.map(wallet =>
-        fetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/${wallet.id}/transactions`))
+        apiFetch(addComuneIdToUrl(`${API_BASE_URL}/api/wallets/${wallet.id}/transactions`))
           .then(r => r.json())
           .then(txData => {
             if (txData.success && txData.data) {
@@ -530,7 +531,7 @@ export default function WalletImpresaPage() {
       // Genera IUV simulato
       const iuv = `IUV-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/sanctions/${selectedSanzione.id}/paga-pagopa`,
         {
           method: "POST",

@@ -80,6 +80,7 @@ import WalletPanel from "./WalletPanel";
 import NotificationsPanel from "./NotificationsPanel";
 
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 
 // ============================================================================
@@ -252,11 +253,11 @@ const GestioneHubPanel = memo(function GestioneHubPanel() {
     try {
       const [marketsRes, vendorsRes, stallsRes, concessionsRes, impreseRes] =
         await Promise.all([
-          fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/markets`)),
-          fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/vendors`)),
-          fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/stalls`)),
-          fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/concessions`)),
-          fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/imprese`)),
+          apiFetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/markets`)),
+          apiFetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/vendors`)),
+          apiFetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/stalls`)),
+          apiFetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/concessions`)),
+          apiFetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/imprese`)),
         ]);
 
       const [

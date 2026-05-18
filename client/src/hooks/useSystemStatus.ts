@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ORCHESTRATORE_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 export type SystemStatus = "online" | "offline" | "checking";
 
@@ -23,7 +24,7 @@ export function useSystemStatus(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${ORCHESTRATORE_API_BASE_URL}/api/system/health`,
         {
           signal: controller.signal,
@@ -45,7 +46,7 @@ export function useSystemStatus(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${ORCHESTRATORE_API_BASE_URL}/api/system/pm2-status`,
         {
           signal: controller.signal,

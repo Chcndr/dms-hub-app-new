@@ -29,6 +29,7 @@ import {
 } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { formatDateTime as formatDate } from "@/lib/formatUtils";
+import { apiFetch } from "@/lib/apiFetch";
 
 const BACKEND_URL = MIHUB_API_BASE_URL;
 const API_BASE_URL = MIHUB_API_BASE_URL;
@@ -158,7 +159,7 @@ export function NotificationsPanel() {
       setLoadingImprese(true);
       try {
         // v3.90.0: Filtro per comune_id durante impersonificazione
-        const response = await fetch(
+        const response = await apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/imprese`)
         );
         const data = await response.json();
@@ -180,7 +181,7 @@ export function NotificationsPanel() {
       setLoadingSettori(true);
       try {
         // Carica comuni — filtra per comune_id durante impersonazione
-        const comuniRes = await fetch(
+        const comuniRes = await apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/comuni`)
         );
         const comuniData = await comuniRes.json();
@@ -191,7 +192,7 @@ export function NotificationsPanel() {
           const allSettori: SettoreComune[] = [];
           for (const comune of comuniData.data) {
             try {
-              const settoriRes = await fetch(
+              const settoriRes = await apiFetch(
                 addComuneIdToUrl(
                   `${API_BASE_URL}/api/comuni/${comune.id}/settori`
                 )
@@ -333,7 +334,7 @@ export function NotificationsPanel() {
     try {
       setLoading(true);
       // v3.90.0: Filtro per comune_id durante impersonificazione
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${BACKEND_URL}/api/mihub/notifications/all`)
       );
       const data = await response.json();

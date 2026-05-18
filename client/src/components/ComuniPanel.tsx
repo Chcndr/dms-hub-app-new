@@ -32,6 +32,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = "https://api.mio-hub.me";
 
@@ -404,7 +405,7 @@ const ComuniPanel = memo(function ComuniPanel() {
   // Carica comuni
   const fetchComuni = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/comuni`);
+      const res = await apiFetch(`${API_BASE_URL}/api/comuni`);
       const data = await res.json();
       if (data.success) {
         setComuni(data.data);
@@ -419,7 +420,7 @@ const ComuniPanel = memo(function ComuniPanel() {
   // Carica settori di un comune
   const fetchSettori = async (comuneId: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/comuni/${comuneId}/settori`);
+      const res = await apiFetch(`${API_BASE_URL}/api/comuni/${comuneId}/settori`);
       const data = await res.json();
       if (data.success) {
         setSettori(data.data);
@@ -433,7 +434,7 @@ const ComuniPanel = memo(function ComuniPanel() {
   const fetchMercati = async (comuneId: number) => {
     setLoadingMercati(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/comuni/${comuneId}/mercati`);
+      const res = await apiFetch(`${API_BASE_URL}/api/comuni/${comuneId}/mercati`);
       const data = await res.json();
       if (data.success) {
         setMercatiComune(data.data);
@@ -449,7 +450,7 @@ const ComuniPanel = memo(function ComuniPanel() {
   const fetchHub = async (comuneId: number) => {
     setLoadingHub(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/comuni/${comuneId}/hub`);
+      const res = await apiFetch(`${API_BASE_URL}/api/comuni/${comuneId}/hub`);
       const data = await res.json();
       if (data.success) {
         setHubComune(data.data);
@@ -466,8 +467,8 @@ const ComuniPanel = memo(function ComuniPanel() {
     setLoadingFatturazione(true);
     try {
       const [contrattiRes, fattureRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/comuni/${comuneId}/contratti`),
-        fetch(`${API_BASE_URL}/api/comuni/${comuneId}/fatture`),
+        apiFetch(`${API_BASE_URL}/api/comuni/${comuneId}/contratti`),
+        apiFetch(`${API_BASE_URL}/api/comuni/${comuneId}/fatture`),
       ]);
       const contrattiData = await contrattiRes.json();
       const fattureData = await fattureRes.json();
@@ -605,7 +606,7 @@ const ComuniPanel = memo(function ComuniPanel() {
   const fetchBillingSummary = async (comuneId: number, da: string, a: string) => {
     setLoadingBillingSummary(true);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/api/comuni/${comuneId}/billing-summary?da=${da}&a=${a}`
       );
       const data = await res.json();
@@ -623,7 +624,7 @@ const ComuniPanel = memo(function ComuniPanel() {
   const fetchBillingTariffe = async (comuneId: number) => {
     setLoadingTariffe(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/comuni/${comuneId}/billing-tariffe`);
+      const res = await apiFetch(`${API_BASE_URL}/api/comuni/${comuneId}/billing-tariffe`);
       const data = await res.json();
       if (data.success) {
         setBillingTariffe(data.data);
@@ -712,7 +713,7 @@ const ComuniPanel = memo(function ComuniPanel() {
     setLoadingDettaglio(true);
     setSelectedFatturaId(fatturaId);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/comuni/fatture/${fatturaId}/dettaglio`);
+      const res = await apiFetch(`${API_BASE_URL}/api/comuni/fatture/${fatturaId}/dettaglio`);
       const data = await res.json();
       if (data.success) {
         setFatturaDettaglio(data.data);
@@ -728,7 +729,7 @@ const ComuniPanel = memo(function ComuniPanel() {
   const fetchPermessi = async (comuneId: number) => {
     setLoadingPermessi(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/comuni/${comuneId}/utenti`);
+      const res = await apiFetch(`${API_BASE_URL}/api/comuni/${comuneId}/utenti`);
       const data = await res.json();
       if (data.success) setUtentiComune(data.data);
     } catch (error) {
@@ -743,7 +744,7 @@ const ComuniPanel = memo(function ComuniPanel() {
     if (!selectedComune || !utenteForm.email) return;
     try {
       // Prima cerchiamo l'utente per email
-      const userRes = await fetch(
+      const userRes = await apiFetch(
         `${API_BASE_URL}/api/users?email=${encodeURIComponent(utenteForm.email)}`
       );
       const userData = await userRes.json();
@@ -838,7 +839,7 @@ const ComuniPanel = memo(function ComuniPanel() {
     setImpersonating(true);
     try {
       // Cerca l'admin del comune
-      const res = await fetch(`${API_BASE_URL}/api/comuni/${comune.id}/utenti`);
+      const res = await apiFetch(`${API_BASE_URL}/api/comuni/${comune.id}/utenti`);
       const data = await res.json();
 
       // Trova l'admin o il primo utente attivo (se esiste)
@@ -890,7 +891,7 @@ const ComuniPanel = memo(function ComuniPanel() {
     setIpaResults([]);
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/api/ipa/search?q=${encodeURIComponent(ipaSearchQuery)}`
       );
       const data = await res.json();
@@ -1234,7 +1235,7 @@ const ComuniPanel = memo(function ComuniPanel() {
     setImportingSettori(true);
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/api/ipa/uo/${selectedComune.codice_ipa}`
       );
       const data = await res.json();
@@ -1373,7 +1374,7 @@ const ComuniPanel = memo(function ComuniPanel() {
       );
 
       // Recupera le UO da IndicePA
-      const resUO = await fetch(`${API_BASE_URL}/api/ipa/uo/${codiceIPA}`);
+      const resUO = await apiFetch(`${API_BASE_URL}/api/ipa/uo/${codiceIPA}`);
       const dataUO = await resUO.json();
 
       if (dataUO.success && dataUO.data && dataUO.data.length > 0) {

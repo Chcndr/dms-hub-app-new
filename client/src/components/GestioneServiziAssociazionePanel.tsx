@@ -43,6 +43,7 @@ import {
   authenticatedFetch,
 } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE = MIHUB_API_BASE_URL;
 
@@ -118,8 +119,8 @@ const GestioneServiziAssociazionePanel = memo(function GestioneServiziAssociazio
     setLoading(true);
     try {
       const [serviziRes, richiesteRes] = await Promise.all([
-        fetch(`${API_BASE}/api/associazioni/${associazioneId}/servizi`),
-        fetch(
+        apiFetch(`${API_BASE}/api/associazioni/${associazioneId}/servizi`),
+        apiFetch(
           `${API_BASE}/api/associazioni/${associazioneId}/richieste-servizi`
         ),
       ]);

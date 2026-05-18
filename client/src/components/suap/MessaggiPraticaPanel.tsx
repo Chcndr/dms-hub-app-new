@@ -28,6 +28,7 @@ import {
   authenticatedFetch,
 } from "@/hooks/useImpersonation";
 import { formatDateTime as formatDate } from "@/lib/formatUtils";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -63,7 +64,7 @@ export default function MessaggiPraticaPanel({
   const loadMessaggi = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/api/suap/pratiche/${praticaId}/messaggi`
       );
       const data = await res.json();

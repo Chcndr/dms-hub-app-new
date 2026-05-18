@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 export interface InternalTrace {
   id: string;
@@ -53,7 +54,7 @@ export function useInternalTraces(
 
         const apiBaseUrl =
           import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
-        const response = await fetch(
+        const response = await apiFetch(
           `${apiBaseUrl}/api/mio/agent-logs?conversation_id=${conversationId}&limit=100`,
           { signal: controller.signal }
         );

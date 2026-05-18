@@ -8,6 +8,7 @@ import {
   ReactNode,
 } from "react";
 import { callOrchestrator } from "../api/orchestratorClient";
+import { apiFetch } from "@/lib/apiFetch";
 
 // 🔥 TABULA RASA: Context condiviso per MIO (Widget + Dashboard)
 
@@ -61,7 +62,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
 
       try {
         // 🚀 TUBO DRITTO - Connessione diretta database → frontend (via Vercel API)
-        const response = await fetch(
+        const response = await apiFetch(
           `/api/mihub/get-messages?conversation_id=${MIO_MAIN_CONVERSATION_ID}`,
           { signal: controller.signal }
         );
@@ -160,7 +161,7 @@ export function MioProvider({ children }: { children: ReactNode }) {
         // 🔧 FIX: Aumentato a 5s e usa merge intelligente invece di sovrascrivere
         setTimeout(async () => {
           try {
-            const response = await fetch(
+            const response = await apiFetch(
               `/api/mihub/get-messages?conversation_id=${MIO_MAIN_CONVERSATION_ID}`
             );
             if (response.ok) {

@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callOrchestrator } from "@/api/orchestratorClient";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 export type AgentId = "mio_dev" | "abacus" | "zapier" | "manus_worker";
 export type Mode = "auto" | "manual";
@@ -99,7 +100,7 @@ export function useAgentConversation(
     queryKey: ["mihub-conversation", userId, agentId],
     queryFn: async () => {
       const params = new URLSearchParams({ userId, agentId, limit: "50" });
-      const res = await fetch(
+      const res = await apiFetch(
         `${MIHUB_API_BASE_URL}/api/mihub/conversations?${params}`
       );
       if (!res.ok) throw new Error(`Errore ${res.status}: ${res.statusText}`);
@@ -149,7 +150,7 @@ export function useAllConversations(userId: string = "user_dashboard") {
     queryKey: ["mihub-all-conversations", userId],
     queryFn: async () => {
       const params = new URLSearchParams({ userId });
-      const res = await fetch(
+      const res = await apiFetch(
         `${MIHUB_API_BASE_URL}/api/mihub/conversations/all?${params}`
       );
       if (!res.ok) throw new Error(`Errore ${res.status}: ${res.statusText}`);

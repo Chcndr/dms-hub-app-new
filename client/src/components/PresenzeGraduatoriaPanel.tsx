@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { formatDate } from "@/lib/formatUtils";
 import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
 
@@ -193,7 +194,7 @@ export function PresenzeGraduatoriaPanel({
       const isTest = forceTestMode || testMercatoActive;
       const testParam = isTest ? "&include_test=true" : "";
 
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(
           `${API_BASE}/api/graduatoria/mercato/${marketId}?tipo=${tipo}${testParam}`
         )
@@ -222,7 +223,7 @@ export function PresenzeGraduatoriaPanel({
       const isTest = forceTestMode || testMercatoActive;
       const testParam = isTest ? "&include_test=true" : "";
 
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(
           `${API_BASE}/api/presenze/mercato/${marketId}?tipo=${tipo}${testParam}`
         )
@@ -245,7 +246,7 @@ export function PresenzeGraduatoriaPanel({
       const isTest = forceTestMode || testMercatoActive;
       const testParam = isTest ? "?include_test=true" : "";
 
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(
           `${API_BASE}/api/spuntisti/mercato/${marketId}${testParam}`
         )
@@ -270,7 +271,7 @@ export function PresenzeGraduatoriaPanel({
   const fetchTestMercatoStato = async () => {
     if (!marketId) return;
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE}/api/test-mercato/stato/${marketId}`
       );
       const data = await response.json();
@@ -285,7 +286,7 @@ export function PresenzeGraduatoriaPanel({
   const handleStartTestMercato = async () => {
     if (!marketId) return;
     try {
-      const response = await fetch(`${API_BASE}/api/test-mercato/start`, {
+      const response = await apiFetch(`${API_BASE}/api/test-mercato/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ market_id: marketId }),
@@ -310,7 +311,7 @@ export function PresenzeGraduatoriaPanel({
   const handleRegistraPresenzaConcessionario = async (stallId: number) => {
     if (!marketId) return;
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE}/api/test-mercato/registra-presenza-concessionario`,
         {
           method: "POST",
@@ -341,7 +342,7 @@ export function PresenzeGraduatoriaPanel({
   const handleAvviaSpunta = async () => {
     if (!marketId) return;
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE}/api/test-mercato/avvia-spunta`,
         {
           method: "POST",
@@ -369,7 +370,7 @@ export function PresenzeGraduatoriaPanel({
   const handleAssegnaPosteggioSpunta = async (stallId: number) => {
     if (!marketId) return;
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE}/api/test-mercato/assegna-posteggio-spunta`,
         {
           method: "POST",
@@ -406,7 +407,7 @@ export function PresenzeGraduatoriaPanel({
     )
       return;
     try {
-      const response = await fetch(`${API_BASE}/api/test-mercato/reset`, {
+      const response = await apiFetch(`${API_BASE}/api/test-mercato/reset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ market_id: marketId }),

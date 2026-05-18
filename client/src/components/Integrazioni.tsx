@@ -43,6 +43,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpcQuery, trpcMutate } from "@/lib/trpcHttp";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 const Integrazioni = memo(function Integrazioni() {
   const [activeTab, setActiveTab] = useState("api-dashboard");
@@ -160,7 +161,7 @@ function APIDashboard() {
 
   // Fetch dynamic endpoint count from backend Hetzner
   useEffect(() => {
-    fetch("/api/dashboard/integrations/endpoint-count")
+    apiFetch("/api/dashboard/integrations/endpoint-count")
       .then(r => r.json())
       .then(data => {
         if (data.success) {
@@ -176,7 +177,7 @@ function APIDashboard() {
 
   // Fetch ALL endpoints from MIO-hub api/index.json (single source of truth)
   useEffect(() => {
-    fetch(
+    apiFetch(
       "https://raw.githubusercontent.com/Chcndr/MIO-hub/master/api/index.json"
     )
       .then(r => r.json())
@@ -718,21 +719,21 @@ function APIDashboard() {
           data = await createResponse.json();
           break;
         case "/api/logs/getLogs":
-          const getResponse = await fetch("/api/logs/getLogs", {
+          const getResponse = await apiFetch("/api/logs/getLogs", {
             method: "GET",
             headers: { "Content-Type": "application/json" },
           });
           data = await getResponse.json();
           break;
         case "/api/logs/stats":
-          const statsResponse = await fetch("/api/logs/stats", {
+          const statsResponse = await apiFetch("/api/logs/stats", {
             method: "GET",
             headers: { "Content-Type": "application/json" },
           });
           data = await statsResponse.json();
           break;
         case "/api/guardian/health":
-          const healthResponse = await fetch("/api/guardian/health", {
+          const healthResponse = await apiFetch("/api/guardian/health", {
             method: "GET",
             headers: { "Content-Type": "application/json" },
           });
@@ -752,7 +753,7 @@ function APIDashboard() {
 
         // SUAP & PDND - chiamate REST dirette
         case "/api/suap/stats":
-          const suapStatsRes = await fetch(
+          const suapStatsRes = await apiFetch(
             `${import.meta.env.VITE_API_URL || "https://api.mio-hub.me"}/api/suap/stats`,
             {
               method: "GET",
@@ -779,7 +780,7 @@ function APIDashboard() {
             );
             data = await suapCreateRes.json();
           } else {
-            const suapListRes = await fetch(
+            const suapListRes = await apiFetch(
               `${import.meta.env.VITE_API_URL || "https://api.mio-hub.me"}/api/suap/pratiche?${new URLSearchParams(parsedBody)}`,
               {
                 method: "GET",
@@ -794,7 +795,7 @@ function APIDashboard() {
           break;
         case "/api/suap/pratiche/:id":
           const suapId = parsedBody.id || 1;
-          const suapDetailRes = await fetch(
+          const suapDetailRes = await apiFetch(
             `${import.meta.env.VITE_API_URL || "https://api.mio-hub.me"}/api/suap/pratiche/${suapId}`,
             {
               method: "GET",
@@ -824,7 +825,7 @@ function APIDashboard() {
 
         // SYSTEM & WORKSPACE
         case "/api/system/status":
-          const sysStatusRes = await fetch(
+          const sysStatusRes = await apiFetch(
             `${import.meta.env.VITE_API_URL || "https://api.mio-hub.me"}/api/system/status`,
             {
               method: "GET",
@@ -834,7 +835,7 @@ function APIDashboard() {
           data = await sysStatusRes.json();
           break;
         case "/api/workspace/files":
-          const wsFilesRes = await fetch(
+          const wsFilesRes = await apiFetch(
             `${import.meta.env.VITE_API_URL || "https://api.mio-hub.me"}/api/workspace/files`,
             {
               method: "GET",
@@ -844,7 +845,7 @@ function APIDashboard() {
           data = await wsFilesRes.json();
           break;
         case "/api/mihub/chats":
-          const chatsRes = await fetch(
+          const chatsRes = await apiFetch(
             `${import.meta.env.VITE_API_URL || "https://api.mio-hub.me"}/api/mihub/chats`,
             {
               method: "GET",
@@ -856,7 +857,7 @@ function APIDashboard() {
 
         // GIS & ABACUS
         case "/api/stalls/stats/totals":
-          const stallsStatsRes = await fetch(
+          const stallsStatsRes = await apiFetch(
             addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/stalls/stats/totals`),
             {
               method: "GET",
@@ -866,7 +867,7 @@ function APIDashboard() {
           data = await stallsStatsRes.json();
           break;
         case "/api/gis/markets":
-          const gisRes = await fetch(
+          const gisRes = await apiFetch(
             `${import.meta.env.VITE_API_URL || "https://api.mio-hub.me"}/api/gis/markets`,
             {
               method: "GET",
@@ -892,7 +893,7 @@ function APIDashboard() {
 
         // IMPRESE & QUALIFICAZIONI - chiamate REST dirette
         case "/api/imprese":
-          const impreseResponse = await fetch(
+          const impreseResponse = await apiFetch(
             "https://api.mio-hub.me/api/imprese",
             {
               method: "GET",
@@ -903,7 +904,7 @@ function APIDashboard() {
           break;
         case "/api/imprese/:id":
           const impresaId = parsedBody.id || 1;
-          const impresaResponse = await fetch(
+          const impresaResponse = await apiFetch(
             `https://api.mio-hub.me/api/imprese/${impresaId}`,
             {
               method: "GET",
@@ -913,7 +914,7 @@ function APIDashboard() {
           data = await impresaResponse.json();
           break;
         case "/api/qualificazioni":
-          const qualificazioniResponse = await fetch(
+          const qualificazioniResponse = await apiFetch(
             "https://api.mio-hub.me/api/qualificazioni",
             {
               method: "GET",
@@ -924,7 +925,7 @@ function APIDashboard() {
           break;
         case "/api/imprese/:id/qualificazioni":
           const impresaIdForQual = parsedBody.id || 1;
-          const qualificazioniByImpresaResponse = await fetch(
+          const qualificazioniByImpresaResponse = await apiFetch(
             `https://api.mio-hub.me/api/imprese/${impresaIdForQual}/qualificazioni`,
             {
               method: "GET",
@@ -937,7 +938,7 @@ function APIDashboard() {
         // COLLABORATORI IMPRESA - chiamate REST dirette
         case "/api/collaboratori?impresa_id=:id":
           const collabImpresaId = parsedBody.impresa_id || 38;
-          const collabResponse = await fetch(
+          const collabResponse = await apiFetch(
             `/api/collaboratori?impresa_id=${collabImpresaId}`,
             {
               method: "GET",
@@ -1099,7 +1100,7 @@ function APIDashboard() {
           data = await routingResponse.json();
           break;
         case "/api/routing/tpl-stops":
-          const tplStopsResponse = await fetch(
+          const tplStopsResponse = await apiFetch(
             `${API_URL}/api/routing/tpl-stops?${new URLSearchParams(parsedBody)}`,
             {
               method: "GET",
@@ -1117,7 +1118,7 @@ function APIDashboard() {
         case "/api/integrations/dms-legacy/vendors":
         case "/api/integrations/dms-legacy/concessions":
         case "/api/integrations/dms-legacy/cron-sync": {
-          const dmsRes = await fetch(`${endpointPath}`, {
+          const dmsRes = await apiFetch(`${endpointPath}`, {
             method: "GET",
             headers: { "Content-Type": "application/json" },
           });
@@ -1126,7 +1127,7 @@ function APIDashboard() {
         }
         case "/api/integrations/dms-legacy/presences/:marketId": {
           const dmsMarketId = parsedBody.marketId || 1;
-          const dmsPresRes = await fetch(
+          const dmsPresRes = await apiFetch(
             `/api/integrations/dms-legacy/presences/${dmsMarketId}`,
             {
               method: "GET",
@@ -1138,7 +1139,7 @@ function APIDashboard() {
         }
         case "/api/integrations/dms-legacy/market-sessions/:marketId": {
           const dmsSessionMarketId = parsedBody.marketId || 1;
-          const dmsSessionRes = await fetch(
+          const dmsSessionRes = await apiFetch(
             `/api/integrations/dms-legacy/market-sessions/${dmsSessionMarketId}`,
             {
               method: "GET",
@@ -1166,7 +1167,7 @@ function APIDashboard() {
         // ============================================
         case "/api/integrations/mercaweb/health":
         case "/api/integrations/mercaweb/status": {
-          const mwGetRes = await fetch(`${endpointPath}`, {
+          const mwGetRes = await apiFetch(`${endpointPath}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -1178,7 +1179,7 @@ function APIDashboard() {
         }
         case "/api/integrations/mercaweb/export/presenze/:marketId": {
           const mwMarketId = parsedBody.marketId || 1;
-          const mwPresRes = await fetch(
+          const mwPresRes = await apiFetch(
             `/api/integrations/mercaweb/export/presenze/${mwMarketId}`,
             {
               method: "GET",
@@ -1194,7 +1195,7 @@ function APIDashboard() {
         }
         case "/api/integrations/mercaweb/export/mapping/:entity": {
           const mwEntity = parsedBody.entity || "imprese";
-          const mwMapRes = await fetch(
+          const mwMapRes = await apiFetch(
             `/api/integrations/mercaweb/export/mapping/${mwEntity}`,
             {
               method: "GET",
@@ -3103,7 +3104,7 @@ function SecretsManager() {
     setError(null);
 
     try {
-      const response = await fetch("/api/mihub/secrets-meta");
+      const response = await apiFetch("/api/mihub/secrets-meta");
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

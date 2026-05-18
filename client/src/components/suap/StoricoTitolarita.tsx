@@ -26,6 +26,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { addComuneIdToUrl } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 import { toast } from "sonner";
 import { formatDate, formatDateTime } from "@/lib/formatUtils";
 
@@ -147,7 +148,7 @@ export default function StoricoTitolarita({
   const loadMarkets = useCallback(async () => {
     try {
       const url = addComuneIdToUrl(`${API_BASE}/markets`);
-      const response = await fetch(url);
+      const response = await apiFetch(url);
       const data = await response.json();
       const marketList = Array.isArray(data)
         ? data
@@ -167,7 +168,7 @@ export default function StoricoTitolarita({
       const url = addComuneIdToUrl(
         `${API_BASE}/stalls?market_id=${selectedMarketId}`
       );
-      const response = await fetch(url);
+      const response = await apiFetch(url);
       const data = await response.json();
       if (data.success !== false) {
         const stallList = Array.isArray(data) ? data : data.data || [];
@@ -190,7 +191,7 @@ export default function StoricoTitolarita({
     try {
       let url = `${API_BASE}/concessions/storico-titolarita/mercato/${selectedMarketId}?limit=200`;
       if (comuneId) url += `&comune_id=${comuneId}`;
-      const response = await fetch(url);
+      const response = await apiFetch(url);
       const data = await response.json();
       if (data.success) {
         setEventi(data.data || []);
@@ -211,7 +212,7 @@ export default function StoricoTitolarita({
       try {
         let url = `${API_BASE}/concessions/storico-titolarita/${posteggioId}`;
         if (comuneId) url += `?comune_id=${comuneId}`;
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         const data = await response.json();
         if (data.success) {
           setEventi(data.data || []);

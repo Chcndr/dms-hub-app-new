@@ -33,6 +33,7 @@ import {
 import { useCivicReports } from "@/contexts/CivicReportsContext";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { formatDate } from "@/lib/formatUtils";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -89,8 +90,8 @@ const CivicReportsPanel = memo(function CivicReportsPanel() {
         ? `${API_BASE_URL}/api/civic-reports?${comuneParam}&limit=200`
         : `${API_BASE_URL}/api/civic-reports?limit=200`;
       const [statsRes, reportsRes] = await Promise.all([
-        fetch(statsUrl, { signal }),
-        fetch(reportsUrl, { signal }),
+        apiFetch(statsUrl, { signal }),
+        apiFetch(reportsUrl, { signal }),
       ]);
       const data = await statsRes.json();
       if (data.success) {
@@ -115,7 +116,7 @@ const CivicReportsPanel = memo(function CivicReportsPanel() {
       const configUrl = comuneId
         ? `${API_BASE_URL}/api/civic-reports/config?comune_id=${comuneId}`
         : `${API_BASE_URL}/api/civic-reports/config?comune_id=1`;
-      const response = await fetch(configUrl, { signal });
+      const response = await apiFetch(configUrl, { signal });
       const data = await response.json();
       if (data.success) {
         setConfig(data.data);

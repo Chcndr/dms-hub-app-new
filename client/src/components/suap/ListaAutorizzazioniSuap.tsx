@@ -39,6 +39,7 @@ import {
 import { toast } from "sonner";
 import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
 import { formatDate } from "@/lib/formatUtils";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
 
@@ -80,7 +81,7 @@ const ListaAutorizzazioniSuap = memo(function ListaAutorizzazioniSuap({
   const fetchAutorizzazioni = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_URL}/api/autorizzazioni`)
       );
       const json = await response.json();

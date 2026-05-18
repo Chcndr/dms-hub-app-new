@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { MarketMapComponent } from "../components/MarketMapComponent";
 import { addComuneIdToUrl } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 interface MarketMapData {
   container: [number, number][];
@@ -75,7 +76,7 @@ export default function MarketGISPage() {
     try {
       const apiUrl =
         import.meta.env.VITE_MIHUB_API_URL || "https://api.mio-hub.me";
-      const response = await fetch(addComuneIdToUrl(`${apiUrl}/api/markets`));
+      const response = await apiFetch(addComuneIdToUrl(`${apiUrl}/api/markets`));
       const result = await response.json();
       if (result.success && result.data) {
         setMarkets(result.data);
@@ -104,7 +105,7 @@ export default function MarketGISPage() {
         ? `${apiUrl}/api/gis/market-map/${targetMarketId}`
         : `${apiUrl}/api/gis/market-map`; // Endpoint base
 
-      const response = await fetch(addComuneIdToUrl(endpoint));
+      const response = await apiFetch(addComuneIdToUrl(endpoint));
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

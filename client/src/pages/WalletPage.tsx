@@ -58,6 +58,7 @@ import {
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 // API Base URL — in produzione usa proxy Vercel (/api/tcc/* → api.mio-hub.me)
 // MIHUB_API_BASE_URL punta a mihub Hetzner che NON serve API TCC, quindi usiamo il proxy
@@ -196,7 +197,7 @@ export default function WalletPage() {
     }[]
   >([]);
   useEffect(() => {
-    fetch(`${API_BASE}/api/gaming-rewards/config/all`)
+    apiFetch(`${API_BASE}/api/gaming-rewards/config/all`)
       .then(r => r.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
@@ -446,7 +447,7 @@ export default function WalletPage() {
         "Content-Type": "application/json",
       };
 
-      const walletRes = await fetch(`${API_BASE}/api/tcc/wallet/${userId}`, {
+      const walletRes = await apiFetch(`${API_BASE}/api/tcc/wallet/${userId}`, {
         headers: authHeaders,
       });
       if (walletRes.ok) {
@@ -459,7 +460,7 @@ export default function WalletPage() {
         }
       }
 
-      const txRes = await fetch(
+      const txRes = await apiFetch(
         `${API_BASE}/api/tcc/wallet/${userId}/transactions?limit=500`,
         {
           headers: authHeaders,
@@ -484,7 +485,7 @@ export default function WalletPage() {
     try {
       setRefreshingQR(true);
       const token = localStorage.getItem("token") || "";
-      const qrRes = await fetch(`${API_BASE}/api/tcc/qrcode/${userId}`, {
+      const qrRes = await apiFetch(`${API_BASE}/api/tcc/qrcode/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -557,7 +558,7 @@ export default function WalletPage() {
     try {
       setLoadingMerchant(true);
 
-      const merchantRes = await fetch(`${API_BASE}/api/tcc/merchant/${shopId}`);
+      const merchantRes = await apiFetch(`${API_BASE}/api/tcc/merchant/${shopId}`);
       if (merchantRes.ok) {
         const data = await merchantRes.json();
         if (data.success) {
@@ -569,7 +570,7 @@ export default function WalletPage() {
         }
       }
 
-      const reimbRes = await fetch(
+      const reimbRes = await apiFetch(
         `${API_BASE}/api/tcc/merchant/${shopId}/reimbursements`
       );
       if (reimbRes.ok) {

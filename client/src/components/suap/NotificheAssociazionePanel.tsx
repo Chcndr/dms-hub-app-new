@@ -47,6 +47,7 @@ import {
 } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { formatDateTime as formatDate } from "@/lib/formatUtils";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -113,7 +114,7 @@ export default function NotificheAssociazionePanel({
     if (!associazioneId) return;
     setLoading(true);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/api/associazioni/${associazioneId}/notifiche`
       );
       const data = await res.json();
@@ -133,7 +134,7 @@ export default function NotificheAssociazionePanel({
   const loadCorsi = useCallback(async () => {
     if (!associazioneId) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/corsi`);
+      const res = await apiFetch(`${API_BASE_URL}/api/associazioni/${associazioneId}/corsi`);
       const data = await res.json();
       setCorsi(data.success && data.data ? data.data : []);
     } catch (error) {
@@ -793,7 +794,7 @@ export default function NotificheAssociazionePanel({
                       onClick={() => {
                         // Cerca la richiesta SCIA corrispondente per ottenere il documento allegato
                         const impresaId = selectedNotifica.mittente_id;
-                        fetch(`${API_BASE_URL}/api/bandi/richieste?impresa_id=${impresaId}&servizio_nome=scia`)
+                        apiFetch(`${API_BASE_URL}/api/bandi/richieste?impresa_id=${impresaId}&servizio_nome=scia`)
                           .then(r => r.json())
                           .then(data => {
                             const richieste = data.data || [];

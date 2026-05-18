@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 export interface AgentLogMessage {
   id: string;
@@ -77,7 +78,7 @@ export function useAgentLogs({
 
         // 🚀 TUBO DIRETTO DATABASE→FRONTEND (bypassa Hetzner)
         const url = `/api/mihub/get-messages?${params.toString()}`;
-        const res = await fetch(url, { signal: controller.signal });
+        const res = await apiFetch(url, { signal: controller.signal });
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }

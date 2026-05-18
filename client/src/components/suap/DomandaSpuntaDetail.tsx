@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
 import { formatDate } from "@/lib/formatUtils";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_URL = MIHUB_API_BASE_URL;
 
@@ -137,7 +138,7 @@ const DomandaSpuntaDetail = memo(function DomandaSpuntaDetail({
   useEffect(() => {
     const fetchDomanda = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/domande-spunta/${domandaId}`);
+        const res = await apiFetch(`${API_URL}/api/domande-spunta/${domandaId}`);
         const json = await res.json();
         if (json.success && json.data) {
           setDomanda(json.data);

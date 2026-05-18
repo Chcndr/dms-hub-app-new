@@ -20,6 +20,7 @@ import {
 import { FileText, Printer, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { addComuneIdToUrl, authenticatedFetch, getImpersonationParams } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
@@ -284,7 +285,7 @@ export default function ConcessioneForm({
 
         // Carica il prossimo numero di concessione disponibile
         try {
-          const concessionsRes = await fetch(
+          const concessionsRes = await apiFetch(
             addComuneIdToUrl(`${API_URL}/api/dmsHub/concessions/list`)
           );
           const concessionsJson = await concessionsRes.json();
@@ -313,7 +314,7 @@ export default function ConcessioneForm({
         }
 
         // Carica mercati
-        const marketsRes = await fetch(
+        const marketsRes = await apiFetch(
           addComuneIdToUrl(`${API_URL}/api/markets`)
         );
         const marketsJson = await marketsRes.json();
@@ -379,7 +380,7 @@ export default function ConcessioneForm({
         const lightFields =
           "id,denominazione,partita_iva,codice_fiscale,comune,indirizzo_via,indirizzo_civico,indirizzo_cap,indirizzo_provincia,stato_impresa,pec,telefono,email,rappresentante_legale,rappresentante_legale_cognome,rappresentante_legale_nome,rappresentante_legale_cf,rappresentante_legale_data_nascita,rappresentante_legale_luogo_nascita,rappresentante_legale_residenza_via,rappresentante_legale_residenza_civico,rappresentante_legale_residenza_cap,rappresentante_legale_residenza_comune,rappresentante_legale_residenza_provincia";
         // Carica TUTTE le imprese senza filtro comune (serve per assegnare concessioni a qualsiasi impresa)
-        const impreseRes = await fetch(
+        const impreseRes = await apiFetch(
           `${API_URL}/api/imprese?fields=${lightFields}&limit=500`
         );
         const impreseJson = await impreseRes.json();
@@ -539,7 +540,7 @@ export default function ConcessioneForm({
     const fetchStalls = async () => {
       try {
         setLoadingStalls(true);
-        const res = await fetch(
+        const res = await apiFetch(
           addComuneIdToUrl(`${API_URL}/api/markets/${selectedMarketId}/stalls`)
         );
         const json = await res.json();

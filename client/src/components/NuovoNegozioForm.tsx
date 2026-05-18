@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -72,7 +73,7 @@ export default function NuovoNegozioForm({
   useEffect(() => {
     const loadHubs = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/hub/locations`);
+        const response = await apiFetch(`${API_BASE_URL}/api/hub/locations`);
         const result = await response.json();
         if (result.success && result.data) {
           setHubs(result.data);

@@ -38,6 +38,7 @@ import {
 import { toast } from "sonner";
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 interface MarketSettings {
   market_id: number;
@@ -80,7 +81,7 @@ export function MarketSettingsTab({
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
+      const response = await apiFetch(
         `${MIHUB_API_BASE_URL}/api/market-settings/${marketId}`
       );
       const data = await response.json();

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { History, Leaf, ArrowLeft, Loader2, Award, Trophy } from "lucide-react";
 import { Link } from "wouter";
+import { apiFetch } from "@/lib/apiFetch";
 
 // API Base URL — in produzione usa proxy Vercel (/api/tcc/* → api.mio-hub.me)
 const API_BASE = import.meta.env.DEV ? "https://api.mio-hub.me" : "";
@@ -98,7 +99,7 @@ export default function WalletStorico() {
     if (currentUser?.id) {
       const controller = new AbortController();
       // Carica transazioni
-      const txPromise = fetch(
+      const txPromise = apiFetch(
         `${API_BASE}/api/tcc/wallet/${currentUser.id}/transactions?limit=500`,
         { signal: controller.signal }
       )
@@ -109,7 +110,7 @@ export default function WalletStorico() {
           }
         });
       // Carica wallet stats (total_earned reale dal backend)
-      const walletPromise = fetch(
+      const walletPromise = apiFetch(
         `${API_BASE}/api/tcc/wallet/${currentUser.id}`,
         { signal: controller.signal }
       )

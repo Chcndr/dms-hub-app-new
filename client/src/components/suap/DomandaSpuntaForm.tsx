@@ -41,6 +41,7 @@ import {
 import { toast } from "sonner";
 import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { apiFetch } from "@/lib/apiFetch";
 
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
@@ -188,7 +189,7 @@ export default function DomandaSpuntaForm({
         setLoadingMarkets(true);
 
         // Carica mercati
-        const marketsRes = await fetch(
+        const marketsRes = await apiFetch(
           addComuneIdToUrl(`${API_URL}/api/markets`)
         );
         const marketsJson = await marketsRes.json();
@@ -197,7 +198,7 @@ export default function DomandaSpuntaForm({
         }
 
         // Carica imprese
-        const impreseRes = await fetch(
+        const impreseRes = await apiFetch(
           addComuneIdToUrl(`${API_URL}/api/imprese`)
         );
         const impreseJson = await impreseRes.json();
@@ -230,7 +231,7 @@ export default function DomandaSpuntaForm({
     if (domandaId && (mode === "view" || mode === "edit")) {
       const fetchDomanda = async () => {
         try {
-          const res = await fetch(
+          const res = await apiFetch(
             addComuneIdToUrl(`${API_URL}/api/domande-spunta/${domandaId}`)
           );
           const json = await res.json();
@@ -318,7 +319,7 @@ export default function DomandaSpuntaForm({
     // Carica autorizzazioni dell'impresa
     setLoadingAutorizzazioni(true);
     try {
-      const authRes = await fetch(
+      const authRes = await apiFetch(
         addComuneIdToUrl(
           `${API_URL}/api/autorizzazioni?impresa_id=${impresa.id}`
         )
@@ -354,7 +355,7 @@ export default function DomandaSpuntaForm({
   // Funzione per verificare i requisiti (DURC, Morali/Requisiti, Antimafia) dalla tabella qualificazioni
   const checkQualificheStatus = async (impresaId: number) => {
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         addComuneIdToUrl(`${API_URL}/api/qualificazioni/impresa/${impresaId}`)
       );
       const json = await res.json();

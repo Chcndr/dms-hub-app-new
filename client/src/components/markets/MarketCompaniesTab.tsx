@@ -286,6 +286,7 @@ type QualificazioneRow = {
 // ============================================================================
 
 import { MIHUB_API_BASE_URL, TCC_API_BASE } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -473,7 +474,7 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
   // Fetch batch TCC wallets from operator_daily_wallet via /api/tcc/v2/wallets/all
   const fetchTccWallets = async () => {
     try {
-      const response = await fetch(`${TCC_API_BASE}/api/tcc/v2/wallets/all`);
+      const response = await apiFetch(`${TCC_API_BASE}/api/tcc/v2/wallets/all`);
       if (response.ok) {
         const data = await response.json();
         if (data.success && Array.isArray(data.wallets)) {
@@ -501,7 +502,7 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/imprese`);
+      const response = await apiFetch(`${API_BASE_URL}/api/imprese`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
 
@@ -587,7 +588,7 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
     // Se marketId è "ALL" o "all", carica tutte le concessioni
     if (marketId === "ALL" || marketId === "all") {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/concessions`)
         );
         if (!response.ok) {
@@ -662,7 +663,7 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
     }
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/markets/${marketId}/concessions`
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -765,7 +766,7 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
   const fetchQualificazioni = async () => {
     try {
       if (selectedCompanyForQualif) {
-        const response = await fetch(
+        const response = await apiFetch(
           `${API_BASE_URL}/api/imprese/${selectedCompanyForQualif.id}/qualificazioni`
         );
         if (response.ok) {
@@ -1945,7 +1946,7 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
                               onView={async () => {
                                 // Carica i dettagli completi della concessione (inclusi campi cedente)
                                 try {
-                                  const response = await fetch(
+                                  const response = await apiFetch(
                                     addComuneIdToUrl(
                                       `https://api.mio-hub.me/api/concessions/${concession.id}`
                                     )
@@ -1959,7 +1960,7 @@ export const MarketCompaniesTab = memo(function MarketCompaniesTab(props: Market
                                     // Se c'è cedente_impresa_id, carica anche i dati dell'impresa cedente
                                     if (data.data.cedente_impresa_id) {
                                       try {
-                                        const cedenteResponse = await fetch(
+                                        const cedenteResponse = await apiFetch(
                                           addComuneIdToUrl(
                                             `https://api.mio-hub.me/api/imprese/${data.data.cedente_impresa_id}`
                                           )
@@ -2224,7 +2225,7 @@ function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
   const loadMatrice = async (impresaId: number | string) => {
     setLoading(true);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/collaboratori/team/matrice?impresa_id=${impresaId}`)
       );
       const data = await res.json();
@@ -2281,7 +2282,7 @@ function FormazioneTeamSection({ companies }: { companies: CompanyRow[] }) {
 
   const downloadPdf = async (attestatoId: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/attestati/${attestatoId}/pdf`);
+      const res = await apiFetch(`${API_BASE_URL}/api/attestati/${attestatoId}/pdf`);
       if (!res.ok) throw new Error("PDF non disponibile");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -2539,7 +2540,7 @@ function WalletTCCBadge({ impresaId, qualificazioni, tccWalletData }: WalletTCCB
 
     const fetchWalletStatus = async () => {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `${TCC_API_BASE}/api/tcc/v2/impresa/${impresaId}/wallet`
         );
         if (response.ok) {
@@ -2661,7 +2662,7 @@ function QualificazioneModal({
 
       const method = qualificazione ? "PUT" : "POST";
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -2689,7 +2690,7 @@ function QualificazioneModal({
 
     try {
       const deleteUrl = `${API_BASE_URL}/api/imprese/${company.id}/qualificazioni/${qualificazione.id}`;
-      const response = await fetch(deleteUrl, { method: "DELETE" });
+      const response = await apiFetch(deleteUrl, { method: "DELETE" });
 
       if (!response.ok) {
         const data = await response.json();
@@ -3492,7 +3493,7 @@ export function CompanyModal({
 
       const method = company ? "PUT" : "POST";
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

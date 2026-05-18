@@ -44,6 +44,7 @@ import {
 } from "@/hooks/useImpersonation";
 import { getCachedUser } from "@/api/authClient";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -86,7 +87,7 @@ export default function CivicPage() {
     const loadConfig = async () => {
       const currentComuneId = comuneId ? parseInt(comuneId) : 1;
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/civic-reports/config`),
           { signal: controller.signal }
         );
@@ -204,7 +205,7 @@ export default function CivicPage() {
         formData.append("file", photo);
         formData.append("folder", "civic-reports");
 
-        const response = await fetch(`${API_BASE_URL}/api/upload`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/upload`, {
           method: "POST",
           body: formData,
         });

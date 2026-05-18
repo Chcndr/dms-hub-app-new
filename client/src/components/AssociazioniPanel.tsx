@@ -24,6 +24,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = "https://api.mio-hub.me";
 
@@ -251,7 +252,7 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
 
   const fetchAssociazioni = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/associazioni`);
+      const res = await apiFetch(`${API_BASE_URL}/api/associazioni`);
       const data = await res.json();
       if (data.success) {
         setAssociazioni(data.data);
@@ -267,8 +268,8 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
     setLoadingFatturazione(true);
     try {
       const [contrattiRes, fattureRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/associazioni/${id}/contratti`),
-        fetch(`${API_BASE_URL}/api/associazioni/${id}/fatture`),
+        apiFetch(`${API_BASE_URL}/api/associazioni/${id}/contratti`),
+        apiFetch(`${API_BASE_URL}/api/associazioni/${id}/fatture`),
       ]);
       const contrattiData = await contrattiRes.json();
       const fattureData = await fattureRes.json();
@@ -284,7 +285,7 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
   const fetchPermessi = async (id: number) => {
     setLoadingPermessi(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/associazioni/${id}/utenti`);
+      const res = await apiFetch(`${API_BASE_URL}/api/associazioni/${id}/utenti`);
       const data = await res.json();
       if (data.success) setUtenti(data.data);
     } catch (error) {
@@ -297,7 +298,7 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
   const fetchResponsabili = async (id: number) => {
     setLoadingResponsabili(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/associazioni/${id}/responsabili`);
+      const res = await apiFetch(`${API_BASE_URL}/api/associazioni/${id}/responsabili`);
       const data = await res.json();
       if (data.success) setResponsabili(data.responsabili || []);
     } catch (error) {
@@ -311,13 +312,13 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
     if (!selectedAssociazione) return;
     try {
       if (editingResponsabile) {
-        await fetch(`${API_BASE_URL}/api/associazioni/responsabili/${editingResponsabile.id}`, {
+        await apiFetch(`${API_BASE_URL}/api/associazioni/responsabili/${editingResponsabile.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(responsabileForm),
         });
       } else {
-        await fetch(`${API_BASE_URL}/api/associazioni/${selectedAssociazione.id}/responsabili`, {
+        await apiFetch(`${API_BASE_URL}/api/associazioni/${selectedAssociazione.id}/responsabili`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(responsabileForm),
@@ -335,7 +336,7 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
   const handleDeleteResponsabile = async (responsabileId: number) => {
     if (!selectedAssociazione) return;
     try {
-      await fetch(`${API_BASE_URL}/api/associazioni/responsabili/${responsabileId}`, { method: 'DELETE' });
+      await apiFetch(`${API_BASE_URL}/api/associazioni/responsabili/${responsabileId}`, { method: 'DELETE' });
       fetchResponsabili(selectedAssociazione.id);
     } catch (error) {
       console.error('Error deleting responsabile:', error);
@@ -621,7 +622,7 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
   const handleAssegnaUtente = async () => {
     if (!selectedAssociazione || !utenteForm.email) return;
     try {
-      const userRes = await fetch(
+      const userRes = await apiFetch(
         `${API_BASE_URL}/api/users?email=${encodeURIComponent(utenteForm.email)}`
       );
       const userData = await userRes.json();
@@ -705,7 +706,7 @@ const AssociazioniPanel = memo(function AssociazioniPanel() {
   const handleAccediComeAssociazione = async (assoc: Associazione) => {
     setImpersonating(true);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/api/associazioni/${assoc.id}/utenti`
       );
       const data = await res.json();

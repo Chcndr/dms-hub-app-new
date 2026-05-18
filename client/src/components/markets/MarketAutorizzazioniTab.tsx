@@ -19,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { authenticatedFetch } from "@/hooks/useImpersonation";
 import { formatDate } from "@/lib/formatUtils";
 import { CompanyRow } from "./MarketCompaniesTab";
@@ -100,7 +101,7 @@ export function MarketAutorizzazioniTab({
       // Ma per ora, per non rompere nulla, uso fetch e assumo che ci sia un adattatore o uso la chiamata diretta.
 
       // Use REST API endpoint
-      const response = await fetch(`${MIHUB_API_BASE_URL}/api/autorizzazioni`);
+      const response = await apiFetch(`${MIHUB_API_BASE_URL}/api/autorizzazioni`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
 

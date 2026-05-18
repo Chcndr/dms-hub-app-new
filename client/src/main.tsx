@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { getLoginUrl } from "./const";
+import { apiFetch } from "@/lib/apiFetch";
 import "./index.css";
 // Force CDN cache invalidation - timestamp: 1763685966
 
@@ -55,7 +56,7 @@ window.addEventListener("error", event => {
   if (event.error) {
     const msg = event.error?.message || event.message || "";
     if (isIndexedDBError(msg)) return; // Gestito da DMS-BUS con fallback localStorage
-    fetch(API_ERROR_URL, {
+    apiFetch(API_ERROR_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -72,7 +73,7 @@ window.addEventListener("unhandledrejection", event => {
   const reason = event.reason;
   const msg = reason?.message || String(reason);
   if (isIndexedDBError(msg)) return; // Gestito da DMS-BUS con fallback localStorage
-  fetch(API_ERROR_URL, {
+  apiFetch(API_ERROR_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

@@ -36,6 +36,7 @@ import {
 import { useLocation, Link } from "wouter";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { addComuneIdToUrl, authenticatedFetch } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 // API Base URL — passa per il proxy Vercel (/api/tcc/* → api.mio-hub.me)
 // Fallback diretto se in sviluppo locale
@@ -53,7 +54,7 @@ async function checkQualificationsLocally(
   impresaId: number
 ): Promise<{ walletEnabled: boolean; label: string }> {
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       addComuneIdToUrl(
         `${MAIN_API_BASE}/api/imprese/${impresaId}/qualificazioni`
       )
@@ -155,7 +156,7 @@ function WalletStatusIndicator({
       // Tentativo 1: cerca per operatorId (endpoint originale)
       if (operatorId && operatorId > 0) {
         try {
-          const response = await fetch(
+          const response = await apiFetch(
             `${API_BASE}/operator/wallet/${operatorId}`,
             {
               headers: { Authorization: `Bearer ${token}` },
@@ -186,7 +187,7 @@ function WalletStatusIndicator({
       // Tentativo 2: cerca per impresaId (endpoint diretto impresa)
       if (!walletFound && impresaId && impresaId > 0) {
         try {
-          const response = await fetch(
+          const response = await apiFetch(
             `${API_BASE}/impresa/${impresaId}/wallet`,
             {
               headers: { Authorization: `Bearer ${token}` },
@@ -466,7 +467,7 @@ export default function HubOperatore() {
       // Tentativo 1: cerca per operatorId
       if (operatore.id > 0) {
         try {
-          const res = await fetch(
+          const res = await apiFetch(
             `${API_BASE}/operator/wallet/${operatore.id}?_t=${Date.now()}${operatore.impresaId ? `&impresa_id=${operatore.impresaId}` : ''}`,
             {
               headers: { Authorization: `Bearer ${token}` },
@@ -487,7 +488,7 @@ export default function HubOperatore() {
       // Tentativo 2: cerca per impresaId (fallback v5.8.0)
       if (!data && operatore.impresaId) {
         try {
-          const res = await fetch(
+          const res = await apiFetch(
             `${API_BASE}/impresa/${operatore.impresaId}/wallet?_t=${Date.now()}`,
             {
               headers: { Authorization: `Bearer ${token}` },
@@ -545,7 +546,7 @@ export default function HubOperatore() {
       // Tentativo 1: transazioni per operatorId (restituisce TUTTE le transazioni, no JOIN rotto sulle date)
       if (operatore.id > 0) {
         try {
-          const res = await fetch(
+          const res = await apiFetch(
             `${API_BASE}/operator/transactions/${operatore.id}?limit=20`,
             {
               headers: { Authorization: `Bearer ${token}` },
@@ -568,7 +569,7 @@ export default function HubOperatore() {
         impresaId
       ) {
         try {
-          const res = await fetch(
+          const res = await apiFetch(
             `${API_BASE}/impresa/${impresaId}/wallet/transactions?limit=20`,
             {
               headers: { Authorization: `Bearer ${token}` },
@@ -595,7 +596,7 @@ export default function HubOperatore() {
 
   const loadTccConfig = async () => {
     try {
-      const res = await fetch(`${API_BASE}/config`);
+      const res = await apiFetch(`${API_BASE}/config`);
       if (!res.ok) return;
       const data = await res.json();
       if (data.success) {
@@ -609,7 +610,7 @@ export default function HubOperatore() {
   const loadHubToday = async () => {
     try {
       const token = await getCurrentToken();
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE}/operator/${operatore.id}/hub-today`,
         {
           headers: { Authorization: `Bearer ${token}` },

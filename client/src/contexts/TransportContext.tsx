@@ -21,6 +21,7 @@ import {
   StopTime,
 } from "@/components/TransportStopsLayer";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 // API base URL - Backend MioHub con dati GTFS reali
 const API_BASE = `${MIHUB_API_BASE_URL}/api/gtfs`;
@@ -144,7 +145,7 @@ export function TransportProvider({ children }: TransportProviderProps) {
   // Carica statistiche
   const loadStats = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch(`${API_BASE}/stats`, { signal });
+      const response = await apiFetch(`${API_BASE}/stats`, { signal });
       if (!response.ok) throw new Error(`Errore: ${response.status}`);
 
       const data = await response.json();
@@ -187,8 +188,8 @@ export function TransportProvider({ children }: TransportProviderProps) {
       trainParams.append("limit", "500"); // Tutte le stazioni treni
 
       const [busResponse, trainResponse] = await Promise.all([
-        fetch(`${API_BASE}/stops?${busParams}`, { signal }),
-        fetch(`${API_BASE}/stops?${trainParams}`, { signal }),
+        apiFetch(`${API_BASE}/stops?${busParams}`, { signal }),
+        apiFetch(`${API_BASE}/stops?${trainParams}`, { signal }),
       ]);
 
       let allStops: TransportStop[] = [];
@@ -258,7 +259,7 @@ export function TransportProvider({ children }: TransportProviderProps) {
           limit: "20",
         });
 
-        const response = await fetch(`${API_BASE}/stops/nearby?${params}`);
+        const response = await apiFetch(`${API_BASE}/stops/nearby?${params}`);
 
         if (!response.ok) {
           throw new Error(`Errore: ${response.status}`);

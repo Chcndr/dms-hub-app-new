@@ -198,6 +198,7 @@ import { useAgentLogs } from "@/hooks/useAgentLogs";
 import { useMio } from "@/contexts/MioContext";
 import { useSystemStatus } from "@/hooks/useSystemStatus";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import {
   LineChart,
   Line,
@@ -244,7 +245,7 @@ function useDashboardData() {
         : "";
 
     // Fetch overview globali (sempre, anche per associazioni)
-    fetch(`${MIHUB_API}/stats/overview${comuneFilter}`)
+    apiFetch(`${MIHUB_API}/stats/overview${comuneFilter}`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -254,7 +255,7 @@ function useDashboardData() {
       .catch(err => console.error("Stats overview fetch error:", err));
 
     // Fetch realtime
-    fetch(`${MIHUB_API}/stats/realtime`)
+    apiFetch(`${MIHUB_API}/stats/realtime`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -264,7 +265,7 @@ function useDashboardData() {
       .catch(err => console.error("Stats realtime fetch error:", err));
 
     // Fetch growth
-    fetch(`${MIHUB_API}/stats/growth`)
+    apiFetch(`${MIHUB_API}/stats/growth`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -285,23 +286,23 @@ function useDashboardData() {
 
     // Fetch qualificazione (Tab Imprese) - solo se NON impersonificazione associazione
     if (!isAssocImpersonation)
-      fetch(`${MIHUB_API}/stats/qualificazione/overview`)
+      apiFetch(`${MIHUB_API}/stats/qualificazione/overview`)
         .then(res => res.json())
         .then(async data => {
           if (data.success) {
             // Fetch anche scadenze, demografia, top-imprese, indici
             const [scadenzeRes, demografiaRes, topImpreseRes, indiciRes] =
               await Promise.all([
-                fetch(`${MIHUB_API}/stats/qualificazione/scadenze`).then(r =>
+                apiFetch(`${MIHUB_API}/stats/qualificazione/scadenze`).then(r =>
                   r.json()
                 ),
-                fetch(`${MIHUB_API}/stats/qualificazione/demografia`).then(r =>
+                apiFetch(`${MIHUB_API}/stats/qualificazione/demografia`).then(r =>
                   r.json()
                 ),
-                fetch(`${MIHUB_API}/stats/qualificazione/top-imprese`).then(r =>
+                apiFetch(`${MIHUB_API}/stats/qualificazione/top-imprese`).then(r =>
                   r.json()
                 ),
-                fetch(`${MIHUB_API}/stats/qualificazione/indici`).then(r =>
+                apiFetch(`${MIHUB_API}/stats/qualificazione/indici`).then(r =>
                   r.json()
                 ),
               ]);
@@ -318,15 +319,15 @@ function useDashboardData() {
         .catch(err => console.error("Stats qualificazione fetch error:", err));
 
     // Fetch formazione stats (enti formatori e corsi)
-    fetch(`${MIHUB_API}/formazione/stats${assocFilter}`)
+    apiFetch(`${MIHUB_API}/formazione/stats${assocFilter}`)
       .then(res => res.json())
       .then(async data => {
         if (data.success) {
           // Fetch anche lista enti, corsi e iscrizioni
           const [entiRes, corsiRes, iscrizioniRes] = await Promise.all([
-            fetch(`${MIHUB_API}/formazione/enti`).then(r => r.json()),
-            fetch(`${MIHUB_API}/formazione/corsi${assocFilter}`).then(r => r.json()),
-            fetch(`${MIHUB_API}/formazione/iscrizioni/stats${assocFilter}`).then(r =>
+            apiFetch(`${MIHUB_API}/formazione/enti`).then(r => r.json()),
+            apiFetch(`${MIHUB_API}/formazione/corsi${assocFilter}`).then(r => r.json()),
+            apiFetch(`${MIHUB_API}/formazione/iscrizioni/stats${assocFilter}`).then(r =>
               r.json()
             ),
           ]);
@@ -345,7 +346,7 @@ function useDashboardData() {
     // dove setEntiSessioniCorsi è effettivamente in scope
 
     // Fetch bandi stats (associazioni e catalogo bandi)
-    fetch(`${MIHUB_API}/bandi/stats`)
+    apiFetch(`${MIHUB_API}/bandi/stats`)
       .then(res => res.json())
       .then(async data => {
         if (data.success) {
@@ -357,13 +358,13 @@ function useDashboardData() {
             richiesteRes,
             regolaritaRes,
           ] = await Promise.all([
-            fetch(`${MIHUB_API}/bandi/associazioni`).then(r => r.json()),
-            fetch(`${MIHUB_API}/bandi/catalogo`).then(r => r.json()),
-            fetch(`${MIHUB_API}/bandi/servizi${assocFilter}`).then(r =>
+            apiFetch(`${MIHUB_API}/bandi/associazioni`).then(r => r.json()),
+            apiFetch(`${MIHUB_API}/bandi/catalogo`).then(r => r.json()),
+            apiFetch(`${MIHUB_API}/bandi/servizi${assocFilter}`).then(r =>
               r.json()
             ),
-            fetch(`${MIHUB_API}/bandi/richieste/stats`).then(r => r.json()),
-            fetch(`${MIHUB_API}/bandi/regolarita/stats`).then(r => r.json()),
+            apiFetch(`${MIHUB_API}/bandi/richieste/stats`).then(r => r.json()),
+            apiFetch(`${MIHUB_API}/bandi/regolarita/stats`).then(r => r.json()),
           ]);
 
           setBandiStats({
@@ -1287,7 +1288,7 @@ export default function DashboardPA() {
   useEffect(() => {
     const loadComuni = async () => {
       try {
-        const response = await fetch(`${TCC_API}/api/tcc/v2/comuni`);
+        const response = await apiFetch(`${TCC_API}/api/tcc/v2/comuni`);
         const data = await response.json();
         if (data.success && data.comuni) {
           setTccComuni(data.comuni);
@@ -1311,7 +1312,7 @@ export default function DashboardPA() {
       if (!selectedComuneId) return;
       try {
         setTccRulesLoading(true);
-        const response = await fetch(
+        const response = await apiFetch(
           `${TCC_API}/api/tcc/v2/rules?comune_id=${selectedComuneId}`
         );
         const data = await response.json();
@@ -1357,7 +1358,7 @@ export default function DashboardPA() {
       if (!selectedComuneId) return;
       setEnvLoading(true);
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `${TCC_API}/api/tcc/v2/environment/${selectedComuneId}`
         );
         const data = await response.json();
@@ -1392,7 +1393,7 @@ export default function DashboardPA() {
       const data = await response.json();
       if (data.success && selectedComuneId) {
         // Ricarica i dati ambientali per aggiornare il valore TCC
-        const envResponse = await fetch(
+        const envResponse = await apiFetch(
           `${TCC_API}/api/tcc/v2/environment/${selectedComuneId}`
         );
         const envData = await envResponse.json();
@@ -1412,8 +1413,8 @@ export default function DashboardPA() {
         setFundLoading(true);
         // Usa l'endpoint originale per le statistiche nazionali
         const [statsResponse, transactionsResponse] = await Promise.all([
-          fetch(`${TCC_API}/api/tcc/v2/fund/stats`),
-          fetch(`${TCC_API}/api/tcc/v2/fund/transactions?limit=500`),
+          apiFetch(`${TCC_API}/api/tcc/v2/fund/stats`),
+          apiFetch(`${TCC_API}/api/tcc/v2/fund/transactions?limit=500`),
         ]);
         const statsData = await statsResponse.json();
         const transactionsData = await transactionsResponse.json();
@@ -1458,7 +1459,7 @@ export default function DashboardPA() {
 
   // Carica statistiche imprese (REST leggero + fallback tRPC)
   useEffect(() => {
-    fetch(addComuneIdToUrl("/api/imprese?stats_only=true"))
+    apiFetch(addComuneIdToUrl("/api/imprese?stats_only=true"))
       .then(r => r.json())
       .then(data => {
         if (data.success && data.stats) {
@@ -1808,7 +1809,7 @@ export default function DashboardPA() {
     if (!assocId) return;
     const isAssoc = urlParams.get('role') === 'associazione' && urlParams.get('impersonate') === 'true';
     if (!isAssoc) return;
-    fetch(`${MIHUB_API_BASE_URL}/api/associazioni/${assocId}/sessioni-tutte`)
+    apiFetch(`${MIHUB_API_BASE_URL}/api/associazioni/${assocId}/sessioni-tutte`)
       .then(r => r.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
@@ -1910,7 +1911,7 @@ export default function DashboardPA() {
     setA99xGruppiLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const resp = await fetch(`${apiUrl}/api/a99x/gruppi-imprese`);
+      const resp = await apiFetch(`${apiUrl}/api/a99x/gruppi-imprese`);
       if (resp.ok) {
         const data = await resp.json();
         if (data.success) setA99xGruppiImprese(data.data);
@@ -1950,7 +1951,7 @@ export default function DashboardPA() {
     setA99xAddPartLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const resp = await fetch(`${apiUrl}/api/a99x/ricerca-contatti?q=${encodeURIComponent(q)}${comuneIdFromUrl ? `&comune_id=${comuneIdFromUrl}` : ''}`);
+      const resp = await apiFetch(`${apiUrl}/api/a99x/ricerca-contatti?q=${encodeURIComponent(q)}${comuneIdFromUrl ? `&comune_id=${comuneIdFromUrl}` : ''}`);
       if (resp.ok) {
         const data = await resp.json();
         setA99xAddPartResults(data.data || []);
@@ -2022,7 +2023,7 @@ export default function DashboardPA() {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
       const cId = comuneIdFromUrl;
       if (!cId) { setA99xInvitiRicevuti([]); return; }
-      const resp = await fetch(`${apiUrl}/api/a99x/inviti-ricevuti?comune_id=${cId}`);
+      const resp = await apiFetch(`${apiUrl}/api/a99x/inviti-ricevuti?comune_id=${cId}`);
       if (resp.ok) {
         const data = await resp.json();
         if (data.success && data.data) {
@@ -2044,7 +2045,7 @@ export default function DashboardPA() {
     const fetchA99xImprese = async () => {
       setA99xLoadingImprese(true);
       try {
-        const resp = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/imprese`));
+        const resp = await apiFetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/imprese`));
         const data = await resp.json();
         if (data.success && data.data) setA99xImprese(data.data);
       } catch (err) { console.warn('[A99X] Errore fetch imprese:', err); }
@@ -2059,13 +2060,13 @@ export default function DashboardPA() {
     const fetchA99xSettori = async () => {
       setA99xLoadingSettori(true);
       try {
-        const comuniRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/comuni`));
+        const comuniRes = await apiFetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/comuni`));
         const comuniData = await comuniRes.json();
         if (comuniData.success && comuniData.data) {
           const allSettori: any[] = [];
           for (const comune of comuniData.data) {
             try {
-              const settoriRes = await fetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/comuni/${comune.id}/settori`));
+              const settoriRes = await apiFetch(addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/comuni/${comune.id}/settori`));
               const settoriData = await settoriRes.json();
               if (settoriData.success && settoriData.data) {
                 settoriData.data.forEach((s: any) => allSettori.push({ ...s, comune_nome: comune.nome }));
@@ -2086,7 +2087,7 @@ export default function DashboardPA() {
     const fetchA99xAssociazioni = async () => {
       setA99xLoadingAssociazioni(true);
       try {
-        const resp = await fetch(`${MIHUB_API_BASE_URL}/api/associazioni`);
+        const resp = await apiFetch(`${MIHUB_API_BASE_URL}/api/associazioni`);
         const data = await resp.json();
         if (data.success && data.data) setA99xAssociazioni(data.data);
         else if (Array.isArray(data)) setA99xAssociazioni(data);
@@ -2249,7 +2250,7 @@ export default function DashboardPA() {
   const rispondiA99xInvito = async (token: string, azione: 'accetta' | 'rifiuta') => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      await fetch(`${apiUrl}/api/a99x/invito/${token}/${azione}?confirmed=1`);
+      await apiFetch(`${apiUrl}/api/a99x/invito/${token}/${azione}?confirmed=1`);
       fetchA99xInviti();
       fetchA99xData();
     } catch (err) { console.warn('Errore risposta invito:', err); }
@@ -2261,7 +2262,7 @@ export default function DashboardPA() {
     setA99xRimandaLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const resp = await fetch(`${apiUrl}/api/a99x/riunioni/${riunioneId}/rimanda`, {
+      const resp = await apiFetch(`${apiUrl}/api/a99x/riunioni/${riunioneId}/rimanda`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nuova_data: nuovaData })
@@ -2287,7 +2288,7 @@ export default function DashboardPA() {
     setA99xEliminaLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const resp = await fetch(`${apiUrl}/api/a99x/riunioni/${riunioneId}`, {
+      const resp = await apiFetch(`${apiUrl}/api/a99x/riunioni/${riunioneId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notifica_partecipanti: true })
@@ -2316,7 +2317,7 @@ export default function DashboardPA() {
 
       if (isAssoc && assocId) {
         // ASSOCIAZIONE: carica solo le riunioni dove l'associazione è invitata
-        const riunioniRes = await fetch(`${apiUrl}/api/a99x/le-mie-riunioni?riferimento_id=${assocId}&tipo=ASSOCIAZIONE`);
+        const riunioniRes = await apiFetch(`${apiUrl}/api/a99x/le-mie-riunioni?riferimento_id=${assocId}&tipo=ASSOCIAZIONE`);
         const riunioniData = await riunioniRes.json();
         if (riunioniData.success) setA99xRiunioni(riunioniData.data || []);
         setA99xTask([]);
@@ -2326,11 +2327,11 @@ export default function DashboardPA() {
       if (!cId) {
         // Super admin senza impersonificazione: mostra TUTTO (riunioni, task, assessori, disponibilità, prenotazioni)
         const [riunioniRes, taskRes, prenRes, dispRes, assRes] = await Promise.all([
-          fetch(`${apiUrl}/api/a99x/riunioni`),
-          fetch(`${apiUrl}/api/a99x/task`),
-          fetch(`${apiUrl}/api/a99x/prenotazioni`).catch(() => null),
-          fetch(`${apiUrl}/api/a99x/disponibilita`).catch(() => null),
-          fetch(`${apiUrl}/api/a99x/assessori`).catch(() => null)
+          apiFetch(`${apiUrl}/api/a99x/riunioni`),
+          apiFetch(`${apiUrl}/api/a99x/task`),
+          apiFetch(`${apiUrl}/api/a99x/prenotazioni`).catch(() => null),
+          apiFetch(`${apiUrl}/api/a99x/disponibilita`).catch(() => null),
+          apiFetch(`${apiUrl}/api/a99x/assessori`).catch(() => null)
         ]);
         const riunioniData = await riunioniRes.json();
         const taskData = await taskRes.json();
@@ -2344,11 +2345,11 @@ export default function DashboardPA() {
 
       // COMUNE: carica solo le riunioni di quel comune
       const [riunioniRes, taskRes, prenRes, dispRes, assRes] = await Promise.all([
-        fetch(`${apiUrl}/api/a99x/riunioni?comune_id=${cId}`),
-        fetch(`${apiUrl}/api/a99x/task?comune_id=${cId}`),
-        fetch(`${apiUrl}/api/a99x/prenotazioni?comune_id=${cId}`).catch(() => null),
-        fetch(`${apiUrl}/api/a99x/disponibilita?comune_id=${cId}`).catch(() => null),
-        fetch(`${apiUrl}/api/a99x/assessori?comune_id=${cId}`).catch(() => null)
+        apiFetch(`${apiUrl}/api/a99x/riunioni?comune_id=${cId}`),
+        apiFetch(`${apiUrl}/api/a99x/task?comune_id=${cId}`),
+        apiFetch(`${apiUrl}/api/a99x/prenotazioni?comune_id=${cId}`).catch(() => null),
+        apiFetch(`${apiUrl}/api/a99x/disponibilita?comune_id=${cId}`).catch(() => null),
+        apiFetch(`${apiUrl}/api/a99x/assessori?comune_id=${cId}`).catch(() => null)
       ]);
       const riunioniData = await riunioniRes.json();
       const taskData = await taskRes.json();
@@ -2435,7 +2436,7 @@ export default function DashboardPA() {
       import.meta.env.VITE_MIHUB_API_BASE_URL || "https://api.mio-hub.me/api";
 
     // Fetch stats notifiche (solo per statistiche generali, NON per badge)
-    fetch(`${MIHUB_API}/notifiche/stats`)
+    apiFetch(`${MIHUB_API}/notifiche/stats`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -2446,7 +2447,7 @@ export default function DashboardPA() {
       .catch(err => console.error("Notifiche stats fetch error:", err));
 
     // Fetch risposte (messaggi dalle imprese) - separate per Enti e Associazioni
-    fetch(`${MIHUB_API}/notifiche/risposte`)
+    apiFetch(`${MIHUB_API}/notifiche/risposte`)
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
@@ -2472,7 +2473,7 @@ export default function DashboardPA() {
     const entiAssocId = impersonationForEntiMsg.associazioneId || new URLSearchParams(window.location.search).get("associazione_id") || "1";
     
     // Enti Formatori: le notifiche inviate dal modulo Enti Formatori (mittente_tipo = ENTE_FORMATORE, mittente_id = associazioneId)
-    fetch(`${MIHUB_API}/notifiche/messaggi/ENTE_FORMATORE/${entiAssocId}?filtro=inviati`)
+    apiFetch(`${MIHUB_API}/notifiche/messaggi/ENTE_FORMATORE/${entiAssocId}?filtro=inviati`)
       .then(r => r.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
@@ -2482,7 +2483,7 @@ export default function DashboardPA() {
       .catch(err => console.error("Messaggi inviati Enti fetch error:", err));
     
     // Associazioni & Bandi: le notifiche inviate dal modulo Associazioni & Bandi (mittente_tipo = ASSOCIAZIONE, mittente_id = associazioneId)
-    fetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/${entiAssocId}?filtro=inviati`)
+    apiFetch(`${MIHUB_API}/notifiche/messaggi/ASSOCIAZIONE/${entiAssocId}?filtro=inviati`)
       .then(r => r.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
@@ -2497,7 +2498,7 @@ export default function DashboardPA() {
       const assocId = imp.associazioneId || new URLSearchParams(window.location.search).get('associazione_id');
       if (assocId) {
         const apiBase = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-        fetch(`${apiBase}/api/associazioni/${assocId}/notifiche`)
+        apiFetch(`${apiBase}/api/associazioni/${assocId}/notifiche`)
           .then(r => r.json())
           .then(data => {
             if (data.success && Array.isArray(data.data)) {
@@ -2515,11 +2516,11 @@ export default function DashboardPA() {
     fetchRiunioniNotifiche();
 
     // Fetch lista mercati
-    fetch(`${MIHUB_API}/stats/overview`)
+    apiFetch(`${MIHUB_API}/stats/overview`)
       .then(res => res.json())
       .then(async data => {
         // Fetch mercati separatamente
-        const mercatiRes = await fetch(`${MIHUB_API}/markets`)
+        const mercatiRes = await apiFetch(`${MIHUB_API}/markets`)
           .then(r => r.json())
           .catch(() => ({ data: [] }));
         if (mercatiRes.data) {
@@ -2529,7 +2530,7 @@ export default function DashboardPA() {
       .catch(err => console.error("Mercati fetch error:", err));
 
     // Fetch lista hub
-    fetch(`${MIHUB_API}/tcc/v2/comuni`)
+    apiFetch(`${MIHUB_API}/tcc/v2/comuni`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.comuni) {
@@ -2539,7 +2540,7 @@ export default function DashboardPA() {
       .catch(err => console.error("Hub fetch error:", err));
 
     // Fetch lista imprese (con limit per ridurre payload)
-    fetch(
+    apiFetch(
       addComuneIdToUrl(
         "/api/imprese?limit=200&fields=id,denominazione,partita_iva,codice_fiscale,comune"
       )
@@ -2554,7 +2555,7 @@ export default function DashboardPA() {
 
     // Polling ogni 30 secondi per aggiornare notifiche
     const interval = setInterval(() => {
-      fetch(`${MIHUB_API}/notifiche/stats`)
+      apiFetch(`${MIHUB_API}/notifiche/stats`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {
@@ -2563,7 +2564,7 @@ export default function DashboardPA() {
         })
         .catch(err => console.error("Notifiche stats poll error:", err));
       // Aggiorna anche risposte non lette
-      fetch(`${MIHUB_API}/notifiche/risposte`)
+      apiFetch(`${MIHUB_API}/notifiche/risposte`)
         .then(res => res.json())
         .then(data => {
           if (data.success && Array.isArray(data.data)) {
@@ -2768,12 +2769,12 @@ export default function DashboardPA() {
     const fetchGisData = async () => {
       try {
         const [stallsRes, mapRes] = await Promise.all([
-          fetch(
+          apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/markets/${gisMarketId}/stalls`
             )
           ),
-          fetch(`${API_BASE_URL}/api/gis/market-map`),
+          apiFetch(`${API_BASE_URL}/api/gis/market-map`),
         ]);
 
         const stallsData = await stallsRes.json();
@@ -2821,7 +2822,7 @@ export default function DashboardPA() {
         const allLogs: any[] = [];
 
         for (const convId of conversationIds) {
-          const response = await fetch(
+          const response = await apiFetch(
             `/api/mihub/get-messages?conversation_id=${convId}&limit=20&order=desc`
           );
           const data = await response.json();
@@ -2882,7 +2883,7 @@ export default function DashboardPA() {
       if (isAnimating) return;
       const MIHUB_API =
         import.meta.env.VITE_MIHUB_API_BASE_URL || "https://api.mio-hub.me/api";
-      fetch(`${MIHUB_API}/stats/realtime`)
+      apiFetch(`${MIHUB_API}/stats/realtime`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {
@@ -7097,7 +7098,7 @@ export default function DashboardPA() {
                                   onClick={() => {
                                     const nuovoPrezzo = prompt(`Modifica prezzo per "${corso.titolo}"\nPrezzo attuale: €${corso.prezzo || 0}\n\nInserisci nuovo prezzo:`, corso.prezzo || "0");
                                     if (nuovoPrezzo !== null && !isNaN(Number(nuovoPrezzo))) {
-                                      fetch(`${MIHUB_API_BASE_URL}/formazione/corsi/${corso.id}/prezzo`, {
+                                      apiFetch(`${MIHUB_API_BASE_URL}/formazione/corsi/${corso.id}/prezzo`, {
                                         method: "PUT",
                                         headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify({ prezzo: parseFloat(nuovoPrezzo) })
@@ -7118,7 +7119,7 @@ export default function DashboardPA() {
                                 <button
                                   onClick={() => {
                                     if (confirm(`Eliminare il corso "${corso.titolo}"?`)) {
-                                      fetch(`${MIHUB_API_BASE_URL}/formazione/corsi/${corso.id}`, {
+                                      apiFetch(`${MIHUB_API_BASE_URL}/formazione/corsi/${corso.id}`, {
                                         method: "DELETE"
                                       }).then(r => r.json()).then(d => {
                                         if (d.success) {
@@ -7324,7 +7325,7 @@ export default function DashboardPA() {
                                 const q = e.target.value;
                                 if (q.length < 2) return;
                                 try {
-                                  const res = await fetch(
+                                  const res = await apiFetch(
                                     `${import.meta.env.VITE_API_URL || "https://api.mio-hub.me"}/api/formazione/imprese/search?q=${encodeURIComponent(q)}`
                                   );
                                   const data = await res.json();
@@ -7396,7 +7397,7 @@ export default function DashboardPA() {
                                 const impresaId = (document.getElementById('impresa_id') as HTMLInputElement)?.value;
                                 if (impresaId && collabSelect) {
                                   try {
-                                    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/collaboratori?impresa_id=${impresaId}`);
+                                    const res = await apiFetch(`${import.meta.env.VITE_API_URL || 'https://api.mio-hub.me'}/api/collaboratori?impresa_id=${impresaId}`);
                                     const data = await res.json();
                                     collabSelect.innerHTML = '<option value="">Seleziona collaboratore...</option>';
                                     if (data.success && data.data) {
@@ -9213,7 +9214,7 @@ export default function DashboardPA() {
                                 onClick={async () => {
                                   try {
                                     const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
-                                    await fetch(`${MIHUB_API}/bandi/richieste/${item.id}`, {
+                                    await apiFetch(`${MIHUB_API}/bandi/richieste/${item.id}`, {
                                       method: 'PUT',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ stato: 'IN_LAVORAZIONE' })
@@ -9231,7 +9232,7 @@ export default function DashboardPA() {
                                 onClick={async () => {
                                   try {
                                     const MIHUB_API = import.meta.env.VITE_MIHUB_API_BASE_URL || 'https://api.mio-hub.me/api';
-                                    await fetch(`${MIHUB_API}/bandi/richieste/${item.id}`, {
+                                    await apiFetch(`${MIHUB_API}/bandi/richieste/${item.id}`, {
                                       method: 'PUT',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ stato: 'COMPLETATA' })
@@ -10923,7 +10924,7 @@ export default function DashboardPA() {
                                               } else {
                                                 // Fallback: aggiorna stato partecipante direttamente
                                                 const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                                fetch(`${apiUrl}/api/a99x/partecipanti/${riunione.mio_partecipante_id || p.id}/stato`, {
+                                                apiFetch(`${apiUrl}/api/a99x/partecipanti/${riunione.mio_partecipante_id || p.id}/stato`, {
                                                   method: 'PUT',
                                                   headers: { 'Content-Type': 'application/json' },
                                                   body: JSON.stringify({ stato: 'CONFERMATO' })
@@ -10941,7 +10942,7 @@ export default function DashboardPA() {
                                                 rispondiA99xInvito(tkn, 'rifiuta');
                                               } else {
                                                 const apiUrl = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-                                                fetch(`${apiUrl}/api/a99x/partecipanti/${riunione.mio_partecipante_id || p.id}/stato`, {
+                                                apiFetch(`${apiUrl}/api/a99x/partecipanti/${riunione.mio_partecipante_id || p.id}/stato`, {
                                                   method: 'PUT',
                                                   headers: { 'Content-Type': 'application/json' },
                                                   body: JSON.stringify({ stato: 'RIFIUTATO' })
@@ -11834,7 +11835,7 @@ export default function DashboardPA() {
                     <button
                       onClick={async () => {
                         try {
-                          const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.miohub.it'}/api/a99x/riunioni`, {
+                          const res = await apiFetch(`${import.meta.env.VITE_API_URL || 'https://api.miohub.it'}/api/a99x/riunioni`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({

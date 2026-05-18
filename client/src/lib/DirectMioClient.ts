@@ -6,6 +6,8 @@
  * Uses a unique function name and file name to avoid any conflicts.
  */
 
+import { apiFetch } from "@/lib/apiFetch";
+
 export interface DirectMioMessage {
   id: string;
   role: "user" | "assistant" | "system";
@@ -38,7 +40,7 @@ export const sendDirectMessageToHetzner = async (
   }
 
   try {
-    const response = await fetch(URL, {
+    const response = await apiFetch(URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

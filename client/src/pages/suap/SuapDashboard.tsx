@@ -18,6 +18,7 @@ import {
   SuapStats,
   SuapPratica,
 } from "@/api/suap";
+import { apiFetch } from "@/lib/apiFetch";
 import SciaForm from "@/components/suap/SciaForm";
 import ConcessioneForm from "@/components/suap/ConcessioneForm";
 import { toast } from "sonner";
@@ -108,13 +109,13 @@ export default function SuapDashboard({
     async function loadPratichePendenti() {
       try {
         // Carica domande spunta da revisionare
-        const domandeRes = await fetch(
+        const domandeRes = await apiFetch(
           `${API_URL}/api/domande-spunta?stato=DA_REVISIONARE`
         );
         const domandeJson = await domandeRes.json();
 
         // Carica autorizzazioni da revisionare
-        const autRes = await fetch(
+        const autRes = await apiFetch(
           `${API_URL}/api/autorizzazioni?stato=DA_REVISIONARE`
         );
         const autJson = await autRes.json();
@@ -171,7 +172,7 @@ export default function SuapDashboard({
     async function loadNuoveDomande() {
       try {
         // Carica domande spunta in attesa
-        const domandeRes = await fetch(
+        const domandeRes = await apiFetch(
           `${API_URL}/api/domande-spunta?stato=IN_ATTESA`
         );
         const domandeJson = await domandeRes.json();

@@ -37,6 +37,7 @@ import {
   authenticatedFetch,
 } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE = MIHUB_API_BASE_URL;
 
@@ -141,7 +142,7 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
     setLoading(true);
     try {
       const apiBase = import.meta.env.VITE_API_URL || 'https://api.miohub.it';
-      const res = await fetch(
+      const res = await apiFetch(
         `${apiBase}/api/associazioni/${associazioneId}/sessioni-tutte`
       );
       const data = await res.json();
@@ -164,7 +165,7 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
   const loadRelatori = useCallback(async () => {
     if (!associazioneId) return;
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE}/api/associazioni/${associazioneId}/relatori`
       );
       const data = await res.json();
@@ -199,7 +200,7 @@ export default function SessioniCorsoTab({ corsi, onSessioniCount }: SessioniCor
     const cId = corsoId || selectedCorsoId;
     if (!cId) return;
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE}/api/associazioni/${associazioneId}/corsi/${cId}/sessioni/${sessioneId}`
       );
       const data = await res.json();
