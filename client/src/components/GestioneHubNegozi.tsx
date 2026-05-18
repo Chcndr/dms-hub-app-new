@@ -21,6 +21,7 @@ import { MarketCompaniesTab } from "./markets/MarketCompaniesTab";
 import { MarketMapComponent } from "./MarketMapComponent";
 import { HubMapComponent } from "./HubMapComponent";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 import {
   Card,
@@ -380,7 +381,7 @@ const GestioneHubNegozi = memo(function GestioneHubNegozi() {
     const loadMapData = async () => {
       try {
         // 1. Load Base Map (Italy View or Specific Market)
-        const mapRes = await fetch(
+        const mapRes = await apiFetch(
           addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/gis/market-map`)
         );
         const mapJson = await mapRes.json();
@@ -391,7 +392,7 @@ const GestioneHubNegozi = memo(function GestioneHubNegozi() {
 
         // 2. Load Stalls only if a market is selected
         if (selectedMarketId) {
-          const stallsRes = await fetch(
+          const stallsRes = await apiFetch(
             addComuneIdToUrl(
               `${MIHUB_API_BASE_URL}/api/markets/${selectedMarketId}/stalls`
             )
@@ -442,7 +443,7 @@ const GestioneHubNegozi = memo(function GestioneHubNegozi() {
   const loadAllHubs = async () => {
     setHubMapLoading(true);
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/hub/locations`)
       );
       const json = await response.json();
@@ -460,7 +461,7 @@ const GestioneHubNegozi = memo(function GestioneHubNegozi() {
   const loadHubDetails = async (hubId: number) => {
     setHubMapLoading(true);
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/hub/locations/${hubId}`)
       );
       const json = await response.json();

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { formatDateTime as formatDate } from "@/lib/formatUtils";
 
 const API_BASE = MIHUB_API_BASE_URL;
@@ -56,7 +57,7 @@ const ClientiTab = memo(function ClientiTab() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_BASE}/api/citizens`)
       );
       if (!response.ok) throw new Error("Errore nel caricamento cittadini");

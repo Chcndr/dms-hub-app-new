@@ -40,6 +40,7 @@ import {
   isAssociazioneImpersonation,
 } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 // ============================================================================
 // INTERFACCE TYPESCRIPT
@@ -150,7 +151,7 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
       setLoading(true);
       try {
         const baseUrl = `${API_BASE_URL}/api/imprese?limit=200`;
-        const response = await fetch(
+        const response = await apiFetch(
           isAssociazioneImpersonation()
             ? addAssociazioneIdToUrl(baseUrl)
             : addComuneIdToUrl(baseUrl)
@@ -186,7 +187,7 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
       const fetchQualificazioni = async () => {
         setLoading(true);
         try {
-          const response = await fetch(
+          const response = await apiFetch(
             addComuneIdToUrl(
               `${API_BASE_URL}/api/imprese/${selectedImpresa.id}/qualificazioni`
             )
@@ -217,7 +218,7 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
         setLoadingTeam(true);
         try {
           const teamUrl = `${API_BASE_URL}/api/collaboratori/team/matrice?impresa_id=${selectedImpresa.id}`;
-          const response = await fetch(
+          const response = await apiFetch(
             isAssociazioneImpersonation()
               ? addAssociazioneIdToUrl(teamUrl)
               : addComuneIdToUrl(teamUrl)
@@ -347,7 +348,7 @@ const ImpreseQualificazioniPanel = memo(function ImpreseQualificazioniPanel() {
   // Download PDF attestato
   const downloadPdf = async (attestatoId: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/attestati/${attestatoId}/pdf`);
+      const res = await apiFetch(`${API_BASE_URL}/api/attestati/${attestatoId}/pdf`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 // ============================================================================
 // TYPES
@@ -144,7 +145,7 @@ function APILogsTab() {
     const loadLogs = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/system/logs?limit=50");
+        const res = await apiFetch("/api/system/logs?limit=50");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
@@ -614,7 +615,7 @@ function SystemStatusTab() {
     const loadStatus = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/system/status");
+        const res = await apiFetch("/api/system/status");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 

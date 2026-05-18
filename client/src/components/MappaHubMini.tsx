@@ -7,6 +7,7 @@ import React, { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { MarketMapComponent } from "./MarketMapComponent";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
@@ -37,7 +38,7 @@ export default function MappaHubMini({ onMarketClick }: MappaHubMiniProps) {
 
   const fetchMarkets = async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/markets`)
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);

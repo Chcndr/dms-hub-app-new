@@ -19,6 +19,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { CalendarDays, Clock, Users, X, Check, XCircle, MapPin, Video, AlertTriangle } from "lucide-react";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE = "https://api.miohub.it";
 
@@ -329,7 +330,7 @@ export default function InvitoNotifier() {
 
       if (!url) return;
 
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) return;
       const data = await res.json();
 
@@ -412,7 +413,7 @@ export default function InvitoNotifier() {
   const rispondi = async (token: string, azione: 'accetta' | 'rifiuta') => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/a99x/invito/${token}/${azione}?confirmed=1`);
+      const res = await apiFetch(`${API_BASE}/api/a99x/invito/${token}/${azione}?confirmed=1`);
       if (res.ok) {
         // Rimuovi dall'elenco
         setInviti(prev => prev.filter(inv => inv.token !== token));

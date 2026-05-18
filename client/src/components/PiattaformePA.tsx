@@ -51,6 +51,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/apiFetch";
 import {
   getPdndStatus,
   getPdndVouchers,
@@ -724,7 +725,7 @@ function SsoPanel() {
       if (params.provider === "spid" || params.provider === "cie") {
         const start = Date.now();
         try {
-          const res = await fetch("https://api.mio-hub.me/api/auth/config");
+          const res = await apiFetch("https://api.mio-hub.me/api/auth/config");
           const responseTimeMs = Date.now() - start;
           return {
             success: res.ok,

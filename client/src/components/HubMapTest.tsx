@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -75,7 +76,7 @@ export default function HubMapTest() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/hub/locations`);
+      const response = await apiFetch(`${API_BASE_URL}/api/hub/locations`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
 
@@ -96,7 +97,7 @@ export default function HubMapTest() {
   const fetchHubDetails = async (hubId: number) => {
     setLoading(true);
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/hub/locations/${hubId}`
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);

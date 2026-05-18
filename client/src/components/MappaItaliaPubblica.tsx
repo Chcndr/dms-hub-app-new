@@ -49,6 +49,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 import { addComuneIdToUrl } from "@/hooks/useImpersonation";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
@@ -133,7 +134,7 @@ const MappaItaliaPubblica = memo(function MappaItaliaPubblica({
 
   const fetchMarkets = async () => {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         addComuneIdToUrl(`${API_BASE_URL}/api/markets`)
       );
       const data = await response.json();
@@ -333,7 +334,7 @@ function MarketDetailPubblica({
 
     const fetchStalls = async () => {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/markets/${market.id}/stalls`)
         );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -446,10 +447,10 @@ function PosteggiTabPubblica({
   const fetchData = async () => {
     try {
       const [stallsRes, mapRes] = await Promise.all([
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/markets/${marketId}/stalls`)
         ),
-        fetch(
+        apiFetch(
           addComuneIdToUrl(`${API_BASE_URL}/api/gis/market-map/${marketId}`)
         ),
       ]);

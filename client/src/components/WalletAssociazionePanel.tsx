@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import { getImpersonationParams } from "@/hooks/useImpersonation";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE = MIHUB_API_BASE_URL;
 
@@ -96,7 +97,7 @@ const WalletAssociazionePanel = memo(function WalletAssociazionePanel() {
 
       // Endpoint v9
       try {
-        const walletRes = await fetch(
+        const walletRes = await apiFetch(
           `${API_BASE}/api/associazioni-v9/wallet/${associazioneId}`
         );
         const walletData = await walletRes.json();
@@ -109,7 +110,7 @@ const WalletAssociazionePanel = memo(function WalletAssociazionePanel() {
       }
 
       try {
-        const transRes = await fetch(
+        const transRes = await apiFetch(
           `${API_BASE}/api/associazioni-v9/wallet/${associazioneId}/transazioni`
         );
         const transData = await transRes.json();
@@ -125,10 +126,10 @@ const WalletAssociazionePanel = memo(function WalletAssociazionePanel() {
       if (!walletLoaded || !transLoaded) {
         const [walletRes, transRes] = await Promise.all([
           !walletLoaded
-            ? fetch(`${API_BASE}/api/associazioni/${associazioneId}/wallet`)
+            ? apiFetch(`${API_BASE}/api/associazioni/${associazioneId}/wallet`)
             : Promise.resolve(null),
           !transLoaded
-            ? fetch(
+            ? apiFetch(
                 `${API_BASE}/api/associazioni/${associazioneId}/wallet/transazioni`
               )
             : Promise.resolve(null),

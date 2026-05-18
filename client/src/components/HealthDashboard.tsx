@@ -92,7 +92,7 @@ function ScannerStatsCard() {
   const { data: scannerData } = useQuery({
     queryKey: ["scanner-stats"],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/security/scanner-stats`);
+      const res = await apiFetch(`${API_BASE}/api/security/scanner-stats`);
       if (!res.ok) throw new Error("Scanner stats non disponibili");
       return res.json();
     },
@@ -151,7 +151,7 @@ export default function HealthDashboard() {
   } = useQuery<HealthReport>({
     queryKey: ["health-full"],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/api/health/full`);
+      const response = await apiFetch(`${API_BASE}/api/health/full`);
       if (!response.ok) throw new Error("Health check failed");
       return response.json();
     },
@@ -164,7 +164,7 @@ export default function HealthDashboard() {
   const { data: historyData } = useQuery({
     queryKey: ["health-history"],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/api/health/history?limit=20`);
+      const response = await apiFetch(`${API_BASE}/api/health/history?limit=20`);
       if (!response.ok) throw new Error("History fetch failed");
       return response.json();
     },
