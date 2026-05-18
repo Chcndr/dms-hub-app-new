@@ -2,6 +2,13 @@
 
 > Questo file e' il punto di ingresso obbligatorio per ogni agente (Claude, Manus, GPT, Gemini, etc.)
 > che lavora su questo repository. Leggilo PRIMA di fare qualsiasi cosa.
+>
+> **IMPORTANTE: Leggi SEMPRE anche `MASTER_BLUEPRINT_MIOHUB.md`** — contiene lo stato
+> completo del sistema, i vincoli negativi aggiornati, e la storia di tutte le modifiche.
+>
+> **Versione sistema:** v11.5.0 (18 Maggio 2026)
+> **Backend:** `Chcndr/mihub-backend-rest` — Hetzner con autodeploy GitHub Actions
+> **Frontend:** `Chcndr/dms-hub-app-new` — Vercel con autodeploy su push master
 
 ## Cosa e' questo sistema
 
