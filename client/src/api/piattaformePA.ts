@@ -10,6 +10,7 @@
 
 import { MIHUB_API_BASE_URL } from "@/config/api";
 import { addComuneIdToUrl } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 // ============================================
 // Types
@@ -119,21 +120,21 @@ export interface SendInstanceResponse {
 
 export async function getPdndStatus(): Promise<PdndStatus> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/pdnd/status`);
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error(`PDND status error: ${res.status}`);
   return res.json();
 }
 
 export async function getPdndVouchers(): Promise<PdndVouchersResponse> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/pdnd/vouchers`);
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error(`PDND vouchers error: ${res.status}`);
   return res.json();
 }
 
 export async function requestPdndVoucher(eServiceId: string, purposeId: string): Promise<{ success: boolean; voucher?: PdndVoucher; error?: string }> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/pdnd/voucher`);
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ e_service_id: eServiceId, purpose_id: purposeId }),
@@ -159,7 +160,7 @@ export async function testPdndConnection(): Promise<{ success: boolean; response
 
 export async function getSsuStatus(): Promise<SsuStatus> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/ssu/status`);
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error(`SSU status error: ${res.status}`);
   return res.json();
 }
@@ -174,7 +175,7 @@ export async function getSsuInstances(params?: { stato?: string; ente?: string; 
   const qs = queryParams.toString();
   if (qs) url += `?${qs}`;
   url = addComuneIdToUrl(url);
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error(`SSU instances error: ${res.status}`);
   return res.json();
 }
@@ -183,14 +184,14 @@ export async function getSsuAuditTrail(limit?: number): Promise<SsuAuditResponse
   let url = `${MIHUB_API_BASE_URL}/api/ssu/audit-trail`;
   if (limit) url += `?limit=${limit}`;
   url = addComuneIdToUrl(url);
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error(`SSU audit error: ${res.status}`);
   return res.json();
 }
 
 export async function sendSsuInstance(praticaId: number): Promise<SendInstanceResponse> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/ssu/send-instance`);
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ pratica_id: praticaId }),
@@ -200,7 +201,7 @@ export async function sendSsuInstance(praticaId: number): Promise<SendInstanceRe
 
 export async function retrySsuInstance(instanceId: number): Promise<{ success: boolean; error?: string }> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/ssu/retry-instance`);
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ instance_id: instanceId }),
@@ -263,14 +264,14 @@ export interface AnprResidenzaResponse {
 
 export async function getAnprStatus(): Promise<AnprStatus> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/anpr/status`);
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error(`ANPR status error: ${res.status}`);
   return res.json();
 }
 
 export async function verificaResidenza(cf: string): Promise<AnprResidenzaResponse> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/anpr/residenza/${cf}`);
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     throw new Error(err.error || `ANPR error: ${res.status}`);
@@ -335,21 +336,21 @@ export interface AppIoSendResponse {
 
 export async function getAppIoStatus(): Promise<AppIoStatus> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/appio/status`);
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error(`App IO status error: ${res.status}`);
   return res.json();
 }
 
 export async function getAppIoTemplates(): Promise<AppIoTemplatesResponse> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/appio/templates`);
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error(`App IO templates error: ${res.status}`);
   return res.json();
 }
 
 export async function sendAppIoMessage(templateId: string, fiscalCode: string, params: Record<string, string>): Promise<AppIoSendResponse> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/appio/send-message`);
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ template_id: templateId, fiscal_code: fiscalCode, params }),
@@ -359,7 +360,7 @@ export async function sendAppIoMessage(templateId: string, fiscalCode: string, p
 
 export async function testAppIoConnection(): Promise<{ success: boolean; mode: string; api_reachable: boolean; response_time_ms: number }> {
   const url = addComuneIdToUrl(`${MIHUB_API_BASE_URL}/api/appio/test-connection`);
-  const res = await fetch(url, { method: "POST" });
+  const res = await apiFetch(url, { method: "POST" });
   return res.json();
 }
 

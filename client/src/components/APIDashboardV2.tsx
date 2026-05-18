@@ -19,6 +19,7 @@ import {
   API_BASE_URL,
   type EndpointConfig,
 } from "@/config/realEndpoints";
+import { apiFetch } from "@/lib/apiFetch";
 
 const APIDashboardV2 = memo(function APIDashboardV2() {
   const [selectedEndpoint, setSelectedEndpoint] =
@@ -108,7 +109,7 @@ const APIDashboardV2 = memo(function APIDashboardV2() {
       }
 
       // Esegui richiesta
-      const response = await fetch(url, options);
+      const response = await apiFetch(url, options);
       const endTime = Date.now();
 
       // Leggi body come testo per gestire JSON e non-JSON

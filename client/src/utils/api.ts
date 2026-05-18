@@ -1,6 +1,7 @@
 // API Client per DMS Backend
 
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "https://api.mio-hub.me/api/v1";
@@ -15,7 +16,7 @@ async function fetchAPI<T>(
   options?: RequestInit
 ): Promise<ApiResponse<T>> {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await apiFetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -50,7 +51,7 @@ export const geoAPI = {
     if (category) params.append("category", category);
 
     // Usa il nuovo endpoint di ricerca pubblica
-    const response = await fetch(
+    const response = await apiFetch(
       `${MIHUB_API_BASE_URL}/api/public/search?query=${encodeURIComponent(query || "")}`
     );
     if (!response.ok) {

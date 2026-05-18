@@ -7,6 +7,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Clock, List, MapPin, CheckCircle, X, ArrowLeft } from "lucide-react";
+import { apiFetch } from "@/lib/apiFetch";
 // import { MarketMapComponent } from "./MarketMapComponent"; // Rimosso: ora usiamo iframe
 
 const MIHUB_API_BASE_URL = "https://api.mio-hub.me";
@@ -154,7 +155,7 @@ export default function SpuntaNotifier() {
     const currentState = spuntaRef.current;
     if (!impresaId || !currentState.session_id) return;
     try {
-      await fetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/scadenza-turno`, {
+      await apiFetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/scadenza-turno`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -182,7 +183,7 @@ export default function SpuntaNotifier() {
       if (scadenzaInCorsoRef.current) { console.log('[SpuntaNotifier] Polling bloccato: scadenza in corso'); return; }
 
       try {
-        const res = await fetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/stato-impresa/${impresaId}`);
+        const res = await apiFetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/stato-impresa/${impresaId}`);
         if (res.ok) {
           const data = await res.json();
           // IMPORTANTE: controllare turno_attivo PRIMA di in_coda,
@@ -397,7 +398,7 @@ export default function SpuntaNotifier() {
   const caricaPosteggiLiberi = async () => {
     if (!spunta.session_id) return;
     try {
-      const res = await fetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/posteggi-liberi/${spunta.session_id}`);
+      const res = await apiFetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/posteggi-liberi/${spunta.session_id}`);
       if (res.ok) {
         const data = await res.json();
         // Il backend restituisce posteggi_liberi con campi: id, number, area_mq, daily_fee, lat, lng
@@ -429,7 +430,7 @@ export default function SpuntaNotifier() {
     if (!impresaId || !spunta.session_id) return;
     setLoadingScelta(true);
     try {
-      const res = await fetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/scegli-posteggio`, {
+      const res = await apiFetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/scegli-posteggio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -596,7 +597,7 @@ export default function SpuntaNotifier() {
             );
             if (!confirmed) return;
             try {
-              const res = await fetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/rinuncia`, {
+              const res = await apiFetch(`${MIHUB_API_BASE_URL}/api/presenze-live/spunta/rinuncia`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

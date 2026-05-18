@@ -15,6 +15,7 @@
  */
 
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const REST_BASE = `${MIHUB_API_BASE_URL}/api`;
 
@@ -103,7 +104,7 @@ export async function trpcQuery<T = unknown>(
       url += `${url.includes("?") ? "&" : "?"}${qs}`;
     }
   }
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok)
     throw new Error(`REST ${procedure}: ${res.status} ${res.statusText}`);
   const json = await res.json();
@@ -121,7 +122,7 @@ export async function trpcMutate<T = unknown>(
   input?: unknown
 ): Promise<T> {
   const path = toRestPath(procedure);
-  const res = await fetch(`${MIHUB_API_BASE_URL}${path}`, {
+  const res = await apiFetch(`${MIHUB_API_BASE_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input ?? {}),

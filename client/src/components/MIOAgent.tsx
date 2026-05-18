@@ -1,4 +1,5 @@
 import React, { useState, useEffect, memo} from "react";
+import { apiFetch } from "@/lib/apiFetch";
 interface Task {
   id: string;
   title: string;
@@ -12,7 +13,7 @@ const MIOAgent = () => {
 
   useEffect(() => {
     const fetchTasks = async () => {
-      const res = await fetch("/api/github/tasks");
+      const res = await apiFetch("/api/github/tasks");
       const data = await res.json();
       setTasks(data.tasks || []);
     };

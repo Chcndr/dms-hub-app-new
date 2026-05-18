@@ -6,6 +6,7 @@ import "leaflet.heat";
 import { useImpersonation, addComuneIdToUrl } from "@/hooks/useImpersonation";
 import { useCivicReports } from "@/contexts/CivicReportsContext";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 // Fix per icone marker Leaflet
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -249,7 +250,7 @@ const CivicReportsHeatmap = memo(function CivicReportsHeatmap() {
           url += `?comune_id=${currentComuneId}`;
         }
 
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         const data = await response.json();
 
         if (data.success && data.data?.recent) {

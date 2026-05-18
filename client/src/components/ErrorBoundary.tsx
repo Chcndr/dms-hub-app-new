@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/apiFetch";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
 
@@ -29,7 +30,7 @@ class ErrorBoundary extends Component<Props, State> {
     try {
       const apiUrl =
         import.meta.env.VITE_MIHUB_API_URL || "https://api.mio-hub.me";
-      fetch(`${apiUrl}/api/logs/client-error`, {
+      apiFetch(`${apiUrl}/api/logs/client-error`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

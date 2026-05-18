@@ -7,6 +7,7 @@
  */
 
 import { ORCHESTRATORE_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = ORCHESTRATORE_API_BASE_URL;
 
@@ -178,7 +179,7 @@ export interface SecurityHealthResponse {
 export async function getSecurityHealth(): Promise<SecurityHealthResponse> {
   const url = `${API_BASE_URL}/api/security/health`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch security health: ${response.statusText}`);
@@ -198,7 +199,7 @@ export async function getSecurityStats(): Promise<{
 }> {
   const url = `${API_BASE_URL}/api/security/stats`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch security stats: ${response.statusText}`);
@@ -218,7 +219,7 @@ export async function getRoles(): Promise<{
 }> {
   const url = `${API_BASE_URL}/api/security/roles`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch roles: ${response.statusText}`);
@@ -239,7 +240,7 @@ export async function getRoleById(
 }> {
   const url = `${API_BASE_URL}/api/security/roles/${id}`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch role: ${response.statusText}`);
@@ -263,7 +264,7 @@ export async function getPermissions(category?: string): Promise<{
 
   const url = `${API_BASE_URL}/api/security/permissions?${params.toString()}`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch permissions: ${response.statusText}`);
@@ -283,7 +284,7 @@ export async function getRolePermissionsMatrix(): Promise<{
 }> {
   const url = `${API_BASE_URL}/api/security/matrix`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch matrix: ${response.statusText}`);
@@ -319,7 +320,7 @@ export async function getAccessLogs(filters?: {
 
   const url = `${API_BASE_URL}/api/security/access-logs?${params.toString()}`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch access logs: ${response.statusText}`);
@@ -350,7 +351,7 @@ export async function getSecurityEvents(filters?: {
 
   const url = `${API_BASE_URL}/api/security/events?${params.toString()}`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch security events: ${response.statusText}`);
@@ -374,7 +375,7 @@ export async function createSecurityEvent(event: {
 }): Promise<{ success: boolean; data: SecurityEvent }> {
   const url = `${API_BASE_URL}/api/security/events`;
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -409,7 +410,7 @@ export async function getLoginAttempts(filters?: {
 
   const url = `${API_BASE_URL}/api/security/login-attempts?${params.toString()}`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch login attempts: ${response.statusText}`);
@@ -430,7 +431,7 @@ export async function getIPBlacklist(
 
   const url = `${API_BASE_URL}/api/security/ip-blacklist?${params.toString()}`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch IP blacklist: ${response.statusText}`);
@@ -452,7 +453,7 @@ export async function blockIP(data: {
 }): Promise<{ success: boolean; data: IPBlacklist }> {
   const url = `${API_BASE_URL}/api/security/ip-blacklist`;
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -477,7 +478,7 @@ export async function unblockIP(
 ): Promise<{ success: boolean; data: IPBlacklist }> {
   const url = `${API_BASE_URL}/api/security/ip-blacklist/${encodeURIComponent(ip)}`;
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -542,7 +543,7 @@ export async function getUsers(filters?: {
 
   const url = `${API_BASE_URL}/api/security/users?${params.toString()}`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch users: ${response.statusText}`);
@@ -560,7 +561,7 @@ export async function getUserById(
 ): Promise<{ success: boolean; data: SecurityUser }> {
   const url = `${API_BASE_URL}/api/security/users/${id}`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch user: ${response.statusText}`);
@@ -579,7 +580,7 @@ export async function lockUser(
 ): Promise<{ success: boolean; message: string }> {
   const url = `${API_BASE_URL}/api/security/users/${id}/lock`;
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -603,7 +604,7 @@ export async function unlockUser(
 ): Promise<{ success: boolean; message: string }> {
   const url = `${API_BASE_URL}/api/security/users/${id}/unlock`;
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -626,7 +627,7 @@ export async function getUserRoles(
 ): Promise<{ success: boolean; data: any[] }> {
   const url = `${API_BASE_URL}/api/security/users/${id}/roles`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch user roles: ${response.statusText}`);

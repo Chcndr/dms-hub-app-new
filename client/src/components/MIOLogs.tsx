@@ -9,6 +9,7 @@ import {
 import { Loader2, FileText, Clock, HardDrive } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 type LogFile = {
   filename: string;
@@ -29,7 +30,7 @@ const MIOLogs = memo(function MIOLogs() {
   } = useQuery<LogFile[]>({
     queryKey: ["mio-agent-logs"],
     queryFn: async () => {
-      const res = await fetch(`${MIHUB_API_BASE_URL}/api/mihub/logs`);
+      const res = await apiFetch(`${MIHUB_API_BASE_URL}/api/mihub/logs`);
       if (!res.ok) throw new Error(`Errore ${res.status}: ${res.statusText}`);
       const data = await res.json();
       return Array.isArray(data) ? data : data.logs || [];

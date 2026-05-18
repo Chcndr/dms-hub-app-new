@@ -7,6 +7,8 @@
  * NON usa tRPC, NON passa per Vercel serverless functions.
  */
 
+import { apiFetch } from "@/lib/apiFetch";
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -75,7 +77,7 @@ export async function callOrchestrator(
   const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 secondi
 
   try {
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -6,6 +6,7 @@
  */
 
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const MIHUB_API_URL = MIHUB_API_BASE_URL;
 
@@ -24,7 +25,7 @@ async function fetchMIHUB<T>(
   options?: RequestInit
 ): Promise<T> {
   try {
-    const response = await fetch(`${MIHUB_API_URL}${endpoint}`, {
+    const response = await apiFetch(`${MIHUB_API_URL}${endpoint}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",

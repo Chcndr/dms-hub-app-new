@@ -9,6 +9,7 @@ import {
   getImpersonationParams,
   isAssociazioneImpersonation,
 } from "@/hooks/useImpersonation";
+import { apiFetch } from "@/lib/apiFetch";
 
 const baseUrl = import.meta.env.VITE_API_URL || "https://api.mio-hub.me";
 
@@ -78,7 +79,7 @@ export async function getSuapStats(enteId: string): Promise<SuapStats> {
   let url = addComuneIdToUrl(`${baseUrl}/api/suap/stats?ente_id=${enteId}`);
   url = addAssociazioneIdToUrl(url);
 
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     headers: {
       "Content-Type": "application/json",
     },
@@ -109,7 +110,7 @@ export async function getSuapPratiche(
   );
   url = addAssociazioneIdToUrl(url);
 
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     headers: {
       "Content-Type": "application/json",
     },
@@ -127,7 +128,7 @@ export async function getSuapPraticaById(
   id: string,
   enteId: string
 ): Promise<SuapPratica & { timeline: SuapEvento[]; checks: SuapCheck[] }> {
-  const res = await fetch(
+  const res = await apiFetch(
     `${baseUrl}/api/suap/pratiche/${id}?ente_id=${enteId}`,
     {
       headers: {
@@ -149,7 +150,7 @@ export async function createSuapPratica(
   enteId: string,
   data: Partial<SuapPratica>
 ): Promise<SuapPratica> {
-  const res = await fetch(`${baseUrl}/api/suap/pratiche`, {
+  const res = await apiFetch(`${baseUrl}/api/suap/pratiche`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -172,7 +173,7 @@ export async function evaluateSuapPratica(
   id: string,
   enteId: string
 ): Promise<any> {
-  const res = await fetch(`${baseUrl}/api/suap/pratiche/${id}/valuta`, {
+  const res = await apiFetch(`${baseUrl}/api/suap/pratiche/${id}/valuta`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -194,7 +195,7 @@ export async function updateSuapPraticaStato(
   nuovoStato: string,
   motivazione?: string
 ): Promise<any> {
-  const res = await fetch(`${baseUrl}/api/suap/pratiche/${id}/stato`, {
+  const res = await apiFetch(`${baseUrl}/api/suap/pratiche/${id}/stato`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

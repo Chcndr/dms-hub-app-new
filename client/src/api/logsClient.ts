@@ -2,6 +2,7 @@
 // Collegamento al backend mihub-backend-rest
 
 import { MIHUB_API_BASE_URL } from "@/config/api";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE_URL = MIHUB_API_BASE_URL;
 
@@ -100,7 +101,7 @@ export async function getLogs(filters?: {
 
   const url = `${API_BASE_URL}/api/logs/getLogs?${params.toString()}`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch logs: ${response.statusText}`);
@@ -116,7 +117,7 @@ export async function getLogs(filters?: {
 export async function getLogsStats(): Promise<LogsStatsResponse> {
   const url = `${API_BASE_URL}/api/logs/stats`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch logs stats: ${response.statusText}`);
@@ -132,7 +133,7 @@ export async function getLogsStats(): Promise<LogsStatsResponse> {
 export async function getGuardianHealth(): Promise<GuardianHealthResponse> {
   const url = `${API_BASE_URL}/api/guardian/health`;
 
-  const response = await fetch(url);
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch Guardian health: ${response.statusText}`);
@@ -150,7 +151,7 @@ export async function testEndpoint(
 ): Promise<DebugTestResponse> {
   const url = `${API_BASE_URL}/api/guardian/debug/testEndpoint`;
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -175,7 +176,7 @@ export async function initLogsSchema(): Promise<{
 }> {
   const url = `${API_BASE_URL}/api/logs/initSchema`;
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
