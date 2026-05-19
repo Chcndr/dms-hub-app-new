@@ -131,11 +131,19 @@ export default function VetrinePage() {
       setLoading(true);
       try {
         if (params?.id) {
-          // Carica impresa singola
-          const response = await apiFetch(
-            addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${params.id}`)
+          // Carica impresa singola — usa endpoint pubblico (no auth richiesta)
+          // Fallback: se vetrina-pubblica fallisce, prova endpoint protetto
+          let response = await fetch(
+            `${API_BASE_URL}/api/imprese/${params.id}/vetrina-pubblica`
           );
-          const result = await response.json();
+          let result = await response.json();
+          if (!result.success) {
+            // Fallback: endpoint protetto (per admin/impresa titolare)
+            response = await apiFetch(
+              addComuneIdToUrl(`${API_BASE_URL}/api/imprese/${params.id}`)
+            );
+            result = await response.json();
+          }
           if (result.success && result.data) {
             setSelectedImpresa(result.data);
           } else {
