@@ -42,8 +42,9 @@ function getSessionTokenFromStorage(): string | null {
 function isInternalApiUrl(url: string): boolean {
   // Path relativo (proxy Vercel) → backend interno
   if (url.startsWith("/")) return true;
-  // Hostname noti del nostro backend
-  return url.includes("api.mio-hub.me") || url.includes("miohub.it");
+  // Qualsiasi sottodominio di mio-hub.me (api., orchestratore., ecc.)
+  // oppure miohub.it (dominio frontend con proxy Vercel)
+  return url.includes("mio-hub.me") || url.includes("miohub.it");
 }
 
 /**
