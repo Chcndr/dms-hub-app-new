@@ -145,7 +145,16 @@
   - `client/src/pages/HomePage.tsx` — check autenticazione (riga 80 e 684).
   - `client/src/pages/WalletStorico.tsx` — check autenticazione (riga 83).
   - `client/src/pages/HubOperatore.tsx` — `getCurrentToken`, `refreshToken` e fetch wallet operatore.
+- **FIX CRITICO `client/src/lib/apiFetch.ts` — isInternalApiUrl (19 Mag 2026)**:
+  - Bug: `isInternalApiUrl` controllava solo `api.mio-hub.me` e `miohub.it`, ma su Vercel la env var `VITE_TRPC_URL` e' settata a `https://orchestratore.mio-hub.me`. Tutte le chiamate via `TRPC_BASE` (lookupLegacyUser, createFirebaseSession body-auth, ecc.) passavano per `orchestratore.mio-hub.me` che NON veniva riconosciuto come URL interno → `apiFetch` non aggiungeva il token → 401 su `requireAuth`.
+  - Fix: Cambiato pattern da `url.includes("api.mio-hub.me")` a `url.includes("mio-hub.me")` — riconosce qualsiasi sottodominio (api., orchestratore., futuro.).
+  - Commit: `40659528`
+- **FIX `client/src/api/authClient.ts` — migrazione session_token (19 Mag 2026)**:
+  - Bug: `getSessionToken()` spostava il token da localStorage a sessionStorage e lo CANCELLAVA da localStorage. `apiFetch` cercava in localStorage → non lo trovava → fallback a Firebase JWT → 401 dopo 1 ora.
+  - Fix: `setSessionToken` salva in entrambi (localStorage + sessionStorage). `getSessionToken` legge da entrambi senza cancellare.
+  - Commit: `a9b69b7e`
 - **Nuovo vincolo negativo documentato**: "NON usare il Firebase ID Token come primary auth nel frontend" — usare sempre `miohub_session_token` come prima scelta, sia in `apiFetch` che nelle chiamate manuali.
+- **VINCOLO NEGATIVO CRITICO**: `isInternalApiUrl` DEVE usare `url.includes("mio-hub.me")` (senza prefisso `api.`) per riconoscere TUTTI i sottodomini del backend. Se si aggiunge un nuovo sottodominio in futuro, il pattern generico lo copre automaticamente. NON tornare mai a `url.includes("api.mio-hub.me")` — rompe tutte le chiamate via `VITE_TRPC_URL=orchestratore.mio-hub.me`.
 
 ### CHANGELOG v11.5.0 — Fase 9 Frontend Fixes (18 Mag 2026)
 - **FIX 9F-1 FRONTEND `client/src/lib/apiFetch.ts`**:
