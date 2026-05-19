@@ -1,6 +1,6 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 11.6.2 (Fix Vetrina Pubblica + Sicurezza Route HUB + Fix Normattiva AVA)
+> **Versione:** 11.6.3 (Fix Vetrina Pubblica + Sicurezza Route HUB + Fix Normattiva AVA + Fix Classificatore)
 > **Data:** 19 Maggio 2026
 > **Stato:** OPERATIVO — Autodeploy GitHub Actions ↔ Hetzner attivo
 >
@@ -91,7 +91,7 @@
 > - **NON creare endpoint di scrittura (POST/PUT/DELETE) in routes/hub.js senza `requireAuth`** — Il guard globale `validateImpersonation` NON protegge le scritture senza `comune_id`. Ogni route di scrittura DEVE avere `requireAuth` come middleware esplicito.
 
 ---
-### RIEPILOGO SESSIONE 19 Mag 2026 (v11.6.0 → v11.6.2)
+### RIEPILOGO SESSIONE 19 Mag 2026 (v11.6.0 → v11.6.3)
 
 **Fix completati in questa sessione:**
 
@@ -101,6 +101,7 @@
 | v11.6.1 | VetrinePage.tsx usa endpoint pubblico per caricare vetrina singola (fallback a endpoint protetto) | Frontend | FUNZIONANTE |
 | v11.6.1 | `requireAuth` aggiunto a TUTTE le route di scrittura in `routes/hub.js` (locations, shops, services) | Backend | FUNZIONANTE |
 | v11.6.2 | Fix tool `cerca_normativa`: migrato da `dati.normattiva.it` (bloccato) a `api.normattiva.it` BFF OpenData v1 | Backend | FUNZIONANTE |
+| v11.6.3 | Fix classificatore: `normativaRegex` mancava `leggi` (plurale) — messaggi con "leggi" + "imprese" andavano a DATABASE | Backend | FUNZIONANTE |
 
 **Bug risolto — Vetrina non si apre nell'app cittadino:**
 - **Root cause:** `GET /api/imprese/:id` richiedeva `assertImpresaAccess` (auth obbligatoria). Quando un cittadino non autenticato cliccava "Visita Vetrina" dal popup mappa, riceveva 401 → toast "Impresa non trovata" → redirect a `/vetrine` (lista).
@@ -109,6 +110,10 @@
 **Bug risolto — AVA non cerca più leggi su Normattiva:**
 - **Root cause:** Il tool `cerca_normativa` in `ai-chat.js` usava l'URL `https://dati.normattiva.it/api/lastestVersionByKeyword` (vecchio portale). Il Poligrafico e Zecca dello Stato ha attivato un sistema anti-bot che blocca le richieste da server (HTTP 409). Il tool restituiva `null` → AVA rispondeva "non ho dati, riformula la domanda".
 - **Soluzione:** Migrato all'API ufficiale BFF OpenData v1 (`https://api.normattiva.it/t/normattiva.api/bff-opendata/v1/api/v1/ricerca/semplice`) che usa POST con body JSON. Testato: restituisce risultati correttamente. Aggiornato anche il classificatore regex per catturare pattern come "disegno di legge", "leggi su", "leggi per".
+
+**Bug risolto — Classificatore mandava "leggi + imprese" a DATABASE:**
+- **Root cause:** Il `normativaRegex` aveva solo `legge` (singolare), `leggi\s+su` e `leggi\s+per`. Il messaggio "cercami le ultime **leggi** riguardanti gli aiuti alle imprese" non matchava il normativaRegex → il `dbForceRegex` catturava "imprese" → forzava DATABASE → query SQL sulla tabella imprese → mostrava l'elenco delle 35 imprese.
+- **Soluzione:** Aggiunto `leggi` (plurale generico) e `leggi\s+riguardant` al `normativaRegex`. Ora qualsiasi messaggio con "leggi" viene riconosciuto come NORMATIVA e non viene catturato dal dbForceRegex.
 
 **Vulnerabilità sicurezza fixata — Route HUB senza auth:**
 - **Root cause:** `POST /api/hub/shops/create-with-impresa`, `POST /api/hub/locations`, `POST /api/hub/shops`, `PUT /api/hub/locations/:id`, `DELETE /api/hub/locations/:id`, `POST /api/hub/services` non avevano middleware `requireAuth`. Il guard globale `validateImpersonation` blocca solo le scritture CON `comune_id` — senza `comune_id` passavano senza auth.
