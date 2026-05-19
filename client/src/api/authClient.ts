@@ -47,24 +47,19 @@ export interface LoginResponse {
 // ============================================
 
 export function getSessionToken(): string | null {
-  // Migrazione: se il token e' ancora in localStorage, spostalo
-  const legacyToken = localStorage.getItem(SESSION_TOKEN_KEY);
-  if (legacyToken) {
-    sessionStorage.setItem(SESSION_TOKEN_KEY, legacyToken);
-    localStorage.removeItem(SESSION_TOKEN_KEY);
-  }
-  return sessionStorage.getItem(SESSION_TOKEN_KEY);
+  // Cerca in entrambi: localStorage (usato da apiFetch) e sessionStorage
+  return localStorage.getItem(SESSION_TOKEN_KEY) || sessionStorage.getItem(SESSION_TOKEN_KEY);
 }
 
 export function setSessionToken(token: string): void {
+  // Salva in ENTRAMBI: localStorage (per apiFetch) e sessionStorage (per authClient)
+  localStorage.setItem(SESSION_TOKEN_KEY, token);
   sessionStorage.setItem(SESSION_TOKEN_KEY, token);
-  // Rimuovi eventuale copia legacy
-  localStorage.removeItem(SESSION_TOKEN_KEY);
 }
 
 export function clearSessionToken(): void {
   sessionStorage.removeItem(SESSION_TOKEN_KEY);
-  localStorage.removeItem(SESSION_TOKEN_KEY); // pulizia legacy
+  localStorage.removeItem(SESSION_TOKEN_KEY);
   localStorage.removeItem(USER_INFO_KEY);
 }
 

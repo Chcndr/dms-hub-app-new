@@ -4,7 +4,8 @@
  * Aggiunge automaticamente l'header `Authorization: Bearer <token>` per le
  * richieste verso il nostro backend, con la seguente priorita':
  *   1. `miohub_session_token` da localStorage (hex64, non scade ogni ora)
- *   2. Firebase ID Token (JWT, scade dopo 1h) come fallback
+ *   2. `miohub_session_token` da sessionStorage (authClient.ts lo sposta qui)
+ *   3. Firebase ID Token (JWT, scade dopo 1h) come fallback
  *
  * Il backend (Fase 10) accetta entrambi sui middleware `requireAuth`,
  * `requireSuperAdmin`, `requirePaymentAuth` e `validateImpersonation`.
@@ -19,6 +20,25 @@
 
 import { getIdToken } from "@/lib/firebase";
 
+const SESSION_TOKEN_KEY = "miohub_session_token";
+
+/**
+ * Recupera il session_token hex64 da localStorage o sessionStorage.
+ * authClient.ts sposta il token in sessionStorage (migrazione legacy),
+ * quindi dobbiamo cercare in entrambi.
+ */
+function getSessionTokenFromStorage(): string | null {
+  try {
+    return (
+      localStorage.getItem(SESSION_TOKEN_KEY) ||
+      sessionStorage.getItem(SESSION_TOKEN_KEY) ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
 function isInternalApiUrl(url: string): boolean {
   // Path relativo (proxy Vercel) → backend interno
   if (url.startsWith("/")) return true;
@@ -27,7 +47,7 @@ function isInternalApiUrl(url: string): boolean {
 }
 
 /**
- * Variante di fetch che aggiunge il Bearer token Firebase per le chiamate
+ * Variante di fetch che aggiunge il Bearer token per le chiamate
  * verso il backend MIO HUB. Per URL esterni, equivale a fetch() normale.
  */
 export async function apiFetch(
@@ -45,13 +65,13 @@ export async function apiFetch(
 
   if (isInternalApiUrl(url) && !headers.has("Authorization")) {
     try {
-      // 1. Prima scelta: session_token (hex64) — non scade ogni ora come il Firebase JWT
-      const sessionToken = localStorage.getItem("miohub_session_token");
+      // 1. Prima scelta: session_token (hex64) da localStorage o sessionStorage
+      const sessionToken = getSessionTokenFromStorage();
 
       if (sessionToken) {
         headers.set("Authorization", `Bearer ${sessionToken}`);
       } else {
-        // 2. Fallback: Firebase ID Token (JWT) — usato solo se session_token non disponibile
+        // 2. Fallback: Firebase ID Token (JWT)
         const token = await getIdToken();
         if (token) {
           headers.set("Authorization", `Bearer ${token}`);
