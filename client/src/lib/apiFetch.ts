@@ -6,18 +6,26 @@
  *
  * Da usare al posto di `fetch()` per tutte le chiamate verso `api.mio-hub.me`.
  *
- * Se l'utente non e' loggato (token assente), la fetch parte senza header
- * Authorization — il backend rispondera' 401 sugli endpoint protetti.
+ * IMPORTANTE — Solo backend interno:
+ * Il Bearer token viene aggiunto SOLO per richieste verso il nostro backend
+ * (api.mio-hub.me, miohub.it, o path relativi `/api/...`). Per URL esterni
+ * (GitHub raw, CDN, mappe pubbliche, ecc.) il token NON viene aggiunto,
+ * perche' alcuni servizi (es. GitHub) rifiutano richieste con un Bearer
+ * non valido restituendo 404 invece che 401/403.
  */
 
 import { getIdToken } from "@/lib/firebase";
 
+function isInternalApiUrl(url: string): boolean {
+  // Path relativo (proxy Vercel) → backend interno
+  if (url.startsWith("/")) return true;
+  // Hostname noti del nostro backend
+  return url.includes("api.mio-hub.me") || url.includes("miohub.it");
+}
+
 /**
- * Variante di fetch che aggiunge il Bearer token Firebase.
- *
- * Mantiene la stessa firma di `fetch()` per essere drop-in replacement.
- * Le opzioni passate vengono preservate; eventuali header espliciti hanno
- * priorita' su quelli auto-aggiunti.
+ * Variante di fetch che aggiunge il Bearer token Firebase per le chiamate
+ * verso il backend MIO HUB. Per URL esterni, equivale a fetch() normale.
  */
 export async function apiFetch(
   input: RequestInfo | URL,
@@ -25,7 +33,14 @@ export async function apiFetch(
 ): Promise<Response> {
   const headers = new Headers(init?.headers);
 
-  if (!headers.has("Authorization")) {
+  const url =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.href
+        : input.url;
+
+  if (isInternalApiUrl(url) && !headers.has("Authorization")) {
     try {
       const token = await getIdToken();
       if (token) {

@@ -152,6 +152,10 @@
       "destination": "https://api.mio-hub.me/api/hub/:path*"
     },
     {
+      "source": "/api/me/:path*",
+      "destination": "https://api.mio-hub.me/api/me/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

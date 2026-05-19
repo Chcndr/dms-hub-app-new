@@ -1,16 +1,16 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 11.4.8 (Fix AVA Filtri Ruolo: PA/Comune, Associazione, Impresa + Autodeploy)
+> **Versione:** 11.5.0 (Fase 9 — Frontend Auth Hardening: apiFetch + legacy-lookup)
 > **Data:** 18 Maggio 2026
 > **Stato:** OPERATIVO — Autodeploy GitHub Actions ↔ Hetzner attivo
 >
 > ---
-> ### STATO SISTEMA (18 Mag 2026 — v11.4.8)
+> ### STATO SISTEMA (18 Mag 2026 — v11.5.0)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `a94bd21` — v11.4.8 |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new `2972ab3` — Tag `STABLE-v11.4.4-20260517` |
+> | **GitHub Backend** | Allineato | mihub-backend-rest `798a248` — Fase 9: /api/me/legacy-lookup + /api/associazioni |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new master — Fase 8 + 9 Frontend Fixes (apiFetch + legacy-lookup) |
 > | **GitHub MIO-hub** | Allineato | MIO-hub v46 — Tag `STABLE-v46-20260516` — 1.100 endpoint catalogati |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy via GitHub Actions — Build 20260518-0130 |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy su push master |
@@ -77,6 +77,8 @@
 > - **NON usare associazione_id come comune_id nella creazione riunione** — Quando un'associazione impersonata crea una riunione, `cId` DEVE essere `'0'` (nessun territorio), NON `assocIdCreator`. L'associazione_id e il comune_id sono entità diverse — confonderli causa che comuni sbagliati vedono riunioni non loro. Le associazioni vedono le riunioni tramite partecipazione (`le-mie-riunioni`), non tramite `r.comune_id`. (Fix v10.31.7h)
 > - **NON mostrare popup InvitoNotifier per collaboratori team** — I collaboratori (es. Viola Checchi per Alimentari Rossi) hanno `impresa_id` nel localStorage ma NON ricevono inviti A99X diretti. Gli inviti vanno all'impresa titolare. Se `user.isCollaborator === true`, bloccare il popup. (Fix v10.31.7e)
 > - **NON usare endpoint GET per azioni dirette nelle email** — Gli scanner antivirus/anti-bot fanno pre-fetch GET su tutti i link nelle email. Endpoint come `/invito/:token/accetta` e `/invito/:token/rifiuta` DEVONO avere una pagina di conferma intermedia (`?confirmed=1`) per evitare azioni automatiche da parte degli scanner. (Fix v10.31.7c)
+> - **NON usare `apiFetch` con token per URL esterni** — Il wrapper `apiFetch` aggiunge `Authorization: Bearer <Firebase ID Token>`. Aggiungerlo a richieste verso host esterni (raw.githubusercontent.com, CDN, mappe pubbliche) puo' causare risposte errate: GitHub raw rifiuta le richieste con Bearer non valido restituendo 404 (non 401/403), rompendo il tab Integrazioni. `apiFetch` filtra in base al dominio: aggiunge il token solo per `api.mio-hub.me`, `miohub.it` o path relativi `/api/...`. (Fix 9F-1, 18 Mag 2026)
+> - **NON usare `/api/security/users` per il lookup utente al login** — Gli endpoint `/api/security/users?search=...` e `/api/security/users/:id` sono `requireSuperAdmin`, quindi restituiscono 401 per cittadini/imprese/PA non-super_admin. Il login Firebase deve usare `/api/me/legacy-lookup` (`requireAuth`), che ricava l'email dal token autenticato e restituisce id, impresa_id, wallet_balance e assigned_roles. (Fix 9F-2, 18 Mag 2026)
 >
 > ---
 >
@@ -87,7 +89,7 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
-### RIEPILOGO SESSIONE 18 Mag 2026 (v11.4.5 → v11.4.8)
+### RIEPILOGO SESSIONE 18 Mag 2026 (v11.4.5 → v11.5.0)
 
 **Fix completati in questa sessione:**
 
@@ -97,6 +99,11 @@
 | v11.4.6 | Filtro comune per super_admin in impersonazione (shouldFilterByComune) | Backend | FUNZIONANTE |
 | v11.4.7 | Fix query imprese per comune: JOIN concessions→markets invece di imprese.comune_id | Backend | FUNZIONANTE |
 | v11.4.8 | Fix bug concessioni: operatore_id→impresa_id (colonna inesistente) + filtro comune concessioni | Backend | FUNZIONANTE |
+| Fase 8  | apiFetch: token Firebase automatico su tutte le chiamate verso il backend | Frontend | FUNZIONANTE |
+| Fase 9 backend | Ripristino GET /api/associazioni + nuovo GET /api/me/legacy-lookup (requireAuth) | Backend | FUNZIONANTE |
+| Fix 9F-1 | apiFetch NON aggiunge token a URL esterni (GitHub raw, CDN) | Frontend | FUNZIONANTE |
+| Fix 9F-2 | lookupLegacyUser usa /api/me/legacy-lookup invece di /api/security/users | Frontend | FUNZIONANTE |
+| Fix 9F-3 | vercel.json: rewrite /api/me/:path* → api.mio-hub.me | Frontend | FUNZIONANTE |
 
 **Problemi risolti:**
 - **AVA non filtrava per associazione**: Confcommercio Bologna vedeva tutte le imprese/concessioni. Aggiunto `assocFilter` che filtra tramite `associazioni_imprese` per mostrare solo gli associati.
@@ -122,6 +129,20 @@
 - Neon DB: integro
 
 ---
+
+### CHANGELOG v11.5.0 — Fase 9 Frontend Fixes (18 Mag 2026)
+- **FIX 9F-1 FRONTEND `client/src/lib/apiFetch.ts`**:
+  - Bug: `apiFetch` aggiungeva `Authorization: Bearer <token Firebase>` a TUTTE le richieste fetch, incluse quelle verso host esterni come `raw.githubusercontent.com`. GitHub rifiutava le richieste con Bearer non-GitHub restituendo 404 (non 401/403), rompendo il tab Integrazioni che carica `https://raw.githubusercontent.com/Chcndr/MIO-hub/master/api/index.json`.
+  - Fix: Aggiunto helper `isInternalApiUrl(url)` che valida se l'URL e' del nostro backend (path relativo `/`, `api.mio-hub.me` o `miohub.it`). Il Bearer viene aggiunto SOLO in quel caso. Per URL esterni `apiFetch` equivale a `fetch()` standard.
+- **FIX 9F-2 FRONTEND `client/src/contexts/FirebaseAuthContext.tsx`**:
+  - Bug: `lookupLegacyUser(email)` faceva due chiamate a `/api/security/users` (`requireSuperAdmin`), che restituivano 401 per tutti i non-super_admin. Risultato: `miohubId = 0` per cittadini/imprese, wallet vuoto, ruoli RBAC non caricati.
+  - Fix: Sostituita con singola chiamata a `GET /api/me/legacy-lookup` (`requireAuth`). L'endpoint backend ricava l'email dal token Firebase autenticato e restituisce `id`, `name`, `email`, `openId`, `impresa_id`, `wallet_balance`, `base_role` e `assigned_roles`. Il parametro `email` resta nella firma per compatibilita' con i call site esistenti.
+  - `is_super_admin` viene derivato da `assigned_roles.some(r => r.role_code === 'super_admin')`.
+- **FIX 9F-3 FRONTEND `vercel.json`**:
+  - Aggiunto rewrite `/api/me/:path*` → `https://api.mio-hub.me/api/me/:path*` per coerenza con gli altri endpoint (anche se il frontend usa l'URL diretto, il proxy rende possibili chiamate via path relativo).
+- **Nuovi vincoli negativi documentati**:
+  - "NON usare `apiFetch` con token per URL esterni" (filtraggio per dominio gia' implementato).
+  - "NON usare `/api/security/users` per il lookup utente al login" (e' super_admin-only — usare `/api/me/legacy-lookup`).
 
 ### CHANGELOG v11.4.8 (18 Mag 2026)
 - **FIX BACKEND AVA Concessioni operatore_id → impresa_id**:

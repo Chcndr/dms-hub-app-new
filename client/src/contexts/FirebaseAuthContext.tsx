@@ -178,82 +178,48 @@ async function lookupImpresaForUser(
 }
 
 /**
- * Cerca l'utente nel database legacy dell'orchestratore tramite email.
- * Prima fa una ricerca per email, poi recupera i dettagli completi.
+ * Cerca l'utente nel database legacy dell'orchestratore.
+ *
+ * Fase 9: usa il nuovo endpoint `/api/me/legacy-lookup` (requireAuth, non
+ * super_admin). L'endpoint ricava l'email dal token Firebase autenticato,
+ * quindi il parametro `email` non viene piu' usato per la chiamata —
+ * resta nella firma per compatibilita' con i call site esistenti.
  */
-async function lookupLegacyUser(email: string): Promise<LegacyUserData | null> {
+async function lookupLegacyUser(
+  email: string
+): Promise<LegacyUserData | null> {
   try {
-    // Step 1: Cerca utente per email
-    const searchRes = await apiFetch(
-      `${API_BASE}/api/security/users?search=${encodeURIComponent(email)}&limit=1`
-    );
-    if (!searchRes.ok) {
-      console.warn(
-        "[FirebaseAuth] Ricerca utente legacy fallita:",
-        searchRes.status
-      );
-      return null;
-    }
-    const searchData = await searchRes.json();
-    if (
-      !searchData.success ||
-      !searchData.data ||
-      searchData.data.length === 0
-    ) {
-      console.warn(
-        "[FirebaseAuth] Utente legacy non trovato per email:",
-        email
-      );
+    const res = await apiFetch(`${API_BASE}/api/me/legacy-lookup`);
+
+    if (!res.ok) {
+      console.warn("[FirebaseAuth] legacy-lookup fallito:", res.status);
       return null;
     }
 
-    const basicUser = searchData.data[0];
-    const userId = basicUser.id;
-
-    // Step 2: Recupera dettagli completi (include impresa_id, wallet_balance, roles, ecc.)
-    const detailRes = await apiFetch(`${API_BASE}/api/security/users/${userId}`);
-    if (!detailRes.ok) {
-      console.warn(
-        "[FirebaseAuth] Dettagli utente legacy non disponibili:",
-        detailRes.status
-      );
-      // Usa i dati base dalla ricerca
-      return {
-        id: basicUser.id,
-        name: basicUser.name || email,
-        email: basicUser.email,
-        base_role: basicUser.base_role || "user",
-        is_super_admin: basicUser.is_super_admin === true,
-        assigned_roles: basicUser.assigned_roles || [],
-      };
-    }
-    const detailData = await detailRes.json();
-    if (!detailData.success || !detailData.data) {
-      return {
-        id: basicUser.id,
-        name: basicUser.name || email,
-        email: basicUser.email,
-        base_role: basicUser.base_role || "user",
-        is_super_admin: basicUser.is_super_admin === true,
-        assigned_roles: basicUser.assigned_roles || [],
-      };
+    const data = await res.json();
+    if (!data.success || !data.data) {
+      console.warn("[FirebaseAuth] legacy-lookup: utente non trovato");
+      return null;
     }
 
-    const fullUser = detailData.data;
+    const user = data.data;
     console.warn(
-      `[FirebaseAuth] Utente legacy trovato: ID=${fullUser.id}, impresa_id=${fullUser.impresa_id}, wallet=${fullUser.wallet_balance}, is_super_admin=${fullUser.is_super_admin}`
+      `[FirebaseAuth] Utente legacy trovato: ID=${user.id}, impresa_id=${user.impresa_id}, wallet=${user.wallet_balance}`
     );
 
+    const assigned = user.assigned_roles || [];
     return {
-      id: fullUser.id,
-      name: fullUser.name || email,
-      email: fullUser.email,
-      openId: fullUser.openId,
-      impresa_id: fullUser.impresa_id || undefined,
-      wallet_balance: fullUser.wallet_balance || 0,
-      base_role: fullUser.role || "user",
-      is_super_admin: fullUser.is_super_admin === true,
-      assigned_roles: (fullUser.roles || []).map((r: any) => ({
+      id: user.id,
+      name: user.name || email,
+      email: user.email,
+      openId: user.openId,
+      impresa_id: user.impresa_id || undefined,
+      wallet_balance: user.wallet_balance || 0,
+      base_role: user.base_role || user.role || "user",
+      is_super_admin: assigned.some(
+        (r: any) => r.role_code === "super_admin"
+      ),
+      assigned_roles: assigned.map((r: any) => ({
         role_id: r.role_id,
         role_code: r.role_code,
         role_name: r.role_name,
