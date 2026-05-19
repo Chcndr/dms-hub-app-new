@@ -1,16 +1,16 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 11.5.0 (Fase 9 — Frontend Auth Hardening: apiFetch + legacy-lookup)
+> **Versione:** 11.6.0 (Fase 10 — Frontend: session_token hex64 primary auth)
 > **Data:** 18 Maggio 2026
 > **Stato:** OPERATIVO — Autodeploy GitHub Actions ↔ Hetzner attivo
 >
 > ---
-> ### STATO SISTEMA (18 Mag 2026 — v11.5.0)
+> ### STATO SISTEMA (18 Mag 2026 — v11.6.0)
 >
 > | Componente | Stato | Dettaglio |
 > |---|---|---|
-> | **GitHub Backend** | Allineato | mihub-backend-rest `798a248` — Fase 9: /api/me/legacy-lookup + /api/associazioni |
-> | **GitHub Frontend** | Allineato | dms-hub-app-new master — Fase 8 + 9 Frontend Fixes (apiFetch + legacy-lookup) |
+> | **GitHub Backend** | Allineato | mihub-backend-rest — Fase 10: session_token hex64 accettato su tutti i middleware auth |
+> | **GitHub Frontend** | Allineato | dms-hub-app-new master — Fase 10: apiFetch usa session_token come primary auth |
 > | **GitHub MIO-hub** | Allineato | MIO-hub v46 — Tag `STABLE-v46-20260516` — 1.100 endpoint catalogati |
 > | **Hetzner (API)** | Online | `https://api.miohub.it` — autodeploy via GitHub Actions — Build 20260518-0130 |
 > | **Vercel (Frontend)** | Deployato | `miohub.it` — autodeploy su push master |
@@ -79,6 +79,7 @@
 > - **NON usare endpoint GET per azioni dirette nelle email** — Gli scanner antivirus/anti-bot fanno pre-fetch GET su tutti i link nelle email. Endpoint come `/invito/:token/accetta` e `/invito/:token/rifiuta` DEVONO avere una pagina di conferma intermedia (`?confirmed=1`) per evitare azioni automatiche da parte degli scanner. (Fix v10.31.7c)
 > - **NON usare `apiFetch` con token per URL esterni** — Il wrapper `apiFetch` aggiunge `Authorization: Bearer <Firebase ID Token>`. Aggiungerlo a richieste verso host esterni (raw.githubusercontent.com, CDN, mappe pubbliche) puo' causare risposte errate: GitHub raw rifiuta le richieste con Bearer non valido restituendo 404 (non 401/403), rompendo il tab Integrazioni. `apiFetch` filtra in base al dominio: aggiunge il token solo per `api.mio-hub.me`, `miohub.it` o path relativi `/api/...`. (Fix 9F-1, 18 Mag 2026)
 > - **NON usare `/api/security/users` per il lookup utente al login** — Gli endpoint `/api/security/users?search=...` e `/api/security/users/:id` sono `requireSuperAdmin`, quindi restituiscono 401 per cittadini/imprese/PA non-super_admin. Il login Firebase deve usare `/api/me/legacy-lookup` (`requireAuth`), che ricava l'email dal token autenticato e restituisce id, impresa_id, wallet_balance e assigned_roles. (Fix 9F-2, 18 Mag 2026)
+> - **NON usare il Firebase ID Token come primary auth nel frontend** — Il JWT Firebase scade dopo 1 ora e causa 401 a raffica su tutti gli endpoint protetti. Dalla Fase 10 il backend accetta il `session_token` (hex64) salvato in `localStorage('miohub_session_token')` su `requireAuth`, `requireSuperAdmin`, `requirePaymentAuth` e `validateImpersonation`. Il wrapper `apiFetch` usa il session_token come prima scelta e Firebase ID Token solo come fallback. Anche le chiamate manuali che leggono `localStorage.getItem("token")` per impostare Authorization devono preferire `localStorage.getItem("miohub_session_token") || localStorage.getItem("token")`. (Fix Fase 10 frontend, 18 Mag 2026)
 >
 > ---
 >
@@ -89,7 +90,7 @@
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
 
 ---
-### RIEPILOGO SESSIONE 18 Mag 2026 (v11.4.5 → v11.5.0)
+### RIEPILOGO SESSIONE 18 Mag 2026 (v11.4.5 → v11.6.0)
 
 **Fix completati in questa sessione:**
 
@@ -104,6 +105,8 @@
 | Fix 9F-1 | apiFetch NON aggiunge token a URL esterni (GitHub raw, CDN) | Frontend | FUNZIONANTE |
 | Fix 9F-2 | lookupLegacyUser usa /api/me/legacy-lookup invece di /api/security/users | Frontend | FUNZIONANTE |
 | Fix 9F-3 | vercel.json: rewrite /api/me/:path* → api.mio-hub.me | Frontend | FUNZIONANTE |
+| Fase 10 backend | session_token hex64 accettato su requireAuth/requireSuperAdmin/requirePaymentAuth/validateImpersonation | Backend | FUNZIONANTE |
+| Fase 10 frontend | apiFetch usa miohub_session_token come primary auth (Firebase JWT come fallback) — risolve 401 da token scaduto | Frontend | FUNZIONANTE |
 
 **Problemi risolti:**
 - **AVA non filtrava per associazione**: Confcommercio Bologna vedeva tutte le imprese/concessioni. Aggiunto `assocFilter` che filtra tramite `associazioni_imprese` per mostrare solo gli associati.
@@ -129,6 +132,20 @@
 - Neon DB: integro
 
 ---
+
+### CHANGELOG v11.6.0 — Fase 10 Frontend: session_token primary auth (18 Mag 2026)
+- **FIX FRONTEND `client/src/lib/apiFetch.ts`**:
+  - Bug: il wrapper inviava il Firebase ID Token (JWT) come Bearer su tutti gli endpoint. Il JWT scade dopo 1 ora, causando 401 a raffica su `requireAuth` / `requireSuperAdmin` / `requirePaymentAuth` finche' Firebase non rifresca il token.
+  - Fix: `apiFetch` ora usa come prima scelta `localStorage.getItem("miohub_session_token")` (hex64, gestito dal backend, non scade ogni ora). Il Firebase ID Token resta come fallback se il session_token non e' presente (es. cittadini non ancora sincronizzati). Il backend (Fase 10) accetta entrambi i formati su tutti i middleware auth, incluso `validateImpersonation`.
+  - Aggiornata la docstring del modulo per documentare la priorita'.
+- **FIX FRONTEND `client/src/pages/WalletPage.tsx`**:
+  - Tutte le chiamate che leggevano `localStorage.getItem("token")` per impostare manualmente l'header `Authorization` (riga 139, 235, 297, 444, 487, 515, 596, 1050) ora preferiscono `localStorage.getItem("miohub_session_token") || localStorage.getItem("token")`. Risolve i 401 sul wallet TCC quando il JWT Firebase scade.
+- **FIX FRONTEND ulteriori file (allineamento priorita' token)**:
+  - `client/src/hooks/useNearbyPOIs.ts` — header `Authorization` su nearby-pois e checkin (POI cultura/mobilita').
+  - `client/src/pages/HomePage.tsx` — check autenticazione (riga 80 e 684).
+  - `client/src/pages/WalletStorico.tsx` — check autenticazione (riga 83).
+  - `client/src/pages/HubOperatore.tsx` — `getCurrentToken`, `refreshToken` e fetch wallet operatore.
+- **Nuovo vincolo negativo documentato**: "NON usare il Firebase ID Token come primary auth nel frontend" — usare sempre `miohub_session_token` come prima scelta, sia in `apiFetch` che nelle chiamate manuali.
 
 ### CHANGELOG v11.5.0 — Fase 9 Frontend Fixes (18 Mag 2026)
 - **FIX 9F-1 FRONTEND `client/src/lib/apiFetch.ts`**:

@@ -77,7 +77,7 @@ export default function HomePage() {
   useEffect(() => {
     const checkAuth = () => {
       const userStr = localStorage.getItem("user");
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token");
       setIsAuthenticated(!!(userStr && token));
       // Determina ruolo utente
       if (userStr) {
@@ -681,7 +681,7 @@ export default function HomePage() {
           setPendingRoute(null);
           // Ricontrolla autenticazione dopo chiusura modal
           const userStr = localStorage.getItem("user");
-          const token = localStorage.getItem("token");
+          const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token");
           if (userStr && token) {
             setIsAuthenticated(true);
           }

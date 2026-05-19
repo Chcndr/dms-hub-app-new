@@ -165,7 +165,7 @@ export function useNearbyPOIs(options: UseNearbyPOIsOptions) {
           ...(userId && { user_id: userId }),
         });
 
-        const token = localStorage.getItem("token") || "";
+        const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token") || "";
         const response = await fetch(
           `${API_BASE_URL}/gaming-rewards/nearby-pois?${params}`,
           {
@@ -217,7 +217,7 @@ export function useNearbyPOIs(options: UseNearbyPOIsOptions) {
         // Genera idempotency key e nonce anti-replay
         const idempotencyKey = crypto.randomUUID();
         const nonce = crypto.randomUUID();
-        const token = localStorage.getItem("token") || "";
+        const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token") || "";
 
         const body =
           poi.type === "culture"

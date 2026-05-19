@@ -136,7 +136,7 @@ export default function WalletPage() {
   useEffect(() => {
     const checkAuth = () => {
       const userStr = localStorage.getItem("user");
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token");
       if (userStr && token) {
         try {
           const user = JSON.parse(userStr);
@@ -232,7 +232,7 @@ export default function WalletPage() {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${localStorage.getItem("miohub_session_token") || localStorage.getItem("token")}`,
             },
             body: JSON.stringify({ active: enabled }),
           }
@@ -294,7 +294,7 @@ export default function WalletPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("miohub_session_token") || localStorage.getItem("token")}`,
           },
           body: JSON.stringify(bodyData),
         }
@@ -441,7 +441,7 @@ export default function WalletPage() {
     try {
       setLoading(true);
 
-      const token = localStorage.getItem("token") || "";
+      const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token") || "";
       const authHeaders = {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -484,7 +484,7 @@ export default function WalletPage() {
   const refreshQRCode = async () => {
     try {
       setRefreshingQR(true);
-      const token = localStorage.getItem("token") || "";
+      const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token") || "";
       const qrRes = await apiFetch(`${API_BASE}/api/tcc/qrcode/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -512,7 +512,7 @@ export default function WalletPage() {
 
     try {
       setGeneratingSpendQR(true);
-      const token = localStorage.getItem("token") || "";
+      const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token") || "";
       const res = await authenticatedFetch(
         `${API_BASE}/api/tcc/v2/generate-spend-qr`,
         {
@@ -593,7 +593,7 @@ export default function WalletPage() {
       setCitizenInfo(null);
       setScanResult(null);
 
-      const token = localStorage.getItem("token") || "";
+      const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token") || "";
       const response = await authenticatedFetch(
         `${API_BASE}/api/tcc/validate-qr`,
         {
@@ -1047,7 +1047,7 @@ export default function WalletPage() {
             setShowLoginModal(false);
             // Ricontrolla autenticazione dopo chiusura modal
             const userStr = localStorage.getItem("user");
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token");
             if (userStr && token) {
               try {
                 const user = JSON.parse(userStr);

@@ -80,7 +80,7 @@ export default function WalletStorico() {
   // Check auth
   useEffect(() => {
     const userStr = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("miohub_session_token") || localStorage.getItem("token");
     if (userStr && token) {
       try {
         const user = JSON.parse(userStr);

@@ -148,7 +148,7 @@ function WalletStatusIndicator({
 
     setStatus("loading");
     try {
-      const token = authToken || localStorage.getItem("token") || "";
+      const token = authToken || localStorage.getItem("miohub_session_token") || localStorage.getItem("token") || "";
       let walletFound = false;
       let resolvedImpresaId: number | undefined;
       let denominazione: string | undefined;
@@ -420,7 +420,7 @@ export default function HubOperatore() {
         const token = await getToken();
         setAuthToken(token);
       } else {
-        setAuthToken(localStorage.getItem("token"));
+        setAuthToken(localStorage.getItem("miohub_session_token") || localStorage.getItem("token"));
       }
     };
     refreshToken();
@@ -432,7 +432,7 @@ export default function HubOperatore() {
       const token = await getToken();
       if (token) return token;
     }
-    return authToken || localStorage.getItem("token") || "";
+    return authToken || localStorage.getItem("miohub_session_token") || localStorage.getItem("token") || "";
   }, [getToken, authToken]);
 
   // Carica dati iniziali quando abbiamo un operatore valido e il token

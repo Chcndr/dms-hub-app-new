@@ -1,10 +1,13 @@
 /**
  * apiFetch — Wrapper centralizzato per fetch verso il backend MIO HUB.
  *
- * Aggiunge automaticamente l'header `Authorization: Bearer <ID_TOKEN>` con
- * l'ID token di Firebase dell'utente corrente, se disponibile.
+ * Aggiunge automaticamente l'header `Authorization: Bearer <token>` per le
+ * richieste verso il nostro backend, con la seguente priorita':
+ *   1. `miohub_session_token` da localStorage (hex64, non scade ogni ora)
+ *   2. Firebase ID Token (JWT, scade dopo 1h) come fallback
  *
- * Da usare al posto di `fetch()` per tutte le chiamate verso `api.mio-hub.me`.
+ * Il backend (Fase 10) accetta entrambi sui middleware `requireAuth`,
+ * `requireSuperAdmin`, `requirePaymentAuth` e `validateImpersonation`.
  *
  * IMPORTANTE — Solo backend interno:
  * Il Bearer token viene aggiunto SOLO per richieste verso il nostro backend
@@ -42,14 +45,22 @@ export async function apiFetch(
 
   if (isInternalApiUrl(url) && !headers.has("Authorization")) {
     try {
-      const token = await getIdToken();
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
+      // 1. Prima scelta: session_token (hex64) — non scade ogni ora come il Firebase JWT
+      const sessionToken = localStorage.getItem("miohub_session_token");
+
+      if (sessionToken) {
+        headers.set("Authorization", `Bearer ${sessionToken}`);
+      } else {
+        // 2. Fallback: Firebase ID Token (JWT) — usato solo se session_token non disponibile
+        const token = await getIdToken();
+        if (token) {
+          headers.set("Authorization", `Bearer ${token}`);
+        }
       }
     } catch (err) {
       // Token non disponibile (utente non loggato o errore Firebase).
       // Procediamo senza header — il backend gestira' eventuali 401.
-      console.warn("[apiFetch] Token Firebase non disponibile:", err);
+      console.warn("[apiFetch] Token non disponibile:", err);
     }
   }
 
