@@ -1,7 +1,7 @@
 # 🏗️ MIO HUB - BLUEPRINT UNIFICATO DEL SISTEMA
 
-> **Versione:** 11.6.0 (Fase 10 — Frontend: session_token hex64 primary auth)
-> **Data:** 18 Maggio 2026
+> **Versione:** 11.6.1 (Fix Vetrina Pubblica + Sicurezza Route HUB)
+> **Data:** 19 Maggio 2026
 > **Stato:** OPERATIVO — Autodeploy GitHub Actions ↔ Hetzner attivo
 >
 > ---
@@ -88,6 +88,29 @@
 > - **Pulsanti ACCETTA/RIFIUTA solo se stato "In attesa"/"INVITATO"** — Se confermato o rifiutato, nessun pulsante, solo lo stato
 > - **LEFT JOIN a99x_inviti DEVE includere AND i.riunione_id = r.id** — Senza questa condizione, il JOIN potrebbe prendere inviti di altre riunioni e restituire token sbagliati o null
 > - **Calendario card colore: arancione se non accettata, viola se accettata** — Solo per vista associazione impersonata. PA vede sempre viola.
+> - **NON creare endpoint di scrittura (POST/PUT/DELETE) in routes/hub.js senza `requireAuth`** — Il guard globale `validateImpersonation` NON protegge le scritture senza `comune_id`. Ogni route di scrittura DEVE avere `requireAuth` come middleware esplicito.
+
+---
+### RIEPILOGO SESSIONE 19 Mag 2026 (v11.6.0 → v11.6.1)
+
+**Fix completati in questa sessione:**
+
+| Versione | Fix | Repo | Stato |
+|----------|-----|------|-------|
+| v11.6.1 | Endpoint pubblico `GET /api/imprese/:id/vetrina-pubblica` (no auth) per app cittadino | Backend | FUNZIONANTE |
+| v11.6.1 | VetrinePage.tsx usa endpoint pubblico per caricare vetrina singola (fallback a endpoint protetto) | Frontend | FUNZIONANTE |
+| v11.6.1 | `requireAuth` aggiunto a TUTTE le route di scrittura in `routes/hub.js` (locations, shops, services) | Backend | FUNZIONANTE |
+
+**Bug risolto — Vetrina non si apre nell'app cittadino:**
+- **Root cause:** `GET /api/imprese/:id` richiedeva `assertImpresaAccess` (auth obbligatoria). Quando un cittadino non autenticato cliccava "Visita Vetrina" dal popup mappa, riceveva 401 → toast "Impresa non trovata" → redirect a `/vetrine` (lista).
+- **Soluzione:** Nuovo endpoint `GET /api/imprese/:id/vetrina-pubblica` che restituisce SOLO dati pubblici (denominazione, settore, indirizzo, social, rating, coordinate shop) senza auth. Frontend aggiornato per usarlo come prima scelta.
+
+**Vulnerabilità sicurezza fixata — Route HUB senza auth:**
+- **Root cause:** `POST /api/hub/shops/create-with-impresa`, `POST /api/hub/locations`, `POST /api/hub/shops`, `PUT /api/hub/locations/:id`, `DELETE /api/hub/locations/:id`, `POST /api/hub/services` non avevano middleware `requireAuth`. Il guard globale `validateImpersonation` blocca solo le scritture CON `comune_id` — senza `comune_id` passavano senza auth.
+- **Soluzione:** Aggiunto `requireAuth` middleware a tutte le 6 route di scrittura in `routes/hub.js`. Testato: tutte restituiscono 401 senza token.
+
+> **VINCOLO NEGATIVO AGGIUNTO:**
+> - **NON creare endpoint di scrittura (POST/PUT/DELETE) in routes/hub.js senza `requireAuth`** — Il guard globale `validateImpersonation` NON protegge le scritture senza `comune_id`. Ogni route di scrittura DEVE avere `requireAuth` come middleware esplicito.
 
 ---
 ### RIEPILOGO SESSIONE 18 Mag 2026 (v11.4.5 → v11.6.0)
